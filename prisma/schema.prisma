@@ -1,7 +1,6 @@
 // Step 4で設定した環境変数 DATABASE_URL を利用
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -30,6 +29,9 @@ model User {
   groups_leading       Group[]     @relation("GroupLeader") // リーダーを務める団体
   group_messages       GroupMessage[] // 団体メッセージの履歴
   event_follows        EventFollow[] // フォローしているイベント
+  
+  // 【修正】主催しているイベントのリスト
+  events_organized     Event[]      @relation("EventOrganizer") // <--- 追加
 
   @@map("users")
 }
@@ -55,7 +57,7 @@ model Event {
   updated_at       DateTime     @updatedAt
 
   // リレーション
-  organizer_user   User?        @relation(fields: [organizer_user_id], references: [id])
+  organizer_user   User?        @relation("EventOrganizer", fields: [organizer_user_id], references: [id]) // <--- リレーション名を追加
   organizer_user_id String?
   
   participants     UserEvent[]
