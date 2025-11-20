@@ -1,0 +1,172 @@
+// Step 4で設定した環境変数 DATABASE_URL を利用
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ユーザー情報
+model User {
+  // Cognito SubまたはランダムUUID (PK)
+  id               String       @id @default(uuid()) @map("id")
+  email            String       @unique
+  // ユーザーがイベント主催者権限を持っているか
+  is_organizer     Boolean      @default(false)
+  is_banned        Boolean      @default(false)
+  role             String       @default("USER") // USER, ADMIN
+  
+  // 公開プロフィール設定
+  is_profile_public Boolean     @default(false)
+  custom_profile_url String?    @unique // 例: /user/itasha_taro
+  
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+
+  // リレーション
+  events_participating UserEvent[] // 参加/フォローしているイベント
+  groups_leading       Group[]     @relation("GroupLeader") // リーダーを務める団体
+  group_messages       GroupMessage[] // 団体メッセージの履歴
+  event_follows        EventFollow[] // フォローしているイベント
+
+  @@map("users")
+}
+
+// イベント情報 (マスターデータ)
+model Event {
+  id               String       @id @default(uuid())
+  name             String
+  theme            String?
+  description      String?      @db.Text
+  
+  // イベント情報の追跡・更新検知のためのURL (Xの投稿URLも含む)
+  original_url     String       @unique
+  
+  event_date       DateTime
+  entry_start_at   DateTime?
+  payment_due_at   DateTime?
+
+  // 承認ステータス (PENDING, APPROVED, REJECTED)
+  approval_status  String       @default("PENDING")
+  
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+
+  // リレーション
+  organizer_user   User?        @relation(fields: [organizer_user_id], references: [id])
+  organizer_user_id String?
+  
+  participants     UserEvent[]
+  groups           Group[]
+  tags             EventTag[]
+  followers        EventFollow[]
+  
+  @@map("events")
+}
+
+// ユーザーとイベントの参加・フォロー状況 (User_Events Tableを代替)
+model UserEvent {
+  user             User         @relation(fields: [user_id], references: [id])
+  user_id          String
+  event            Event        @relation(fields: [event_id], references: [id])
+  event_id         String
+  
+  // ユーザーがどの併せ（団体）に参加しているかを示すID (Optional)
+  group            Group?       @relation(fields: [group_id], references: [id])
+  group_id         String?
+  
+  // 参加ステータス (INTERESTED, REGISTERED, PAID, ATTENDED)
+  status           String       @default("INTERESTED")
+  
+  // プッシュ通知のサブスクリプション情報 (FCMトークンなど)
+  push_subscription Json?        @db.JsonB
+
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+
+  @@id([user_id, event_id])
+  @@map("user_events")
+}
+
+// 団体情報 (併せ)
+model Group {
+  id               String       @id @default(uuid())
+  event            Event        @relation(fields: [event_id], references: [id])
+  event_id         String
+  
+  name             String
+  theme            String?
+  max_members      Int?
+  
+  // リーダーは必ずUserテーブルを参照
+  leader           User         @relation("GroupLeader", fields: [leader_user_id], references: [id])
+  leader_user_id   String
+  
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+
+  // リレーション
+  members          UserEvent[]   // 団体に参加しているメンバー
+  messages         GroupMessage[]
+  
+  @@unique([event_id, name]) // 同一イベント内で団体名はユニーク
+  @@map("groups")
+}
+
+// 団体メッセージ (一斉連絡/掲示板)
+model GroupMessage {
+  id               String       @id @default(uuid())
+  group            Group        @relation(fields: [group_id], references: [id])
+  group_id         String
+  sender           User         @relation(fields: [sender_id], references: [id])
+  sender_id        String
+  
+  content          String       @db.Text
+  
+  // trueの場合、SESによるメール通知も行う (一斉連絡フラグ)
+  is_announcement  Boolean      @default(false)
+  
+  created_at       DateTime     @default(now())
+  
+  @@map("group_messages")
+}
+
+// タグマスター
+model Tag {
+  id               String       @id @default(uuid())
+  name             String       @unique
+  usage_count      Int          @default(1)
+  
+  // リレーション
+  events           EventTag[]
+  
+  @@map("tags")
+}
+
+// イベント-タグ紐付け
+model EventTag {
+  event            Event        @relation(fields: [event_id], references: [id])
+  event_id         String
+  tag              Tag          @relation(fields: [tag_id], references: [id])
+  tag_id           String
+  
+  created_at       DateTime     @default(now())
+  
+  @@id([event_id, tag_id])
+  @@map("event_tags")
+}
+
+// イベントのフォロー (SNS要素ではない、単なるリマインダーリスト)
+model EventFollow {
+  user             User         @relation(fields: [user_id], references: [id])
+  user_id          String
+  event            Event        @relation(fields: [event_id], references: [id])
+  event_id         String
+  
+  followed_at      DateTime     @default(now())
+
+  @@id([user_id, event_id])
+  @@map("event_follows")
+}
