@@ -81,12 +81,13 @@ const useDatabaseStrategy =
   adapterInstance !== undefined;
 
 // デバッグ: セッション戦略をログに出力
-if (process.env.NODE_ENV === "development") {
-  console.log("[Auth Debug] Session strategy:", useDatabaseStrategy ? "database" : "jwt");
-  console.log("[Auth Debug] hasDatabaseUrl:", hasDatabaseUrl);
-  console.log("[Auth Debug] adapterInstance:", adapterInstance ? "exists" : "undefined");
-  console.log("[Auth Debug] NODE_ENV:", process.env.NODE_ENV);
-}
+console.log("[Auth Debug] Session strategy:", useDatabaseStrategy ? "database" : "jwt");
+console.log("[Auth Debug] hasDatabaseUrl:", hasDatabaseUrl);
+console.log("[Auth Debug] adapterInstance:", adapterInstance ? "exists" : "undefined");
+console.log("[Auth Debug] NODE_ENV:", process.env.NODE_ENV);
+console.log("[Auth Debug] GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID ? "設定済み" : "未設定");
+console.log("[Auth Debug] GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET ? "設定済み" : "未設定");
+console.log("[Auth Debug] NEXTAUTH_URL:", process.env.NEXTAUTH_URL || "未設定（自動検出）");
 
 // プロバイダー設定（GoogleとXのみ）
 // DATABASE_URLが設定されている場合のみadapterを設定
@@ -96,6 +97,7 @@ const configBase: NextAuthConfig = {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       allowDangerousEmailAccountLinking: true, // 同じメールアドレスで複数プロバイダーをリンク
+      // 明示的にリダイレクトURIを設定（オプション、trustHostがtrueの場合は自動検出される）
     }),
     Twitter({
       clientId: process.env.TWITTER_CLIENT_ID,
@@ -225,20 +227,21 @@ const config: NextAuthConfig = {
   // 無効なセッションクッキーを無視する（AUTH_SECRETが変更された場合など）
   trustHost: true,
   // セッションのエラーハンドリングを改善
-  debug: process.env.NODE_ENV === "development",
+  // 本番環境でも一時的にデバッグを有効にしてリダイレクトURIを確認
+  debug: true,
   // エラー時の処理を改善
   events: {
-    async signIn({ user }) {
+    async signIn({ user, account }) {
       // サインイン成功時のログ
-      if (process.env.NODE_ENV === "development") {
-        console.log("[Auth Debug] Sign in successful:", { userId: user.id, email: user.email });
-      }
+      console.log("[Auth Debug] Sign in successful:", { 
+        userId: user.id, 
+        email: user.email,
+        provider: account?.provider,
+      });
     },
     async signOut() {
       // サインアウト時のログ
-      if (process.env.NODE_ENV === "development") {
-        console.log("[Auth Debug] Sign out");
-      }
+      console.log("[Auth Debug] Sign out");
     },
   },
 };
