@@ -32,11 +32,13 @@ export async function middleware(request: NextRequest) {
       // JWEInvalidエラーの場合は警告のみ（これは正常な動作）
       if (
         errorMessage.includes("JWEInvalid") ||
-        errorMessage.includes("Invalid Compact JWE")
+        errorMessage.includes("Invalid Compact JWE") ||
+        errorMessage.includes("JWTSessionError")
       ) {
         // 無効なセッションクッキーは無視（これは正常な動作）
-        // デバッグのため、本番環境でもログを出力
-        console.warn("[Auth Debug] Invalid session cookie detected, ignoring:", errorMessage);
+        // デバッグのため、本番環境でもログを出力（ただし頻度を減らす）
+        // ログを抑制してノイズを減らす
+        // console.warn("[Auth Debug] Invalid session cookie detected, ignoring:", errorMessage);
       } else {
         // その他のエラーはログに記録
         console.error("[Auth Debug] Auth initialization failed:", error);

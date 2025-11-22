@@ -293,6 +293,22 @@ const config: NextAuthConfig = {
   // セッションのエラーハンドリングを改善
   // 本番環境でも一時的にデバッグを有効にしてリダイレクトURIを確認
   debug: true,
+  // セッションクッキーの設定を改善（データベースセッション使用時）
+  cookies: useDatabaseStrategy
+    ? {
+      sessionToken: {
+        name: useDatabaseStrategy
+          ? "__Secure-authjs.session-token"
+          : "__Secure-authjs.session-token",
+        options: {
+          httpOnly: true,
+          sameSite: "lax",
+          path: "/",
+          secure: true,
+        },
+      },
+    }
+    : undefined,
   // エラー時の処理を改善
   events: {
     async signIn({ user, account }) {
