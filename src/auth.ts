@@ -54,7 +54,21 @@ const getAdapter = () => {
 
 // adapterを取得
 const adapterInstance = getAdapter();
-const useDatabaseStrategy = hasDatabaseUrl && adapterInstance !== undefined;
+// セッション戦略を決定
+// 注意: 開発環境では一時的にJWT戦略を使用（古いセッションクッキーの問題を回避）
+// 本番環境では、DATABASE_URLが設定されている場合はdatabase戦略を使用
+const useDatabaseStrategy =
+  process.env.NODE_ENV === "production" &&
+  hasDatabaseUrl &&
+  adapterInstance !== undefined;
+
+// デバッグ: セッション戦略をログに出力
+if (process.env.NODE_ENV === "development") {
+  console.log("[Auth Debug] Session strategy:", useDatabaseStrategy ? "database" : "jwt");
+  console.log("[Auth Debug] hasDatabaseUrl:", hasDatabaseUrl);
+  console.log("[Auth Debug] adapterInstance:", adapterInstance ? "exists" : "undefined");
+  console.log("[Auth Debug] NODE_ENV:", process.env.NODE_ENV);
+}
 
 // プロバイダー設定（GoogleとXのみ）
 // DATABASE_URLが設定されている場合のみadapterを設定
@@ -76,6 +90,24 @@ const configBase: NextAuthConfig = {
     error: "/app/auth",
   },
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      // urlが相対パスの場合（callbackUrlが指定されている場合）
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`;
+      }
+      // 同じオリジンのURLの場合（完全なURLが指定されている場合）
+      try {
+        const urlObj = new URL(url);
+        if (urlObj.origin === baseUrl) {
+          return url;
+        }
+      } catch {
+        // URLのパースに失敗した場合は相対パスとして扱う
+        return `${baseUrl}${url}`;
+      }
+      // 外部URLの場合はデフォルトのマイページにリダイレクト
+      return `${baseUrl}/app/mypage`;
+    },
     async session({ session, user, token }) {
       // database strategyの場合
       if (user && useDatabaseStrategy) {
@@ -146,27 +178,51 @@ const configBase: NextAuthConfig = {
   },
 };
 
-// AUTH_SECRETが設定されていない場合は開発環境用のデフォルト値を使用
-// 本番環境では必ずAUTH_SECRETを設定すること
+// AUTH_SECRETは開発環境・本番環境問わず必須
+// 実際のGoogleアカウントを使用するため、ダミー値ではなく正規の値を設定すること
 const authSecret =
   process.env.AUTH_SECRET ||
-  process.env.NEXTAUTH_SECRET ||
-  (process.env.NODE_ENV === "development"
-    ? "development-secret-key-change-in-production"
-    : undefined);
+  process.env.NEXTAUTH_SECRET;
 
-if (!authSecret && process.env.NODE_ENV === "production") {
-  console.error(
-    "AUTH_SECRET or NEXTAUTH_SECRET environment variable is required in production."
-  );
+if (!authSecret) {
+  const errorMessage =
+    "AUTH_SECRET or NEXTAUTH_SECRET environment variable is required. " +
+    "Please generate a secret key using: openssl rand -base64 32";
+  console.error(errorMessage);
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(errorMessage);
+  } else {
+    // 開発環境でもエラーを投げる（実際のGoogleアカウントを使用するため）
+    throw new Error(errorMessage);
+  }
 }
 
 // adapterが存在する場合のみ設定
+// 開発環境では、古いセッションクッキーの問題を回避するため、adapterを使用しない
 const config: NextAuthConfig = {
   ...configBase,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ...(adapterInstance ? { adapter: adapterInstance as any } : {}),
+  ...(useDatabaseStrategy && adapterInstance ? { adapter: adapterInstance as any } : {}),
   secret: authSecret,
+  // 無効なセッションクッキーを無視する（AUTH_SECRETが変更された場合など）
+  trustHost: true,
+  // セッションのエラーハンドリングを改善
+  debug: process.env.NODE_ENV === "development",
+  // エラー時の処理を改善
+  events: {
+    async signIn({ user, account, profile }) {
+      // サインイン成功時のログ
+      if (process.env.NODE_ENV === "development") {
+        console.log("[Auth Debug] Sign in successful:", { userId: user.id, email: user.email });
+      }
+    },
+    async signOut() {
+      // サインアウト時のログ
+      if (process.env.NODE_ENV === "development") {
+        console.log("[Auth Debug] Sign out");
+      }
+    },
+  },
 };
 
 export const { handlers, auth, signIn, signOut } = NextAuth(config);

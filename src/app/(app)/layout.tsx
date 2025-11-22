@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -90,7 +90,7 @@ function BottomTabBar() {
 function SideNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const activeKey = resolveActiveKey(pathname);
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -106,10 +106,50 @@ function SideNav() {
     }
   };
 
+  const displayName = session?.user?.name || session?.user?.email || "ゲスト";
+  const isLoading = status === "loading";
+
   return (
     <aside className="sticky top-0 hidden h-screen w-56 border-r border-zinc-100 bg-white px-4 py-6 sm:flex sm:flex-col">
       <div className="mb-6 text-sm font-semibold text-zinc-900">
         痛車オーナーズポータル
+      </div>
+      {/* ユーザー情報表示領域（固定サイズでレイアウトシフトを防止） */}
+      <div className="mb-4 min-h-[80px] rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-2">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+          </div>
+        ) : session ? (
+          <>
+            <div className="flex items-center gap-2">
+              {session.user?.image && (
+                <img
+                  src={session.user.image}
+                  alt={displayName}
+                  className="h-8 w-8 rounded-full"
+                  referrerPolicy="no-referrer"
+                />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-zinc-900 truncate">
+                  {session.user?.name || "ユーザー"}
+                </p>
+                {session.user?.email && (
+                  <p className="text-[10px] text-zinc-600 truncate">
+                    {session.user.email}
+                  </p>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="mt-2 w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-[10px] font-medium text-zinc-700 transition hover:bg-zinc-100"
+            >
+              ログアウト
+            </button>
+          </>
+        ) : null}
       </div>
       <nav className="space-y-1 text-sm">
         {tabs.map((tab) => {

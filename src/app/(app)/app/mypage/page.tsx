@@ -1,6 +1,12 @@
+"use client";
+
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 export default function MyPage() {
+    const { data: session, status } = useSession();
+    const isLoading = status === "loading";
+
     return (
         <main className="flex-1">
             <section className="mx-auto flex max-w-4xl flex-col gap-6 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
@@ -8,7 +14,26 @@ export default function MyPage() {
                     <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
                         マイページ
                     </h1>
-                    <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+                    {/* ユーザー情報表示領域（固定サイズでレイアウトシフトを防止） */}
+                    <div className="mt-1 min-h-[20px]">
+                        {isLoading ? (
+                            <div className="flex items-center gap-2">
+                                <div className="h-3 w-3 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+                                <span className="text-xs text-zinc-500">読み込み中...</span>
+                            </div>
+                        ) : session ? (
+                            <p className="text-xs text-zinc-600 sm:text-sm">
+                                {session.user?.name && (
+                                    <span className="font-medium">{session.user.name}</span>
+                                )}
+                                {session.user?.name && session.user?.email && " / "}
+                                {session.user?.email && (
+                                    <span className="text-zinc-500">{session.user.email}</span>
+                                )}
+                            </p>
+                        ) : null}
+                    </div>
+                    <p className="mt-2 text-xs text-zinc-600 sm:text-sm">
                         自分専用のリマインダー一覧やフォロー中イベント、公開プロフィール設定を
                         行う画面です。
                     </p>

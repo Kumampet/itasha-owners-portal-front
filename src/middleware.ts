@@ -21,9 +21,28 @@ export async function middleware(request: NextRequest) {
   try {
     session = await auth();
   } catch (error) {
-    // DATABASE_URLが設定されていない場合など、認証の初期化に失敗した場合は
-    // 認証が必要なパスへのアクセスをブロック
-    console.error("Auth initialization failed:", error);
+    // 無効なセッションクッキー（JWEInvalidなど）の場合は無視して続行
+    // これはAUTH_SECRETが変更された場合や古いセッションクッキーが残っている場合に発生する
+    // NextAuth.js v5では、このエラーは内部で処理されるべきだが、念のため明示的に処理
+    session = null;
+    
+    // デバッグモードでのみエラーをログに記録（本番環境ではログを抑制）
+    if (process.env.NODE_ENV === "development") {
+      if (error instanceof Error) {
+        const errorMessage = error.message || String(error);
+        // JWEInvalidエラーの場合は警告のみ（これは正常な動作）
+        if (
+          errorMessage.includes("JWEInvalid") ||
+          errorMessage.includes("Invalid Compact JWE")
+        ) {
+          // 無効なセッションクッキーは無視（これは正常な動作）
+          // ログは出力しない（ノイズを減らすため）
+        } else {
+          // その他のエラーはログに記録
+          console.error("Auth initialization failed:", error);
+        }
+      }
+    }
   }
 
   // 認証が必要なパス
