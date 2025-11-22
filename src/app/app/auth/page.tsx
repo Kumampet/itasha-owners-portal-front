@@ -3,9 +3,9 @@
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 
-export default function AuthPage() {
+function AuthForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/app/mypage";
   const [isLoading, setIsLoading] = useState<string | null>(null);
@@ -73,6 +73,27 @@ export default function AuthPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-md space-y-8 rounded-3xl border border-zinc-200 bg-white p-8 shadow-lg">
+          <div className="text-center">
+            <h1 className="text-2xl font-semibold text-zinc-900">
+              ログイン / 新規登録
+            </h1>
+            <p className="mt-2 text-sm text-zinc-600">
+              読み込み中...
+            </p>
+          </div>
+        </div>
+      </main>
+    }>
+      <AuthForm />
+    </Suspense>
   );
 }
 
