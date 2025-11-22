@@ -210,7 +210,7 @@ const config: NextAuthConfig = {
   debug: process.env.NODE_ENV === "development",
   // エラー時の処理を改善
   events: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user }) {
       // サインイン成功時のログ
       if (process.env.NODE_ENV === "development") {
         console.log("[Auth Debug] Sign in successful:", { userId: user.id, email: user.email });

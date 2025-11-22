@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 
@@ -124,9 +125,11 @@ function SideNav() {
           <>
             <div className="flex items-center gap-2">
               {session.user?.image && (
-                <img
+                <Image
                   src={session.user.image}
                   alt={displayName}
+                  width={32}
+                  height={32}
                   className="h-8 w-8 rounded-full"
                   referrerPolicy="no-referrer"
                 />
