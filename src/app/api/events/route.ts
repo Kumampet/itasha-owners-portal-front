@@ -4,6 +4,19 @@ import { prisma } from "@/lib/prisma"; // 修正は不要ですが、PrismaClien
 // GET /api/events
 // 承認済みのイベントリストをDBから取得するAPI
 export async function GET() {
+  // 環境変数のデバッグ情報（本番環境でも出力）
+  console.log("Environment check:", {
+    hasDatabaseUrl: !!process.env.DATABASE_URL,
+    databaseUrlLength: process.env.DATABASE_URL?.length || 0,
+    nodeEnv: process.env.NODE_ENV,
+    allEnvKeys: Object.keys(process.env).filter(key => 
+      key.includes("DATABASE") || 
+      key.includes("DB") || 
+      key.includes("MYSQL") ||
+      key.includes("MARIA")
+    ),
+  });
+
   try {
     // 承認ステータスが "APPROVED" のイベントのみを取得
     // 主催者情報も含める (リレーション)

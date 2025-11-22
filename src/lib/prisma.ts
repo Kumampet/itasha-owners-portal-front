@@ -1,8 +1,6 @@
-// dotenvは開発環境でのみ使用（本番環境では環境変数が直接設定される）
-if (process.env.NODE_ENV !== "production") {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  require("dotenv/config");
-}
+// dotenvを常に読み込む（Amplifyでは.envファイルに環境変数を書き出すため）
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+require("dotenv/config");
 
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
@@ -13,14 +11,31 @@ const globalForPrisma = globalThis as unknown as {
 
 // Prisma Clientの初期化関数
 function createPrismaClient() {
+  // 環境変数の詳細なデバッグ情報
+  const envDebug = {
+    hasDatabaseUrl: !!process.env.DATABASE_URL,
+    databaseUrlPrefix: process.env.DATABASE_URL?.substring(0, 20) || "not set",
+    nodeEnv: process.env.NODE_ENV,
+    allEnvKeys: Object.keys(process.env).sort(),
+    dbRelatedKeys: Object.keys(process.env).filter(key =>
+      key.toUpperCase().includes("DATABASE") ||
+      key.toUpperCase().includes("DB") ||
+      key.toUpperCase().includes("MYSQL") ||
+      key.toUpperCase().includes("MARIA")
+    ),
+  };
+
+  console.log("Prisma Client initialization - Environment debug:", envDebug);
+
   // DATABASE_URLをパースしてmariadb用の設定に変換
   if (!process.env.DATABASE_URL) {
     const error = new Error(
       "DATABASE_URL environment variable is not set. " +
-      "Please configure it in Amplify Console -> App settings -> Environment variables"
+      "Please configure it in Amplify Console -> App settings -> Environment variables. " +
+      `Found ${envDebug.dbRelatedKeys.length} DB-related env vars: ${envDebug.dbRelatedKeys.join(", ")}`
     );
     console.error("Prisma initialization error:", error);
-    console.error("Available env vars:", Object.keys(process.env).filter(key => key.includes("DATABASE") || key.includes("DB")));
+    console.error("Full environment debug:", JSON.stringify(envDebug, null, 2));
     throw error;
   }
 

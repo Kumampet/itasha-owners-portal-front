@@ -8,6 +8,8 @@ applications:
             - npx prisma generate
         build:
           commands:
+            # Amplifyの環境変数を.envファイルに書き出す（アプリ起動時にも有効にするため）
+            - echo "DATABASE_URL=$DATABASE_URL" >> .env
             - npm run build
       artifacts:
         baseDirectory: .next
