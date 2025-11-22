@@ -52,8 +52,24 @@ export async function GET() {
     return NextResponse.json(events);
   } catch (error) {
     console.error("Error fetching events:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    const errorName = error instanceof Error ? error.name : "Error";
+    
+    // エラーの詳細をログに出力（Amplifyのログで確認可能）
+    console.error("Error details:", {
+      name: errorName,
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    
+    // 本番環境でもエラーメッセージを返す（セキュリティ上問題ない範囲で）
     return NextResponse.json(
-      { error: "Failed to fetch events." },
+      {
+        error: "Failed to fetch events.",
+        message: errorMessage,
+        type: errorName,
+      },
       { status: 500 }
     );
   }
