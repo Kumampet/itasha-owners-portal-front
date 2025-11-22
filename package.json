@@ -11,7 +11,9 @@
     "prisma:generate": "prisma generate"
   },
   "dependencies": {
+    "@prisma/adapter-mariadb": "^7.0.0",
     "@prisma/client": "^7.0.0",
+    "mariadb": "^3.4.5",
     "mysql2": "^3.15.3",
     "next": "16.0.3",
     "react": "19.2.0",

@@ -1,5 +1,24 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { mockEvents } from "@/data/events";
+
+type DbEvent = {
+  id: string;
+  name: string;
+  theme: string | null;
+  description: string | null;
+  event_date: string;
+  entry_start_at: string | null;
+  payment_due_at: string | null;
+  original_url: string;
+  approval_status: string;
+  tags: Array<{
+    tag: {
+      name: string;
+    };
+  }>;
+};
 
 function formatDate(dateString: string) {
   return new Intl.DateTimeFormat("ja-JP", {
@@ -10,10 +29,44 @@ function formatDate(dateString: string) {
   }).format(new Date(dateString));
 }
 
+function formatDateShort(dateString: string | null) {
+  if (!dateString) return "未定";
+  return new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(dateString));
+}
+
 export default function EventsPage() {
-  const sortedEvents = [...mockEvents].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-  );
+  const [events, setEvents] = useState<DbEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchEvents() {
+      try {
+        const res = await fetch("/api/events");
+        if (!res.ok) throw new Error("Failed to fetch events");
+        const data = await res.json();
+        setEvents(data);
+      } catch (err) {
+        console.error("Failed to fetch events:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchEvents();
+  }, []);
+
+  if (loading) {
+    return (
+      <main className="flex-1 px-4 pb-16 pt-6 sm:pb-12 sm:pt-8">
+        <section className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+          <p className="text-sm text-zinc-600">読み込み中...</p>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 px-4 pb-16 pt-6 sm:pb-12 sm:pt-8">
@@ -32,68 +85,80 @@ export default function EventsPage() {
         </header>
 
         <div className="space-y-3">
-          {sortedEvents.map((event) => (
-            <article
-              key={event.slug}
-              className="rounded-3xl border border-zinc-200 bg-white p-4 ring-offset-white transition hover:-translate-y-0.5 hover:border-zinc-900 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:p-5"
-            >
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                <div className="flex-1 space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
-                    {formatDate(event.date)}
-                  </p>
-                  <div>
-                    <h2 className="text-lg font-semibold text-zinc-900">
-                      {event.name}
-                    </h2>
-                    <p className="text-sm text-zinc-600">{event.location}</p>
+          {events.length === 0 ? (
+            <p className="text-sm text-zinc-600">
+              イベントが登録されていません。
+            </p>
+          ) : (
+            events.map((event) => (
+              <article
+                key={event.id}
+                className="rounded-3xl border border-zinc-200 bg-white p-4 ring-offset-white transition hover:-translate-y-0.5 hover:border-zinc-900 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:p-5"
+              >
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <div className="flex-1 space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
+                      {formatDate(event.event_date)}
+                    </p>
+                    <div>
+                      <h2 className="text-lg font-semibold text-zinc-900">
+                        {event.name}
+                      </h2>
+                      {event.theme && (
+                        <p className="text-sm text-zinc-600">{event.theme}</p>
+                      )}
+                    </div>
+                    {event.description && (
+                      <p className="text-sm text-zinc-700">{event.description}</p>
+                    )}
+                    {event.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {event.tags.map((eventTag, idx) => (
+                          <span
+                            key={idx}
+                            className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700"
+                          >
+                            {eventTag.tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <p className="text-sm text-zinc-700">{event.summary}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {event.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700"
+                  <div className="flex flex-col items-start gap-2 text-xs text-zinc-500 sm:w-48">
+                    {event.entry_start_at && (
+                      <div>
+                        エントリー開始:{" "}
+                        <span className="font-semibold text-zinc-700">
+                          {formatDateShort(event.entry_start_at)}
+                        </span>
+                      </div>
+                    )}
+                    {event.payment_due_at && (
+                      <div>
+                        支払期限:{" "}
+                        <span className="font-semibold text-zinc-700">
+                          {formatDateShort(event.payment_due_at)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex w-full flex-col gap-2">
+                      <Link
+                        href={`/app/events/${event.id}`}
+                        className="inline-flex items-center justify-center rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
                       >
-                        {tag}
-                      </span>
-                    ))}
+                        詳細
+                      </Link>
+                      <button
+                        className="inline-flex items-center justify-center rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                      >
+                        気になる
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex flex-col items-start gap-2 text-xs text-zinc-500 sm:w-48">
-                  <div>
-                    エントリー開始:{" "}
-                    <span className="font-semibold text-zinc-700">
-                      {event.entryStart}
-                    </span>
-                  </div>
-                  <div>
-                    締切:{" "}
-                    <span className="font-semibold text-zinc-700">
-                      {event.entryDeadline}
-                    </span>
-                  </div>
-                  <div className="flex w-full flex-col gap-2">
-                    <Link
-                      href={`/app/events/${event.slug}`}
-                      className="inline-flex items-center justify-center rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
-                    >
-                      詳細
-                    </Link>
-                    <button
-                      className={`inline-flex items-center justify-center rounded-full border px-4 py-2 text-sm font-medium transition ${
-                        event.isFollowed
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"
-                      }`}
-                    >
-                      {event.isFollowed ? "気になる済" : "気になる"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            ))
+          )}
         </div>
       </section>
     </main>
