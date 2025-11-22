@@ -75,11 +75,32 @@ function createPrismaClient() {
   }
 }
 
-export const prisma =
-  globalForPrisma.prisma ?? createPrismaClient();
+// Prisma Clientを遅延初期化（実際に使用される時点で初期化）
+let prismaInstance: PrismaClient | undefined;
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+function getPrisma(): PrismaClient {
+  if (prismaInstance) {
+    return prismaInstance;
+  }
+
+  if (globalForPrisma.prisma) {
+    prismaInstance = globalForPrisma.prisma;
+    return prismaInstance;
+  }
+
+  prismaInstance = createPrismaClient();
+
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = prismaInstance;
+  }
+
+  return prismaInstance;
 }
+
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    return getPrisma()[prop as keyof PrismaClient];
+  },
+});
 
 
