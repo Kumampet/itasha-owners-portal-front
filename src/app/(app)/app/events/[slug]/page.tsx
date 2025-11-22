@@ -94,7 +94,7 @@ export default async function EventDetailPage({
           )}
           {event.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {event.tags.map((eventTag, idx) => (
+              {event.tags.map((eventTag: { tag: { name: string } }, idx: number) => (
                 <span
                   key={idx}
                   className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700"
