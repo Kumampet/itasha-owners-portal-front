@@ -22,8 +22,10 @@ const wrappedHandlers = {
         console.error("[Auth Debug] Error message:", error.message);
         console.error("[Auth Debug] Error stack:", error.stack);
         // Invalid Compact JWEエラーの場合は、セッションクッキーをクリアする必要がある
-        if (error.message.includes("Invalid Compact JWE") || error.message.includes("JWEInvalid")) {
-          console.warn("[Auth Debug] Invalid session cookie detected, this may be due to NEXTAUTH_SECRET mismatch");
+        if (error.message.includes("Invalid Compact JWE") || error.message.includes("JWEInvalid") || error.message.includes("JWTSessionError")) {
+          console.warn("[Auth Debug] Invalid session cookie detected, this may be due to NEXTAUTH_SECRET mismatch or old JWT session cookie");
+          // エラーを無視して、NextAuth.jsに処理させる（内部で適切に処理される）
+          // データベースセッションを使用している場合、JWTセッションクッキーは無視される
         }
       }
       // エラーを再スローしてNextAuth.jsに処理させる
@@ -39,8 +41,10 @@ const wrappedHandlers = {
         console.error("[Auth Debug] Error message:", error.message);
         console.error("[Auth Debug] Error stack:", error.stack);
         // Invalid Compact JWEエラーの場合は、セッションクッキーをクリアする必要がある
-        if (error.message.includes("Invalid Compact JWE") || error.message.includes("JWEInvalid")) {
-          console.warn("[Auth Debug] Invalid session cookie detected, this may be due to NEXTAUTH_SECRET mismatch");
+        if (error.message.includes("Invalid Compact JWE") || error.message.includes("JWEInvalid") || error.message.includes("JWTSessionError")) {
+          console.warn("[Auth Debug] Invalid session cookie detected, this may be due to NEXTAUTH_SECRET mismatch or old JWT session cookie");
+          // エラーを無視して、NextAuth.jsに処理させる（内部で適切に処理される）
+          // データベースセッションを使用している場合、JWTセッションクッキーは無視される
         }
       }
       // エラーを再スローしてNextAuth.jsに処理させる

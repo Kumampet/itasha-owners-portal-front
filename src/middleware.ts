@@ -80,11 +80,30 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith(path),
   ) || isDashboard;
 
+  // セッションが取得できなかった場合でも、クライアントサイドのuseSessionに任せる
+  // データベースセッションを使用する場合、middleware.ts（Edge Runtime）ではセッションが取得できない可能性がある
+  // その場合、クライアントサイドでセッションを確認し、必要に応じてリダイレクトする
   if (isProtectedPath && !session) {
-    // 未ログインの場合はログインページにリダイレクト
-    const signInUrl = new URL("/app/auth", request.url);
-    signInUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(signInUrl);
+    // セッション取得に失敗した場合のログ
+    console.warn("[Middleware Debug] Session not found for protected path:", pathname);
+    console.warn("[Middleware Debug] This may be due to Edge Runtime limitations with database sessions");
+    console.warn("[Middleware Debug] Client-side session check will be performed instead");
+
+    // クライアントサイドのuseSessionに任せるため、リダイレクトしない
+    // ただし、明らかに未ログインの場合はリダイレクトする
+    // セッションクッキーが存在しない場合は、未ログインと判断
+    const sessionCookie = request.cookies.get("__Secure-authjs.session-token");
+    const jwtCookie = request.cookies.get("__Secure-authjs.pkce.code_verifier");
+
+    if (!sessionCookie && !jwtCookie) {
+      // セッションクッキーが存在しない場合は、未ログインと判断してリダイレクト
+      const signInUrl = new URL("/app/auth", request.url);
+      signInUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+
+    // セッションクッキーが存在する場合は、クライアントサイドでセッションを確認させる
+    // データベースセッションを使用する場合、middleware.tsではセッションが取得できない可能性がある
   }
 
   // ログイン済みでログインページにアクセスしている場合

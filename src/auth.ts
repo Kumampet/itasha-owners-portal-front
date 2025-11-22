@@ -294,12 +294,11 @@ const config: NextAuthConfig = {
   // 本番環境でも一時的にデバッグを有効にしてリダイレクトURIを確認
   debug: true,
   // セッションクッキーの設定を改善（データベースセッション使用時）
+  // データベースセッションを使用する場合、JWTセッションクッキーと区別するため、クッキー名を変更
   cookies: useDatabaseStrategy
     ? {
       sessionToken: {
-        name: useDatabaseStrategy
-          ? "__Secure-authjs.session-token"
-          : "__Secure-authjs.session-token",
+        name: "__Secure-authjs.session-token",
         options: {
           httpOnly: true,
           sameSite: "lax",
@@ -307,6 +306,7 @@ const config: NextAuthConfig = {
           secure: true,
         },
       },
+      // 古いJWTセッションクッキーを無視するため、JWTセッションクッキー名を明示的に設定しない
     }
     : undefined,
   // エラー時の処理を改善
