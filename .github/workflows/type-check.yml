@@ -26,6 +26,8 @@ jobs:
         run: npm ci
 
       - name: Generate Prisma Client
+        env:
+          DATABASE_URL: "mysql://user:password@localhost:3306/dummy"
         run: npx prisma generate
 
       - name: Run TypeScript type check
