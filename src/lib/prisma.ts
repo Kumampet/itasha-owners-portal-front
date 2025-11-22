@@ -1,4 +1,5 @@
 // dotenvは開発環境でのみ使用（本番環境では環境変数が直接設定される）
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 if (process.env.NODE_ENV !== "production") {
   require("dotenv/config");
 }
