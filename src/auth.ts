@@ -111,22 +111,31 @@ const configBase: NextAuthConfig = {
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
+      console.log("[Auth Debug] Redirect callback:", { url, baseUrl });
+
       // urlが相対パスの場合（callbackUrlが指定されている場合）
       if (url.startsWith("/")) {
-        return `${baseUrl}${url}`;
+        const redirectUrl = `${baseUrl}${url}`;
+        console.log("[Auth Debug] Redirecting to relative path:", redirectUrl);
+        return redirectUrl;
       }
       // 同じオリジンのURLの場合（完全なURLが指定されている場合）
       try {
         const urlObj = new URL(url);
         if (urlObj.origin === baseUrl) {
+          console.log("[Auth Debug] Redirecting to same origin:", url);
           return url;
         }
       } catch {
         // URLのパースに失敗した場合は相対パスとして扱う
-        return `${baseUrl}${url}`;
+        const redirectUrl = `${baseUrl}${url}`;
+        console.log("[Auth Debug] URL parse failed, treating as relative:", redirectUrl);
+        return redirectUrl;
       }
       // 外部URLの場合はデフォルトのマイページにリダイレクト
-      return `${baseUrl}/app/mypage`;
+      const defaultRedirect = `${baseUrl}/app/mypage`;
+      console.log("[Auth Debug] External URL, redirecting to default:", defaultRedirect);
+      return defaultRedirect;
     },
     async session({ session, user, token }) {
       // database strategyの場合

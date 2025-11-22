@@ -72,8 +72,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(signInUrl);
   }
 
-  // ログイン済みでログインページにアクセスしている場合はマイページにリダイレクト
+  // ログイン済みでログインページにアクセスしている場合
   if (pathname === "/app/auth" && session) {
+    // callbackUrlパラメータが指定されている場合はそのURLにリダイレクト
+    const callbackUrl = request.nextUrl.searchParams.get("callbackUrl");
+    if (callbackUrl) {
+      try {
+        // callbackUrlが相対パスの場合
+        if (callbackUrl.startsWith("/")) {
+          return NextResponse.redirect(new URL(callbackUrl, request.url));
+        }
+        // callbackUrlが完全なURLの場合、同じオリジンのみ許可
+        const callbackUrlObj = new URL(callbackUrl);
+        if (callbackUrlObj.origin === new URL(request.url).origin) {
+          return NextResponse.redirect(callbackUrlObj);
+        }
+      } catch {
+        // URLのパースに失敗した場合はデフォルトのマイページにリダイレクト
+      }
+    }
+    // callbackUrlが指定されていない場合はマイページにリダイレクト
     return NextResponse.redirect(new URL("/app/mypage", request.url));
   }
 
