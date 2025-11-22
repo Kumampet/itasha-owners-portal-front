@@ -22,25 +22,24 @@ export async function middleware(request: NextRequest) {
     session = await auth();
   } catch (error) {
     // 無効なセッションクッキー（JWEInvalidなど）の場合は無視して続行
-    // これはAUTH_SECRETが変更された場合や古いセッションクッキーが残っている場合に発生する
+    // これはNEXTAUTH_SECRETが変更された場合や古いセッションクッキーが残っている場合に発生する
     // NextAuth.js v5では、このエラーは内部で処理されるべきだが、念のため明示的に処理
     session = null;
-    
-    // デバッグモードでのみエラーをログに記録（本番環境ではログを抑制）
-    if (process.env.NODE_ENV === "development") {
-      if (error instanceof Error) {
-        const errorMessage = error.message || String(error);
-        // JWEInvalidエラーの場合は警告のみ（これは正常な動作）
-        if (
-          errorMessage.includes("JWEInvalid") ||
-          errorMessage.includes("Invalid Compact JWE")
-        ) {
-          // 無効なセッションクッキーは無視（これは正常な動作）
-          // ログは出力しない（ノイズを減らすため）
-        } else {
-          // その他のエラーはログに記録
-          console.error("Auth initialization failed:", error);
-        }
+
+    // エラーをログに記録（本番環境でもデバッグのため）
+    if (error instanceof Error) {
+      const errorMessage = error.message || String(error);
+      // JWEInvalidエラーの場合は警告のみ（これは正常な動作）
+      if (
+        errorMessage.includes("JWEInvalid") ||
+        errorMessage.includes("Invalid Compact JWE")
+      ) {
+        // 無効なセッションクッキーは無視（これは正常な動作）
+        // デバッグのため、本番環境でもログを出力
+        console.warn("[Auth Debug] Invalid session cookie detected, ignoring:", errorMessage);
+      } else {
+        // その他のエラーはログに記録
+        console.error("[Auth Debug] Auth initialization failed:", error);
       }
     }
   }

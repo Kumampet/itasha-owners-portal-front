@@ -10,7 +10,6 @@ applications:
           commands:
             # Amplifyの環境変数を.envファイルに書き出す（アプリ起動時にも有効にするため）
             - echo "DATABASE_URL=$DATABASE_URL" >> .env
-            - echo "AUTH_SECRET=$AUTH_SECRET" >> .env
             - echo "NEXTAUTH_SECRET=$NEXTAUTH_SECRET" >> .env
             - echo "NEXTAUTH_URL=$NEXTAUTH_URL" >> .env
             - echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env

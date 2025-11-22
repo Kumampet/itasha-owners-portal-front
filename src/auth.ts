@@ -244,20 +244,16 @@ const configBase: NextAuthConfig = {
   },
 };
 
-// AUTH_SECRETは開発環境・本番環境問わず必須
+// NEXTAUTH_SECRETは開発環境・本番環境問わず必須
 // 実際のGoogleアカウントを使用するため、ダミー値ではなく正規の値を設定すること
-const authSecret =
-  process.env.AUTH_SECRET ||
-  process.env.NEXTAUTH_SECRET;
+const authSecret = process.env.NEXTAUTH_SECRET;
 
-// デバッグ: AUTH_SECRETの読み込み状況を確認
-console.log("[Auth Debug] AUTH_SECRET:", authSecret ? `設定済み（長さ: ${authSecret.length}文字）` : "未設定");
-console.log("[Auth Debug] AUTH_SECRET from process.env.AUTH_SECRET:", process.env.AUTH_SECRET ? "設定済み" : "未設定");
-console.log("[Auth Debug] AUTH_SECRET from process.env.NEXTAUTH_SECRET:", process.env.NEXTAUTH_SECRET ? "設定済み" : "未設定");
+// デバッグ: NEXTAUTH_SECRETの読み込み状況を確認
+console.log("[Auth Debug] NEXTAUTH_SECRET:", authSecret ? `設定済み（長さ: ${authSecret.length}文字）` : "未設定");
 
 if (!authSecret) {
   const errorMessage =
-    "AUTH_SECRET or NEXTAUTH_SECRET environment variable is required. " +
+    "NEXTAUTH_SECRET environment variable is required. " +
     "Please generate a secret key using: openssl rand -base64 32";
   console.error(errorMessage);
   if (process.env.NODE_ENV === "production") {
@@ -275,7 +271,7 @@ const config: NextAuthConfig = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ...(useDatabaseStrategy && adapterInstance ? { adapter: adapterInstance as any } : {}),
   secret: authSecret,
-  // 無効なセッションクッキーを無視する（AUTH_SECRETが変更された場合など）
+  // 無効なセッションクッキーを無視する（NEXTAUTH_SECRETが変更された場合など）
   trustHost: true,
   // セッションのエラーハンドリングを改善
   // 本番環境でも一時的にデバッグを有効にしてリダイレクトURIを確認

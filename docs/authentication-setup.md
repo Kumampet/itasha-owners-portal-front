@@ -11,8 +11,6 @@
 DATABASE_URL="mysql://user:password@host:port/database"
 
 # NextAuth.js
-AUTH_SECRET="your-secret-key-here"
-# または
 NEXTAUTH_SECRET="your-secret-key-here"
 
 # Google OAuth
@@ -230,7 +228,7 @@ console.log("TWITTER_CLIENT_SECRET:", process.env.TWITTER_CLIENT_SECRET ? "設�
   - ✅ 紛失した場合は「Keys and tokens」タブで「Regenerate」をクリックして再生成してください
   - ✅ 再生成後、環境変数も更新してください
 
-## AUTH_SECRETの生成
+## NEXTAUTH_SECRETの生成
 
 以下のコマンドでランダムなシークレットを生成できます：
 
@@ -286,7 +284,7 @@ if (process.env.NODE_ENV === "development") {
 Amplifyコンソールで以下の環境変数を設定してください：
 
 - `DATABASE_URL`
-- `AUTH_SECRET` または `NEXTAUTH_SECRET`
+- `NEXTAUTH_SECRET`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `TWITTER_CLIENT_ID`

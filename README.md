@@ -50,7 +50,7 @@ Amplifyコンソールの「Build details」から各デプロイ状況を確認
 Amplifyコンソールで以下の環境変数を設定してください：
 
 - `DATABASE_URL`
-- `AUTH_SECRET` または `NEXTAUTH_SECRET`
+- `NEXTAUTH_SECRET`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `TWITTER_CLIENT_ID`
