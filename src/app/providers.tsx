@@ -8,6 +8,15 @@ type ProvidersProps = {
 };
 
 export function Providers({ children }: ProvidersProps) {
-  return <SessionProvider>{children}</SessionProvider>;
+  return (
+    <SessionProvider
+      // セッションの再取得間隔を設定（5分）
+      refetchInterval={5 * 60}
+      // フォーカス時にセッションを再取得
+      refetchOnWindowFocus={true}
+    >
+      {children}
+    </SessionProvider>
+  );
 }
 

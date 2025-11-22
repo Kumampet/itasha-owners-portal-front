@@ -19,7 +19,19 @@ export async function middleware(request: NextRequest) {
   // 認証が必要なパスでのみauth()を呼び出す
   let session = null;
   try {
-    session = await auth();
+    // /app配下のパスにアクセスする場合のみauth()を呼び出す
+    if (pathname.startsWith("/app/")) {
+      session = await auth();
+      // デバッグ: セッション取得状況をログに出力（/app配下の全パス）
+      console.log("[Middleware Debug] Session check for", pathname, ":", session ? `取得成功 (user: ${session.user?.email || "unknown"})` : "未取得");
+      if (session) {
+        console.log("[Middleware Debug] Session details:", {
+          userId: session.user?.id,
+          email: session.user?.email,
+          name: session.user?.name,
+        });
+      }
+    }
   } catch (error) {
     // 無効なセッションクッキー（JWEInvalidなど）の場合は無視して続行
     // これはNEXTAUTH_SECRETが変更された場合や古いセッションクッキーが残っている場合に発生する
@@ -36,12 +48,14 @@ export async function middleware(request: NextRequest) {
         errorMessage.includes("JWTSessionError")
       ) {
         // 無効なセッションクッキーは無視（これは正常な動作）
-        // デバッグのため、本番環境でもログを出力（ただし頻度を減らす）
-        // ログを抑制してノイズを減らす
-        // console.warn("[Auth Debug] Invalid session cookie detected, ignoring:", errorMessage);
+        // デバッグのため、本番環境でもログを出力
+        console.warn("[Middleware Debug] Invalid session cookie detected for", pathname, ":", errorMessage);
       } else {
         // その他のエラーはログに記録
-        console.error("[Auth Debug] Auth initialization failed:", error);
+        console.error("[Middleware Debug] Auth initialization failed for", pathname, ":", error);
+        if (error.stack) {
+          console.error("[Middleware Debug] Error stack:", error.stack);
+        }
       }
     }
   }
