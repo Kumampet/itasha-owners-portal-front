@@ -1,6 +1,6 @@
-// Step 4で設定した環境変数 DATABASE_URL を利用
+// Prisma 7では、datasource.urlはprisma.config.tsで設定します
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
 }
 
 generator client {
@@ -9,8 +9,8 @@ generator client {
 
 // ユーザー情報
 model User {
-  // Cognito SubまたはランダムUUID (PK)
-  id               String       @id @default(uuid()) @map("id")
+  // MySQLではUUIDに対応するデータ型を明示的に指定
+  id               String       @id @default(uuid()) @db.VarChar(36) @map("id") // UUIDは通常VARCHAR(36)を使用
   email            String       @unique
   // ユーザーがイベント主催者権限を持っているか
   is_organizer     Boolean      @default(false)
@@ -21,6 +21,8 @@ model User {
   is_profile_public Boolean     @default(false)
   custom_profile_url String?    @unique // 例: /user/itasha_taro
   
+  // MySQLではDateTimeの代わりにDateTimeTzを使用しないため、@db.DateTime(6) などで精度を指定できますが、
+  // デフォルトのままにしておきます。
   created_at       DateTime     @default(now())
   updated_at       DateTime     @updatedAt
 
@@ -31,16 +33,17 @@ model User {
   event_follows        EventFollow[] // フォローしているイベント
   
   // 【修正】主催しているイベントのリスト
-  events_organized     Event[]      @relation("EventOrganizer") // <--- 追加
+  events_organized     Event[]      @relation("EventOrganizer")
 
   @@map("users")
 }
 
 // イベント情報 (マスターデータ)
 model Event {
-  id               String       @id @default(uuid())
+  id               String       @id @default(uuid()) @db.VarChar(36)
   name             String
   theme            String?
+  // MySQLのTEXT型は @db.Text で指定
   description      String?      @db.Text
   
   // イベント情報の追跡・更新検知のためのURL (Xの投稿URLも含む)
@@ -57,8 +60,8 @@ model Event {
   updated_at       DateTime     @updatedAt
 
   // リレーション
-  organizer_user   User?        @relation("EventOrganizer", fields: [organizer_user_id], references: [id]) // <--- リレーション名を追加
-  organizer_user_id String?
+  organizer_user   User?        @relation("EventOrganizer", fields: [organizer_user_id], references: [id])
+  organizer_user_id String?     @db.VarChar(36)
   
   participants     UserEvent[]
   groups           Group[]
@@ -71,20 +74,21 @@ model Event {
 // ユーザーとイベントの参加・フォロー状況 (User_Events Tableを代替)
 model UserEvent {
   user             User         @relation(fields: [user_id], references: [id])
-  user_id          String
+  user_id          String       @db.VarChar(36)
   event            Event        @relation(fields: [event_id], references: [id])
-  event_id         String
+  event_id         String       @db.VarChar(36)
   
   // ユーザーがどの併せ（団体）に参加しているかを示すID (Optional)
   group            Group?       @relation(fields: [group_id], references: [id])
-  group_id         String?
+  group_id         String?      @db.VarChar(36)
   
   // 参加ステータス (INTERESTED, REGISTERED, PAID, ATTENDED)
   status           String       @default("INTERESTED")
   
   // プッシュ通知のサブスクリプション情報 (FCMトークンなど)
-  push_subscription Json?        @db.JsonB
-
+  // MySQLではネイティブなJSON型を使用
+  push_subscription Json?        
+  
   created_at       DateTime     @default(now())
   updated_at       DateTime     @updatedAt
 
@@ -94,9 +98,9 @@ model UserEvent {
 
 // 団体情報 (併せ)
 model Group {
-  id               String       @id @default(uuid())
+  id               String       @id @default(uuid()) @db.VarChar(36)
   event            Event        @relation(fields: [event_id], references: [id])
-  event_id         String
+  event_id         String       @db.VarChar(36)
   
   name             String
   theme            String?
@@ -104,7 +108,7 @@ model Group {
   
   // リーダーは必ずUserテーブルを参照
   leader           User         @relation("GroupLeader", fields: [leader_user_id], references: [id])
-  leader_user_id   String
+  leader_user_id   String       @db.VarChar(36)
   
   created_at       DateTime     @default(now())
   updated_at       DateTime     @updatedAt
@@ -119,13 +123,13 @@ model Group {
 
 // 団体メッセージ (一斉連絡/掲示板)
 model GroupMessage {
-  id               String       @id @default(uuid())
+  id               String       @id @default(uuid()) @db.VarChar(36)
   group            Group        @relation(fields: [group_id], references: [id])
-  group_id         String
+  group_id         String       @db.VarChar(36)
   sender           User         @relation(fields: [sender_id], references: [id])
-  sender_id        String
+  sender_id        String       @db.VarChar(36)
   
-  content          String       @db.Text
+  content          String       @db.Text // MySQLのTEXT型
   
   // trueの場合、SESによるメール通知も行う (一斉連絡フラグ)
   is_announcement  Boolean      @default(false)
@@ -137,7 +141,7 @@ model GroupMessage {
 
 // タグマスター
 model Tag {
-  id               String       @id @default(uuid())
+  id               String       @id @default(uuid()) @db.VarChar(36)
   name             String       @unique
   usage_count      Int          @default(1)
   
@@ -150,9 +154,9 @@ model Tag {
 // イベント-タグ紐付け
 model EventTag {
   event            Event        @relation(fields: [event_id], references: [id])
-  event_id         String
+  event_id         String       @db.VarChar(36)
   tag              Tag          @relation(fields: [tag_id], references: [id])
-  tag_id           String
+  tag_id           String       @db.VarChar(36)
   
   created_at       DateTime     @default(now())
   
@@ -163,9 +167,9 @@ model EventTag {
 // イベントのフォロー (SNS要素ではない、単なるリマインダーリスト)
 model EventFollow {
   user             User         @relation(fields: [user_id], references: [id])
-  user_id          String
+  user_id          String       @db.VarChar(36)
   event            Event        @relation(fields: [event_id], references: [id])
-  event_id         String
+  event_id         String       @db.VarChar(36)
   
   followed_at      DateTime     @default(now())
 

@@ -1,3 +1,5 @@
+import { DbEventsPreview } from "@/components/db-events-preview";
+
 export default function Home() {
   return (
     <main className="flex-1">
@@ -113,6 +115,8 @@ export default function Home() {
             </li>
           </ul>
         </section>
+
+        <DbEventsPreview />
       </section>
     </main>
   );
