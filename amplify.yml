@@ -12,6 +12,7 @@ applications:
             - echo "DATABASE_URL=$DATABASE_URL" >> .env
             - echo "AUTH_SECRET=$AUTH_SECRET" >> .env
             - echo "NEXTAUTH_SECRET=$NEXTAUTH_SECRET" >> .env
+            - echo "NEXTAUTH_URL=$NEXTAUTH_URL" >> .env
             - echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
             - echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
             - echo "TWITTER_CLIENT_ID=$TWITTER_CLIENT_ID" >> .env

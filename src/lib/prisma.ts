@@ -47,11 +47,17 @@ function createPrismaClient() {
     if (!databaseUrl || typeof databaseUrl !== "string") {
       throw new Error("DATABASE_URL must be a non-empty string");
     }
-    const dbUrlString = String(databaseUrl).trim().replace(/^mysql:\/\//, "http://");
-    if (!dbUrlString || dbUrlString === "http://") {
+    // databaseUrlが確実に文字列であることを確認
+    const dbUrlString = String(databaseUrl || "").trim();
+    if (!dbUrlString) {
+      throw new Error("DATABASE_URL is empty after conversion to string");
+    }
+    // mysql:// を http:// に置換してURLとしてパース
+    const normalizedUrl = dbUrlString.replace(/^mysql:\/\//, "http://");
+    if (!normalizedUrl || normalizedUrl === "http://") {
       throw new Error("DATABASE_URL is invalid or empty after processing");
     }
-    const dbUrl = new URL(dbUrlString);
+    const dbUrl = new URL(normalizedUrl);
 
     // パスワードのデコード（URLエンコードされている場合）
     const password = decodeURIComponent(dbUrl.password || "");
