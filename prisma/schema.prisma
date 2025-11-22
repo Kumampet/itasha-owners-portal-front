@@ -137,7 +137,7 @@ model UserEvent {
   // プッシュ通知のサブスクリプション情報 (FCMトークンなど)
   // MySQLではネイティブなJSON型を使用
   push_subscription Json?        
-  
+
   created_at       DateTime     @default(now())
   updated_at       DateTime     @updatedAt
 

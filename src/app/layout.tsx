@@ -40,9 +40,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen`}
       >
         <Providers>
-          <div className="min-h-screen flex flex-col">
-            {children}
-          </div>
+        <div className="min-h-screen flex flex-col">
+          {children}
+        </div>
         </Providers>
       </body>
     </html>

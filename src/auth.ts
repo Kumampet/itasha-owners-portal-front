@@ -250,6 +250,11 @@ const authSecret =
   process.env.AUTH_SECRET ||
   process.env.NEXTAUTH_SECRET;
 
+// デバッグ: AUTH_SECRETの読み込み状況を確認
+console.log("[Auth Debug] AUTH_SECRET:", authSecret ? `設定済み（長さ: ${authSecret.length}文字）` : "未設定");
+console.log("[Auth Debug] AUTH_SECRET from process.env.AUTH_SECRET:", process.env.AUTH_SECRET ? "設定済み" : "未設定");
+console.log("[Auth Debug] AUTH_SECRET from process.env.NEXTAUTH_SECRET:", process.env.NEXTAUTH_SECRET ? "設定済み" : "未設定");
+
 if (!authSecret) {
   const errorMessage =
     "AUTH_SECRET or NEXTAUTH_SECRET environment variable is required. " +
