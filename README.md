@@ -29,6 +29,12 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## 認証設定
+
+このアプリケーションはGoogleアカウントとX（Twitter）アカウントでのログインをサポートしています。
+
+詳細な設定手順については、[認証設定ガイド](docs/authentication-setup.md)を参照してください。
+
 ## Deploy on AWS Amplify
 
 このリポジトリはAmplify Hostingに接続済みで、`main`ブランチへのpushをトリガーにCI/CDが走る構成です。
@@ -38,3 +44,18 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 3. ビルド成功後、AmplifyのホスティングURLへ即時反映
 
 Amplifyコンソールの「Build details」から各デプロイ状況を確認できます。
+
+### Amplifyでの環境変数設定
+
+Amplifyコンソールで以下の環境変数を設定してください：
+
+- `DATABASE_URL`
+- `AUTH_SECRET` または `NEXTAUTH_SECRET`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `TWITTER_CLIENT_ID`
+- `TWITTER_CLIENT_SECRET`
+
+設定場所: Amplify Console → App settings → Environment variables
+
+詳細は[認証設定ガイド](docs/authentication-setup.md#aws-amplifyでの環境変数設定)を参照してください。

@@ -1,5 +1,7 @@
 import NextAuth from "next-auth";
 import type { NextAuthConfig } from "next-auth";
+import Google from "next-auth/providers/google";
+import Twitter from "next-auth/providers/twitter";
 
 // DATABASE_URLが設定されているかチェック
 const hasDatabaseUrl = !!(
@@ -30,12 +32,12 @@ const getAdapter = () => {
     // ただし、requireを使うとモジュールが読み込まれるため、実際の初期化は遅延される
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { PrismaAdapter } = require("@auth/prisma-adapter");
-    
+
     // Prisma Clientを動的にインポート（実際に使用される時点で初期化される）
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const prismaModule = require("@/lib/prisma");
     const { prisma } = prismaModule;
-    
+
     // PrismaAdapterを呼び出すと、Prisma Clientのプロパティにアクセスしようとし、
     // その際にPrisma Clientが初期化される
     // DATABASE_URLが未設定の場合は、この時点でエラーが発生する
@@ -54,11 +56,20 @@ const getAdapter = () => {
 const adapterInstance = getAdapter();
 const useDatabaseStrategy = hasDatabaseUrl && adapterInstance !== undefined;
 
-// プロバイダー設定（後でCognito、X、Googleを追加）
+// プロバイダー設定（GoogleとXのみ）
 // DATABASE_URLが設定されている場合のみadapterを設定
 const configBase: NextAuthConfig = {
   providers: [
-    // TODO: AWS Cognito、X、Googleプロバイダーを追加
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      allowDangerousEmailAccountLinking: true, // 同じメールアドレスで複数プロバイダーをリンク
+    }),
+    Twitter({
+      clientId: process.env.TWITTER_CLIENT_ID,
+      clientSecret: process.env.TWITTER_CLIENT_SECRET,
+      allowDangerousEmailAccountLinking: true, // 同じメールアドレスで複数プロバイダーをリンク
+    }),
   ],
   pages: {
     signIn: "/app/auth",

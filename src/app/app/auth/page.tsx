@@ -1,11 +1,24 @@
 "use client";
 
+import { signIn } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function AuthPage() {
-  // TODO: プロバイダーが設定された際にcallbackUrlを使用
-  // const searchParams = useSearchParams();
-  // const callbackUrl = searchParams.get("callbackUrl") || "/app";
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/app/mypage";
+  const [isLoading, setIsLoading] = useState<string | null>(null);
+
+  const handleSignIn = async (provider: "google" | "twitter") => {
+    setIsLoading(provider);
+    try {
+      await signIn(provider, { callbackUrl });
+    } catch (error) {
+      console.error("Sign in error:", error);
+      setIsLoading(null);
+    }
+  };
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
@@ -20,24 +33,19 @@ export default function AuthPage() {
         </div>
 
         <div className="space-y-3">
-          {/* TODO: プロバイダーが設定されたら有効化 */}
           <button
-            disabled
+            onClick={() => handleSignIn("google")}
+            disabled={isLoading !== null}
             className="w-full rounded-full border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Googleでログイン（準備中）
+            {isLoading === "google" ? "ログイン中..." : "Googleでログイン"}
           </button>
           <button
-            disabled
+            onClick={() => handleSignIn("twitter")}
+            disabled={isLoading !== null}
             className="w-full rounded-full border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            X（Twitter）でログイン（準備中）
-          </button>
-          <button
-            disabled
-            className="w-full rounded-full border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            AWS Cognitoでログイン（準備中）
+            {isLoading === "twitter" ? "ログイン中..." : "X（Twitter）でログイン"}
           </button>
         </div>
 
