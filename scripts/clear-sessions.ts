@@ -6,7 +6,7 @@
 // 環境変数を読み込む（.env と .env.local の両方から）
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const dotenv = require("dotenv");
-const path = require("path");
+import path from "path";
 
 // .env ファイルを読み込む（存在する場合）
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
