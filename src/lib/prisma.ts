@@ -25,18 +25,25 @@ function createPrismaClient() {
     ),
   };
 
-  console.log("Prisma Client initialization - Environment debug:", envDebug);
+  console.log("[Prisma Debug] Prisma Client initialization - Environment debug:", envDebug);
 
   // DATABASE_URLをパースしてmariadb用の設定に変換
   const databaseUrl = process.env.DATABASE_URL;
+  console.log("[Prisma Debug] DATABASE_URL check:", {
+    exists: !!databaseUrl,
+    type: typeof databaseUrl,
+    length: databaseUrl ? databaseUrl.length : 0,
+    prefix: databaseUrl ? databaseUrl.substring(0, 30) : "not set",
+  });
+
   if (!databaseUrl || typeof databaseUrl !== "string" || databaseUrl.trim() === "") {
     const error = new Error(
       "DATABASE_URL environment variable is not set. " +
       "Please configure it in Amplify Console -> App settings -> Environment variables. " +
       `Found ${envDebug.dbRelatedKeys.length} DB-related env vars: ${envDebug.dbRelatedKeys.join(", ")}`
     );
-    console.error("Prisma initialization error:", error);
-    console.error("Full environment debug:", JSON.stringify(envDebug, null, 2));
+    console.error("[Prisma Debug] Prisma initialization error:", error);
+    console.error("[Prisma Debug] Full environment debug:", JSON.stringify(envDebug, null, 2));
     throw error;
   }
 

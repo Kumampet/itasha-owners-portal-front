@@ -27,9 +27,17 @@ const getAdapter = () => {
   }
 
   try {
-    // DATABASE_URLが設定されているか再確認
-    if (!process.env.DATABASE_URL || typeof process.env.DATABASE_URL !== "string" || process.env.DATABASE_URL.trim() === "") {
-      console.warn("DATABASE_URL is not set. Skipping Prisma Adapter initialization.");
+    // DATABASE_URLが設定されているか再確認（実行時に再チェック）
+    const databaseUrl = process.env.DATABASE_URL;
+    console.log("[Auth Debug] getAdapter - DATABASE_URL check:", {
+      exists: !!databaseUrl,
+      type: typeof databaseUrl,
+      length: databaseUrl ? databaseUrl.length : 0,
+      prefix: databaseUrl ? databaseUrl.substring(0, 20) : "not set",
+    });
+
+    if (!databaseUrl || typeof databaseUrl !== "string" || databaseUrl.trim() === "") {
+      console.warn("[Auth Debug] DATABASE_URL is not set at runtime. Skipping Prisma Adapter initialization.");
       adapter = undefined;
       return undefined;
     }
@@ -54,17 +62,26 @@ const getAdapter = () => {
     // DATABASE_URLが未設定の場合は、この時点でエラーが発生する
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     adapter = PrismaAdapter(prisma) as any; // TODO: 型エラーを回避するための一時的な対応
+    console.log("[Auth Debug] Prisma Adapter created successfully");
     return adapter;
   } catch (error) {
-    console.error("Failed to create Prisma Adapter:", error);
+    console.error("[Auth Debug] Failed to create Prisma Adapter:", error);
     if (error instanceof Error) {
-      console.error("Error details:", {
+      console.error("[Auth Debug] Error details:", {
         name: error.name,
         message: error.message,
         stack: error.stack,
       });
+      // DATABASE_URL関連のエラーの場合は詳細を出力
+      if (error.message.includes("replace") || error.message.includes("DATABASE_URL")) {
+        console.error("[Auth Debug] DATABASE_URL at error time:", {
+          exists: !!process.env.DATABASE_URL,
+          type: typeof process.env.DATABASE_URL,
+          value: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + "..." : "not set",
+        });
+      }
     }
-    console.error("This is expected if DATABASE_URL is not set or invalid.");
+    console.warn("[Auth Debug] Falling back to JWT strategy due to Prisma Adapter error.");
     adapter = undefined;
     return undefined;
   }
