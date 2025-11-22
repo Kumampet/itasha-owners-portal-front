@@ -27,6 +27,13 @@ const getAdapter = () => {
   }
 
   try {
+    // DATABASE_URLが設定されているか再確認
+    if (!process.env.DATABASE_URL || typeof process.env.DATABASE_URL !== "string" || process.env.DATABASE_URL.trim() === "") {
+      console.warn("DATABASE_URL is not set. Skipping Prisma Adapter initialization.");
+      adapter = undefined;
+      return undefined;
+    }
+
     // 動的インポートでPrisma AdapterとPrisma Clientを読み込む
     // これにより、DATABASE_URLが設定されていない場合はPrisma Clientが初期化されない
     // ただし、requireを使うとモジュールが読み込まれるため、実際の初期化は遅延される
@@ -38,6 +45,10 @@ const getAdapter = () => {
     const prismaModule = require("@/lib/prisma");
     const { prisma } = prismaModule;
 
+    if (!prisma) {
+      throw new Error("Prisma Client is not available");
+    }
+
     // PrismaAdapterを呼び出すと、Prisma Clientのプロパティにアクセスしようとし、
     // その際にPrisma Clientが初期化される
     // DATABASE_URLが未設定の場合は、この時点でエラーが発生する
@@ -46,7 +57,14 @@ const getAdapter = () => {
     return adapter;
   } catch (error) {
     console.error("Failed to create Prisma Adapter:", error);
-    console.error("This is expected if DATABASE_URL is not set.");
+    if (error instanceof Error) {
+      console.error("Error details:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      });
+    }
+    console.error("This is expected if DATABASE_URL is not set or invalid.");
     adapter = undefined;
     return undefined;
   }

@@ -44,7 +44,13 @@ function createPrismaClient() {
     // mysql:// または mariadb:// の接続文字列をパース
     // URL形式: mysql://user:password@host:port/database
     // databaseUrlは上記のチェックで確実に文字列であることが保証されている
-    const dbUrlString = String(databaseUrl).replace(/^mysql:\/\//, "http://");
+    if (!databaseUrl || typeof databaseUrl !== "string") {
+      throw new Error("DATABASE_URL must be a non-empty string");
+    }
+    const dbUrlString = String(databaseUrl).trim().replace(/^mysql:\/\//, "http://");
+    if (!dbUrlString || dbUrlString === "http://") {
+      throw new Error("DATABASE_URL is invalid or empty after processing");
+    }
     const dbUrl = new URL(dbUrlString);
 
     // パスワードのデコード（URLエンコードされている場合）
