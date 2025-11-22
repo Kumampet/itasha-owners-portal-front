@@ -1,12 +1,12 @@
 import Link from "next/link";
 
-export default function ProfileRemindersPage() {
+export default function ReminderPage() {
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
         <header className="space-y-2">
           <Link
-            href="/app/profile"
+            href="/app/mypage"
             className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
           >
             ← マイページへ戻る
@@ -33,5 +33,4 @@ export default function ProfileRemindersPage() {
     </main>
   );
 }
-
 

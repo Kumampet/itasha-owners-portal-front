@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DbEventsPreview } from "@/components/db-events-preview";
 
 export default function Home() {
@@ -24,12 +25,18 @@ export default function Home() {
               <li>・フォロー/いいね/ランキングのない、穏やかな情報プラットフォーム</li>
             </ul>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-              <button className="h-11 rounded-full bg-black px-6 text-sm font-medium text-white transition hover:bg-zinc-800">
-                無料ではじめる（メールアドレスで登録）
-              </button>
-              <button className="h-11 rounded-full border border-zinc-300 px-6 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50">
-                まずは機能を詳しく見る
-              </button>
+              <Link
+                href="/events"
+                className="h-11 rounded-full bg-black px-6 text-sm font-medium text-white transition hover:bg-zinc-800 flex items-center justify-center"
+              >
+                まずはイベントを確認する
+              </Link>
+              <Link
+                href="/app/auth"
+                className="h-11 rounded-full border border-zinc-300 px-6 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 flex items-center justify-center"
+              >
+                ログインしてすべての機能を使う
+              </Link>
             </div>
           </div>
           <div className="mt-4 w-full max-w-sm self-stretch rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:mt-0 sm:w-80">

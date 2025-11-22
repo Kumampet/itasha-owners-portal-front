@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { AuthButton } from "@/components/auth-button";
 
 type DbEvent = {
   id: string;
@@ -41,6 +43,7 @@ function formatDateShort(dateString: string | null) {
 export default function EventsPage() {
   const [events, setEvents] = useState<DbEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const { data: session } = useSession();
 
   useEffect(() => {
     async function fetchEvents() {
@@ -143,16 +146,17 @@ export default function EventsPage() {
                     )}
                     <div className="flex w-full flex-col gap-2">
                       <Link
-                        href={`/app/events/${event.id}`}
+                        href={`/events/${event.id}`}
                         className="inline-flex items-center justify-center rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
                       >
                         詳細
                       </Link>
-                      <button
+                      <AuthButton
+                        eventId={event.id}
                         className="inline-flex items-center justify-center rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
                       >
-                        気になる
-                      </button>
+                        {session ? "気になる" : "ログインして気になる"}
+                      </AuthButton>
                     </div>
                   </div>
                 </div>

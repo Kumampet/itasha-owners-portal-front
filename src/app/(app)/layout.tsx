@@ -2,16 +2,16 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 type AppLayoutProps = {
   children: ReactNode;
 };
 
 const tabs = [
-  { href: "/app", label: "ホーム", key: "app" },
-  { href: "/app/events", label: "イベント", key: "events" },
-  { href: "/app/profile", label: "マイページ", key: "profile" },
+  { href: "/app/mypage", label: "ホーム", key: "mypage" },
+  { href: "/events", label: "イベント", key: "events" },
 ];
 
 function resolveActiveKey(pathname: string) {
@@ -19,25 +19,58 @@ function resolveActiveKey(pathname: string) {
   const segments = normalized.split("/").filter(Boolean);
 
   if (segments.length === 0) return "";
+  
+  // /events の場合は "events" を返す
+  if (segments[0] === "events") {
+    return "events";
+  }
+  
+  // /app 配下の場合は2番目のセグメントを返す
   if (segments[0] === "app" && segments.length > 1) {
+    // /app/mypage の場合は "mypage" を返す
+    if (segments[1] === "mypage") {
+      return "mypage";
+    }
     return segments[1];
   }
+  
+  // /app のみの場合は "mypage" を返す（リダイレクトされるが、念のため）
+  if (segments[0] === "app") {
+    return "mypage";
+  }
+  
   return segments[0];
 }
 
 function BottomTabBar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
   const activeKey = resolveActiveKey(pathname);
+
+  const handleTabClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    // イベントページは常にアクセス可能
+    if (href === "/events") {
+      return;
+    }
+    
+    // 未ログインで保護されたページにアクセスしようとした場合
+    if (!session && href === "/app/mypage") {
+      e.preventDefault();
+      router.push(`/app/auth?callbackUrl=${encodeURIComponent(href)}`);
+    }
+  };
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-zinc-200 bg-white/90 px-2 py-2.5 backdrop-blur sm:hidden">
       <ul className="flex items-center justify-between text-[11px]">
         {tabs.map((tab) => {
-          const isActive = tab.key === activeKey || (tab.key === "app" && activeKey === "app");
+          const isActive = tab.key === activeKey;
           return (
             <li key={tab.href}>
               <Link
                 href={tab.href}
+                onClick={(e) => handleTabClick(e, tab.href)}
                 className={`flex flex-col items-center rounded-full px-3 py-1.5 ${
                   isActive
                     ? "bg-zinc-900 text-white"
@@ -56,7 +89,22 @@ function BottomTabBar() {
 
 function SideNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
   const activeKey = resolveActiveKey(pathname);
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    // イベントページは常にアクセス可能
+    if (href === "/events") {
+      return;
+    }
+    
+    // 未ログインで保護されたページにアクセスしようとした場合
+    if (!session && href === "/app/mypage") {
+      e.preventDefault();
+      router.push(`/app/auth?callbackUrl=${encodeURIComponent(href)}`);
+    }
+  };
 
   return (
     <aside className="sticky top-0 hidden h-screen w-56 border-r border-zinc-100 bg-white px-4 py-6 sm:flex sm:flex-col">
@@ -65,11 +113,12 @@ function SideNav() {
       </div>
       <nav className="space-y-1 text-sm">
         {tabs.map((tab) => {
-          const isActive = tab.key === activeKey || (tab.key === "app" && activeKey === "app");
+          const isActive = tab.key === activeKey;
           return (
             <Link
               key={tab.href}
               href={tab.href}
+              onClick={(e) => handleNavClick(e, tab.href)}
               className={`block rounded-lg px-3 py-2 ${
                 isActive
                   ? "bg-zinc-900 text-white"

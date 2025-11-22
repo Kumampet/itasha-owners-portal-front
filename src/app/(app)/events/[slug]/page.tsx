@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { EventDetailActions } from "@/components/event-detail-actions";
 
 type EventDetailPageProps = {
   params: Promise<{ slug: string }>;
@@ -81,7 +82,7 @@ export default async function EventDetailPage({
       <article className="mx-auto flex w-full max-w-4xl flex-col gap-6 sm:gap-8">
         <header className="space-y-3">
           <Link
-            href="/app/events"
+            href="/events"
             className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
           >
             ← イベント一覧に戻る
@@ -125,14 +126,7 @@ export default async function EventDetailPage({
             <p className="text-sm text-zinc-700">
               開始: {formatted.entryStart} / 締切: {formatted.deadline}
             </p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <button className="flex-1 rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800">
-                エントリー情報を確認
-              </button>
-              <button className="flex-1 rounded-full border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50">
-                気になる
-              </button>
-            </div>
+            <EventDetailActions eventId={event.id} />
           </div>
         </section>
 
@@ -166,5 +160,4 @@ export default async function EventDetailPage({
     </main>
   );
 }
-
 

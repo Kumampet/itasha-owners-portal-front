@@ -28,7 +28,8 @@ function createPrismaClient() {
   console.log("Prisma Client initialization - Environment debug:", envDebug);
 
   // DATABASE_URLをパースしてmariadb用の設定に変換
-  if (!process.env.DATABASE_URL) {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl || typeof databaseUrl !== "string" || databaseUrl.trim() === "") {
     const error = new Error(
       "DATABASE_URL environment variable is not set. " +
       "Please configure it in Amplify Console -> App settings -> Environment variables. " +
@@ -42,7 +43,8 @@ function createPrismaClient() {
   try {
     // mysql:// または mariadb:// の接続文字列をパース
     // URL形式: mysql://user:password@host:port/database
-    const dbUrlString = process.env.DATABASE_URL.replace(/^mysql:\/\//, "http://");
+    // databaseUrlは上記のチェックで確実に文字列であることが保証されている
+    const dbUrlString = String(databaseUrl).replace(/^mysql:\/\//, "http://");
     const dbUrl = new URL(dbUrlString);
 
     // パスワードのデコード（URLエンコードされている場合）
