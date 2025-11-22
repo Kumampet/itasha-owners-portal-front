@@ -6,10 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
     "type-check": "tsc --noEmit",
+    "check": "npm run prisma:generate && npm run type-check && npm run lint",
     "db:seed": "tsx prisma/seed.ts",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "prepare": "husky"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.0.0",
@@ -27,6 +30,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
+    "husky": "^9.1.7",
     "prisma": "^7.0.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",

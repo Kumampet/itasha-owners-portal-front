@@ -35,4 +35,5 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint
+        # --max-warnings=0 により、info/warnもエラーとして扱われる
 

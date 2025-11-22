@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-push checks..."
+
+# Prisma Clientを生成
+echo "📦 Generating Prisma Client..."
+DATABASE_URL="mysql://user:password@localhost:3306/dummy" npm run prisma:generate
+
+# 型チェック
+echo "🔎 Running TypeScript type check..."
+npm run type-check
+
+# ESLint（info/warnもエラーとして扱う）
+echo "✨ Running ESLint..."
+npm run lint
+
+echo "✅ All checks passed!"
+
