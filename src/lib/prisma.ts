@@ -1,6 +1,9 @@
-import "dotenv/config";
+// dotenvは開発環境でのみ使用（本番環境では環境変数が直接設定される）
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv/config");
+}
+
 import { PrismaClient } from "@prisma/client";
-import { createPool } from "mariadb";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 const globalForPrisma = globalThis as unknown as {
@@ -11,8 +14,12 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient() {
   // DATABASE_URLをパースしてmariadb用の設定に変換
   if (!process.env.DATABASE_URL) {
-    const error = new Error("DATABASE_URL environment variable is not set");
+    const error = new Error(
+      "DATABASE_URL environment variable is not set. " +
+      "Please configure it in Amplify Console -> App settings -> Environment variables"
+    );
     console.error("Prisma initialization error:", error);
+    console.error("Available env vars:", Object.keys(process.env).filter(key => key.includes("DATABASE") || key.includes("DB")));
     throw error;
   }
 
