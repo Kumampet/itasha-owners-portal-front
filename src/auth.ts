@@ -39,6 +39,7 @@ const getAdapter = () => {
     // PrismaAdapterを呼び出すと、Prisma Clientのプロパティにアクセスしようとし、
     // その際にPrisma Clientが初期化される
     // DATABASE_URLが未設定の場合は、この時点でエラーが発生する
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     adapter = PrismaAdapter(prisma) as any; // TODO: 型エラーを回避するための一時的な対応
     return adapter;
   } catch (error) {
@@ -152,6 +153,7 @@ if (!authSecret && process.env.NODE_ENV === "production") {
 // adapterが存在する場合のみ設定
 const config: NextAuthConfig = {
   ...configBase,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ...(adapterInstance ? { adapter: adapterInstance as any } : {}),
   secret: authSecret,
 };

@@ -1,25 +1,11 @@
 "use client";
 
-import { signIn } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
-import { useState } from "react";
 import Link from "next/link";
 
 export default function AuthPage() {
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/app";
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSignIn = async (provider: string) => {
-    setIsLoading(true);
-    try {
-      await signIn(provider, { callbackUrl });
-    } catch (error) {
-      console.error("Sign in error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // TODO: プロバイダーが設定された際にcallbackUrlを使用
+  // const searchParams = useSearchParams();
+  // const callbackUrl = searchParams.get("callbackUrl") || "/app";
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
