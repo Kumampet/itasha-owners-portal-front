@@ -64,11 +64,14 @@ TWITTER_CLIENT_SECRET="abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnop"
 4. **名前**を入力（例: "Itasha Portal Web Client"）
 5. **承認済みの JavaScript 生成元**に以下を追加：
    - 開発環境: `http://localhost:3000`
-   - 本番環境: `https://your-domain.com`
+   - 本番環境: `https://main.da1pjhpif1fug.amplifyapp.com`（AmplifyのURLに置き換えてください）
 6. **承認済みのリダイレクト URI**に以下を追加（**重要**）：
    - 開発環境: `http://localhost:3000/api/auth/callback/google`
-   - 本番環境: `https://your-domain.com/api/auth/callback/google`
-   - **注意**: 末尾のスラッシュ（`/`）は不要です
+   - 本番環境: `https://main.da1pjhpif1fug.amplifyapp.com/api/auth/callback/google`（AmplifyのURLに置き換えてください）
+   - **注意**: 
+     - 末尾のスラッシュ（`/`）は不要です
+     - 本番環境のURLは実際のAmplifyアプリのURLに置き換えてください
+     - 複数の環境がある場合は、すべてのURLを追加してください
 7. 「作成」をクリック
 8. **クライアントID**と**クライアントシークレット**が表示されます
    - これらをコピーして環境変数に設定してください
@@ -288,8 +291,15 @@ Amplifyコンソールで以下の環境変数を設定してください：
 - `GOOGLE_CLIENT_SECRET`
 - `TWITTER_CLIENT_ID`
 - `TWITTER_CLIENT_SECRET`
+- `NEXTAUTH_URL`（オプション、Amplifyでは自動検出されますが、明示的に設定することも可能）
 
 設定場所: Amplify Console → App settings → Environment variables
 
-**注意**: 本番環境のリダイレクトURIもAmplifyのURLに合わせて設定してください。
+**重要**: 
+- 本番環境のリダイレクトURIもAmplifyのURLに合わせてGoogle Cloud ConsoleとTwitter Developer Portalで設定してください
+- 本番環境のURL例: `https://main.da1pjhpif1fug.amplifyapp.com`
+- Google Cloud Consoleの「承認済みのリダイレクト URI」に以下を追加:
+  - `https://main.da1pjhpif1fug.amplifyapp.com/api/auth/callback/google`
+- Twitter Developer Portalの「Callback URI / Redirect URL」に以下を追加:
+  - `https://main.da1pjhpif1fug.amplifyapp.com/api/auth/callback/twitter`
 

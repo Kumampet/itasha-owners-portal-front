@@ -233,8 +233,8 @@ const config: NextAuthConfig = {
   events: {
     async signIn({ user, account }) {
       // サインイン成功時のログ
-      console.log("[Auth Debug] Sign in successful:", { 
-        userId: user.id, 
+      console.log("[Auth Debug] Sign in successful:", {
+        userId: user.id,
         email: user.email,
         provider: account?.provider,
       });
