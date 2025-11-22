@@ -113,18 +113,14 @@ const configBase: NextAuthConfig = {
     async redirect({ url, baseUrl }) {
       console.log("[Auth Debug] Redirect callback:", { url, baseUrl });
 
-      // urlが相対パスの場合（callbackUrlが指定されている場合）
-      if (url.startsWith("/")) {
-        const redirectUrl = `${baseUrl}${url}`;
-        console.log("[Auth Debug] Redirecting to relative path:", redirectUrl);
-        return redirectUrl;
-      }
-      // 同じオリジンのURLの場合（完全なURLが指定されている場合）
+      // URLをパースしてクエリパラメータを確認
+      let parsedUrl: URL;
       try {
-        const urlObj = new URL(url);
-        if (urlObj.origin === baseUrl) {
-          console.log("[Auth Debug] Redirecting to same origin:", url);
-          return url;
+        // urlが相対パスの場合はbaseUrlと結合
+        if (url.startsWith("/")) {
+          parsedUrl = new URL(url, baseUrl);
+        } else {
+          parsedUrl = new URL(url);
         }
       } catch {
         // URLのパースに失敗した場合は相対パスとして扱う
@@ -132,6 +128,47 @@ const configBase: NextAuthConfig = {
         console.log("[Auth Debug] URL parse failed, treating as relative:", redirectUrl);
         return redirectUrl;
       }
+
+      // /app/authにリダイレクトされる場合、callbackUrlパラメータを確認
+      if (parsedUrl.pathname === "/app/auth") {
+        const callbackUrl = parsedUrl.searchParams.get("callbackUrl");
+        if (callbackUrl) {
+          // callbackUrlが相対パスの場合
+          if (callbackUrl.startsWith("/")) {
+            const redirectUrl = `${baseUrl}${callbackUrl}`;
+            console.log("[Auth Debug] Found callbackUrl in query, redirecting to:", redirectUrl);
+            return redirectUrl;
+          }
+          // callbackUrlが完全なURLの場合、同じオリジンのみ許可
+          try {
+            const callbackUrlObj = new URL(callbackUrl);
+            if (callbackUrlObj.origin === baseUrl) {
+              console.log("[Auth Debug] Found callbackUrl in query (full URL), redirecting to:", callbackUrl);
+              return callbackUrl;
+            }
+          } catch {
+            // URLのパースに失敗した場合は無視
+          }
+        }
+        // callbackUrlがない場合はマイページにリダイレクト
+        const defaultRedirect = `${baseUrl}/app/mypage`;
+        console.log("[Auth Debug] No callbackUrl found, redirecting to default:", defaultRedirect);
+        return defaultRedirect;
+      }
+
+      // urlが相対パスの場合（callbackUrlが指定されている場合）
+      if (url.startsWith("/")) {
+        const redirectUrl = `${baseUrl}${url}`;
+        console.log("[Auth Debug] Redirecting to relative path:", redirectUrl);
+        return redirectUrl;
+      }
+
+      // 同じオリジンのURLの場合（完全なURLが指定されている場合）
+      if (parsedUrl.origin === baseUrl) {
+        console.log("[Auth Debug] Redirecting to same origin:", url);
+        return url;
+      }
+
       // 外部URLの場合はデフォルトのマイページにリダイレクト
       const defaultRedirect = `${baseUrl}/app/mypage`;
       console.log("[Auth Debug] External URL, redirecting to default:", defaultRedirect);
