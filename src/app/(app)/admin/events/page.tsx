@@ -7,6 +7,7 @@ type Event = {
   id: string;
   name: string;
   theme: string | null;
+  description: string | null;
   event_date: string;
   entry_start_at: string | null;
   payment_due_at: string | null;
@@ -96,7 +97,7 @@ export default function AdminEventsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
           イベント管理
@@ -110,7 +111,7 @@ export default function AdminEventsPage() {
       <div className="mb-6 space-y-4 rounded-lg border border-zinc-200 bg-white p-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           {/* 検索 */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <input
               type="text"
               placeholder="イベント名で検索..."
@@ -121,13 +122,13 @@ export default function AdminEventsPage() {
           </div>
 
           {/* ステータスフィルター */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 shrink-0">
             {(["ALL", "DRAFT", "PENDING", "APPROVED", "REJECTED"] as FilterStatus[]).map(
               (status) => (
                 <button
                   key={status}
                   onClick={() => setFilterStatus(status)}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition whitespace-nowrap ${
                     filterStatus === status
                       ? "bg-zinc-900 text-white"
                       : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
@@ -193,52 +194,96 @@ export default function AdminEventsPage() {
           <p className="text-sm text-zinc-600">イベントがありません</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {events.map((event) => (
-            <Link
-              key={event.id}
-              href={`/admin/events/${event.id}`}
-              className="block rounded-lg border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 hover:shadow-md"
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex-1">
-                  <div className="mb-2 flex items-center gap-2">
+        <div className="w-full overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+          <table className="min-w-[1200px] divide-y divide-zinc-200">
+            <thead className="bg-zinc-50">
+              <tr>
+                <th className="w-24 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  ステータス
+                </th>
+                <th className="min-w-[200px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  イベント名
+                </th>
+                <th className="min-w-[250px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  イベント詳細
+                </th>
+                <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  開催日
+                </th>
+                <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  エントリー開始
+                </th>
+                <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  支払期限
+                </th>
+                <th className="min-w-[180px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  主催者
+                </th>
+                <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  作成日
+                </th>
+                <th className="w-20 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  アクション
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-200 bg-white">
+              {events.map((event) => (
+                <tr
+                  key={event.id}
+                  className="transition hover:bg-zinc-50"
+                >
+                  <td className="whitespace-nowrap px-4 py-3">
                     <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadgeClass(
+                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadgeClass(
                         event.approval_status
                       )}`}
                     >
                       {getStatusLabel(event.approval_status)}
                     </span>
-                    {event.organizer_user && (
-                      <span className="text-xs text-zinc-500">
-                        {event.organizer_user.email}
-                      </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="text-sm font-medium text-zinc-900">
+                      {event.name}
+                    </div>
+                    {event.theme && (
+                      <div className="mt-1 text-xs text-zinc-500">
+                        {event.theme}
+                      </div>
                     )}
-                  </div>
-                  <h3 className="text-base font-semibold text-zinc-900">
-                    {event.name}
-                  </h3>
-                  {event.theme && (
-                    <p className="text-sm text-zinc-600">{event.theme}</p>
-                  )}
-                  <div className="mt-2 flex flex-wrap gap-4 text-xs text-zinc-500">
-                    <span>開催日: {formatDate(event.event_date)}</span>
-                    {event.entry_start_at && (
-                      <span>
-                        エントリー開始: {formatDate(event.entry_start_at)}
-                      </span>
-                    )}
-                    {event.payment_due_at && (
-                      <span>支払期限: {formatDate(event.payment_due_at)}</span>
-                    )}
-                    <span>作成日: {formatDate(event.created_at)}</span>
-                  </div>
-                </div>
-                <div className="text-sm text-zinc-500">→</div>
-              </div>
-            </Link>
-          ))}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="text-sm text-zinc-600 line-clamp-2">
+                      {event.description || "-"}
+                    </div>
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
+                    {formatDate(event.event_date)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
+                    {event.entry_start_at ? formatDate(event.entry_start_at) : "-"}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
+                    {event.payment_due_at ? formatDate(event.payment_due_at) : "-"}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-zinc-600">
+                    {event.organizer_user ? event.organizer_user.email : "-"}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600">
+                    {formatDate(event.created_at)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm">
+                    <Link
+                      href={`/admin/events/${event.id}`}
+                      className="text-zinc-900 hover:text-zinc-700 hover:underline"
+                    >
+                      詳細
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

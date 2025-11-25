@@ -46,6 +46,7 @@ export async function GET(request: Request) {
         id: true,
         name: true,
         theme: true,
+        description: true,
         event_date: true,
         entry_start_at: true,
         payment_due_at: true,

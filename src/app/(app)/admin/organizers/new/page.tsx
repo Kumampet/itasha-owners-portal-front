@@ -66,7 +66,7 @@ export default function AdminNewOrganizerPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="mb-6">
         <Link
           href="/admin"

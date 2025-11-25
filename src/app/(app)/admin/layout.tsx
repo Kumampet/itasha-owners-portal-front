@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -15,10 +15,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const hasRedirected = useRef(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // ログインページとパスワード変更ページでは認証チェックをスキップ
   const isAuthPage = pathname === "/admin/auth";
   const isChangePasswordPage = pathname === "/admin/change-password";
+
+  // メニューが開いている時はスクロールを無効化（すべてのHooksは早期リターンの前に配置）
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMenuOpen]);
 
   useEffect(() => {
     // ログインページでは認証チェックをスキップ
@@ -78,70 +91,145 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { href: "/admin/organizers/new", label: "オーガナイザー作成", icon: "👤" },
   ];
 
+  const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => (
+    <div className="flex h-full flex-col">
+      <div className="border-b border-zinc-200 p-4">
+        <Link
+          href="/admin/dashboard"
+          className="text-lg font-semibold text-zinc-900 hover:text-zinc-700"
+          onClick={onLinkClick}
+        >
+          管理画面
+        </Link>
+      </div>
+      <nav className="flex-1 p-4">
+        {/* 新規イベントを作成ボタン */}
+        <Link
+          href="/admin/events/new"
+          className={`mb-4 flex items-center gap-3 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium transition ${
+            pathname === "/admin/events/new"
+              ? "bg-zinc-900 text-white border-zinc-900"
+              : "bg-white text-zinc-900 hover:bg-zinc-50 hover:border-zinc-900"
+          }`}
+          onClick={onLinkClick}
+        >
+          <span>➕</span>
+          <span>新規イベントを作成</span>
+        </Link>
+        <div className="mb-4 border-t border-zinc-200"></div>
+        {/* 通常のメニュー項目 */}
+        <div className="space-y-1">
+          {menuItems.map((item) => {
+            const isActive = pathname === item.href || (item.href !== "/admin/dashboard" && pathname?.startsWith(item.href));
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+                  isActive
+                    ? "bg-zinc-900 text-white"
+                    : "text-zinc-700 hover:bg-zinc-50"
+                }`}
+                onClick={onLinkClick}
+              >
+                <span>{item.icon}</span>
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+      <div className="border-t border-zinc-200 p-4">
+        <div className="mb-2 text-xs text-zinc-600">{session.user.email}</div>
+        <Link
+          href="/app/mypage"
+          className="text-xs text-zinc-600 hover:text-zinc-900"
+          onClick={onLinkClick}
+        >
+          アプリに戻る
+        </Link>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex min-h-screen">
-      {/* サイドバー（PC版） */}
-      <aside className="hidden w-64 border-r border-zinc-200 bg-white sm:block">
+      {/* オーバーレイ（lg未満のみ） */}
+      {isMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setIsMenuOpen(false)}
+        />
+      )}
+
+      {/* サイドバー（PC版 - lg以上で表示） */}
+      <aside className="hidden w-64 flex-shrink-0 border-r border-zinc-200 bg-white lg:block">
+        <SidebarContent />
+      </aside>
+
+      {/* サイドバー（モバイル版 - lg未満でハンバーガーメニュー） */}
+      <aside
+        className={`fixed top-0 left-0 z-50 h-screen w-64 border-r border-zinc-200 bg-white transition-transform duration-300 ease-in-out lg:hidden ${
+          isMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="flex h-full flex-col">
-          <div className="border-b border-zinc-200 p-4">
+          <div className="flex items-center justify-between border-b border-zinc-200 p-4">
             <Link
               href="/admin/dashboard"
               className="text-lg font-semibold text-zinc-900 hover:text-zinc-700"
+              onClick={() => setIsMenuOpen(false)}
             >
               管理画面
             </Link>
-          </div>
-          <nav className="flex-1 p-4">
-            {/* 新規イベントを作成ボタン */}
-            <Link
-              href="/admin/events/new"
-              className={`mb-4 flex items-center gap-3 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium transition ${
-                pathname === "/admin/events/new"
-                  ? "bg-zinc-900 text-white border-zinc-900"
-                  : "bg-white text-zinc-900 hover:bg-zinc-50 hover:border-zinc-900"
-              }`}
+            <button
+              onClick={() => setIsMenuOpen(false)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100"
+              aria-label="メニューを閉じる"
             >
-              <span>➕</span>
-              <span>新規イベントを作成</span>
-            </Link>
-            <div className="mb-4 border-t border-zinc-200"></div>
-            {/* 通常のメニュー項目 */}
-            <div className="space-y-1">
-              {menuItems.map((item) => {
-                const isActive = pathname === item.href || (item.href !== "/admin/dashboard" && pathname?.startsWith(item.href));
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
-                      isActive
-                        ? "bg-zinc-900 text-white"
-                        : "text-zinc-700 hover:bg-zinc-50"
-                    }`}
-                  >
-                    <span>{item.icon}</span>
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </nav>
-          <div className="border-t border-zinc-200 p-4">
-            <div className="mb-2 text-xs text-zinc-600">{session.user.email}</div>
-            <Link
-              href="/app/mypage"
-              className="text-xs text-zinc-600 hover:text-zinc-900"
-            >
-              アプリに戻る
-            </Link>
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
           </div>
+          <SidebarContent onLinkClick={() => setIsMenuOpen(false)} />
         </div>
       </aside>
 
       {/* メインコンテンツ */}
-      <div className="flex min-h-screen flex-1 flex-col">
-        <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white sm:hidden">
+      <div className="flex min-h-screen flex-1 flex-col lg:w-auto w-screen">
+        {/* ヘッダー（lg未満のみ） */}
+        <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white lg:hidden">
           <div className="flex h-14 items-center justify-between px-4">
+            <button
+              onClick={() => setIsMenuOpen(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100"
+              aria-label="メニューを開く"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
             <Link href="/admin/dashboard" className="text-lg font-semibold text-zinc-900">
               管理画面
             </Link>
