@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { useState } from "react";
+import { DisplayNameModal } from "@/components/display-name-modal";
 
 export default function MyPage() {
-    const { data: session, status } = useSession();
+    const { data: session, status, update } = useSession();
     const isLoading = status === "loading";
+    const [isDisplayNameModalOpen, setIsDisplayNameModalOpen] = useState(false);
 
     return (
         <main className="flex-1">
@@ -69,7 +72,39 @@ export default function MyPage() {
                         <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
                             基本情報
                         </h2>
-                        <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
+                        <div className="mt-3 space-y-3">
+                            <div>
+                                <h3 className="text-xs font-medium text-zinc-700 sm:text-sm">
+                                    表示名
+                                </h3>
+                                {session?.user?.displayName ? (
+                                    <div className="mt-1 flex items-center justify-between">
+                                        <p className="text-xs text-zinc-900 sm:text-sm">
+                                            {session.user.displayName}
+                                        </p>
+                                        <button
+                                            onClick={() => setIsDisplayNameModalOpen(true)}
+                                            className="text-xs text-emerald-600 hover:text-emerald-700 sm:text-sm"
+                                        >
+                                            編集
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="mt-1">
+                                        <p className="text-xs text-zinc-500 sm:text-sm">
+                                            未設定（ログインしたアカウントの名前を使用）
+                                        </p>
+                                        <button
+                                            onClick={() => setIsDisplayNameModalOpen(true)}
+                                            className="mt-2 text-xs font-semibold text-emerald-600 hover:text-emerald-700 sm:text-sm"
+                                        >
+                                            表示名を設定 →
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <p className="mt-3 text-xs text-zinc-700 sm:text-sm">
                             認証基盤（Cognito）連携後、ここにメールアドレスやプロフィールURLなどの
                             情報を表示し、編集できるようにします。
                         </p>
@@ -122,6 +157,36 @@ export default function MyPage() {
                     </Link>
                 </div>
             </section>
+
+            <DisplayNameModal
+                isOpen={isDisplayNameModalOpen}
+                onClose={() => setIsDisplayNameModalOpen(false)}
+                onSave={async (displayName: string) => {
+                    try {
+                        const response = await fetch("/api/user/display-name", {
+                            method: "PATCH",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({ displayName }),
+                        });
+
+                        if (!response.ok) {
+                            throw new Error("Failed to save display name");
+                        }
+
+                        // セッションを更新
+                        await update();
+                        setIsDisplayNameModalOpen(false);
+                    } catch (error) {
+                        console.error("Failed to save display name:", error);
+                        throw error;
+                    }
+                }}
+                onLater={() => setIsDisplayNameModalOpen(false)}
+                initialDisplayName={session?.user?.displayName || null}
+                showLaterButton={false}
+            />
         </main>
     );
 }

@@ -41,6 +41,7 @@ type GroupMessage = {
   sender: {
     id: string;
     name: string | null;
+    displayName?: string | null;
     email: string;
   };
   createdAt: string;
@@ -480,7 +481,7 @@ export default function GroupDetailPage({
                       </div>
                       <div className={`mt-1 px-1 ${isOwnMessage ? "text-right" : "text-left"}`}>
                         <p className="text-xs text-zinc-500">
-                          {truncateName(message.sender.name)} {formatDateTime(message.createdAt)}
+                          {truncateName(message.sender.displayName || message.sender.name)} {formatDateTime(message.createdAt)}
                         </p>
                       </div>
                     </div>

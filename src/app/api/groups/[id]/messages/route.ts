@@ -50,6 +50,7 @@ export async function GET(
           select: {
             id: true,
             name: true,
+            display_name: true,
             email: true,
           },
         },
@@ -67,6 +68,7 @@ export async function GET(
         sender: {
           id: msg.sender.id,
           name: msg.sender.name,
+          displayName: msg.sender.display_name,
           email: msg.sender.email,
         },
         createdAt: msg.created_at,
@@ -167,6 +169,7 @@ export async function POST(
           select: {
             id: true,
             name: true,
+            display_name: true,
             email: true,
           },
         },

@@ -7,6 +7,7 @@ declare module "next-auth" {
       id: string;
       email: string;
       name?: string | null;
+      displayName?: string | null;
       image?: string | null;
       role: string; // "USER" | "ADMIN" | "ORGANIZER"
       isBanned: boolean;

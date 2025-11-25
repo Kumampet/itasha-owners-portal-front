@@ -14,6 +14,7 @@ model User {
   email            String       @unique
   emailVerified    DateTime?
   name             String?
+  display_name     String?      // 表示名（ニックネーム、任意）
   image            String?
   is_banned        Boolean      @default(false)
   role             String       @default("USER") // USER, ADMIN, ORGANIZER

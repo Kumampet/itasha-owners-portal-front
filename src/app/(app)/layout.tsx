@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { DisplayNameModal } from "@/components/display-name-modal";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -248,6 +249,9 @@ function MobileHeader({
 export default function AppLayout({ children }: AppLayoutProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { data: session, status } = useSession();
+  const [showDisplayNameModal, setShowDisplayNameModal] = useState(false);
+  const [hasCheckedDisplayName, setHasCheckedDisplayName] = useState(false);
 
   // メニューが開いている時はスクロールを無効化
   // Hooksのルールに従い、早期リターンの前にすべてのHooksを呼ぶ
@@ -266,18 +270,107 @@ export default function AppLayout({ children }: AppLayoutProps) {
     };
   }, [isMenuOpen, pathname]);
 
+  // 表示名のチェック（ログイン時のみ）
+  useEffect(() => {
+    if (status === "loading" || hasCheckedDisplayName) return;
+    if (pathname?.startsWith("/admin")) return; // 管理画面では表示しない
+
+    if (session?.user) {
+      // Cookieをチェック（「あとで」を選択した場合）
+      const laterCookie = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("display_name_later="));
+
+      if (laterCookie) {
+        // Cookieが存在する場合は期限をチェック
+        const cookieValue = laterCookie.split("=")[1];
+        const expireDate = new Date(cookieValue);
+        const now = new Date();
+        
+        // 7日経過している場合は再度促す
+        if (now > expireDate) {
+          // Cookieを削除
+          document.cookie = "display_name_later=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+          // 表示名が未設定の場合はモーダルを表示
+          if (!session.user.displayName) {
+            setShowDisplayNameModal(true);
+            setHasCheckedDisplayName(true);
+          }
+        } else {
+          setHasCheckedDisplayName(true);
+        }
+      } else {
+        // Cookieが存在しない場合、表示名が未設定ならモーダルを表示
+        if (!session.user.displayName) {
+          setShowDisplayNameModal(true);
+          setHasCheckedDisplayName(true);
+        } else {
+          setHasCheckedDisplayName(true);
+        }
+      }
+    } else {
+      setHasCheckedDisplayName(true);
+    }
+  }, [session, status, pathname, hasCheckedDisplayName]);
+
+  const handleSaveDisplayName = async (displayName: string) => {
+    try {
+      const res = await fetch("/api/user/display-name", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ displayName }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save display name");
+      }
+
+      // セッションを更新
+      await fetch("/api/auth/session?update");
+      setShowDisplayNameModal(false);
+      window.location.reload(); // セッションを反映させるためにリロード
+    } catch (error) {
+      console.error("Failed to save display name:", error);
+      throw error;
+    }
+  };
+
+  const handleLater = () => {
+    // 7日後の日付を設定
+    const expireDate = new Date();
+    expireDate.setDate(expireDate.getDate() + 7);
+    
+    // Cookieに保存
+    document.cookie = `display_name_later=${expireDate.toISOString()}; expires=${expireDate.toUTCString()}; path=/;`;
+    setShowDisplayNameModal(false);
+    setHasCheckedDisplayName(true);
+  };
+
   // 管理画面配下の場合は通常のレイアウトを適用しない
   if (pathname?.startsWith("/admin")) {
     return <>{children}</>;
   }
 
   return (
-    <div className="flex min-h-screen">
-      <MobileHeader onMenuClick={() => setIsMenuOpen(true)} />
-      <SideNav isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-      <div className="flex min-h-screen flex-1 flex-col pt-14 sm:pt-0">
-        {children}
+    <>
+      <div className="flex min-h-screen">
+        <MobileHeader onMenuClick={() => setIsMenuOpen(true)} />
+        <SideNav isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+        <div className="flex min-h-screen flex-1 flex-col pt-14 sm:pt-0">
+          {children}
+        </div>
       </div>
-    </div>
+      <DisplayNameModal
+        isOpen={showDisplayNameModal}
+        onClose={() => {
+          setShowDisplayNameModal(false);
+          setHasCheckedDisplayName(true);
+        }}
+        onSave={handleSaveDisplayName}
+        onLater={handleLater}
+      />
+    </>
   );
 }

@@ -240,6 +240,7 @@ const configBase: NextAuthConfig = {
               role: true,
               is_banned: true,
               custom_profile_url: true,
+              display_name: true,
             },
           });
 
@@ -248,6 +249,7 @@ const configBase: NextAuthConfig = {
             session.user.role = dbUser.role;
             session.user.isBanned = dbUser.is_banned;
             session.user.customProfileUrl = dbUser.custom_profile_url;
+            session.user.displayName = dbUser.display_name;
           }
         } catch (error) {
           // エラーは無視して続行
