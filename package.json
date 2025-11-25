@@ -12,8 +12,7 @@
     "check": "npm run prisma:generate && npm run type-check && npm run lint",
     "db:seed": "tsx prisma/seed.ts",
     "db:clear-sessions": "tsx scripts/clear-sessions.ts",
-    "prisma:generate": "prisma generate",
-    "prepare": "node -e \"if (!process.env.CI) { try { require('husky').install() } catch(e) {} }\""
+    "prisma:generate": "prisma generate"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
