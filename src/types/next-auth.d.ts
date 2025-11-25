@@ -12,6 +12,7 @@ declare module "next-auth" {
       isOrganizer: boolean;
       isBanned: boolean;
       customProfileUrl?: string | null;
+      mustChangePassword?: boolean;
     };
   }
 
@@ -22,6 +23,7 @@ declare module "next-auth" {
     isOrganizer: boolean;
     isBanned: boolean;
     customProfileUrl?: string | null;
+    mustChangePassword?: boolean;
   }
 }
 

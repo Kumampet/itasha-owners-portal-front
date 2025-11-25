@@ -67,6 +67,9 @@ export async function middleware(request: NextRequest) {
     "/app/groups",
   ];
 
+  // 管理画面のパス（管理者権限が必要）
+  const isAdminPath = pathname.startsWith("/admin");
+
   // ダッシュボード（/app）は /app/mypage にリダイレクト
   if (pathname === "/app") {
     return NextResponse.redirect(new URL("/app/mypage", request.url));
@@ -106,6 +109,22 @@ export async function middleware(request: NextRequest) {
     // データベースセッションを使用する場合、middleware.tsではセッションが取得できない可能性がある
   }
 
+  // 管理画面のアクセス制御
+  if (isAdminPath && pathname !== "/admin/auth") {
+    // 管理画面のログインページ以外は認証が必要
+    if (!session) {
+      const signInUrl = new URL("/admin/auth", request.url);
+      signInUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+
+    // 管理者権限がない場合はマイページにリダイレクト
+    // セッションからroleを取得（middlewareでは直接取得できない場合があるため、クライアントサイドでもチェック）
+    if (session.user?.role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/app/mypage", request.url));
+    }
+  }
+
   // ログイン済みでログインページにアクセスしている場合
   if (pathname === "/app/auth" && session) {
     // callbackUrlパラメータが指定されている場合はそのURLにリダイレクト
@@ -127,6 +146,12 @@ export async function middleware(request: NextRequest) {
     }
     // callbackUrlが指定されていない場合はマイページにリダイレクト
     return NextResponse.redirect(new URL("/app/mypage", request.url));
+  }
+
+  // ログイン済みで管理画面ログインページにアクセスしている場合
+  if (pathname === "/admin/auth" && session && session.user?.role === "ADMIN") {
+    const callbackUrl = request.nextUrl.searchParams.get("callbackUrl") || "/admin";
+    return NextResponse.redirect(new URL(callbackUrl, request.url));
   }
 
   return NextResponse.next();

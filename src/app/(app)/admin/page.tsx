@@ -1,0 +1,65 @@
+"use client";
+
+import { useSession } from "next-auth/react";
+import Link from "next/link";
+
+export default function AdminDashboard() {
+  const { data: session } = useSession();
+
+  const menuItems = [
+    {
+      title: "イベント管理",
+      description: "イベントの承認、作成、編集、削除",
+      href: "/admin/events",
+      icon: "📅",
+    },
+    {
+      title: "ユーザー管理",
+      description: "ユーザー一覧、権限管理、BAN管理",
+      href: "/admin/users",
+      icon: "👥",
+    },
+    {
+      title: "情報提供フォーム",
+      description: "ユーザーからの情報提供を確認・処理",
+      href: "/admin/submissions",
+      icon: "📝",
+    },
+    {
+      title: "オーガナイザーアカウント作成",
+      description: "イベントオーガナイザー用のアカウントを作成",
+      href: "/admin/organizers/new",
+      icon: "👤",
+    },
+  ];
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
+          管理ダッシュボード
+        </h1>
+        <p className="mt-2 text-sm text-zinc-600 sm:text-base">
+          管理者: {session?.user?.email}
+        </p>
+      </div>
+
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {menuItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="group rounded-lg border border-zinc-200 bg-white p-6 transition hover:border-zinc-900 hover:shadow-md"
+          >
+            <div className="mb-4 text-3xl">{item.icon}</div>
+            <h2 className="mb-2 text-lg font-semibold text-zinc-900">
+              {item.title}
+            </h2>
+            <p className="text-sm text-zinc-600">{item.description}</p>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+

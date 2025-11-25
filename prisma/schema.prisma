@@ -24,6 +24,12 @@ model User {
   is_profile_public Boolean     @default(false)
   custom_profile_url String?    @unique // 例: /user/itasha_taro
   
+  // 管理画面用パスワード（ハッシュ化済み、通常ユーザーはnull）
+  password          String?     @db.VarChar(255)
+  
+  // 初回ログイン時にパスワード変更を強制するフラグ
+  must_change_password Boolean   @default(false)
+  
   // MySQLではDateTimeの代わりにDateTimeTzを使用しないため、@db.DateTime(6) などで精度を指定できますが、
   // デフォルトのままにしておきます。
   created_at       DateTime     @default(now())
@@ -41,6 +47,9 @@ model User {
   
   // 【修正】主催しているイベントのリスト
   events_organized     Event[]      @relation("EventOrganizer")
+  
+  // 情報提供フォーム
+  event_submissions    EventSubmission[]
 
   @@map("users")
 }
@@ -102,8 +111,9 @@ model Event {
   entry_start_at   DateTime?
   payment_due_at   DateTime?
 
-  // 承認ステータス (PENDING, APPROVED, REJECTED)
-  approval_status  String       @default("PENDING")
+  // 承認ステータス (DRAFT, PENDING, APPROVED, REJECTED)
+  // DRAFT: 下書き（未公開）、PENDING: 承認待ち、APPROVED: 承認済み、REJECTED: 却下
+  approval_status  String       @default("DRAFT")
   
   created_at       DateTime     @default(now())
   updated_at       DateTime     @updatedAt
@@ -224,4 +234,34 @@ model EventFollow {
 
   @@id([user_id, event_id])
   @@map("event_follows")
+}
+
+// ユーザーからのイベント情報提供
+model EventSubmission {
+  id               String       @id @default(uuid()) @db.VarChar(36)
+  
+  // 提供者情報（未ログインの場合はnull）
+  submitter        User?        @relation(fields: [submitter_id], references: [id])
+  submitter_id     String?     @db.VarChar(36)
+  submitter_email  String?     // 未ログインの場合のメールアドレス
+  
+  // イベント情報
+  name             String
+  theme            String?
+  description      String?      @db.Text
+  original_url     String
+  event_date       DateTime?
+  entry_start_at   DateTime?
+  payment_due_at   DateTime?
+  
+  // 処理ステータス (PENDING, PROCESSED, REJECTED)
+  status           String       @default("PENDING")
+  
+  // 処理メモ（管理者が記入）
+  admin_note       String?      @db.Text
+  
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+  
+  @@map("event_submissions")
 }

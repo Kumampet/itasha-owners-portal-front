@@ -1,0 +1,124 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+
+// GET /api/admin/events
+// 管理画面用のイベント一覧取得API（全ステータス、ソート・絞り込み対応）
+export async function GET(request: Request) {
+  try {
+    const session = await auth();
+
+    // 管理者権限チェック
+    if (!session || session.user?.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status");
+    const sortBy = searchParams.get("sortBy") || "created_at";
+    const sortOrder = searchParams.get("sortOrder") || "desc";
+    const search = searchParams.get("search");
+
+    // フィルター条件を構築
+    const where: any = {};
+    if (status && status !== "ALL") {
+      where.approval_status = status;
+    }
+    if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { theme: { contains: search } },
+        { description: { contains: search } },
+      ];
+    }
+
+    // ソート条件を構築
+    const orderBy: any = {};
+    orderBy[sortBy] = sortOrder;
+
+    const events = await prisma.event.findMany({
+      where,
+      orderBy,
+      select: {
+        id: true,
+        name: true,
+        theme: true,
+        event_date: true,
+        entry_start_at: true,
+        payment_due_at: true,
+        approval_status: true,
+        created_at: true,
+        organizer_user: {
+          select: {
+            email: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(events);
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch events" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/admin/events
+// 管理画面用のイベント作成API
+export async function POST(request: Request) {
+  try {
+    const session = await auth();
+
+    // 管理者権限チェック
+    if (!session || session.user?.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+
+    const event = await prisma.event.create({
+      data: {
+        name: body.name,
+        theme: body.theme || null,
+        description: body.description || null,
+        original_url: body.original_url,
+        event_date: new Date(body.event_date),
+        entry_start_at: body.entry_start_at
+          ? new Date(body.entry_start_at)
+          : null,
+        payment_due_at: body.payment_due_at
+          ? new Date(body.payment_due_at)
+          : null,
+        approval_status: body.approval_status || "DRAFT",
+      },
+      select: {
+        id: true,
+        name: true,
+        theme: true,
+        description: true,
+        original_url: true,
+        event_date: true,
+        entry_start_at: true,
+        payment_due_at: true,
+        approval_status: true,
+      },
+    });
+
+    return NextResponse.json(event);
+  } catch (error) {
+    console.error("Error creating event:", error);
+    return NextResponse.json(
+      { error: "Failed to create event" },
+      { status: 500 }
+    );
+  }
+}

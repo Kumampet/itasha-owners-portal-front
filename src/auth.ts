@@ -2,6 +2,8 @@ import NextAuth from "next-auth";
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import Twitter from "next-auth/providers/twitter";
+import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 
 // DATABASE_URLが設定されているかチェック
 const hasDatabaseUrl = !!(
@@ -106,7 +108,7 @@ console.log("[Auth Debug] GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID ? "�
 console.log("[Auth Debug] GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET ? "設定済み" : "未設定");
 console.log("[Auth Debug] NEXTAUTH_URL:", process.env.NEXTAUTH_URL || "未設定（自動検出）");
 
-// プロバイダー設定（GoogleとXのみ）
+// プロバイダー設定（Google、X、管理画面用Credentials）
 // DATABASE_URLが設定されている場合のみadapterを設定
 const configBase: NextAuthConfig = {
   providers: [
@@ -120,6 +122,82 @@ const configBase: NextAuthConfig = {
       clientId: process.env.TWITTER_CLIENT_ID,
       clientSecret: process.env.TWITTER_CLIENT_SECRET,
       allowDangerousEmailAccountLinking: true, // 同じメールアドレスで複数プロバイダーをリンク
+    }),
+    // 管理画面用のメール/パスワード認証
+    Credentials({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        if (!hasDatabaseUrl) {
+          console.error("DATABASE_URL is not set. Cannot authenticate admin user.");
+          return null;
+        }
+
+        try {
+          const { prisma } = await import("@/lib/prisma");
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email as string },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              password: true,
+              role: true,
+              is_organizer: true,
+              is_banned: true,
+              custom_profile_url: true,
+            },
+          });
+
+          if (!user || !user.password) {
+            return null;
+          }
+
+          // パスワードの検証
+          const isValid = await bcrypt.compare(
+            credentials.password as string,
+            user.password
+          );
+
+          if (!isValid) {
+            return null;
+          }
+
+          // 管理者またはオーガナイザーのみログイン可能
+          if (user.role !== "ADMIN" && !user.is_organizer) {
+            return null;
+          }
+
+          // must_change_passwordフィールドも取得
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: {
+              must_change_password: true,
+            },
+          });
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            isOrganizer: user.is_organizer,
+            isBanned: user.is_banned,
+            customProfileUrl: user.custom_profile_url,
+            mustChangePassword: dbUser?.must_change_password || false,
+          };
+        } catch (error) {
+          console.error("Admin authentication error:", error);
+          return null;
+        }
+      },
     }),
   ],
   pages: {
@@ -231,6 +309,7 @@ const configBase: NextAuthConfig = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.mustChangePassword = user.mustChangePassword || false;
         // DATABASE_URLが設定されている場合はデータベースから取得
         if (hasDatabaseUrl) {
           try {
@@ -241,12 +320,14 @@ const configBase: NextAuthConfig = {
                 role: true,
                 is_organizer: true,
                 is_banned: true,
+                must_change_password: true,
               },
             });
             if (dbUser) {
               token.role = dbUser.role;
               token.isOrganizer = dbUser.is_organizer;
               token.isBanned = dbUser.is_banned;
+              token.mustChangePassword = dbUser.must_change_password;
             }
           } catch (error) {
             console.error("Failed to fetch user from database:", error);
