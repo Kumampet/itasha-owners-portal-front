@@ -13,7 +13,7 @@ type AppLayoutProps = {
 };
 
 const tabs = [
-  { href: "/app/mypage", label: "ホーム", key: "mypage" },
+  { href: "/app/mypage", label: "マイページ", key: "mypage" },
   { href: "/events", label: "イベント", key: "events" },
 ];
 

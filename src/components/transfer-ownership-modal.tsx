@@ -10,6 +10,7 @@ type TransferOwnershipModalProps = {
     members: Array<{
         id: string;
         name: string | null;
+        displayName?: string | null;
     }>;
     currentUserId: string;
 };
@@ -81,7 +82,7 @@ export function TransferOwnershipModal({
                         <option value="">選択してください</option>
                         {otherMembers.map((member) => (
                             <option key={member.id} value={member.id}>
-                                {member.name || "名前未設定"}
+                                {member.displayName || member.name || "名前未設定"}
                             </option>
                         ))}
                     </select>

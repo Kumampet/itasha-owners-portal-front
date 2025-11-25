@@ -23,11 +23,13 @@ type GroupDetail = {
   leader: {
     id: string;
     name: string | null;
+    displayName?: string | null;
     email: string;
   };
   members: Array<{
     id: string;
     name: string | null;
+    displayName?: string | null;
     email: string;
     status: string;
   }>;
@@ -414,23 +416,31 @@ export default function GroupDetailPage({
                 {group.maxMembers && ` / ${group.maxMembers}人`}
               </p>
               <div className="mt-4 space-y-2">
-                {group.members.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 p-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-zinc-900">
-                        {member.name || "名前未設定"}
-                      </p>
+                {group.members.map((member) => {
+                  const isCurrentUser = member.id === session?.user?.id;
+                  return (
+                    <div
+                      key={member.id}
+                      className="relative flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 p-3 overflow-hidden"
+                    >
+                      {isCurrentUser && (
+                        <div className="absolute -left-4 top-1.5 w-16 bg-emerald-500 text-white text-[10px] font-semibold py-0.5 text-center transform -rotate-45 shadow-md">
+                          You
+                        </div>
+                      )}
+                      <div className={isCurrentUser ? "pl-6" : ""}>
+                        <p className="text-sm font-medium text-zinc-900">
+                          {member.displayName || member.name || "名前未設定"}
+                        </p>
+                      </div>
+                      {member.id === group.leader.id && (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                          オーナー
+                        </span>
+                      )}
                     </div>
-                    {member.id === group.leader.id && (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                        オーナー
-                      </span>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           </div>

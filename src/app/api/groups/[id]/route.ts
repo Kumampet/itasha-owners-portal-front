@@ -35,6 +35,7 @@ export async function GET(
           select: {
             id: true,
             name: true,
+            display_name: true,
             email: true,
           },
         },
@@ -44,6 +45,7 @@ export async function GET(
               select: {
                 id: true,
                 name: true,
+                display_name: true,
                 email: true,
               },
             },
@@ -90,10 +92,16 @@ export async function GET(
       memberCount: group._count.members,
       isLeader: group.leader_user_id === session.user.id,
       event: group.event,
-      leader: group.leader,
+      leader: {
+        id: group.leader.id,
+        name: group.leader.name,
+        displayName: group.leader.display_name,
+        email: group.leader.email,
+      },
       members: group.members.map((m) => ({
         id: m.user.id,
         name: m.user.name,
+        displayName: m.user.display_name,
         email: m.user.email,
         status: m.status,
       })),
