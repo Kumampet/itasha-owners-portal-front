@@ -58,7 +58,7 @@ const getAdapter = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     adapter = PrismaAdapter(prisma) as any; // TODO: 型エラーを回避するための一時的な対応
     return adapter;
-  } catch (error) {
+  } catch {
     adapter = undefined;
     return undefined;
   }
@@ -161,7 +161,7 @@ const configBase: NextAuthConfig = {
             customProfileUrl: user.custom_profile_url,
             mustChangePassword: dbUser?.must_change_password || false,
           };
-        } catch (error) {
+        } catch {
           return null;
         }
       },
@@ -251,7 +251,7 @@ const configBase: NextAuthConfig = {
             session.user.customProfileUrl = dbUser.custom_profile_url;
             session.user.displayName = dbUser.display_name;
           }
-        } catch (error) {
+        } catch {
           // エラーは無視して続行
         }
       }

@@ -32,7 +32,7 @@ function verifyBasicAuth(request: NextRequest): boolean {
 
     // ユーザー名とパスワードを検証
     return username === basicAuthUsername && password === basicAuthPassword;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -68,7 +68,7 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith("/app/") || pathname.startsWith("/admin")) {
       session = await auth();
     }
-  } catch (error) {
+  } catch {
     // 無効なセッションクッキー（JWEInvalidなど）の場合は無視して続行
     // これはNEXTAUTH_SECRETが変更された場合や古いセッションクッキーが残っている場合に発生する
     // NextAuth.js v5では、このエラーは内部で処理されるべきだが、念のため明示的に処理
@@ -100,7 +100,7 @@ export async function middleware(request: NextRequest) {
     let adminSession = null;
     try {
       adminSession = await auth();
-    } catch (error) {
+    } catch {
       // エラーは無視
     }
 

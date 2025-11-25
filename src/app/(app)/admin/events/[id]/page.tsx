@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, use, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import EventForm, { EventFormData } from "@/components/event-form";

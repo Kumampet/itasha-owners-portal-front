@@ -10,6 +10,7 @@ interface ModalBaseProps {
 
 export function ModalBase({
     isOpen,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onClose: _onClose,
     title,
     children,

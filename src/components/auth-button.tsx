@@ -13,6 +13,7 @@ type AuthButtonProps = {
  * 認証が必要なアクション用のボタンコンポーネント
  * 未ログイン時はDisableにしてツールチップを表示
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function AuthButton({ eventId: _eventId, className, children }: AuthButtonProps) {
   const { data: session, status } = useSession();
 
