@@ -70,25 +70,6 @@ export default function GroupDetailPage({
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [processing, setProcessing] = useState(false);
 
-
-  useEffect(() => {
-    if (activeTab === "messages" && group) {
-      fetchMessages();
-    }
-  }, [activeTab, group, fetchMessages]);
-
-  // メッセージ読み込み後にスクロールを最下部に移動
-  useEffect(() => {
-    if (messages.length > 0 && !messagesLoading) {
-      setTimeout(() => {
-        const messagesContainer = document.querySelector('[data-messages-container]');
-        if (messagesContainer) {
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-      }, 100);
-    }
-  }, [messages, messagesLoading]);
-
   const fetchGroup = useCallback(async () => {
     try {
       const res = await fetch(`/api/groups/${id}`);
