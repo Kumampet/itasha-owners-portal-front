@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
     "/app/groups",
   ];
 
-  // 管理画面のパス（管理者権限が必要）
+  // 管理画面のパス（管理者またはオーガナイザー権限が必要）
   const isAdminPath = pathname.startsWith("/admin");
 
   // /admin へのアクセス時のリダイレクト処理
@@ -64,6 +64,29 @@ export async function middleware(request: NextRequest) {
 
     // ログイン済みの場合はダッシュボードにリダイレクト
     return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+  }
+
+  // 管理画面のアクセス制御（/admin/auth と /admin/change-password を除く）
+  if (isAdminPath && pathname !== "/admin/auth" && pathname !== "/admin/change-password") {
+    // セッションが取得できた場合のみ権限チェック
+    if (session) {
+      // 管理者またはオーガナイザーのみアクセス可能
+      if (session.user?.role !== "ADMIN" && session.user?.role !== "ORGANIZER") {
+        return NextResponse.redirect(new URL("/app/mypage", request.url));
+      }
+    } else {
+      // セッションが取得できない場合は、クッキーを確認
+      const sessionCookie = request.cookies.get("__Secure-authjs.session-token");
+      const jwtCookie = request.cookies.get("__Secure-authjs.pkce.code_verifier");
+      
+      if (!sessionCookie && !jwtCookie) {
+        // セッションクッキーが存在しない場合は、未ログインと判断してリダイレクト
+        const signInUrl = new URL("/admin/auth", request.url);
+        signInUrl.searchParams.set("callbackUrl", pathname);
+        return NextResponse.redirect(signInUrl);
+      }
+      // セッションクッキーが存在するが、middlewareで取得できない場合はクライアントサイドでチェック
+    }
   }
 
   // ダッシュボード（/app）は /app/mypage にリダイレクト
@@ -98,29 +121,6 @@ export async function middleware(request: NextRequest) {
 
     // セッションクッキーが存在する場合は、クライアントサイドでセッションを確認させる
     // データベースセッションを使用する場合、middleware.tsではセッションが取得できない可能性がある
-  }
-
-  // 管理画面のアクセス制御
-  if (isAdminPath && pathname !== "/admin/auth" && pathname !== "/admin/change-password") {
-    // 管理画面のログインページとパスワード変更ページ以外は認証が必要
-    if (!session) {
-      // セッションクッキーを確認
-      const sessionCookie = request.cookies.get("__Secure-authjs.session-token");
-      const jwtCookie = request.cookies.get("__Secure-authjs.pkce.code_verifier");
-      
-      if (!sessionCookie && !jwtCookie) {
-        // セッションクッキーが存在しない場合は、未ログインと判断してリダイレクト
-        const signInUrl = new URL("/admin/auth", request.url);
-        signInUrl.searchParams.set("callbackUrl", pathname);
-        return NextResponse.redirect(signInUrl);
-      }
-      // セッションクッキーが存在するが、middlewareで取得できない場合はクライアントサイドでチェック
-    } else {
-      // 管理者またはオーガナイザーのみアクセス可能
-      if (session.user?.role !== "ADMIN" && session.user?.role !== "ORGANIZER") {
-        return NextResponse.redirect(new URL("/app/mypage", request.url));
-      }
-    }
   }
 
   // ログイン済みでログインページにアクセスしている場合

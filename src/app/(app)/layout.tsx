@@ -249,13 +249,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  // 管理画面配下の場合は通常のレイアウトを適用しない
-  if (pathname?.startsWith("/admin")) {
-    return <>{children}</>;
-  }
-
   // メニューが開いている時はスクロールを無効化
+  // Hooksのルールに従い、早期リターンの前にすべてのHooksを呼ぶ
   useEffect(() => {
+    if (pathname?.startsWith("/admin")) {
+      // 管理画面ではスクロール制御は不要
+      return;
+    }
     if (isMenuOpen) {
       document.body.style.overflow = "hidden";
     } else {
@@ -264,7 +264,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isMenuOpen]);
+  }, [isMenuOpen, pathname]);
+
+  // 管理画面配下の場合は通常のレイアウトを適用しない
+  if (pathname?.startsWith("/admin")) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="flex min-h-screen">
