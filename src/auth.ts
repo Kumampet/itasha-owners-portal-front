@@ -284,7 +284,7 @@ const configBase: NextAuthConfig = {
               token.isBanned = dbUser.is_banned;
               token.mustChangePassword = dbUser.must_change_password;
             }
-          } catch (error) {
+          } catch {
             // エラーは無視して続行
           }
         }
