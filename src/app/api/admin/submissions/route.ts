@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     const search = searchParams.get("search");
 
     // フィルター条件を構築
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (status && status !== "ALL") {
       where.status = status;
     }
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
     }
 
     // ソート条件を構築
-    const orderBy: any = {};
+    const orderBy: Record<string, string> = {};
     if (sortBy === "event_date") {
       orderBy.event_date = sortOrder;
     } else if (sortBy === "name") {

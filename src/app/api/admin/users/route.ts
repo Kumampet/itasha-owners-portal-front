@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     const role = searchParams.get("role");
 
     // フィルター条件を構築
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (role && role !== "ALL") {
       where.role = role;
     }
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     }
 
     // ソート条件を構築
-    const orderBy: any = {};
+    const orderBy: Record<string, string> = {};
     orderBy[sortBy] = sortOrder;
 
     const users = await prisma.user.findMany({
