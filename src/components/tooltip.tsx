@@ -43,8 +43,10 @@ export function Tooltip({
         clearTimeout(fadeTimeoutRef.current);
         fadeTimeoutRef.current = null;
       }
-      setIsFading(false);
-      return;
+      // クリーンアップ関数でフェード状態をリセット
+      return () => {
+        setIsFading(false);
+      };
     }
 
     // 3秒後にフェードアウト開始
@@ -118,7 +120,7 @@ export function Tooltip({
     setIsVisible((prev) => !prev);
   };
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = () => {
     // タッチイベントで処理済みの場合はスキップ
     if (touchHandledRef.current) {
       touchHandledRef.current = false;

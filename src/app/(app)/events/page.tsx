@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 import { AuthButton } from "@/components/auth-button";
 
 type DbEvent = {
@@ -43,7 +42,6 @@ function formatDateShort(dateString: string | null) {
 export default function EventsPage() {
   const [events, setEvents] = useState<DbEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const { data: session } = useSession();
 
   useEffect(() => {
     async function fetchEvents() {
