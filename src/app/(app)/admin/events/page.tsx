@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 
 type Event = {
@@ -30,11 +30,7 @@ export default function AdminEventsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    fetchEvents();
-  }, [filterStatus, sortBy, sortOrder, searchQuery]);
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -56,7 +52,11 @@ export default function AdminEventsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterStatus, sortBy, sortOrder, searchQuery]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {

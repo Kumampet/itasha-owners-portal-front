@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 
 export default function ChangePasswordPage() {
   const router = useRouter();
-  const { data: session, update } = useSession();
+  const { update } = useSession();
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",

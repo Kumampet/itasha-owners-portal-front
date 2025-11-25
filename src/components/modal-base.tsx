@@ -10,7 +10,7 @@ interface ModalBaseProps {
 
 export function ModalBase({
     isOpen,
-    onClose,
+    onClose: _onClose,
     title,
     children,
     footer,

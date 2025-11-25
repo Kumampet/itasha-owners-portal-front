@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 // GET /api/groups
 // ユーザーが参加している団体一覧を取得
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const session = await auth();
 

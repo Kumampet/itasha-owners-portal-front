@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -39,7 +39,6 @@ export default function AdminEventDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const router = useRouter();
   const { data: session } = useSession();
   const { id } = use(params);
   const [event, setEvent] = useState<Event | null>(null);
@@ -79,11 +78,7 @@ export default function AdminEventDetailPage({
     (session?.user?.role === "ADMIN" || 
      (session?.user?.role === "ORGANIZER" && event.organizer_user?.id === session.user.id));
 
-  useEffect(() => {
-    fetchEvent();
-  }, [id]);
-
-  const fetchEvent = async () => {
+  const fetchEvent = useCallback(async () => {
     try {
       const res = await fetch(`/api/admin/events/${id}`);
       if (!res.ok) {
@@ -119,7 +114,11 @@ export default function AdminEventDetailPage({
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchEvent();
+  }, [fetchEvent]);
 
   const handleSave = async (approvalStatus: "DRAFT" | "PENDING" | "APPROVED") => {
     setSaving(true);

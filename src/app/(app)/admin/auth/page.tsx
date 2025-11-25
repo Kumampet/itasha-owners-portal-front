@@ -46,7 +46,7 @@ export default function AdminAuthPage() {
         }
         router.refresh();
       }
-    } catch (error) {
+    } catch {
       setError("ログインに失敗しました。もう一度お試しください。");
       setIsLoading(false);
     }

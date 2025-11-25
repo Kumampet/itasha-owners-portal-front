@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -70,15 +70,12 @@ export default function GroupDetailPage({
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    fetchGroup();
-  }, [id]);
 
   useEffect(() => {
     if (activeTab === "messages" && group) {
       fetchMessages();
     }
-  }, [activeTab, group]);
+  }, [activeTab, group, fetchMessages]);
 
   // メッセージ読み込み後にスクロールを最下部に移動
   useEffect(() => {
@@ -92,7 +89,7 @@ export default function GroupDetailPage({
     }
   }, [messages, messagesLoading]);
 
-  const fetchGroup = async () => {
+  const fetchGroup = useCallback(async () => {
     try {
       const res = await fetch(`/api/groups/${id}`);
       if (!res.ok) {
@@ -107,9 +104,13 @@ export default function GroupDetailPage({
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const fetchMessages = async () => {
+  useEffect(() => {
+    fetchGroup();
+  }, [fetchGroup]);
+
+  const fetchMessages = useCallback(async () => {
     setMessagesLoading(true);
     try {
       const res = await fetch(`/api/groups/${id}/messages`);
@@ -124,7 +125,17 @@ export default function GroupDetailPage({
     } finally {
       setMessagesLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchGroup();
+  }, [fetchGroup]);
+
+  useEffect(() => {
+    if (activeTab === "messages" && group) {
+      fetchMessages();
+    }
+  }, [activeTab, group, fetchMessages]);
 
   const handleSendMessage = async () => {
     if (!messageContent.trim()) {

@@ -145,7 +145,7 @@ export async function PATCH(
       });
 
       // イベントを更新
-      const updatedEvent = await tx.event.update({
+      await tx.event.update({
         where: { id },
         data: {
           name: body.name,

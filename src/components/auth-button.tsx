@@ -13,7 +13,7 @@ type AuthButtonProps = {
  * 認証が必要なアクション用のボタンコンポーネント
  * 未ログイン時はDisableにしてツールチップを表示
  */
-export function AuthButton({ eventId, className, children }: AuthButtonProps) {
+export function AuthButton({ eventId: _eventId, className, children }: AuthButtonProps) {
   const { data: session, status } = useSession();
 
   if (status === "loading") {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 type Submission = {
   id: string;
@@ -34,11 +34,7 @@ export default function AdminSubmissionsPage() {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    fetchSubmissions();
-  }, [filterStatus, sortBy, sortOrder, searchQuery]);
-
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -60,7 +56,11 @@ export default function AdminSubmissionsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterStatus, sortBy, sortOrder, searchQuery]);
+
+  useEffect(() => {
+    fetchSubmissions();
+  }, [fetchSubmissions]);
 
   const handleProcess = async (submissionId: string, action: "PROCESSED" | "REJECTED") => {
     setProcessing(true);

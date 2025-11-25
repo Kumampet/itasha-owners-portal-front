@@ -6,7 +6,6 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 
 export default function AdminNewOrganizerPage() {
-  const router = useRouter();
   const { data: session, status } = useSession();
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -57,11 +56,11 @@ export default function AdminNewOrganizerPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "アカウントの作成に失敗しました");
+        const errorData = await res.json();
+        throw new Error(errorData.error || "アカウントの作成に失敗しました");
       }
 
-      const data = await res.json();
+      await res.json();
       setCreatedAccount({ email: formData.email, password });
       setSuccess(true);
       setFormData({ email: "", name: "" });
