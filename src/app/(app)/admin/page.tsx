@@ -1,64 +1,40 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 
-export default function AdminDashboard() {
-  const { data: session } = useSession();
+export default function AdminPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const hasRedirected = useRef(false);
 
-  const menuItems = [
-    {
-      title: "イベント管理",
-      description: "イベントの承認、作成、編集、削除",
-      href: "/admin/events",
-      icon: "📅",
-    },
-    {
-      title: "ユーザー管理",
-      description: "ユーザー一覧、権限管理、BAN管理",
-      href: "/admin/users",
-      icon: "👥",
-    },
-    {
-      title: "情報提供フォーム",
-      description: "ユーザーからの情報提供を確認・処理",
-      href: "/admin/submissions",
-      icon: "📝",
-    },
-    {
-      title: "オーガナイザーアカウント作成",
-      description: "イベントオーガナイザー用のアカウントを作成",
-      href: "/admin/organizers/new",
-      icon: "👤",
-    },
-  ];
+  useEffect(() => {
+    if (status === "loading" || hasRedirected.current) return;
 
+    // 未ログインの場合は管理画面ログインページにリダイレクト
+    if (!session) {
+      hasRedirected.current = true;
+      router.replace("/admin/auth?callbackUrl=/admin/dashboard");
+      return;
+    }
+
+    // 管理者またはオーガナイザーのみアクセス可能
+    if (session.user.role !== "ADMIN" && !session.user.isOrganizer) {
+      hasRedirected.current = true;
+      router.replace("/app/mypage");
+      return;
+    }
+
+    // ログイン済みの場合はダッシュボードにリダイレクト
+    hasRedirected.current = true;
+    router.replace("/admin/dashboard");
+  }, [session, status, router]);
+
+  // ローディング中
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
-          管理ダッシュボード
-        </h1>
-        <p className="mt-2 text-sm text-zinc-600 sm:text-base">
-          管理者: {session?.user?.email}
-        </p>
-      </div>
-
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {menuItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="group rounded-lg border border-zinc-200 bg-white p-6 transition hover:border-zinc-900 hover:shadow-md"
-          >
-            <div className="mb-4 text-3xl">{item.icon}</div>
-            <h2 className="mb-2 text-lg font-semibold text-zinc-900">
-              {item.title}
-            </h2>
-            <p className="text-sm text-zinc-600">{item.description}</p>
-          </Link>
-        ))}
-      </div>
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
     </div>
   );
 }

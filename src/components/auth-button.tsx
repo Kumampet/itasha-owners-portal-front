@@ -49,7 +49,7 @@ export function AuthButton({ eventId, className, children }: AuthButtonProps) {
       className={className}
       onClick={() => {
         // TODO: 実際の「気になる」機能を実装
-        console.log("気になる機能を実装予定", eventId);
+        // 気になる機能を実装予定
       }}
     >
       {children}

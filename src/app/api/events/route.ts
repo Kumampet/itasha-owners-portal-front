@@ -60,20 +60,6 @@ const getCachedEvents = unstable_cache(
 // GET /api/events
 // 承認済みのイベントリストをDBから取得するAPI
 export async function GET() {
-  // 環境変数のデバッグ情報（本番環境でも出力）
-  console.log("Environment check:", {
-    hasDatabaseUrl: !!process.env.DATABASE_URL,
-    databaseUrlLength: process.env.DATABASE_URL?.length || 0,
-    nodeEnv: process.env.NODE_ENV,
-    allEnvKeys: Object.keys(process.env).filter(
-      (key) =>
-        key.includes("DATABASE") ||
-        key.includes("DB") ||
-        key.includes("MYSQL") ||
-        key.includes("MARIA")
-    ),
-  });
-
   try {
     const events = await getCachedEvents();
     return NextResponse.json(events);
@@ -83,14 +69,6 @@ export async function GET() {
       error instanceof Error ? error.message : "Unknown error";
     const errorName = error instanceof Error ? error.name : "Error";
 
-    // エラーの詳細をログに出力（Amplifyのログで確認可能）
-    console.error("Error details:", {
-      name: errorName,
-      message: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-
-    // 本番環境でもエラーメッセージを返す（セキュリティ上問題ない範囲で）
     return NextResponse.json(
       {
         error: "Failed to fetch events.",

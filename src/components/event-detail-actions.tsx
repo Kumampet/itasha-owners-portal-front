@@ -20,7 +20,7 @@ export function EventDetailActions({ eventId }: EventDetailActionsProps) {
           className="flex-1 rounded-full border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
           onClick={() => {
             // TODO: 実際の「気になる」機能を実装
-            console.log("気になる機能を実装予定", eventId);
+            // 気になる機能を実装予定
           }}
         >
           気になる

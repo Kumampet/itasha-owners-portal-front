@@ -10,7 +10,6 @@ function AuthForm() {
   const callbackUrl = searchParams.get("callbackUrl") || "/app/mypage";
   const [isLoading, setIsLoading] = useState<string | null>(null);
 
-  console.log({ callbackUrl })
 
   const handleSignIn = async (provider: "google" | "twitter") => {
     setIsLoading(provider);

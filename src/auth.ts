@@ -31,15 +31,8 @@ const getAdapter = () => {
   try {
     // DATABASE_URLが設定されているか再確認（実行時に再チェック）
     const databaseUrl = process.env.DATABASE_URL;
-    console.log("[Auth Debug] getAdapter - DATABASE_URL check:", {
-      exists: !!databaseUrl,
-      type: typeof databaseUrl,
-      length: databaseUrl ? databaseUrl.length : 0,
-      prefix: databaseUrl ? databaseUrl.substring(0, 20) : "not set",
-    });
 
     if (!databaseUrl || typeof databaseUrl !== "string" || databaseUrl.trim() === "") {
-      console.warn("[Auth Debug] DATABASE_URL is not set at runtime. Skipping Prisma Adapter initialization.");
       adapter = undefined;
       return undefined;
     }
@@ -64,26 +57,8 @@ const getAdapter = () => {
     // DATABASE_URLが未設定の場合は、この時点でエラーが発生する
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     adapter = PrismaAdapter(prisma) as any; // TODO: 型エラーを回避するための一時的な対応
-    console.log("[Auth Debug] Prisma Adapter created successfully");
     return adapter;
   } catch (error) {
-    console.error("[Auth Debug] Failed to create Prisma Adapter:", error);
-    if (error instanceof Error) {
-      console.error("[Auth Debug] Error details:", {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      });
-      // DATABASE_URL関連のエラーの場合は詳細を出力
-      if (error.message.includes("replace") || error.message.includes("DATABASE_URL")) {
-        console.error("[Auth Debug] DATABASE_URL at error time:", {
-          exists: !!process.env.DATABASE_URL,
-          type: typeof process.env.DATABASE_URL,
-          value: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + "..." : "not set",
-        });
-      }
-    }
-    console.warn("[Auth Debug] Falling back to JWT strategy due to Prisma Adapter error.");
     adapter = undefined;
     return undefined;
   }
@@ -98,15 +73,6 @@ const useDatabaseStrategy =
   process.env.NODE_ENV === "production" &&
   hasDatabaseUrl &&
   adapterInstance !== undefined;
-
-// デバッグ: セッション戦略をログに出力
-console.log("[Auth Debug] Session strategy:", useDatabaseStrategy ? "database" : "jwt");
-console.log("[Auth Debug] hasDatabaseUrl:", hasDatabaseUrl);
-console.log("[Auth Debug] adapterInstance:", adapterInstance ? "exists" : "undefined");
-console.log("[Auth Debug] NODE_ENV:", process.env.NODE_ENV);
-console.log("[Auth Debug] GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID ? "設定済み" : "未設定");
-console.log("[Auth Debug] GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET ? "設定済み" : "未設定");
-console.log("[Auth Debug] NEXTAUTH_URL:", process.env.NEXTAUTH_URL || "未設定（自動検出）");
 
 // プロバイダー設定（Google、X、管理画面用Credentials）
 // DATABASE_URLが設定されている場合のみadapterを設定
@@ -136,12 +102,12 @@ const configBase: NextAuthConfig = {
         }
 
         if (!hasDatabaseUrl) {
-          console.error("DATABASE_URL is not set. Cannot authenticate admin user.");
           return null;
         }
 
         try {
           const { prisma } = await import("@/lib/prisma");
+          
           const user = await prisma.user.findUnique({
             where: { email: credentials.email as string },
             select: {
@@ -156,7 +122,11 @@ const configBase: NextAuthConfig = {
             },
           });
 
-          if (!user || !user.password) {
+          if (!user) {
+            return null;
+          }
+
+          if (!user.password) {
             return null;
           }
 
@@ -194,7 +164,6 @@ const configBase: NextAuthConfig = {
             mustChangePassword: dbUser?.must_change_password || false,
           };
         } catch (error) {
-          console.error("Admin authentication error:", error);
           return null;
         }
       },
@@ -206,8 +175,6 @@ const configBase: NextAuthConfig = {
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
-      console.log("[Auth Debug] Redirect callback:", { url, baseUrl });
-
       // URLをパースしてクエリパラメータを確認
       let parsedUrl: URL;
       try {
@@ -220,7 +187,6 @@ const configBase: NextAuthConfig = {
       } catch {
         // URLのパースに失敗した場合は相対パスとして扱う
         const redirectUrl = `${baseUrl}${url}`;
-        console.log("[Auth Debug] URL parse failed, treating as relative:", redirectUrl);
         return redirectUrl;
       }
 
@@ -231,14 +197,12 @@ const configBase: NextAuthConfig = {
           // callbackUrlが相対パスの場合
           if (callbackUrl.startsWith("/")) {
             const redirectUrl = `${baseUrl}${callbackUrl}`;
-            console.log("[Auth Debug] Found callbackUrl in query, redirecting to:", redirectUrl);
             return redirectUrl;
           }
           // callbackUrlが完全なURLの場合、同じオリジンのみ許可
           try {
             const callbackUrlObj = new URL(callbackUrl);
             if (callbackUrlObj.origin === baseUrl) {
-              console.log("[Auth Debug] Found callbackUrl in query (full URL), redirecting to:", callbackUrl);
               return callbackUrl;
             }
           } catch {
@@ -247,26 +211,22 @@ const configBase: NextAuthConfig = {
         }
         // callbackUrlがない場合はマイページにリダイレクト
         const defaultRedirect = `${baseUrl}/app/mypage`;
-        console.log("[Auth Debug] No callbackUrl found, redirecting to default:", defaultRedirect);
         return defaultRedirect;
       }
 
       // urlが相対パスの場合（callbackUrlが指定されている場合）
       if (url.startsWith("/")) {
         const redirectUrl = `${baseUrl}${url}`;
-        console.log("[Auth Debug] Redirecting to relative path:", redirectUrl);
         return redirectUrl;
       }
 
       // 同じオリジンのURLの場合（完全なURLが指定されている場合）
       if (parsedUrl.origin === baseUrl) {
-        console.log("[Auth Debug] Redirecting to same origin:", url);
         return url;
       }
 
       // 外部URLの場合はデフォルトのマイページにリダイレクト
       const defaultRedirect = `${baseUrl}/app/mypage`;
-      console.log("[Auth Debug] External URL, redirecting to default:", defaultRedirect);
       return defaultRedirect;
     },
     async session({ session, user, token }) {
@@ -294,7 +254,7 @@ const configBase: NextAuthConfig = {
             session.user.customProfileUrl = dbUser.custom_profile_url;
           }
         } catch (error) {
-          console.error("Failed to fetch user from database:", error);
+          // エラーは無視して続行
         }
       }
       // jwt strategyの場合
@@ -330,7 +290,7 @@ const configBase: NextAuthConfig = {
               token.mustChangePassword = dbUser.must_change_password;
             }
           } catch (error) {
-            console.error("Failed to fetch user from database:", error);
+            // エラーは無視して続行
           }
         }
       }
@@ -345,9 +305,6 @@ const configBase: NextAuthConfig = {
 // NEXTAUTH_SECRETは開発環境・本番環境問わず必須
 // 実際のGoogleアカウントを使用するため、ダミー値ではなく正規の値を設定すること
 const authSecret = process.env.NEXTAUTH_SECRET;
-
-// デバッグ: NEXTAUTH_SECRETの読み込み状況を確認
-console.log("[Auth Debug] NEXTAUTH_SECRET:", authSecret ? `設定済み（長さ: ${authSecret.length}文字）` : "未設定");
 
 if (!authSecret) {
   const errorMessage =
@@ -390,19 +347,12 @@ const config: NextAuthConfig = {
       // 古いJWTセッションクッキーを無視するため、JWTセッションクッキー名を明示的に設定しない
     }
     : undefined,
-  // エラー時の処理を改善
   events: {
-    async signIn({ user, account }) {
-      // サインイン成功時のログ
-      console.log("[Auth Debug] Sign in successful:", {
-        userId: user.id,
-        email: user.email,
-        provider: account?.provider,
-      });
+    async signIn() {
+      // サインイン成功時の処理
     },
     async signOut() {
-      // サインアウト時のログ
-      console.log("[Auth Debug] Sign out");
+      // サインアウト時の処理
     },
   },
 };

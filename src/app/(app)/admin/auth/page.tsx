@@ -35,17 +35,18 @@ export default function AdminAuthPage() {
         // セッションを更新してmustChangePasswordを取得
         const sessionRes = await fetch("/api/auth/session");
         const sessionData = await sessionRes.json();
-        
+
         // 初回ログイン時はパスワード変更ページにリダイレクト
         if (sessionData?.user?.mustChangePassword) {
           router.push("/admin/change-password");
         } else {
-          router.push(callbackUrl);
+          // callbackUrlが指定されている場合はそれを使用、なければダッシュボードへ
+          const redirectUrl = callbackUrl || "/admin/dashboard";
+          router.push(redirectUrl);
         }
         router.refresh();
       }
     } catch (error) {
-      console.error("Login error:", error);
       setError("ログインに失敗しました。もう一度お試しください。");
       setIsLoading(false);
     }

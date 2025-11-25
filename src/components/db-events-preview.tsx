@@ -31,7 +31,7 @@ export function DbEventsPreview() {
           setStatus("idle");
         }
       } catch (err) {
-        console.error(err);
+        console.error("Failed to fetch events:", err);
         if (mounted) setStatus("error");
       }
     }

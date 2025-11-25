@@ -247,6 +247,12 @@ function MobileHeader({
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  // 管理画面配下の場合は通常のレイアウトを適用しない
+  if (pathname?.startsWith("/admin")) {
+    return <>{children}</>;
+  }
 
   // メニューが開いている時はスクロールを無効化
   useEffect(() => {

@@ -19,18 +19,9 @@ export async function middleware(request: NextRequest) {
   // 認証が必要なパスでのみauth()を呼び出す
   let session = null;
   try {
-    // /app配下のパスにアクセスする場合のみauth()を呼び出す
-    if (pathname.startsWith("/app/")) {
+    // /app配下または/admin配下のパスにアクセスする場合にauth()を呼び出す
+    if (pathname.startsWith("/app/") || pathname.startsWith("/admin")) {
       session = await auth();
-      // デバッグ: セッション取得状況をログに出力（/app配下の全パス）
-      console.log("[Middleware Debug] Session check for", pathname, ":", session ? `取得成功 (user: ${session.user?.email || "unknown"})` : "未取得");
-      if (session) {
-        console.log("[Middleware Debug] Session details:", {
-          userId: session.user?.id,
-          email: session.user?.email,
-          name: session.user?.name,
-        });
-      }
     }
   } catch (error) {
     // 無効なセッションクッキー（JWEInvalidなど）の場合は無視して続行
@@ -38,26 +29,7 @@ export async function middleware(request: NextRequest) {
     // NextAuth.js v5では、このエラーは内部で処理されるべきだが、念のため明示的に処理
     session = null;
 
-    // エラーをログに記録（本番環境でもデバッグのため）
-    if (error instanceof Error) {
-      const errorMessage = error.message || String(error);
-      // JWEInvalidエラーの場合は警告のみ（これは正常な動作）
-      if (
-        errorMessage.includes("JWEInvalid") ||
-        errorMessage.includes("Invalid Compact JWE") ||
-        errorMessage.includes("JWTSessionError")
-      ) {
-        // 無効なセッションクッキーは無視（これは正常な動作）
-        // デバッグのため、本番環境でもログを出力
-        console.warn("[Middleware Debug] Invalid session cookie detected for", pathname, ":", errorMessage);
-      } else {
-        // その他のエラーはログに記録
-        console.error("[Middleware Debug] Auth initialization failed for", pathname, ":", error);
-        if (error.stack) {
-          console.error("[Middleware Debug] Error stack:", error.stack);
-        }
-      }
-    }
+    // エラーは無視して続行
   }
 
   // 認証が必要なパス
@@ -69,6 +41,30 @@ export async function middleware(request: NextRequest) {
 
   // 管理画面のパス（管理者権限が必要）
   const isAdminPath = pathname.startsWith("/admin");
+
+  // /admin へのアクセス時のリダイレクト処理
+  if (pathname === "/admin") {
+    // セッションを取得（管理画面用）
+    let adminSession = null;
+    try {
+      adminSession = await auth();
+    } catch (error) {
+      // エラーは無視
+    }
+
+    if (!adminSession) {
+      // 未ログインの場合は管理画面ログインページにリダイレクト
+      return NextResponse.redirect(new URL("/admin/auth?callbackUrl=/admin/dashboard", request.url));
+    }
+
+    // 管理者またはオーガナイザーのみアクセス可能
+    if (adminSession.user?.role !== "ADMIN" && !adminSession.user?.isOrganizer) {
+      return NextResponse.redirect(new URL("/app/mypage", request.url));
+    }
+
+    // ログイン済みの場合はダッシュボードにリダイレクト
+    return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+  }
 
   // ダッシュボード（/app）は /app/mypage にリダイレクト
   if (pathname === "/app") {
@@ -87,11 +83,6 @@ export async function middleware(request: NextRequest) {
   // データベースセッションを使用する場合、middleware.ts（Edge Runtime）ではセッションが取得できない可能性がある
   // その場合、クライアントサイドでセッションを確認し、必要に応じてリダイレクトする
   if (isProtectedPath && !session) {
-    // セッション取得に失敗した場合のログ
-    console.warn("[Middleware Debug] Session not found for protected path:", pathname);
-    console.warn("[Middleware Debug] This may be due to Edge Runtime limitations with database sessions");
-    console.warn("[Middleware Debug] Client-side session check will be performed instead");
-
     // クライアントサイドのuseSessionに任せるため、リダイレクトしない
     // ただし、明らかに未ログインの場合はリダイレクトする
     // セッションクッキーが存在しない場合は、未ログインと判断
@@ -110,18 +101,25 @@ export async function middleware(request: NextRequest) {
   }
 
   // 管理画面のアクセス制御
-  if (isAdminPath && pathname !== "/admin/auth") {
-    // 管理画面のログインページ以外は認証が必要
+  if (isAdminPath && pathname !== "/admin/auth" && pathname !== "/admin/change-password") {
+    // 管理画面のログインページとパスワード変更ページ以外は認証が必要
     if (!session) {
-      const signInUrl = new URL("/admin/auth", request.url);
-      signInUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(signInUrl);
-    }
-
-    // 管理者権限がない場合はマイページにリダイレクト
-    // セッションからroleを取得（middlewareでは直接取得できない場合があるため、クライアントサイドでもチェック）
-    if (session.user?.role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/app/mypage", request.url));
+      // セッションクッキーを確認
+      const sessionCookie = request.cookies.get("__Secure-authjs.session-token");
+      const jwtCookie = request.cookies.get("__Secure-authjs.pkce.code_verifier");
+      
+      if (!sessionCookie && !jwtCookie) {
+        // セッションクッキーが存在しない場合は、未ログインと判断してリダイレクト
+        const signInUrl = new URL("/admin/auth", request.url);
+        signInUrl.searchParams.set("callbackUrl", pathname);
+        return NextResponse.redirect(signInUrl);
+      }
+      // セッションクッキーが存在するが、middlewareで取得できない場合はクライアントサイドでチェック
+    } else {
+      // 管理者またはオーガナイザーのみアクセス可能
+      if (session.user?.role !== "ADMIN" && !session.user?.isOrganizer) {
+        return NextResponse.redirect(new URL("/app/mypage", request.url));
+      }
     }
   }
 
@@ -149,7 +147,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ログイン済みで管理画面ログインページにアクセスしている場合
-  if (pathname === "/admin/auth" && session && session.user?.role === "ADMIN") {
+  if (pathname === "/admin/auth" && session && (session.user?.role === "ADMIN" || session.user?.isOrganizer)) {
     const callbackUrl = request.nextUrl.searchParams.get("callbackUrl") || "/admin";
     return NextResponse.redirect(new URL(callbackUrl, request.url));
   }

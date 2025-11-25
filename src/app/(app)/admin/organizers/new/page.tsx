@@ -57,7 +57,6 @@ export default function AdminNewOrganizerPage() {
       setSuccess(true);
       setFormData({ email: "", name: "" });
     } catch (error) {
-      console.error("Failed to create organizer account:", error);
       setError(
         error instanceof Error ? error.message : "アカウントの作成に失敗しました"
       );

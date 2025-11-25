@@ -48,9 +48,8 @@ export default function ChangePasswordPage() {
 
       // セッションを更新
       await update();
-      router.push("/admin");
+      router.push("/admin/dashboard");
     } catch (error) {
-      console.error("Failed to change password:", error);
       setError(
         error instanceof Error ? error.message : "パスワードの変更に失敗しました"
       );
