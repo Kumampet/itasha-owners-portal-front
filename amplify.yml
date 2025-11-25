@@ -16,8 +16,6 @@ applications:
             - 'echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env'
             - 'echo "TWITTER_CLIENT_ID=$TWITTER_CLIENT_ID" >> .env'
             - 'echo "TWITTER_CLIENT_SECRET=$TWITTER_CLIENT_SECRET" >> .env'
-            - 'echo "BASIC_AUTH_USERNAME=$BASIC_AUTH_USERNAME" >> .env'
-            - 'echo "BASIC_AUTH_PASSWORD=$BASIC_AUTH_PASSWORD" >> .env'
             - npm run build
       artifacts:
         baseDirectory: .next
