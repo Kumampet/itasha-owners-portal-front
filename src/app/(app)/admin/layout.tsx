@@ -88,6 +88,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { href: "/admin/events", label: "イベント管理", icon: "📅" },
     { href: "/admin/users", label: "ユーザー管理", icon: "👥" },
     { href: "/admin/submissions", label: "情報提供フォーム", icon: "📝" },
+  ];
+
+  // adminのみ表示するメニュー項目
+  const adminOnlyMenuItems = [
     { href: "/admin/organizers/new", label: "オーガナイザー作成", icon: "👤" },
   ];
 
@@ -137,6 +141,26 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </Link>
             );
           })}
+          {/* adminのみ表示するメニュー項目 */}
+          {session.user.role === "ADMIN" &&
+            adminOnlyMenuItems.map((item) => {
+              const isActive = pathname === item.href || pathname?.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+                    isActive
+                      ? "bg-zinc-900 text-white"
+                      : "text-zinc-700 hover:bg-zinc-50"
+                  }`}
+                  onClick={onLinkClick}
+                >
+                  <span>{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
         </div>
       </nav>
       <div className="border-t border-zinc-200 p-4">

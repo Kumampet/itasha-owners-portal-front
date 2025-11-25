@@ -31,6 +31,10 @@ export default function AdminDashboard() {
       href: "/admin/submissions",
       icon: "📝",
     },
+  ];
+
+  // adminのみ表示するメニュー項目
+  const adminOnlyMenuItems = [
     {
       title: "オーガナイザーアカウント作成",
       description: "イベントオーガナイザー用のアカウントを作成",
@@ -64,6 +68,21 @@ export default function AdminDashboard() {
             <p className="text-sm text-zinc-600">{item.description}</p>
           </Link>
         ))}
+        {/* adminのみ表示するメニュー項目 */}
+        {session?.user?.role === "ADMIN" &&
+          adminOnlyMenuItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="group rounded-lg border border-zinc-200 bg-white p-6 transition hover:border-zinc-900 hover:shadow-md"
+            >
+              <div className="mb-4 text-3xl">{item.icon}</div>
+              <h2 className="mb-2 text-lg font-semibold text-zinc-900">
+                {item.title}
+              </h2>
+              <p className="text-sm text-zinc-600">{item.description}</p>
+            </Link>
+          ))}
       </div>
     </div>
   );

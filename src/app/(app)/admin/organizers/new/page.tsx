@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 
 export default function AdminNewOrganizerPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -17,6 +19,13 @@ export default function AdminNewOrganizerPage() {
     email: string;
     password: string;
   } | null>(null);
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session || session.user?.role !== "ADMIN") {
+      return;
+    }
+  }, [session, status]);
 
   const generatePassword = () => {
     const length = 12;
@@ -64,6 +73,36 @@ export default function AdminNewOrganizerPage() {
       setSaving(false);
     }
   };
+
+  // ローディング中
+  if (status === "loading") {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+      </div>
+    );
+  }
+
+  // admin以外はアクセス拒否
+  if (!session || session.user?.role !== "ADMIN") {
+    return (
+      <div className="w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+        <div className="mb-6">
+          <Link
+            href="/admin"
+            className="text-sm text-zinc-600 hover:text-zinc-900"
+          >
+            ← ダッシュボードに戻る
+          </Link>
+        </div>
+        <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center">
+          <p className="text-lg font-semibold text-zinc-900">
+            この画面へのアクセスは許可されていません。
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
