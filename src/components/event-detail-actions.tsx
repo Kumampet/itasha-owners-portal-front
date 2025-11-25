@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import Link from "next/link";
+import { Tooltip } from "@/components/tooltip";
 
 type EventDetailActionsProps = {
   eventId: string;
@@ -11,7 +11,7 @@ export function EventDetailActions({ eventId }: EventDetailActionsProps) {
   const { data: session } = useSession();
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row">
+    <div className="flex flex-row gap-2">
       <button className="flex-1 rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800">
         エントリー情報を確認
       </button>
@@ -26,12 +26,21 @@ export function EventDetailActions({ eventId }: EventDetailActionsProps) {
           気になる
         </button>
       ) : (
-        <Link
-          href={`/app/auth?callbackUrl=/events/${eventId}`}
-          className="flex-1 rounded-full border border-zinc-200 px-4 py-2 text-center text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+        <Tooltip
+          content="この機能はログインすることでご利用いただけます。"
+          disabled={false}
+          arrowPosition="right"
         >
-          ログインして気になる
-        </Link>
+          <button
+            aria-disabled="true"
+            onClick={(e) => {
+              e.preventDefault();
+            }}
+            className="flex-1 rounded-full border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 cursor-not-allowed opacity-50"
+          >
+            気になる
+          </button>
+        </Tooltip>
       )}
     </div>
   );

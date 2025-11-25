@@ -155,7 +155,7 @@ export default function EventsPage() {
                         eventId={event.id}
                         className="inline-flex items-center justify-center rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
                       >
-                        {session ? "気になる" : "ログインして気になる"}
+                        気になる
                       </AuthButton>
                     </div>
                   </div>

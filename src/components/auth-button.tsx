@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import Link from "next/link";
+import { Tooltip } from "@/components/tooltip";
 
 type AuthButtonProps = {
   eventId: string;
@@ -11,17 +11,14 @@ type AuthButtonProps = {
 
 /**
  * 認証が必要なアクション用のボタンコンポーネント
- * 未ログイン時はログインページにリダイレクト
+ * 未ログイン時はDisableにしてツールチップを表示
  */
 export function AuthButton({ eventId, className, children }: AuthButtonProps) {
   const { data: session, status } = useSession();
 
   if (status === "loading") {
     return (
-      <button
-        disabled
-        className={className}
-      >
+      <button disabled className={className}>
         {children}
       </button>
     );
@@ -29,12 +26,21 @@ export function AuthButton({ eventId, className, children }: AuthButtonProps) {
 
   if (!session) {
     return (
-      <Link
-        href={`/app/auth?callbackUrl=/events/${eventId}`}
-        className={className}
+      <Tooltip
+        content="この機能はログインすることでご利用いただけます。"
+        disabled={false}
+        arrowPosition="right"
       >
-        {children}
-      </Link>
+        <button
+          aria-disabled="true"
+          onClick={(e) => {
+            e.preventDefault();
+          }}
+          className={`${className} cursor-not-allowed opacity-50`}
+        >
+          {children}
+        </button>
+      </Tooltip>
     );
   }
 
