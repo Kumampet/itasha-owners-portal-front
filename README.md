@@ -35,6 +35,12 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 詳細な設定手順については、[認証設定ガイド](docs/authentication-setup.md)を参照してください。
 
+### Basic認証（管理画面用）
+
+`/admin`配下の管理画面に対してBasic認証を設定できます。
+
+詳細な設定手順については、[Basic認証設定ガイド](docs/basic-auth-setup.md)を参照してください。
+
 ## Deploy on AWS Amplify
 
 このリポジトリはAmplify Hostingに接続済みで、`main`ブランチへのpushをトリガーにCI/CDが走る構成です。
@@ -55,7 +61,9 @@ Amplifyコンソールで以下の環境変数を設定してください：
 - `GOOGLE_CLIENT_SECRET`
 - `TWITTER_CLIENT_ID`
 - `TWITTER_CLIENT_SECRET`
+- `BASIC_AUTH_USERNAME`（オプション、管理画面用Basic認証）
+- `BASIC_AUTH_PASSWORD`（オプション、管理画面用Basic認証）
 
 設定場所: Amplify Console → App settings → Environment variables
 
-詳細は[認証設定ガイド](docs/authentication-setup.md#aws-amplifyでの環境変数設定)を参照してください。
+詳細は[認証設定ガイド](docs/authentication-setup.md#aws-amplifyでの環境変数設定)と[Basic認証設定ガイド](docs/basic-auth-setup.md#aws-amplifyでの環境変数設定)を参照してください。

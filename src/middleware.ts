@@ -2,6 +2,51 @@ import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// Basic認証の検証関数
+function verifyBasicAuth(request: NextRequest): boolean {
+  // 開発環境ではBasic認証をスキップ
+  if (process.env.NODE_ENV === "development") {
+    return true;
+  }
+
+  const basicAuthUsername = process.env.BASIC_AUTH_USERNAME;
+  const basicAuthPassword = process.env.BASIC_AUTH_PASSWORD;
+
+  // 環境変数が設定されていない場合はBasic認証をスキップ
+  if (!basicAuthUsername || !basicAuthPassword) {
+    return true; // Basic認証が設定されていない場合は通過
+  }
+
+  const authHeader = request.headers.get("authorization");
+
+  if (!authHeader || !authHeader.startsWith("Basic ")) {
+    return false;
+  }
+
+  try {
+    // Base64デコード（Edge Runtime対応）
+    const base64Credentials = authHeader.substring(6);
+    // atobはEdge Runtimeで使用可能（globalThis経由でアクセス）
+    const credentials = globalThis.atob(base64Credentials);
+    const [username, password] = credentials.split(":");
+
+    // ユーザー名とパスワードを検証
+    return username === basicAuthUsername && password === basicAuthPassword;
+  } catch (error) {
+    return false;
+  }
+}
+
+// Basic認証の401レスポンスを返す関数
+function createBasicAuthResponse(): NextResponse {
+  return new NextResponse(null, {
+    status: 401,
+    headers: {
+      "WWW-Authenticate": 'Basic realm="Admin Area"',
+    },
+  });
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -42,6 +87,13 @@ export async function middleware(request: NextRequest) {
   // 管理画面のパス（管理者またはオーガナイザー権限が必要）
   const isAdminPath = pathname.startsWith("/admin");
 
+  // 管理画面へのアクセス時はBasic認証をチェック（/admin/auth と /admin/change-password を除く）
+  if (isAdminPath && pathname !== "/admin/auth" && pathname !== "/admin/change-password") {
+    if (!verifyBasicAuth(request)) {
+      return createBasicAuthResponse();
+    }
+  }
+
   // /admin へのアクセス時のリダイレクト処理
   if (pathname === "/admin") {
     // セッションを取得（管理画面用）
@@ -78,7 +130,7 @@ export async function middleware(request: NextRequest) {
       // セッションが取得できない場合は、クッキーを確認
       const sessionCookie = request.cookies.get("__Secure-authjs.session-token");
       const jwtCookie = request.cookies.get("__Secure-authjs.pkce.code_verifier");
-      
+
       if (!sessionCookie && !jwtCookie) {
         // セッションクッキーが存在しない場合は、未ログインと判断してリダイレクト
         const signInUrl = new URL("/admin/auth", request.url);
