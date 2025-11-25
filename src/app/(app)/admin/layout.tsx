@@ -91,24 +91,40 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               管理画面
             </Link>
           </div>
-          <nav className="flex-1 space-y-1 p-4">
-            {menuItems.map((item) => {
-              const isActive = pathname === item.href || (item.href !== "/admin/dashboard" && pathname?.startsWith(item.href));
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
-                    isActive
-                      ? "bg-zinc-900 text-white"
-                      : "text-zinc-700 hover:bg-zinc-50"
-                  }`}
-                >
-                  <span>{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+          <nav className="flex-1 p-4">
+            {/* 新規イベントを作成ボタン */}
+            <Link
+              href="/admin/events/new"
+              className={`mb-4 flex items-center gap-3 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium transition ${
+                pathname === "/admin/events/new"
+                  ? "bg-zinc-900 text-white border-zinc-900"
+                  : "bg-white text-zinc-900 hover:bg-zinc-50 hover:border-zinc-900"
+              }`}
+            >
+              <span>➕</span>
+              <span>新規イベントを作成</span>
+            </Link>
+            <div className="mb-4 border-t border-zinc-200"></div>
+            {/* 通常のメニュー項目 */}
+            <div className="space-y-1">
+              {menuItems.map((item) => {
+                const isActive = pathname === item.href || (item.href !== "/admin/dashboard" && pathname?.startsWith(item.href));
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+                      isActive
+                        ? "bg-zinc-900 text-white"
+                        : "text-zinc-700 hover:bg-zinc-50"
+                    }`}
+                  >
+                    <span>{item.icon}</span>
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </nav>
           <div className="border-t border-zinc-200 p-4">
             <div className="mb-2 text-xs text-zinc-600">{session.user.email}</div>

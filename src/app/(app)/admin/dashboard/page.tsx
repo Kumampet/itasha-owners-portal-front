@@ -14,6 +14,12 @@ export default function AdminDashboard() {
       icon: "📅",
     },
     {
+      title: "新規イベントを作成",
+      description: "新しいイベントを作成",
+      href: "/admin/events/new",
+      icon: "➕",
+    },
+    {
       title: "ユーザー管理",
       description: "ユーザー一覧、権限管理、BAN管理",
       href: "/admin/users",
