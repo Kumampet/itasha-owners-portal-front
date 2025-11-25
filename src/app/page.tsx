@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { DbEventsPreview } from "@/components/db-events-preview";
 
 export default function Home() {
   return (
@@ -72,7 +71,7 @@ export default function Home() {
           </div>
         </div>
 
-        <section className="grid gap-4 rounded-3xl bg-zinc-50 p-5 sm:grid-cols-3 sm:gap-6 sm:p-8">
+        <section className="grid gap-4 rounded-3xl bg-zinc-50 p-5 sm:grid-cols-2 sm:gap-6 sm:p-8">
           <div>
             <h2 className="text-sm font-semibold text-zinc-900">
               期限管理のストレスをゼロに
@@ -101,6 +100,15 @@ export default function Home() {
               インフラとして設計されています。
             </p>
           </div>
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-900">
+              イベント主催者（オーガナイザー）向け機能
+            </h2>
+            <p className="mt-2 text-xs leading-relaxed text-zinc-600 sm:text-sm">
+              管理者に申請することで、イベント主催者用アカウントを作成できます。
+              未公開のイベント情報も、公開管理を時限的に操作できます。
+            </p>
+          </div>
         </section>
 
         <section className="space-y-4 rounded-3xl border border-dashed border-zinc-300 bg-white p-5 sm:p-7">
@@ -122,8 +130,6 @@ export default function Home() {
             </li>
           </ul>
         </section>
-
-        <DbEventsPreview />
       </section>
     </main>
   );
