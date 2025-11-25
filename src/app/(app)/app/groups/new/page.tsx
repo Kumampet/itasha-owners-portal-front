@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -11,7 +11,7 @@ type Event = {
   event_date: string;
 };
 
-export default function NewGroupPage() {
+function NewGroupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventId = searchParams.get("eventId");
@@ -291,6 +291,22 @@ export default function NewGroupPage() {
         )}
       </section>
     </main>
+  );
+}
+
+export default function NewGroupPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex-1">
+        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
+          <div className="flex items-center justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+          </div>
+        </section>
+      </main>
+    }>
+      <NewGroupForm />
+    </Suspense>
   );
 }
 
