@@ -52,16 +52,18 @@ function createPrismaClient() {
     const password = decodeURIComponent(dbUrl.password || "");
 
     // PrismaMariaDbはPoolConfigまたは接続文字列を受け取る
+    // サーバーレス環境での接続リークを防ぐため、接続プールの設定を調整
     const poolConfig = {
       host: dbUrl.hostname,
       port: parseInt(dbUrl.port || "3306"),
       user: dbUrl.username,
       password: password,
       database: dbUrl.pathname.slice(1), // 先頭の/を削除
-      connectionLimit: 10,
-      connectTimeout: 60000, // 60秒に延長
-      acquireTimeout: 60000, // 60秒に延長
-      idleTimeout: 300000, // 5分
+      connectionLimit: 5, // 接続数を削減（サーバーレス環境では少ない接続数で運用）
+      connectTimeout: 10000, // 10秒（Amplifyのサーバーレス関数のタイムアウトに合わせて短縮）
+      acquireTimeout: 10000, // 10秒
+      idleTimeout: 60000, // 1分（アイドル接続を早めに解放）
+      queueLimit: 0, // 接続待ちキューを無制限（タイムアウトで制御）
     };
 
     const adapter = new PrismaMariaDb(poolConfig);
@@ -79,6 +81,7 @@ function createPrismaClient() {
 }
 
 // Prisma Clientを遅延初期化（実際に使用される時点で初期化）
+// サーバーレス環境でも接続を共有するため、常にグローバル変数に保存
 let prismaInstance: PrismaClient | undefined;
 
 function getPrisma(): PrismaClient {
@@ -92,10 +95,10 @@ function getPrisma(): PrismaClient {
   }
 
   prismaInstance = createPrismaClient();
-
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.prisma = prismaInstance;
-  }
+  
+  // サーバーレス環境でも接続を共有するため、常にグローバル変数に保存
+  // これにより、各リクエストで新しいPrisma Clientインスタンスが作成されるのを防ぐ
+  globalForPrisma.prisma = prismaInstance;
 
   return prismaInstance;
 }
