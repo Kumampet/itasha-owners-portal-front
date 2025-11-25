@@ -108,3 +108,70 @@ export async function GET(
   }
 }
 
+// DELETE /api/groups/[id]
+// 団体解散（オーナーのみ）
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
+
+    // 団体を取得
+    const group = await prisma.group.findUnique({
+      where: { id },
+    });
+
+    if (!group) {
+      return NextResponse.json(
+        { error: "Group not found" },
+        { status: 404 }
+      );
+    }
+
+    // オーナーのみ解散可能
+    if (group.leader_user_id !== session.user.id) {
+      return NextResponse.json(
+        { error: "Only the group leader can disband the group" },
+        { status: 403 }
+      );
+    }
+
+    // トランザクションで団体と関連データを削除
+    await prisma.$transaction(async (tx) => {
+      // メッセージを削除
+      await tx.groupMessage.deleteMany({
+        where: { group_id: id },
+      });
+
+      // UserEventからgroup_idを削除（nullに更新）
+      await tx.userEvent.updateMany({
+        where: { group_id: id },
+        data: { group_id: null },
+      });
+
+      // 団体を削除
+      await tx.group.delete({
+        where: { id },
+      });
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error disbanding group:", error);
+    return NextResponse.json(
+      { error: "Failed to disband group" },
+      { status: 500 }
+    );
+  }
+}
+

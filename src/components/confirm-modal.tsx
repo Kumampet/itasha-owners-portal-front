@@ -1,5 +1,7 @@
 "use client";
 
+import { ModalBase } from "./modal-base";
+
 interface ConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -19,14 +21,13 @@ export default function ConfirmModal({
   confirmLabel = "はい",
   cancelLabel = "いいえ",
 }: ConfirmModalProps) {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="rounded-lg bg-white p-6 shadow-lg">
-        <h2 className="mb-4 text-lg font-semibold text-zinc-900">{title}</h2>
-        <p className="mb-6 text-sm text-zinc-600">{message}</p>
-        <div className="flex justify-end gap-2">
+    <ModalBase
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      footer={
+        <>
           <button
             type="button"
             onClick={onClose}
@@ -41,9 +42,17 @@ export default function ConfirmModal({
           >
             {confirmLabel}
           </button>
-        </div>
+        </>
+      }
+    >
+      <div className="space-y-2">
+        {message.split("\n").map((line, index) => (
+          <p key={index} className="text-sm text-zinc-600">
+            {line}
+          </p>
+        ))}
       </div>
-    </div>
+    </ModalBase>
   );
 }
 
