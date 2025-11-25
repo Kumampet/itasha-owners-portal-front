@@ -55,6 +55,10 @@ export default async function EventDetailPage({
       payment_due_at: true,
       original_url: true,
       approval_status: true,
+      prefecture: true,
+      city: true,
+      street_address: true,
+      venue_name: true,
       tags: {
         select: {
           tag: {
@@ -118,6 +122,16 @@ export default async function EventDetailPage({
             {event.theme && (
               <p className="text-sm text-zinc-600">{event.theme}</p>
             )}
+            {event.prefecture && (
+              <p className="text-sm text-zinc-600">
+                開催地: {event.prefecture}
+              </p>
+            )}
+            {event.venue_name && (
+              <p className="text-sm text-zinc-600">
+                会場: {event.venue_name}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
@@ -141,6 +155,28 @@ export default async function EventDetailPage({
 
         <section className="rounded-3xl border border-zinc-200 bg-white p-5 sm:p-7">
           <div className="grid gap-4 sm:grid-cols-2">
+            {event.venue_name && (
+              <div className="rounded-2xl border border-zinc-200 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  会場
+                </p>
+                <p className="mt-1 text-sm text-zinc-800">
+                  {event.venue_name}
+                </p>
+              </div>
+            )}
+            {event.prefecture && (
+              <div className="rounded-2xl border border-zinc-200 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  開催地
+                </p>
+                <p className="mt-1 text-sm text-zinc-800">
+                  {event.prefecture}
+                  {event.city && ` ${event.city}`}
+                  {event.street_address && ` ${event.street_address}`}
+                </p>
+              </div>
+            )}
             <Link
               href={event.original_url}
               className="rounded-2xl border border-zinc-200 p-4 transition hover:border-zinc-900"

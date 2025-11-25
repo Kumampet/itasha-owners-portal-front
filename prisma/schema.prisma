@@ -109,6 +109,13 @@ model Event {
   entry_start_at   DateTime?
   payment_due_at   DateTime?
 
+  // 開催地（住所）情報
+  postal_code      String?      // 郵便番号（任意）
+  prefecture       String?      // 都道府県（必須）
+  city             String?      // 市区町村（必須）
+  street_address   String?      // 番地（必須）
+  venue_name       String?      // 固有会場名（任意）
+
   // 承認ステータス (DRAFT, PENDING, APPROVED, REJECTED)
   // DRAFT: 下書き（未公開）、PENDING: 承認待ち、APPROVED: 承認済み、REJECTED: 却下
   approval_status  String       @default("DRAFT")

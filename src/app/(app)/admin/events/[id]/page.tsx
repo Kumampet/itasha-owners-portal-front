@@ -16,6 +16,11 @@ type Event = {
   event_date: string;
   entry_start_at: string | null;
   payment_due_at: string | null;
+  postal_code: string | null;
+  prefecture: string | null;
+  city: string | null;
+  street_address: string | null;
+  venue_name: string | null;
   approval_status: string;
   organizer_user: {
     id: string;
@@ -53,6 +58,11 @@ export default function AdminEventDetailPage({
     event_date: "",
     entry_start_at: "",
     payment_due_at: "",
+    postal_code: "",
+    prefecture: "",
+    city: "",
+    street_address: "",
+    venue_name: "",
   });
 
   // 現在のユーザーがadminまたはイベントのorganizerかどうかを確認
@@ -69,7 +79,10 @@ export default function AdminEventDetailPage({
   const fetchEvent = async () => {
     try {
       const res = await fetch(`/api/admin/events/${id}`);
-      if (!res.ok) throw new Error("Failed to fetch event");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to fetch event: ${res.status}`);
+      }
       const data = await res.json();
       setEvent(data);
       setFormData({
@@ -86,10 +99,16 @@ export default function AdminEventDetailPage({
         payment_due_at: data.payment_due_at
           ? new Date(data.payment_due_at).toISOString().split("T")[0]
           : "",
+        postal_code: data.postal_code || "",
+        prefecture: data.prefecture || "",
+        city: data.city || "",
+        street_address: data.street_address || "",
+        venue_name: data.venue_name || "",
       });
       setTags(data.tags.map((eventTag: { tag: { name: string } }) => eventTag.tag.name));
     } catch (error) {
       console.error("Failed to fetch event:", error);
+      alert(`イベントの取得に失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setLoading(false);
     }
@@ -337,7 +356,7 @@ export default function AdminEventDetailPage({
             disabled={saving}
             className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
           >
-            {saving ? "保存中..." : event?.approval_status === "REJECTED" ? "再申請" : "申請"}
+            {saving ? "保存中..." : event?.approval_status === "REJECTED" ? "保存して再申請" : "保存して申請"}
           </button>
         </EventForm>
       ) : (
@@ -426,6 +445,18 @@ export default function AdminEventDetailPage({
                 <h3 className="text-sm font-medium text-zinc-700">主催者</h3>
                 <p className="mt-1 text-sm text-zinc-600">
                   {event.organizer_user.email}
+                </p>
+              </div>
+            )}
+
+            {event.prefecture && (
+              <div>
+                <h3 className="text-sm font-medium text-zinc-700">開催地</h3>
+                <p className="mt-1 text-sm text-zinc-600">
+                  {event.prefecture}
+                  {event.city && ` ${event.city}`}
+                  {event.street_address && ` ${event.street_address}`}
+                  {event.venue_name && ` ${event.venue_name}`}
                 </p>
               </div>
             )}

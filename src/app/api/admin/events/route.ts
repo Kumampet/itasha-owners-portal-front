@@ -102,6 +102,11 @@ export async function POST(request: Request) {
           payment_due_at: body.payment_due_at
             ? new Date(body.payment_due_at)
             : null,
+          postal_code: body.postal_code || null,
+          prefecture: body.prefecture || null,
+          city: body.city || null,
+          street_address: body.street_address || null,
+          venue_name: body.venue_name || null,
           approval_status: body.approval_status || "DRAFT",
         },
       });
@@ -145,6 +150,11 @@ export async function POST(request: Request) {
           event_date: true,
           entry_start_at: true,
           payment_due_at: true,
+          postal_code: true,
+          prefecture: true,
+          city: true,
+          street_address: true,
+          venue_name: true,
           approval_status: true,
           tags: {
             select: {

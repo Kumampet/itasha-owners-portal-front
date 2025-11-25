@@ -20,6 +20,10 @@ const getCachedEvent = (id: string) =>
           entry_start_at: true,
           payment_due_at: true,
           original_url: true,
+          prefecture: true,
+          city: true,
+          street_address: true,
+          venue_name: true,
           approval_status: true,
           organizer_user: {
             select: {

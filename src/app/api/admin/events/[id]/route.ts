@@ -55,6 +55,11 @@ export async function GET(
         event_date: true,
         entry_start_at: true,
         payment_due_at: true,
+        postal_code: true,
+        prefecture: true,
+        city: true,
+        street_address: true,
+        venue_name: true,
         approval_status: true,
         organizer_user: {
           select: {
@@ -78,8 +83,10 @@ export async function GET(
     return NextResponse.json(event);
   } catch (error) {
     console.error("Error fetching event:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to fetch event" },
+      { error: "Failed to fetch event", message: errorMessage },
       { status: 500 }
     );
   }
@@ -152,6 +159,11 @@ export async function PATCH(
           payment_due_at: body.payment_due_at
             ? new Date(body.payment_due_at)
             : null,
+          postal_code: body.postal_code || null,
+          prefecture: body.prefecture || null,
+          city: body.city || null,
+          street_address: body.street_address || null,
+          venue_name: body.venue_name || null,
           approval_status: body.approval_status,
         },
       });

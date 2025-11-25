@@ -19,6 +19,11 @@ export default function AdminNewEventPage() {
     event_date: "",
     entry_start_at: "",
     payment_due_at: "",
+    postal_code: "",
+    prefecture: "",
+    city: "",
+    street_address: "",
+    venue_name: "",
   });
 
   const handleSave = async (approvalStatus: "DRAFT" | "PENDING") => {
