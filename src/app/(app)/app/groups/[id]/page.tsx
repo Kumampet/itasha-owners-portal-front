@@ -106,10 +106,6 @@ export default function GroupDetailPage({
     }
   }, [id]);
 
-  useEffect(() => {
-    fetchGroup();
-  }, [fetchGroup]);
-
   const fetchMessages = useCallback(async () => {
     setMessagesLoading(true);
     try {
