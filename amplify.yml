@@ -10,15 +10,15 @@ applications:
         build:
           commands:
             # Amplifyの環境変数を.envファイルに書き出す（アプリ起動時にも有効にするため）
-            - echo "DATABASE_URL=$DATABASE_URL" >> .env
-            - echo "NEXTAUTH_SECRET=$NEXTAUTH_SECRET" >> .env
-            - echo "NEXTAUTH_URL=$NEXTAUTH_URL" >> .env
-            - echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
-            - echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
-            - echo "TWITTER_CLIENT_ID=$TWITTER_CLIENT_ID" >> .env
-            - echo "TWITTER_CLIENT_SECRET=$TWITTER_CLIENT_SECRET" >> .env
-            - echo "BASIC_AUTH_USERNAME=$BASIC_AUTH_USERNAME" >> .env
-            - echo "BASIC_AUTH_PASSWORD=$BASIC_AUTH_PASSWORD" >> .env
+            - 'echo "DATABASE_URL=$DATABASE_URL" >> .env'
+            - 'echo "NEXTAUTH_SECRET=$NEXTAUTH_SECRET" >> .env'
+            - 'echo "NEXTAUTH_URL=$NEXTAUTH_URL" >> .env'
+            - 'echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env'
+            - 'echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env'
+            - 'echo "TWITTER_CLIENT_ID=$TWITTER_CLIENT_ID" >> .env'
+            - 'echo "TWITTER_CLIENT_SECRET=$TWITTER_CLIENT_SECRET" >> .env'
+            - 'echo "BASIC_AUTH_USERNAME=$BASIC_AUTH_USERNAME" >> .env'
+            - 'echo "BASIC_AUTH_PASSWORD=$BASIC_AUTH_PASSWORD" >> .env'
             - npm run build
       artifacts:
         baseDirectory: .next
