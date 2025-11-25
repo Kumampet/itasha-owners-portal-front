@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function AdminAuthPage() {
+function AdminAuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/admin";
@@ -121,6 +121,23 @@ export default function AdminAuthPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AdminAuthPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4">
+        <div className="w-full max-w-md space-y-8 rounded-lg border border-zinc-200 bg-white p-8 shadow-sm">
+          <div className="text-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900 mx-auto"></div>
+            <p className="mt-2 text-sm text-zinc-600">読み込み中...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <AdminAuthForm />
+    </Suspense>
   );
 }
 
