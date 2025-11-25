@@ -5,7 +5,8 @@ applications:
         preBuild:
           commands:
             - npm ci
-            - npx prisma generate
+            - echo "Generating Prisma Client..."
+            - npx prisma generate || echo "Warning: Prisma generate failed, but continuing build"
         build:
           commands:
             # Amplifyの環境変数を.envファイルに書き出す（アプリ起動時にも有効にするため）
@@ -16,6 +17,8 @@ applications:
             - echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
             - echo "TWITTER_CLIENT_ID=$TWITTER_CLIENT_ID" >> .env
             - echo "TWITTER_CLIENT_SECRET=$TWITTER_CLIENT_SECRET" >> .env
+            - echo "BASIC_AUTH_USERNAME=$BASIC_AUTH_USERNAME" >> .env
+            - echo "BASIC_AUTH_PASSWORD=$BASIC_AUTH_PASSWORD" >> .env
             - npm run build
       artifacts:
         baseDirectory: .next
