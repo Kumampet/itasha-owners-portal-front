@@ -3,7 +3,9 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import EventForm, { EventFormData } from "@/components/event-form";
+import ConfirmModal from "@/components/confirm-modal";
 
 type Event = {
   id: string;
@@ -33,11 +35,15 @@ export default function AdminEventDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
+  const { data: session } = useSession();
   const { id } = use(params);
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [formData, setFormData] = useState<EventFormData>({
     name: "",
@@ -48,6 +54,13 @@ export default function AdminEventDetailPage({
     entry_start_at: "",
     payment_due_at: "",
   });
+
+  // 現在のユーザーがadminまたはイベントのorganizerかどうかを確認
+  const canReapply = 
+    event &&
+    event.approval_status === "REJECTED" &&
+    (session?.user?.role === "ADMIN" || 
+     (session?.user?.role === "ORGANIZER" && event.organizer_user?.id === session.user.id));
 
   useEffect(() => {
     fetchEvent();
@@ -82,7 +95,7 @@ export default function AdminEventDetailPage({
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (approvalStatus: "DRAFT" | "PENDING") => {
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/events/${id}`, {
@@ -91,6 +104,7 @@ export default function AdminEventDetailPage({
         body: JSON.stringify({
           ...formData,
           tags: tags,
+          approval_status: approvalStatus,
         }),
       });
 
@@ -100,15 +114,50 @@ export default function AdminEventDetailPage({
       setIsEditing(false);
     } catch (error) {
       console.error("Failed to update event:", error);
-      alert("更新に失敗しました");
+      alert("保存に失敗しました");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleApprove = async () => {
-    if (!confirm("このイベントを承認しますか？")) return;
+  const handleReapply = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/events/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          tags: tags,
+          approval_status: "PENDING",
+        }),
+      });
 
+      if (!res.ok) throw new Error("Failed to reapply event");
+
+      await fetchEvent();
+    } catch (error) {
+      console.error("Failed to reapply event:", error);
+      alert("再申請に失敗しました");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = () => {
+    setIsEditing(false);
+    fetchEvent();
+  };
+
+  const handleApproveClick = () => {
+    setShowApproveModal(true);
+  };
+
+  const handleApprove = async () => {
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/events/${id}/approve`, {
@@ -118,6 +167,7 @@ export default function AdminEventDetailPage({
       if (!res.ok) throw new Error("Failed to approve event");
 
       await fetchEvent();
+      setShowApproveModal(false);
     } catch (error) {
       console.error("Failed to approve event:", error);
       alert("承認に失敗しました");
@@ -126,9 +176,11 @@ export default function AdminEventDetailPage({
     }
   };
 
-  const handleReject = async () => {
-    if (!confirm("このイベントを却下しますか？")) return;
+  const handleRejectClick = () => {
+    setShowRejectModal(true);
+  };
 
+  const handleReject = async () => {
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/events/${id}/reject`, {
@@ -138,6 +190,7 @@ export default function AdminEventDetailPage({
       if (!res.ok) throw new Error("Failed to reject event");
 
       await fetchEvent();
+      setShowRejectModal(false);
     } catch (error) {
       console.error("Failed to reject event:", error);
       alert("却下に失敗しました");
@@ -185,23 +238,32 @@ export default function AdminEventDetailPage({
         </h1>
         {!isEditing && (
           <div className="flex gap-2">
-            {event.approval_status === "PENDING" && (
+            {event.approval_status === "PENDING" && session?.user?.role === "ADMIN" && (
               <>
                 <button
-                  onClick={handleApprove}
+                  onClick={handleApproveClick}
                   disabled={saving}
                   className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:opacity-50"
                 >
                   承認
                 </button>
                 <button
-                  onClick={handleReject}
+                  onClick={handleRejectClick}
                   disabled={saving}
                   className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
                 >
                   却下
                 </button>
               </>
+            )}
+            {canReapply && (
+              <button
+                onClick={handleReapply}
+                disabled={saving}
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
+              >
+                再申請
+              </button>
             )}
             <button
               onClick={() => setIsEditing(true)}
@@ -213,6 +275,39 @@ export default function AdminEventDetailPage({
         )}
       </div>
 
+      {/* キャンセル確認モーダル */}
+      <ConfirmModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleConfirmCancel}
+        title="編集をキャンセルしますか？"
+        message="変更内容は破棄されます。"
+        confirmLabel="はい"
+        cancelLabel="いいえ"
+      />
+
+      {/* 承認確認モーダル */}
+      <ConfirmModal
+        isOpen={showApproveModal}
+        onClose={() => setShowApproveModal(false)}
+        onConfirm={handleApprove}
+        title="このイベントを承認しますか？"
+        message="承認すると、イベントが公開されます。"
+        confirmLabel="承認"
+        cancelLabel="キャンセル"
+      />
+
+      {/* 却下確認モーダル */}
+      <ConfirmModal
+        isOpen={showRejectModal}
+        onClose={() => setShowRejectModal(false)}
+        onConfirm={handleReject}
+        title="このイベントを却下しますか？"
+        message="却下すると、イベントは非公開になります。主催者は再申請することができます。"
+        confirmLabel="却下"
+        cancelLabel="キャンセル"
+      />
+
       {isEditing ? (
         <EventForm
           formData={formData}
@@ -221,21 +316,28 @@ export default function AdminEventDetailPage({
           onTagsChange={setTags}
         >
           <button
-            onClick={handleSave}
-            disabled={saving}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
-          >
-            {saving ? "保存中..." : "保存"}
-          </button>
-          <button
-            onClick={() => {
-              setIsEditing(false);
-              fetchEvent();
-            }}
+            type="button"
+            onClick={handleCancel}
             disabled={saving}
             className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50"
           >
             キャンセル
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSave("DRAFT")}
+            disabled={saving}
+            className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50"
+          >
+            {saving ? "保存中..." : "下書き"}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSave("PENDING")}
+            disabled={saving}
+            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
+          >
+            {saving ? "保存中..." : event?.approval_status === "REJECTED" ? "再申請" : "申請"}
           </button>
         </EventForm>
       ) : (

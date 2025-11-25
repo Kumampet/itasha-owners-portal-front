@@ -11,8 +11,8 @@ export async function GET(
   try {
     const session = await auth();
 
-    // 管理者権限チェック
-    if (!session || session.user?.role !== "ADMIN") {
+    // 管理者またはオーガナイザーの権限チェック
+    if (!session || (session.user?.role !== "ADMIN" && session.user?.role !== "ORGANIZER")) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -20,6 +20,29 @@ export async function GET(
     }
 
     const { id } = await params;
+    
+    // イベントを取得して権限チェック
+    const eventForCheck = await prisma.event.findUnique({
+      where: { id },
+      select: {
+        organizer_user_id: true,
+      },
+    });
+
+    if (!eventForCheck) {
+      return NextResponse.json(
+        { error: "Event not found" },
+        { status: 404 }
+      );
+    }
+
+    // オーガナイザーの場合、自分のイベントのみアクセス可能
+    if (session.user?.role === "ORGANIZER" && eventForCheck.organizer_user_id !== session.user.id) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 403 }
+      );
+    }
 
     const event = await prisma.event.findUnique({
       where: { id },
@@ -52,13 +75,6 @@ export async function GET(
       },
     });
 
-    if (!event) {
-      return NextResponse.json(
-        { error: "Event not found" },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json(event);
   } catch (error) {
     console.error("Error fetching event:", error);
@@ -78,8 +94,8 @@ export async function PATCH(
   try {
     const session = await auth();
 
-    // 管理者権限チェック
-    if (!session || session.user?.role !== "ADMIN") {
+    // 管理者またはオーガナイザーの権限チェック
+    if (!session || (session.user?.role !== "ADMIN" && session.user?.role !== "ORGANIZER")) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -87,6 +103,30 @@ export async function PATCH(
     }
 
     const { id } = await params;
+    
+    // イベントを取得して権限チェック
+    const existingEvent = await prisma.event.findUnique({
+      where: { id },
+      select: {
+        organizer_user_id: true,
+      },
+    });
+
+    if (!existingEvent) {
+      return NextResponse.json(
+        { error: "Event not found" },
+        { status: 404 }
+      );
+    }
+
+    // オーガナイザーの場合、自分のイベントのみ更新可能
+    if (session.user?.role === "ORGANIZER" && existingEvent.organizer_user_id !== session.user.id) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const tags: string[] = body.tags || [];
 
