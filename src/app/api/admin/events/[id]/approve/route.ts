@@ -28,7 +28,7 @@ export async function POST(
 
     // キャッシュを無効化
     const { revalidateTag } = await import("next/cache");
-    revalidateTag("events");
+    revalidateTag("events", {});
 
     return NextResponse.json(event);
   } catch (error) {

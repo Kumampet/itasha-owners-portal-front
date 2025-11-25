@@ -10,92 +10,26 @@ type AdminLayoutProps = {
   children: ReactNode;
 };
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const pathname = usePathname();
-  const hasRedirected = useRef(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+const menuItems = [
+  { href: "/admin/dashboard", label: "ダッシュボード", icon: "📊" },
+  { href: "/admin/events", label: "イベント管理", icon: "📅" },
+  { href: "/admin/users", label: "ユーザー管理", icon: "👥" },
+  { href: "/admin/submissions", label: "情報提供フォーム", icon: "📝" },
+];
 
-  // ログインページとパスワード変更ページでは認証チェックをスキップ
-  const isAuthPage = pathname === "/admin/auth";
-  const isChangePasswordPage = pathname === "/admin/change-password";
+// adminのみ表示するメニュー項目
+const adminOnlyMenuItems = [
+  { href: "/admin/organizers/new", label: "オーガナイザー作成", icon: "👤" },
+];
 
-  // メニューが開いている時はスクロールを無効化（すべてのHooksは早期リターンの前に配置）
-  useEffect(() => {
-    if (isMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isMenuOpen]);
+type SidebarContentProps = {
+  onLinkClick?: () => void;
+  pathname: string | null;
+  session: { user: { role: string; email: string } };
+};
 
-  useEffect(() => {
-    // ログインページでは認証チェックをスキップ
-    if (isAuthPage) {
-      return;
-    }
-
-    if (status === "loading" || hasRedirected.current) return;
-
-    // 未ログインの場合はログインページにリダイレクト
-    if (!session) {
-      hasRedirected.current = true;
-      router.replace("/admin/auth?callbackUrl=/admin/dashboard");
-      return;
-    }
-
-    // 管理者またはオーガナイザーのみアクセス可能
-    if (session.user.role !== "ADMIN" && session.user.role !== "ORGANIZER") {
-      hasRedirected.current = true;
-      router.replace("/app/mypage");
-      return;
-    }
-
-    // 初回ログイン時（パスワード変更が必要）はパスワード変更ページにリダイレクト
-    if (session.user.mustChangePassword && !isChangePasswordPage) {
-      hasRedirected.current = true;
-      router.replace("/admin/change-password");
-      return;
-    }
-
-    hasRedirected.current = false;
-  }, [session, status, router, pathname, isAuthPage, isChangePasswordPage]);
-
-  // ログインページとパスワード変更ページでは認証チェックをスキップ（ページ側で処理）
-  if (isAuthPage || isChangePasswordPage) {
-    return <>{children}</>;
-  }
-
-  // ローディング中または権限チェック中は何も表示しない
-  if (
-    status === "loading" ||
-    !session ||
-    (session.user.role !== "ADMIN" && session.user.role !== "ORGANIZER")
-  ) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
-      </div>
-    );
-  }
-
-  const menuItems = [
-    { href: "/admin/dashboard", label: "ダッシュボード", icon: "📊" },
-    { href: "/admin/events", label: "イベント管理", icon: "📅" },
-    { href: "/admin/users", label: "ユーザー管理", icon: "👥" },
-    { href: "/admin/submissions", label: "情報提供フォーム", icon: "📝" },
-  ];
-
-  // adminのみ表示するメニュー項目
-  const adminOnlyMenuItems = [
-    { href: "/admin/organizers/new", label: "オーガナイザー作成", icon: "👤" },
-  ];
-
-  const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => (
+function SidebarContent({ onLinkClick, pathname, session }: SidebarContentProps) {
+  return (
     <div className="flex h-full flex-col">
       <div className="border-b border-zinc-200 p-4">
         <Link
@@ -175,6 +109,81 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </div>
     </div>
   );
+}
+
+export default function AdminLayout({ children }: AdminLayoutProps) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
+  const hasRedirected = useRef(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // ログインページとパスワード変更ページでは認証チェックをスキップ
+  const isAuthPage = pathname === "/admin/auth";
+  const isChangePasswordPage = pathname === "/admin/change-password";
+
+  // メニューが開いている時はスクロールを無効化（すべてのHooksは早期リターンの前に配置）
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMenuOpen]);
+
+  useEffect(() => {
+    // ログインページでは認証チェックをスキップ
+    if (isAuthPage) {
+      return;
+    }
+
+    if (status === "loading" || hasRedirected.current) return;
+
+    // 未ログインの場合はログインページにリダイレクト
+    if (!session) {
+      hasRedirected.current = true;
+      router.replace("/admin/auth?callbackUrl=/admin/dashboard");
+      return;
+    }
+
+    // 管理者またはオーガナイザーのみアクセス可能
+    if (session.user.role !== "ADMIN" && session.user.role !== "ORGANIZER") {
+      hasRedirected.current = true;
+      router.replace("/app/mypage");
+      return;
+    }
+
+    // 初回ログイン時（パスワード変更が必要）はパスワード変更ページにリダイレクト
+    if (session.user.mustChangePassword && !isChangePasswordPage) {
+      hasRedirected.current = true;
+      router.replace("/admin/change-password");
+      return;
+    }
+
+    hasRedirected.current = false;
+  }, [session, status, router, pathname, isAuthPage, isChangePasswordPage]);
+
+  // ログインページとパスワード変更ページでは認証チェックをスキップ（ページ側で処理）
+  if (isAuthPage || isChangePasswordPage) {
+    return <>{children}</>;
+  }
+
+  // ローディング中または権限チェック中は何も表示しない
+  if (
+    status === "loading" ||
+    !session ||
+    (session.user.role !== "ADMIN" && session.user.role !== "ORGANIZER")
+  ) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="flex min-h-screen">
@@ -188,7 +197,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* サイドバー（PC版 - lg以上で表示） */}
       <aside className="hidden w-64 flex-shrink-0 border-r border-zinc-200 bg-white lg:block">
-        <SidebarContent />
+        <SidebarContent pathname={pathname} session={session} />
       </aside>
 
       {/* サイドバー（モバイル版 - lg未満でハンバーガーメニュー） */}
@@ -226,7 +235,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </svg>
             </button>
           </div>
-          <SidebarContent onLinkClick={() => setIsMenuOpen(false)} />
+          <SidebarContent onLinkClick={() => setIsMenuOpen(false)} pathname={pathname} session={session} />
         </div>
       </aside>
 

@@ -15,7 +15,6 @@ async function main() {
       name: true,
       role: true,
       password: true,
-      is_organizer: true,
       must_change_password: true,
     },
   });
@@ -30,7 +29,6 @@ async function main() {
   console.log("Email:", user.email);
   console.log("Name:", user.name);
   console.log("Role:", user.role);
-  console.log("Is Organizer:", user.is_organizer);
   console.log("Must Change Password:", user.must_change_password);
   console.log("Password exists:", !!user.password);
   console.log("Password length:", user.password?.length || 0);

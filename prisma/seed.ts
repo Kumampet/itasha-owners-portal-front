@@ -36,7 +36,6 @@ async function main() {
     update: {},
     create: {
       email: "organizer@itasha-portal.com",
-      is_organizer: true,
       role: "ADMIN",
       custom_profile_url: "organizer",
     },
