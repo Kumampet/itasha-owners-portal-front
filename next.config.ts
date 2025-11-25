@@ -22,9 +22,7 @@ const nextConfig: NextConfig = {
     ],
   },
   // APIルートをNode.js Runtimeで実行するように強制
-  experimental: {
-    serverComponentsExternalPackages: ["@auth/core"],
-  },
+  serverExternalPackages: ["@auth/core"],
 };
 
 export default nextConfig;

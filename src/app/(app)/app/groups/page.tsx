@@ -1,6 +1,58 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
+type Group = {
+  id: string;
+  name: string;
+  theme: string | null;
+  groupCode: string;
+  maxMembers: number | null;
+  memberCount: number;
+  isLeader: boolean;
+  event: {
+    id: string;
+    name: string;
+    event_date: string;
+  };
+  leader: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
+  createdAt: string;
+};
+
 export default function GroupsPage() {
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  const fetchGroups = async () => {
+    try {
+      const res = await fetch("/api/groups");
+      if (!res.ok) throw new Error("Failed to fetch groups");
+      const data = await res.json();
+      setGroups(data);
+    } catch (error) {
+      console.error("Failed to fetch groups:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("ja-JP", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
@@ -11,26 +63,75 @@ export default function GroupsPage() {
           >
             ← マイページへ戻る
           </Link>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              団体（併せ）管理
-            </h1>
-            <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
-              イベントごとの団体参加（併せ）のメンバー募集・参加状況・一斉連絡を
-              管理する画面です。
-            </p>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                団体（併せ）管理
+              </h1>
+              <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+                イベントごとの団体参加（併せ）のメンバー募集・参加状況・一斉連絡を
+                管理する画面です。
+              </p>
+            </div>
+            <Link
+              href="/app/groups/new"
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 whitespace-nowrap"
+            >
+              新規団体を作成
+            </Link>
           </div>
         </header>
 
         <div className="space-y-4">
           <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
             <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
-              併せ一覧
+              参加団体一覧
             </h2>
-            <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
-              まだ団体は登録されていません。将来的には、参加予定イベントごとに
-              作成した併せがここに表示されます。
-            </p>
+            {loading ? (
+              <div className="mt-4 flex items-center justify-center py-8">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+              </div>
+            ) : groups.length === 0 ? (
+              <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
+                まだ団体は登録されていません。イベント詳細ページから「団体を組む」ボタンで団体を作成または加入できます。
+              </p>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {groups.map((group) => (
+                  <Link
+                    key={group.id}
+                    href={`/app/groups/${group.id}`}
+                    className="block rounded-lg border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 hover:shadow-md"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-semibold text-zinc-900">
+                            {group.name}
+                          </h3>
+                          {group.isLeader && (
+                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                              オーナー
+                            </span>
+                          )}
+                        </div>
+                        {group.theme && (
+                          <p className="mt-1 text-xs text-zinc-600">{group.theme}</p>
+                        )}
+                        <p className="mt-2 text-xs text-zinc-500">
+                          {group.event.name} / {formatDate(group.event.event_date)}
+                        </p>
+                        <p className="mt-1 text-xs text-zinc-500">
+                          メンバー: {group.memberCount}
+                          {group.maxMembers && ` / ${group.maxMembers}`}人
+                        </p>
+                      </div>
+                      <div className="text-sm text-zinc-500">→</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </section>
 
           <section className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-4 sm:p-5">
