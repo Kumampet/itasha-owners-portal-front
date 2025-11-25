@@ -72,6 +72,13 @@ export default function AdminEventDetailPage({
     (session?.user?.role === "ADMIN" || 
      (session?.user?.role === "ORGANIZER" && event.organizer_user?.id === session.user.id));
 
+  // 一度公開されたイベントを編集する場合（作成者またはadminのみ）
+  const canUpdateDirectly = 
+    event &&
+    event.approval_status === "APPROVED" &&
+    (session?.user?.role === "ADMIN" || 
+     (session?.user?.role === "ORGANIZER" && event.organizer_user?.id === session.user.id));
+
   useEffect(() => {
     fetchEvent();
   }, [id]);
@@ -114,7 +121,7 @@ export default function AdminEventDetailPage({
     }
   };
 
-  const handleSave = async (approvalStatus: "DRAFT" | "PENDING") => {
+  const handleSave = async (approvalStatus: "DRAFT" | "PENDING" | "APPROVED") => {
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/events/${id}`, {
@@ -350,14 +357,25 @@ export default function AdminEventDetailPage({
           >
             {saving ? "保存中..." : "下書き"}
           </button>
-          <button
-            type="button"
-            onClick={() => handleSave("PENDING")}
-            disabled={saving}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
-          >
-            {saving ? "保存中..." : event?.approval_status === "REJECTED" ? "保存して再申請" : "保存して申請"}
-          </button>
+          {canUpdateDirectly ? (
+            <button
+              type="button"
+              onClick={() => handleSave("APPROVED")}
+              disabled={saving}
+              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
+            >
+              {saving ? "保存中..." : "保存して更新"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleSave("PENDING")}
+              disabled={saving}
+              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
+            >
+              {saving ? "保存中..." : event?.approval_status === "REJECTED" ? "保存して再申請" : "保存して申請"}
+            </button>
+          )}
         </EventForm>
       ) : (
         <div className="space-y-6 rounded-lg border border-zinc-200 bg-white p-6">
