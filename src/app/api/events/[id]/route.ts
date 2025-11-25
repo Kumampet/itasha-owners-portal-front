@@ -1,5 +1,51 @@
 import { NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
+
+// キャッシュされた個別イベント取得関数
+// ISR: 60秒間キャッシュしてDB負荷を軽減
+const getCachedEvent = (id: string) =>
+  unstable_cache(
+    async () => {
+      return await prisma.event.findUnique({
+        where: {
+          id: id,
+        },
+        select: {
+          id: true,
+          name: true,
+          theme: true,
+          description: true,
+          event_date: true,
+          entry_start_at: true,
+          payment_due_at: true,
+          original_url: true,
+          approval_status: true,
+          organizer_user: {
+            select: {
+              id: true,
+              email: true,
+              custom_profile_url: true,
+            },
+          },
+          tags: {
+            select: {
+              tag: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    },
+    [`event-${id}`], // イベントIDを含むキャッシュキー
+    {
+      revalidate: 60, // 60秒で再検証
+      tags: ["events", `event-${id}`], // キャッシュタグ（revalidateTagで無効化可能）
+    }
+  )();
 
 // GET /api/events/[id]
 // 個別のイベント情報をDBから取得するAPI
@@ -10,38 +56,7 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const event = await prisma.event.findUnique({
-      where: {
-        id: id,
-      },
-      select: {
-        id: true,
-        name: true,
-        theme: true,
-        description: true,
-        event_date: true,
-        entry_start_at: true,
-        payment_due_at: true,
-        original_url: true,
-        approval_status: true,
-        organizer_user: {
-          select: {
-            id: true,
-            email: true,
-            custom_profile_url: true,
-          },
-        },
-        tags: {
-          select: {
-            tag: {
-              select: {
-                name: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    const event = await getCachedEvent(id);
 
     if (!event) {
       return NextResponse.json(
@@ -59,4 +74,3 @@ export async function GET(
     );
   }
 }
-

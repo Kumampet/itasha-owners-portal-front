@@ -1,26 +1,14 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // 修正は不要ですが、PrismaClientのインポートを確認
+import { unstable_cache } from "next/cache";
+import { prisma } from "@/lib/prisma";
 
-// GET /api/events
-// 承認済みのイベントリストをDBから取得するAPI
-export async function GET() {
-  // 環境変数のデバッグ情報（本番環境でも出力）
-  console.log("Environment check:", {
-    hasDatabaseUrl: !!process.env.DATABASE_URL,
-    databaseUrlLength: process.env.DATABASE_URL?.length || 0,
-    nodeEnv: process.env.NODE_ENV,
-    allEnvKeys: Object.keys(process.env).filter(key => 
-      key.includes("DATABASE") || 
-      key.includes("DB") || 
-      key.includes("MYSQL") ||
-      key.includes("MARIA")
-    ),
-  });
-
-  try {
+// キャッシュされたイベント取得関数
+// ISR: 60秒間キャッシュしてDB負荷を軽減
+const getCachedEvents = unstable_cache(
+  async () => {
     // 承認ステータスが "APPROVED" のイベントのみを取得
     // 主催者情報も含める (リレーション)
-    const events = await prisma.event.findMany({
+    return await prisma.event.findMany({
       where: {
         approval_status: "APPROVED",
       },
@@ -61,21 +49,47 @@ export async function GET() {
         event_date: "desc",
       },
     });
+  },
+  ["events"], // キャッシュキー
+  {
+    revalidate: 60, // 60秒で再検証
+    tags: ["events"], // キャッシュタグ（revalidateTagで無効化可能）
+  }
+);
 
+// GET /api/events
+// 承認済みのイベントリストをDBから取得するAPI
+export async function GET() {
+  // 環境変数のデバッグ情報（本番環境でも出力）
+  console.log("Environment check:", {
+    hasDatabaseUrl: !!process.env.DATABASE_URL,
+    databaseUrlLength: process.env.DATABASE_URL?.length || 0,
+    nodeEnv: process.env.NODE_ENV,
+    allEnvKeys: Object.keys(process.env).filter(
+      (key) =>
+        key.includes("DATABASE") ||
+        key.includes("DB") ||
+        key.includes("MYSQL") ||
+        key.includes("MARIA")
+    ),
+  });
+
+  try {
+    const events = await getCachedEvents();
     return NextResponse.json(events);
   } catch (error) {
     console.error("Error fetching events:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     const errorName = error instanceof Error ? error.name : "Error";
-    
+
     // エラーの詳細をログに出力（Amplifyのログで確認可能）
     console.error("Error details:", {
       name: errorName,
       message: errorMessage,
       stack: error instanceof Error ? error.stack : undefined,
     });
-    
+
     // 本番環境でもエラーメッセージを返す（セキュリティ上問題ない範囲で）
     return NextResponse.json(
       {
