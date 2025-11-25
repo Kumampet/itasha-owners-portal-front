@@ -13,12 +13,12 @@ type AdminLayoutProps = {
 const menuItems = [
   { href: "/admin/dashboard", label: "ダッシュボード", icon: "📊" },
   { href: "/admin/events", label: "イベント管理", icon: "📅" },
-  { href: "/admin/users", label: "ユーザー管理", icon: "👥" },
-  { href: "/admin/submissions", label: "情報提供フォーム", icon: "📝" },
 ];
 
 // adminのみ表示するメニュー項目
 const adminOnlyMenuItems = [
+  { href: "/admin/users", label: "ユーザー管理", icon: "👥" },
+  { href: "/admin/submissions", label: "情報提供フォーム", icon: "📝" },
   { href: "/admin/organizers/new", label: "オーガナイザー作成", icon: "👤" },
 ];
 
@@ -37,18 +37,17 @@ function SidebarContent({ onLinkClick, pathname, session }: SidebarContentProps)
           className="text-lg font-semibold text-zinc-900 hover:text-zinc-700"
           onClick={onLinkClick}
         >
-          管理画面
+          オーガナイザー機能
         </Link>
       </div>
       <nav className="flex-1 p-4">
         {/* 新規イベントを作成ボタン */}
         <Link
           href="/admin/events/new"
-          className={`mb-4 flex items-center gap-3 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium transition ${
-            pathname === "/admin/events/new"
-              ? "bg-zinc-900 text-white border-zinc-900"
-              : "bg-white text-zinc-900 hover:bg-zinc-50 hover:border-zinc-900"
-          }`}
+          className={`mb-4 flex items-center gap-3 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium transition ${pathname === "/admin/events/new"
+            ? "bg-zinc-900 text-white border-zinc-900"
+            : "bg-white text-zinc-900 hover:bg-zinc-50 hover:border-zinc-900"
+            }`}
           onClick={onLinkClick}
         >
           <span>➕</span>
@@ -63,11 +62,10 @@ function SidebarContent({ onLinkClick, pathname, session }: SidebarContentProps)
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
-                  isActive
-                    ? "bg-zinc-900 text-white"
-                    : "text-zinc-700 hover:bg-zinc-50"
-                }`}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${isActive
+                  ? "bg-zinc-900 text-white"
+                  : "text-zinc-700 hover:bg-zinc-50"
+                  }`}
                 onClick={onLinkClick}
               >
                 <span>{item.icon}</span>
@@ -83,11 +81,10 @@ function SidebarContent({ onLinkClick, pathname, session }: SidebarContentProps)
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
-                    isActive
-                      ? "bg-zinc-900 text-white"
-                      : "text-zinc-700 hover:bg-zinc-50"
-                  }`}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${isActive
+                    ? "bg-zinc-900 text-white"
+                    : "text-zinc-700 hover:bg-zinc-50"
+                    }`}
                   onClick={onLinkClick}
                 >
                   <span>{item.icon}</span>
@@ -202,9 +199,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* サイドバー（モバイル版 - lg未満でハンバーガーメニュー） */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen w-64 border-r border-zinc-200 bg-white transition-transform duration-300 ease-in-out lg:hidden ${
-          isMenuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed top-0 left-0 z-50 h-screen w-64 border-r border-zinc-200 bg-white transition-transform duration-300 ease-in-out lg:hidden ${isMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-zinc-200 p-4">
@@ -213,7 +209,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               className="text-lg font-semibold text-zinc-900 hover:text-zinc-700"
               onClick={() => setIsMenuOpen(false)}
             >
-              管理画面
+              オーガナイザー機能
             </Link>
             <button
               onClick={() => setIsMenuOpen(false)}
@@ -264,7 +260,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </svg>
             </button>
             <Link href="/admin/dashboard" className="text-lg font-semibold text-zinc-900">
-              管理画面
+              オーガナイザー機能
             </Link>
             <span className="text-sm text-zinc-600">{session.user.email}</span>
           </div>

@@ -162,7 +162,7 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
           </div>
         )}
       </div>
-      <nav className="space-y-1 text-sm">
+      <nav className="space-y-1 text-sm flex-1">
         {tabs.map((tab) => {
           const isActive = tab.key === activeKey;
           return (
@@ -181,6 +181,21 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
           );
         })}
       </nav>
+      {(session?.user?.role === "ADMIN" || session?.user?.role === "ORGANIZER") && (
+        <div className="mt-auto border-t border-zinc-200 pt-4">
+          <Link
+            href="/admin/dashboard"
+            onClick={(e) => handleNavClick(e, "/admin/dashboard")}
+            className={`block rounded-lg px-3 py-2 text-sm ${
+              pathname?.startsWith("/admin")
+                ? "bg-zinc-900 text-white"
+                : "text-zinc-700 hover:bg-zinc-50"
+            }`}
+          >
+            オーガナイザー機能
+          </Link>
+        </div>
+      )}
       </aside>
     </>
   );

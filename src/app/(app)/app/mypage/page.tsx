@@ -66,7 +66,7 @@ export default function MyPage() {
                     </section>
                 </div>
 
-                {/* 基本情報と公開プロフィール */}
+                {/* 基本情報、リマインダー管理、団体管理、オーガナイザー機能（2x2グリッド） */}
                 <div className="grid gap-4 sm:grid-cols-2">
                     <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
                         <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
@@ -110,20 +110,6 @@ export default function MyPage() {
                         </p>
                     </section>
 
-                    <section className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 sm:p-5">
-                        <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
-                            公開プロフィール
-                        </h2>
-                        <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
-                            SNS的なフォロー/いいね機能は搭載せず、
-                            参加予定・参加済みイベントや参加中の団体のみを
-                            穏やかに共有できるページとして設計します。
-                        </p>
-                    </section>
-                </div>
-
-                {/* リマインダー管理と団体管理 */}
-                <div className="grid gap-4 sm:grid-cols-2">
                     <Link
                         href="/app/reminder"
                         className="rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 sm:p-5"
@@ -155,6 +141,34 @@ export default function MyPage() {
                             詳細を見る →
                         </p>
                     </Link>
+
+                    {/* オーガナイザー機能（admin/organizerのみ） */}
+                    {(session?.user?.role === "ADMIN" || session?.user?.role === "ORGANIZER") ? (
+                        <Link
+                            href="/admin/dashboard"
+                            className="rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 sm:p-5"
+                        >
+                            <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
+                                オーガナイザー機能
+                            </h2>
+                            <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
+                                イベント管理やユーザー管理、情報提供フォームの処理など、
+                                オーガナイザー向けの機能を利用できます。
+                            </p>
+                            <p className="mt-3 text-xs font-semibold text-emerald-600">
+                                詳細を見る →
+                            </p>
+                        </Link>
+                    ) : (
+                        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 sm:p-5">
+                            <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
+                                オーガナイザー機能
+                            </h2>
+                            <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
+                                オーガナイザー権限が必要です。
+                            </p>
+                        </div>
+                    )}
                 </div>
             </section>
 

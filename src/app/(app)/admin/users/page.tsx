@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 type User = {
   id: string;
@@ -15,12 +17,23 @@ type SortBy = "created_at" | "email" | "role";
 type SortOrder = "asc" | "desc";
 
 export default function AdminUsersPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortBy>("created_at");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState<string>("ALL");
+
+  // organizerはアクセス不可
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session) return;
+    if (session.user?.role !== "ADMIN") {
+      router.replace("/admin/dashboard");
+    }
+  }, [session, status, router]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -47,8 +60,12 @@ export default function AdminUsersPage() {
   }, [sortBy, sortOrder, searchQuery, filterRole]);
 
   useEffect(() => {
+    // adminのみアクセス可能
+    if (status === "loading" || !session || session.user?.role !== "ADMIN") {
+      return;
+    }
     fetchUsers();
-  }, [fetchUsers]);
+  }, [fetchUsers, session, status]);
 
   const handleUpdateRole = async (userId: string, newRole: string) => {
     try {

@@ -19,6 +19,10 @@ export default function AdminDashboard() {
       href: "/admin/events/new",
       icon: "➕",
     },
+  ];
+
+  // adminのみ表示するメニュー項目
+  const adminOnlyMenuItems = [
     {
       title: "ユーザー管理",
       description: "ユーザー一覧、権限管理、BAN管理",
@@ -31,10 +35,6 @@ export default function AdminDashboard() {
       href: "/admin/submissions",
       icon: "📝",
     },
-  ];
-
-  // adminのみ表示するメニュー項目
-  const adminOnlyMenuItems = [
     {
       title: "オーガナイザーアカウント作成",
       description: "イベントオーガナイザー用のアカウントを作成",
@@ -47,7 +47,7 @@ export default function AdminDashboard() {
     <div className="w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
-          管理ダッシュボード
+          オーガナイザー機能 ダッシュボード
         </h1>
         <p className="mt-2 text-sm text-zinc-600 sm:text-base">
           管理者: {session?.user?.email}

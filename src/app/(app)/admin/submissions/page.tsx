@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 type Submission = {
   id: string;
@@ -25,6 +27,8 @@ type SortBy = "created_at" | "event_date" | "name";
 type SortOrder = "asc" | "desc";
 
 export default function AdminSubmissionsPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("ALL");
@@ -33,6 +37,15 @@ export default function AdminSubmissionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [processing, setProcessing] = useState(false);
+
+  // organizerはアクセス不可
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session) return;
+    if (session.user?.role !== "ADMIN") {
+      router.replace("/admin/dashboard");
+    }
+  }, [session, status, router]);
 
   const fetchSubmissions = useCallback(async () => {
     setLoading(true);
@@ -59,8 +72,12 @@ export default function AdminSubmissionsPage() {
   }, [filterStatus, sortBy, sortOrder, searchQuery]);
 
   useEffect(() => {
+    // adminのみアクセス可能
+    if (status === "loading" || !session || session.user?.role !== "ADMIN") {
+      return;
+    }
     fetchSubmissions();
-  }, [fetchSubmissions]);
+  }, [fetchSubmissions, session, status]);
 
   const handleProcess = async (submissionId: string, action: "PROCESSED" | "REJECTED") => {
     setProcessing(true);

@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function AdminNewOrganizerPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -18,12 +20,14 @@ export default function AdminNewOrganizerPage() {
     password: string;
   } | null>(null);
 
+  // organizerはアクセス不可
   useEffect(() => {
     if (status === "loading") return;
-    if (!session || session.user?.role !== "ADMIN") {
-      return;
+    if (!session) return;
+    if (session.user?.role !== "ADMIN") {
+      router.replace("/admin/dashboard");
     }
-  }, [session, status]);
+  }, [session, status, router]);
 
   const generatePassword = () => {
     const length = 12;
