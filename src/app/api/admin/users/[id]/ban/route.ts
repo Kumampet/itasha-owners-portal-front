@@ -30,7 +30,6 @@ export async function PATCH(
         email: true,
         name: true,
         role: true,
-        is_organizer: true,
         is_banned: true,
         created_at: true,
       },

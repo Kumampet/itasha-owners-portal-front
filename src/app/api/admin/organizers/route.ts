@@ -49,15 +49,14 @@ export async function POST(request: Request) {
         email,
         name: name || null,
         password: hashedPassword,
-        role: "USER",
-        is_organizer: true,
+        role: "ORGANIZER",
         must_change_password: true, // 初回ログイン時にパスワード変更を強制
       },
       select: {
         id: true,
         email: true,
         name: true,
-        is_organizer: true,
+        role: true,
         must_change_password: true,
       },
     });

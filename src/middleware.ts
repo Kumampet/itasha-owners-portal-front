@@ -58,7 +58,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // 管理者またはオーガナイザーのみアクセス可能
-    if (adminSession.user?.role !== "ADMIN" && !adminSession.user?.isOrganizer) {
+    if (adminSession.user?.role !== "ADMIN" && adminSession.user?.role !== "ORGANIZER") {
       return NextResponse.redirect(new URL("/app/mypage", request.url));
     }
 
@@ -117,7 +117,7 @@ export async function middleware(request: NextRequest) {
       // セッションクッキーが存在するが、middlewareで取得できない場合はクライアントサイドでチェック
     } else {
       // 管理者またはオーガナイザーのみアクセス可能
-      if (session.user?.role !== "ADMIN" && !session.user?.isOrganizer) {
+      if (session.user?.role !== "ADMIN" && session.user?.role !== "ORGANIZER") {
         return NextResponse.redirect(new URL("/app/mypage", request.url));
       }
     }
@@ -147,7 +147,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ログイン済みで管理画面ログインページにアクセスしている場合
-  if (pathname === "/admin/auth" && session && (session.user?.role === "ADMIN" || session.user?.isOrganizer)) {
+  if (pathname === "/admin/auth" && session && (session.user?.role === "ADMIN" || session.user?.role === "ORGANIZER")) {
     const callbackUrl = request.nextUrl.searchParams.get("callbackUrl") || "/admin";
     return NextResponse.redirect(new URL(callbackUrl, request.url));
   }

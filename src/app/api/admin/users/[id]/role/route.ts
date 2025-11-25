@@ -22,7 +22,7 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    if (!body.role || !["USER", "ADMIN"].includes(body.role)) {
+    if (!body.role || !["USER", "ADMIN", "ORGANIZER"].includes(body.role)) {
       return NextResponse.json(
         { error: "Invalid role" },
         { status: 400 }
@@ -37,7 +37,6 @@ export async function PATCH(
         email: true,
         name: true,
         role: true,
-        is_organizer: true,
         is_banned: true,
         created_at: true,
       },

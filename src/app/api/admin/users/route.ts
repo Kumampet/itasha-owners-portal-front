@@ -46,7 +46,6 @@ export async function GET(request: Request) {
         email: true,
         name: true,
         role: true,
-        is_organizer: true,
         is_banned: true,
         created_at: true,
       },

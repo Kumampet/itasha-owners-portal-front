@@ -6,8 +6,7 @@ type User = {
   id: string;
   email: string;
   name: string | null;
-  role: string;
-  is_organizer: boolean;
+  role: string; // "USER" | "ADMIN" | "ORGANIZER"
   is_banned: boolean;
   created_at: string;
 };
@@ -67,12 +66,13 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleToggleOrganizer = async (userId: string, currentValue: boolean) => {
+  const handleToggleOrganizer = async (userId: string, currentRole: string) => {
     try {
+      const newRole = currentRole === "ORGANIZER" ? "USER" : "ORGANIZER";
       const res = await fetch(`/api/admin/users/${userId}/organizer`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_organizer: !currentValue }),
+        body: JSON.stringify({ is_organizer: newRole === "ORGANIZER" }),
       });
 
       if (!res.ok) throw new Error("Failed to update organizer status");
@@ -138,7 +138,7 @@ export default function AdminUsersPage() {
 
           {/* ロールフィルター */}
           <div className="flex gap-2">
-            {(["ALL", "USER", "ADMIN"] as const).map((role) => (
+            {(["ALL", "USER", "ADMIN", "ORGANIZER"] as const).map((role) => (
               <button
                 key={role}
                 onClick={() => setFilterRole(role)}
@@ -148,7 +148,7 @@ export default function AdminUsersPage() {
                     : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
                 }`}
               >
-                {role === "ALL" ? "すべて" : role === "USER" ? "ユーザー" : "管理者"}
+                {role === "ALL" ? "すべて" : role === "USER" ? "ユーザー" : role === "ADMIN" ? "管理者" : "主催者"}
               </button>
             ))}
           </div>
@@ -235,20 +235,21 @@ export default function AdminUsersPage() {
                     >
                       <option value="USER">ユーザー</option>
                       <option value="ADMIN">管理者</option>
+                      <option value="ORGANIZER">主催者</option>
                     </select>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
                     <button
                       onClick={() =>
-                        handleToggleOrganizer(user.id, user.is_organizer)
+                        handleToggleOrganizer(user.id, user.role)
                       }
                       className={`rounded-md px-2 py-1 text-xs font-medium transition ${
-                        user.is_organizer
+                        user.role === "ORGANIZER"
                           ? "bg-green-100 text-green-700 hover:bg-green-200"
                           : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
                       }`}
                     >
-                      {user.is_organizer ? "有効" : "無効"}
+                      {user.role === "ORGANIZER" ? "有効" : "無効"}
                     </button>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">

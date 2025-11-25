@@ -36,7 +36,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
 
     // 管理者またはオーガナイザーのみアクセス可能
-    if (session.user.role !== "ADMIN" && !session.user.isOrganizer) {
+    if (session.user.role !== "ADMIN" && session.user.role !== "ORGANIZER") {
       hasRedirected.current = true;
       router.replace("/app/mypage");
       return;
@@ -61,7 +61,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   if (
     status === "loading" ||
     !session ||
-    (session.user.role !== "ADMIN" && !session.user.isOrganizer)
+    (session.user.role !== "ADMIN" && session.user.role !== "ORGANIZER")
   ) {
     return (
       <div className="flex min-h-screen items-center justify-center">

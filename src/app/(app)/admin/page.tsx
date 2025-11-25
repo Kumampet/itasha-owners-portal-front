@@ -20,7 +20,7 @@ export default function AdminPage() {
     }
 
     // 管理者またはオーガナイザーのみアクセス可能
-    if (session.user.role !== "ADMIN" && !session.user.isOrganizer) {
+    if (session.user.role !== "ADMIN" && session.user.role !== "ORGANIZER") {
       hasRedirected.current = true;
       router.replace("/app/mypage");
       return;

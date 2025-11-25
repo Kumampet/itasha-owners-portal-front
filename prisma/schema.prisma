@@ -15,10 +15,8 @@ model User {
   emailVerified    DateTime?
   name             String?
   image            String?
-  // ユーザーがイベント主催者権限を持っているか
-  is_organizer     Boolean      @default(false)
   is_banned        Boolean      @default(false)
-  role             String       @default("USER") // USER, ADMIN
+  role             String       @default("USER") // USER, ADMIN, ORGANIZER
   
   // 公開プロフィール設定
   is_profile_public Boolean     @default(false)

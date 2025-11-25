@@ -116,7 +116,6 @@ const configBase: NextAuthConfig = {
               name: true,
               password: true,
               role: true,
-              is_organizer: true,
               is_banned: true,
               custom_profile_url: true,
             },
@@ -141,7 +140,7 @@ const configBase: NextAuthConfig = {
           }
 
           // 管理者またはオーガナイザーのみログイン可能
-          if (user.role !== "ADMIN" && !user.is_organizer) {
+          if (user.role !== "ADMIN" && user.role !== "ORGANIZER") {
             return null;
           }
 
@@ -158,7 +157,6 @@ const configBase: NextAuthConfig = {
             email: user.email,
             name: user.name,
             role: user.role,
-            isOrganizer: user.is_organizer,
             isBanned: user.is_banned,
             customProfileUrl: user.custom_profile_url,
             mustChangePassword: dbUser?.must_change_password || false,
@@ -240,7 +238,6 @@ const configBase: NextAuthConfig = {
               id: true,
               email: true,
               role: true,
-              is_organizer: true,
               is_banned: true,
               custom_profile_url: true,
             },
@@ -249,7 +246,6 @@ const configBase: NextAuthConfig = {
           if (dbUser) {
             session.user.id = dbUser.id;
             session.user.role = dbUser.role;
-            session.user.isOrganizer = dbUser.is_organizer;
             session.user.isBanned = dbUser.is_banned;
             session.user.customProfileUrl = dbUser.custom_profile_url;
           }
@@ -261,7 +257,6 @@ const configBase: NextAuthConfig = {
       if (token && !user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
-        session.user.isOrganizer = token.isOrganizer as boolean;
         session.user.isBanned = token.isBanned as boolean;
       }
       return session;
@@ -278,14 +273,12 @@ const configBase: NextAuthConfig = {
               where: { id: user.id },
               select: {
                 role: true,
-                is_organizer: true,
                 is_banned: true,
                 must_change_password: true,
               },
             });
             if (dbUser) {
               token.role = dbUser.role;
-              token.isOrganizer = dbUser.is_organizer;
               token.isBanned = dbUser.is_banned;
               token.mustChangePassword = dbUser.must_change_password;
             }

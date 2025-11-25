@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -29,9 +29,10 @@ type Event = {
 export default function AdminEventDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
+  const { id } = use(params);
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -49,11 +50,11 @@ export default function AdminEventDetailPage({
 
   useEffect(() => {
     fetchEvent();
-  }, [params.id]);
+  }, [id]);
 
   const fetchEvent = async () => {
     try {
-      const res = await fetch(`/api/admin/events/${params.id}`);
+      const res = await fetch(`/api/admin/events/${id}`);
       if (!res.ok) throw new Error("Failed to fetch event");
       const data = await res.json();
       setEvent(data);
@@ -83,7 +84,7 @@ export default function AdminEventDetailPage({
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`/api/admin/events/${params.id}`, {
+      const res = await fetch(`/api/admin/events/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -106,7 +107,7 @@ export default function AdminEventDetailPage({
 
     setSaving(true);
     try {
-      const res = await fetch(`/api/admin/events/${params.id}/approve`, {
+      const res = await fetch(`/api/admin/events/${id}/approve`, {
         method: "POST",
       });
 
@@ -126,7 +127,7 @@ export default function AdminEventDetailPage({
 
     setSaving(true);
     try {
-      const res = await fetch(`/api/admin/events/${params.id}/reject`, {
+      const res = await fetch(`/api/admin/events/${id}/reject`, {
         method: "POST",
       });
 
