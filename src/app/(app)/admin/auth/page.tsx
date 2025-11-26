@@ -31,22 +31,43 @@ function AdminAuthForm() {
         return;
       }
 
-      if (result?.ok) {
-        // セッションを更新してmustChangePasswordを取得
+      if (!result?.ok) {
+        setError("ログインに失敗しました。もう一度お試しください。");
+        setIsLoading(false);
+        return;
+      }
+
+      // セッションを更新してmustChangePasswordを取得
+      try {
         const sessionRes = await fetch("/api/auth/session");
+        
+        if (!sessionRes.ok) {
+          throw new Error("Failed to fetch session");
+        }
+        
         const sessionData = await sessionRes.json();
 
         // 初回ログイン時はパスワード変更ページにリダイレクト
         if (sessionData?.user?.mustChangePassword) {
           router.push("/admin/change-password");
+          router.refresh();
         } else {
           // callbackUrlが指定されている場合はそれを使用、なければダッシュボードへ
           const redirectUrl = callbackUrl || "/admin/dashboard";
           router.push(redirectUrl);
+          router.refresh();
         }
+        // リダイレクト後はsetIsLoading(false)を呼ばない（ページ遷移するため）
+      } catch (sessionError) {
+        console.error("Failed to fetch session:", sessionError);
+        // セッション取得に失敗した場合でも、ログインは成功している可能性があるため
+        // ダッシュボードにリダイレクトを試みる
+        const redirectUrl = callbackUrl || "/admin/dashboard";
+        router.push(redirectUrl);
         router.refresh();
       }
-    } catch {
+    } catch (error) {
+      console.error("Login error:", error);
       setError("ログインに失敗しました。もう一度お試しください。");
       setIsLoading(false);
     }
