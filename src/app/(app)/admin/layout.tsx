@@ -32,7 +32,8 @@ type SidebarContentProps = {
 function SidebarContent({ onLinkClick, pathname, session }: SidebarContentProps) {
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-zinc-200 p-4">
+      {/* PC版のみタイトルを表示（モバイル版はヘッダーに表示されるため非表示） */}
+      <div className="hidden border-b border-zinc-200 p-4 lg:block">
         <Link
           href="/admin/dashboard"
           className="text-lg font-semibold text-zinc-900 hover:text-zinc-700"

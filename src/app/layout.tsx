@@ -27,6 +27,13 @@ export const metadata: Metadata = {
       "痛車イベントのエントリー開始・支払期限・併せ連絡をまとめて管理できるPWA",
     type: "website",
   },
+  manifest: "/manifest.json",
+  themeColor: "#18181b",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "痛車オーナーズポータル",
+  },
 };
 
 export default function RootLayout({

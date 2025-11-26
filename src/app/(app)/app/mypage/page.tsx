@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { DisplayNameModal } from "@/components/display-name-modal";
+import { PWAInstallCard } from "@/components/pwa-install-card";
 
 export default function MyPage() {
     const { data: session, status, update } = useSession();
@@ -65,6 +66,9 @@ export default function MyPage() {
                         </ul>
                     </section>
                 </div>
+
+                {/* PWAインストール案内（スマホのみ） */}
+                <PWAInstallCard />
 
                 {/* 基本情報、リマインダー管理、団体管理、オーガナイザー機能（2x2グリッド） */}
                 <div className="grid gap-4 sm:grid-cols-2">

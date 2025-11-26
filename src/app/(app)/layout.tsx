@@ -7,6 +7,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { DisplayNameModal } from "@/components/display-name-modal";
+import { PWAInstallBanner } from "@/components/pwa-install-banner";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -84,7 +85,7 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
       )}
       {/* サイドメニュー */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen w-56 border-r border-zinc-100 bg-white px-4 py-6 transition-transform duration-300 ease-in-out sm:sticky sm:translate-x-0 sm:flex sm:flex-col ${isOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 left-0 z-50 flex h-screen w-56 flex-col border-r border-zinc-100 bg-white px-4 py-6 transition-transform duration-300 ease-in-out sm:sticky sm:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"
           }`}
       >
         {/* 閉じるボタン（SP版のみ） */}
@@ -384,6 +385,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         onSave={handleSaveDisplayName}
         onLater={handleLater}
       />
+      <PWAInstallBanner />
     </>
   );
 }

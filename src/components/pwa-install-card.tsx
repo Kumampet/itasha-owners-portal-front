@@ -1,0 +1,85 @@
+"use client";
+
+import { useState, useEffect } from "react";
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
+export function PWAInstallCard() {
+  const [isVisible, setIsVisible] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+
+  useEffect(() => {
+    // PC表示では非表示
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!isMobile) {
+      return;
+    }
+
+    // 既にPWAとしてインストールされている場合は非表示
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      return;
+    }
+
+    // beforeinstallpromptイベントをリッスン
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setIsVisible(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
+    // 既にインストール可能な場合は表示
+    if (deferredPrompt) {
+      setIsVisible(true);
+    }
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    };
+  }, [deferredPrompt]);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) {
+      return;
+    }
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === "accepted") {
+      setIsVisible(false);
+    }
+    
+    setDeferredPrompt(null);
+  };
+
+  if (!isVisible) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5 sm:hidden">
+      <div className="flex items-start gap-3">
+        <div className="flex-1">
+          <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
+            ホーム画面に追加
+          </h2>
+          <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
+            アプリのように使えます。プッシュ通知やオフライン機能も利用できます。
+          </p>
+        </div>
+        <button
+          onClick={handleInstall}
+          className="rounded-md bg-zinc-900 px-4 py-2 text-xs font-medium text-white transition hover:bg-zinc-800 whitespace-nowrap shrink-0"
+        >
+          追加
+        </button>
+      </div>
+    </div>
+  );
+}
+
