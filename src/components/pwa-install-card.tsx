@@ -8,7 +8,6 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PWAInstallCard() {
-  const [isVisible, setIsVisible] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
@@ -36,12 +35,8 @@ export function PWAInstallCard() {
     };
   }, []);
 
-  // deferredPromptが設定されたときに表示
-  useEffect(() => {
-    if (deferredPrompt) {
-      setIsVisible(true);
-    }
-  }, [deferredPrompt]);
+  // isVisibleはdeferredPromptから計算
+  const isVisible = deferredPrompt !== null;
 
   const handleInstall = async () => {
     if (!deferredPrompt) {
@@ -52,10 +47,8 @@ export function PWAInstallCard() {
     const { outcome } = await deferredPrompt.userChoice;
     
     if (outcome === "accepted") {
-      setIsVisible(false);
+      setDeferredPrompt(null);
     }
-    
-    setDeferredPrompt(null);
   };
 
   if (!isVisible) {
