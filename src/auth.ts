@@ -258,8 +258,27 @@ const configBase: NextAuthConfig = {
       // jwt strategyの場合
       if (token && !user) {
         session.user.id = token.id as string;
-        session.user.role = token.role as string;
-        session.user.isBanned = token.isBanned as boolean;
+        session.user.role = (token.role as string) || "USER"; // デフォルト値を設定
+        session.user.isBanned = (token.isBanned as boolean) || false;
+        // roleが取得できていない場合はデータベースから再取得を試みる
+        if (!token.role && hasDatabaseUrl && token.id) {
+          try {
+            const { prisma } = await import("@/lib/prisma");
+            const dbUser = await prisma.user.findUnique({
+              where: { id: token.id as string },
+              select: {
+                role: true,
+                is_banned: true,
+              },
+            });
+            if (dbUser) {
+              session.user.role = dbUser.role;
+              session.user.isBanned = dbUser.is_banned;
+            }
+          } catch {
+            // エラーは無視して続行
+          }
+        }
       }
       return session;
     },
@@ -267,26 +286,30 @@ const configBase: NextAuthConfig = {
       if (user) {
         token.id = user.id;
         token.mustChangePassword = user.mustChangePassword || false;
-        // DATABASE_URLが設定されている場合はデータベースから取得
-        if (hasDatabaseUrl) {
-          try {
-            const { prisma } = await import("@/lib/prisma");
-            const dbUser = await prisma.user.findUnique({
-              where: { id: user.id },
-              select: {
-                role: true,
-                is_banned: true,
-                must_change_password: true,
-              },
-            });
-            if (dbUser) {
-              token.role = dbUser.role;
-              token.isBanned = dbUser.is_banned;
+      }
+      
+      // DATABASE_URLが設定されている場合はデータベースから取得
+      // userが存在する場合（初回ログイン）も、存在しない場合（セッション更新）も取得
+      if (hasDatabaseUrl && token.id) {
+        try {
+          const { prisma } = await import("@/lib/prisma");
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: {
+              role: true,
+              is_banned: true,
+              must_change_password: true,
+            },
+          });
+          if (dbUser) {
+            token.role = dbUser.role;
+            token.isBanned = dbUser.is_banned;
+            if (user) {
               token.mustChangePassword = dbUser.must_change_password;
             }
-          } catch {
-            // エラーは無視して続行
           }
+        } catch {
+          // エラーは無視して続行
         }
       }
       return token;
