@@ -15,23 +15,26 @@ export function PWAInstallBanner() {
   });
   
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
+  
+  // モバイル判定とPWAインストール状態を初期値として設定
+  const [isMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  });
+  
+  const [isStandalone] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(display-mode: standalone)").matches;
+  });
 
   useEffect(() => {
     // PC表示では非表示
-    const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    setIsMobile(mobile);
-    
-    if (!mobile) {
+    if (!isMobile) {
       return;
     }
 
     // 既にPWAとしてインストールされている場合は非表示
-    const standalone = window.matchMedia("(display-mode: standalone)").matches;
-    setIsStandalone(standalone);
-    
-    if (standalone) {
+    if (isStandalone) {
       return;
     }
 
@@ -46,7 +49,7 @@ export function PWAInstallBanner() {
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
-  }, []);
+  }, [isMobile, isStandalone]);
 
   // モバイルで、PWAとしてインストールされていない場合、かつ非表示にされていない場合は表示
   const isVisible = isMobile && !isStandalone && !isDismissed;
