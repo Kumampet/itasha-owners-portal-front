@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import ConfirmModal from "@/components/confirm-modal";
 import EventForm, { EventFormData } from "@/components/event-form";
 
 export default function AdminNewEventPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [saving, setSaving] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
@@ -24,17 +26,25 @@ export default function AdminNewEventPage() {
     city: "",
     street_address: "",
     venue_name: "",
+    organizer_email: "",
   });
 
   const handleSave = async (approvalStatus: "DRAFT" | "PENDING") => {
     setSaving(true);
 
     try {
+      // 申請時（PENDING）は、主催者メールアドレスが未設定の場合、ログインユーザーのメールアドレスを自動設定
+      const organizerEmail = 
+        approvalStatus === "PENDING" && !formData.organizer_email && session?.user?.email
+          ? session.user.email
+          : formData.organizer_email || null;
+
       const res = await fetch("/api/admin/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
+          organizer_email: organizerEmail,
           tags: tags,
           approval_status: approvalStatus,
         }),

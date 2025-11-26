@@ -61,6 +61,7 @@ export async function GET(
         street_address: true,
         venue_name: true,
         approval_status: true,
+        organizer_email: true,
         organizer_user: {
           select: {
             id: true,
@@ -137,6 +138,16 @@ export async function PATCH(
     const body = await request.json();
     const tags: string[] = body.tags || [];
 
+    // 主催者メールアドレスからユーザーを検索
+    let organizerUserId: string | null = null;
+    if (body.organizer_email) {
+      const organizerUser = await prisma.user.findUnique({
+        where: { email: body.organizer_email },
+        select: { id: true },
+      });
+      organizerUserId = organizerUser?.id || null;
+    }
+
     // トランザクションでイベントとタグを同時に更新
     const event = await prisma.$transaction(async (tx) => {
       // 既存のタグを削除
@@ -165,6 +176,8 @@ export async function PATCH(
           street_address: body.street_address || null,
           venue_name: body.venue_name || null,
           approval_status: body.approval_status,
+          organizer_email: body.organizer_email || null,
+          organizer_user_id: organizerUserId,
         },
       });
 
@@ -208,6 +221,7 @@ export async function PATCH(
           entry_start_at: true,
           payment_due_at: true,
           approval_status: true,
+          organizer_email: true,
           organizer_user: {
             select: {
               id: true,

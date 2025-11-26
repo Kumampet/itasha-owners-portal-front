@@ -128,6 +128,9 @@ model Event {
   organizer_user   User?        @relation("EventOrganizer", fields: [organizer_user_id], references: [id])
   organizer_user_id String?     @db.VarChar(36)
   
+  // 主催者メールアドレス（手動入力可能、申請時に自動設定される）
+  organizer_email  String?      @db.VarChar(255)
+  
   participants     UserEvent[]
   groups           Group[]
   tags             EventTag[]

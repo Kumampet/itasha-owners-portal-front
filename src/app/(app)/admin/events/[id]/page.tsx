@@ -21,6 +21,7 @@ type Event = {
   street_address: string | null;
   venue_name: string | null;
   approval_status: string;
+  organizer_email: string | null;
   organizer_user: {
     id: string;
     email: string;
@@ -61,6 +62,7 @@ export default function AdminEventDetailPage({
     city: "",
     street_address: "",
     venue_name: "",
+    organizer_email: "",
   });
 
   // 現在のユーザーがadminまたはイベントのorganizerかどうかを確認
@@ -105,6 +107,7 @@ export default function AdminEventDetailPage({
         city: data.city || "",
         street_address: data.street_address || "",
         venue_name: data.venue_name || "",
+        organizer_email: data.organizer_email || data.organizer_user?.email || "",
       });
       setTags(data.tags.map((eventTag: { tag: { name: string } }) => eventTag.tag.name));
     } catch (error) {
@@ -122,11 +125,18 @@ export default function AdminEventDetailPage({
   const handleSave = async (approvalStatus: "DRAFT" | "PENDING" | "APPROVED") => {
     setSaving(true);
     try {
+      // 申請時（PENDING）は、主催者メールアドレスが未設定の場合、ログインユーザーのメールアドレスを自動設定
+      const organizerEmail = 
+        approvalStatus === "PENDING" && !formData.organizer_email && session?.user?.email
+          ? session.user.email
+          : formData.organizer_email || null;
+
       const res = await fetch(`/api/admin/events/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
+          organizer_email: organizerEmail,
           tags: tags,
           approval_status: approvalStatus,
         }),
@@ -147,11 +157,18 @@ export default function AdminEventDetailPage({
   const handleReapply = async () => {
     setSaving(true);
     try {
+      // 再申請時は、主催者メールアドレスが未設定の場合、ログインユーザーのメールアドレスを自動設定
+      const organizerEmail = 
+        !formData.organizer_email && session?.user?.email
+          ? session.user.email
+          : formData.organizer_email || null;
+
       const res = await fetch(`/api/admin/events/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
+          organizer_email: organizerEmail,
           tags: tags,
           approval_status: "PENDING",
         }),
@@ -456,11 +473,11 @@ export default function AdminEventDetailPage({
               </a>
             </div>
 
-            {event.organizer_user && (
+            {(event.organizer_email || event.organizer_user) && (
               <div>
                 <h3 className="text-sm font-medium text-zinc-700">主催者</h3>
                 <p className="mt-1 text-sm text-zinc-600">
-                  {event.organizer_user.email}
+                  {event.organizer_email || event.organizer_user?.email || ""}
                 </p>
               </div>
             )}

@@ -87,6 +87,16 @@ export async function POST(request: Request) {
     const body = await request.json();
     const tags: string[] = body.tags || [];
 
+    // 主催者メールアドレスからユーザーを検索
+    let organizerUserId: string | null = null;
+    if (body.organizer_email) {
+      const organizerUser = await prisma.user.findUnique({
+        where: { email: body.organizer_email },
+        select: { id: true },
+      });
+      organizerUserId = organizerUser?.id || null;
+    }
+
     // トランザクションでイベントとタグを同時に作成
     const event = await prisma.$transaction(async (tx) => {
       // イベントを作成
@@ -109,6 +119,8 @@ export async function POST(request: Request) {
           street_address: body.street_address || null,
           venue_name: body.venue_name || null,
           approval_status: body.approval_status || "DRAFT",
+          organizer_email: body.organizer_email || null,
+          organizer_user_id: organizerUserId,
         },
       });
 

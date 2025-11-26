@@ -15,6 +15,7 @@ export type EventFormData = {
   city: string;
   street_address: string;
   venue_name: string;
+  organizer_email: string;
 };
 
 interface EventFormProps {
@@ -180,6 +181,24 @@ export default function EventForm({
           className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
           required
         />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-zinc-700">
+          主催者メールアドレス
+        </label>
+        <input
+          type="email"
+          value={formData.organizer_email}
+          onChange={(e) =>
+            onFormDataChange({ ...formData, organizer_email: e.target.value })
+          }
+          className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+          placeholder="example@example.com"
+        />
+        <p className="mt-1 text-xs text-zinc-500">
+          申請ボタンを押すと、ログインユーザーのメールアドレスが自動的に設定されます。
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
