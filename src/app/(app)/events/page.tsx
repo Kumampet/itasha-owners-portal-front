@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AuthButton } from "@/components/auth-button";
+import { WatchlistButton } from "@/components/watchlist-button";
 
 type DbEvent = {
   id: string;
@@ -80,7 +80,7 @@ export default function EventsPage() {
             痛車イベントをまとめてチェック
           </h1>
           <p className="text-sm text-zinc-600 sm:text-base">
-            エントリー開始前に「気になる」をつけておくと、リマインダーとメール通知で
+            エントリー開始前にウォッチリストに追加しておくと、リマインダーとメール通知で
             申込チャンスを逃しません。
           </p>
         </header>
@@ -149,12 +149,10 @@ export default function EventsPage() {
                       >
                         詳細
                       </Link>
-                      <AuthButton
+                      <WatchlistButton
                         eventId={event.id}
                         className="inline-flex items-center justify-center rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
-                      >
-                        気になる
-                      </AuthButton>
+                      />
                     </div>
                   </div>
                 </div>

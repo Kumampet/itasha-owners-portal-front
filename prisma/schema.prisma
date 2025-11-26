@@ -49,6 +49,12 @@ model User {
   
   // 情報提供フォーム
   event_submissions    EventSubmission[]
+  
+  // リマインダー
+  reminders            Reminder[]
+  
+  // 通知設定
+  notification_settings UserNotificationSettings?
 
   @@map("users")
 }
@@ -135,6 +141,7 @@ model Event {
   groups           Group[]
   tags             EventTag[]
   followers        EventFollow[]
+  reminders        Reminder[]
   
   @@map("events")
 }
@@ -276,4 +283,47 @@ model EventSubmission {
   updated_at       DateTime     @updatedAt
   
   @@map("event_submissions")
+}
+
+// リマインダー
+model Reminder {
+  id               String       @id @default(uuid()) @db.VarChar(36)
+  user             User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id          String       @db.VarChar(36)
+  event            Event        @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  event_id         String       @db.VarChar(36)
+  
+  // リマインダーの種類（将来の仕様変更に対応するため、JSONで柔軟に保存）
+  // 例: {"type": "entry_start", "datetime": "2025-01-01T00:00:00Z", "label": "エントリー開始"}
+  reminder_data    Json         @db.Json
+  
+  // 通知送信済みフラグ
+  notified         Boolean      @default(false)
+  
+  // 通知送信日時
+  notified_at      DateTime?
+  
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+  
+  @@index([user_id, event_id])
+  @@map("reminders")
+}
+
+// ユーザー通知設定
+model UserNotificationSettings {
+  id               String       @id @default(uuid()) @db.VarChar(36)
+  user             User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id          String       @unique @db.VarChar(36)
+  
+  // ブラウザ通知を有効にするか
+  browser_notification_enabled Boolean @default(true)
+  
+  // メール通知を有効にするか
+  email_notification_enabled Boolean @default(true)
+  
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+  
+  @@map("user_notification_settings")
 }

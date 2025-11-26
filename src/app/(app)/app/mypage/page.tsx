@@ -111,6 +111,22 @@ export default function MyPage() {
                     </section>
 
                     <Link
+                        href="/app/watchlist"
+                        className="rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 sm:p-5"
+                    >
+                        <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
+                            ウォッチリスト
+                        </h2>
+                        <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
+                            気になるイベントをまとめて管理します。
+                            ウォッチリストに追加したイベントのリマインダーが自動的に設定されます。
+                        </p>
+                        <p className="mt-3 text-xs font-semibold text-emerald-600">
+                            詳細を見る →
+                        </p>
+                    </Link>
+
+                    <Link
                         href="/app/reminder"
                         className="rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 sm:p-5"
                     >
@@ -118,8 +134,24 @@ export default function MyPage() {
                             リマインダー管理
                         </h2>
                         <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
-                            気になるイベントやエントリー済みイベントの
+                            エントリー済みイベントの
                             締切・集合時間・支払期日をまとめて確認。
+                        </p>
+                        <p className="mt-3 text-xs font-semibold text-emerald-600">
+                            詳細を見る →
+                        </p>
+                    </Link>
+
+                    <Link
+                        href="/app/notification-settings"
+                        className="rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 sm:p-5"
+                    >
+                        <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
+                            通知設定
+                        </h2>
+                        <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
+                            ブラウザ通知とメール通知の
+                            有効/無効を設定できます。
                         </p>
                         <p className="mt-3 text-xs font-semibold text-emerald-600">
                             詳細を見る →
