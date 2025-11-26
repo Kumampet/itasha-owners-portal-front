@@ -19,6 +19,7 @@ export default function NewReminderPage() {
     event_id: "",
     label: "",
     datetime: "",
+    note: "",
   });
 
   useEffect(() => {
@@ -152,6 +153,21 @@ export default function NewReminderPage() {
               }
               className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-700">
+              備考
+            </label>
+            <textarea
+              value={formData.note}
+              onChange={(e) =>
+                setFormData({ ...formData, note: e.target.value })
+              }
+              rows={4}
+              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              placeholder="リマインダーに関するメモや備考を入力してください（任意）"
             />
           </div>
 

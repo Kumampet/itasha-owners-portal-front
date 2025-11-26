@@ -297,6 +297,9 @@ model Reminder {
   // 例: {"type": "entry_start", "datetime": "2025-01-01T00:00:00Z", "label": "エントリー開始"}
   reminder_data    Json         @db.Json
   
+  // 備考（任意）
+  note             String?      @db.Text
+  
   // 通知送信済みフラグ
   notified         Boolean      @default(false)
   

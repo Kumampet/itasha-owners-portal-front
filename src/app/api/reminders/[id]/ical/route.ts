@@ -75,9 +75,17 @@ export async function GET(
     };
 
     const summary = escapeICalText(`${reminderData.label} - ${reminder.event.name}`);
-    const description = reminder.event.theme
-      ? escapeICalText(`${reminder.event.name}\\n${reminder.event.theme}\\n${reminderData.label}`)
-      : escapeICalText(`${reminder.event.name}\\n${reminderData.label}`);
+    
+    // 説明文を構築（備考がある場合は含める）
+    let descriptionParts = [reminder.event.name];
+    if (reminder.event.theme) {
+      descriptionParts.push(reminder.event.theme);
+    }
+    descriptionParts.push(reminderData.label);
+    if (reminder.note) {
+      descriptionParts.push(`\\n備考: ${reminder.note}`);
+    }
+    const description = escapeICalText(descriptionParts.join("\\n"));
 
     // iCal形式のファイルを生成
     const icalContent = [

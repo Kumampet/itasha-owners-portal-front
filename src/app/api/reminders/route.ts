@@ -91,6 +91,7 @@ export async function GET(request: Request) {
         type: reminderData.type,
         datetime: reminderData.datetime,
         label: reminderData.label,
+        note: reminder.note,
         notified: reminder.notified,
         notified_at: reminder.notified_at,
         created_at: reminder.created_at,
@@ -128,7 +129,7 @@ export async function POST(request: Request) {
 
     const userId = session.user.id;
     const body = await request.json();
-    const { label, datetime, event_id } = body;
+    const { label, datetime, event_id, note } = body;
 
     // イベント情報を取得
     const event = await prisma.event.findUnique({
@@ -161,6 +162,7 @@ export async function POST(request: Request) {
           event_id: event_id,
           event_name: event.name,
         },
+        note: note || null,
       },
       include: {
         event: {
@@ -195,6 +197,7 @@ export async function POST(request: Request) {
       type: reminderData.type,
       datetime: reminderData.datetime,
       label: reminderData.label,
+      note: reminder.note,
       notified: reminder.notified,
       notified_at: reminder.notified_at,
       created_at: reminder.created_at,

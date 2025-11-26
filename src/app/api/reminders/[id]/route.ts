@@ -70,6 +70,7 @@ export async function GET(
       type: reminderData.type,
       datetime: reminderData.datetime,
       label: reminderData.label,
+      note: reminder.note,
       notified: reminder.notified,
       notified_at: reminder.notified_at,
       created_at: reminder.created_at,
@@ -121,7 +122,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { label, datetime, event_id } = body;
+    const { label, datetime, event_id, note } = body;
 
     // イベント情報を取得
     const event = await prisma.event.findUnique({
@@ -159,6 +160,7 @@ export async function PATCH(
           event_id: event_id,
           event_name: event.name,
         },
+        note: note || null,
       },
       include: {
         event: {
@@ -193,6 +195,7 @@ export async function PATCH(
       type: updatedReminderData.type,
       datetime: updatedReminderData.datetime,
       label: updatedReminderData.label,
+      note: updatedReminder.note,
       notified: updatedReminder.notified,
       notified_at: updatedReminder.notified_at,
       created_at: updatedReminder.created_at,
