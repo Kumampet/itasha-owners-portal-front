@@ -50,6 +50,9 @@ model User {
   // 情報提供フォーム
   event_submissions    EventSubmission[]
   
+  // お問い合わせフォーム
+  contact_submissions  ContactSubmission[]
+  
   // リマインダー
   reminders            Reminder[]
   
@@ -329,4 +332,30 @@ model UserNotificationSettings {
   updated_at       DateTime     @updatedAt
   
   @@map("user_notification_settings")
+}
+
+// お問い合わせフォーム
+model ContactSubmission {
+  id               String       @id @default(uuid()) @db.VarChar(36)
+  
+  // 提供者情報（未ログインの場合はnull）
+  submitter        User?        @relation(fields: [submitter_id], references: [id])
+  submitter_id     String?     @db.VarChar(36)
+  
+  // お問い合わせ情報
+  title            String       @db.VarChar(255) // タイトル
+  name             String       @db.VarChar(100) // お名前（ニックネーム可）
+  email            String       @db.VarChar(255) // メールアドレス
+  content          String       @db.Text // お問い合わせ内容（長文）
+  
+  // 処理ステータス (PENDING: 未処理, PROCESSING: 処理中, RESOLVED: 対応済)
+  status           String       @default("PENDING")
+  
+  // 処理メモ（管理者が記入）
+  admin_note       String?      @db.Text
+  
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+  
+  @@map("contact_submissions")
 }

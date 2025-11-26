@@ -16,6 +16,7 @@ const tabs = [
   { href: "/app/mypage", label: "マイページ", key: "mypage" },
   { href: "/events", label: "イベント", key: "events" },
   { href: "/app/event-submission", label: "イベント掲載依頼", key: "event-submission" },
+  { href: "/app/contact", label: "お問い合わせ", key: "contact" },
 ];
 
 function resolveActiveKey(pathname: string) {
@@ -53,8 +54,8 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
   const activeKey = resolveActiveKey(pathname);
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    // イベントページは常にアクセス可能
-    if (href === "/events") {
+    // イベントページとお問い合わせフォームは常にアクセス可能
+    if (href === "/events" || href === "/app/contact") {
       onClose();
       return;
     }

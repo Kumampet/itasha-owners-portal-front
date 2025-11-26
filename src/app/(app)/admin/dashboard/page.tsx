@@ -36,6 +36,12 @@ export default function AdminDashboard() {
       icon: "📝",
     },
     {
+      title: "お問い合わせ管理",
+      description: "ユーザーからのお問い合わせを確認・処理",
+      href: "/admin/contacts",
+      icon: "💬",
+    },
+    {
       title: "オーガナイザーアカウント作成",
       description: "イベントオーガナイザー用のアカウントを作成",
       href: "/admin/organizers/new",
