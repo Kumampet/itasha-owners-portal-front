@@ -8,9 +8,14 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PWAInstallBanner() {
+  // ローカルストレージで非表示状態を初期値として設定
+  const [isDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("pwa-banner-dismissed") === "true";
+  });
+  
   const [isVisible, setIsVisible] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
     // PC表示では非表示
@@ -24,10 +29,8 @@ export function PWAInstallBanner() {
       return;
     }
 
-    // ローカルストレージで非表示状態を確認
-    const dismissed = localStorage.getItem("pwa-banner-dismissed");
-    if (dismissed === "true") {
-      setIsDismissed(true);
+    // 既に非表示にされている場合は何もしない
+    if (isDismissed) {
       return;
     }
 
@@ -40,15 +43,17 @@ export function PWAInstallBanner() {
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-    // 既にインストール可能な場合は表示
-    if (deferredPrompt) {
-      setIsVisible(true);
-    }
-
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
-  }, [deferredPrompt]);
+  }, [isDismissed]);
+
+  // deferredPromptが設定されたときに表示
+  useEffect(() => {
+    if (deferredPrompt && !isDismissed) {
+      setIsVisible(true);
+    }
+  }, [deferredPrompt, isDismissed]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) {
@@ -67,7 +72,6 @@ export function PWAInstallBanner() {
 
   const handleDismiss = () => {
     setIsVisible(false);
-    setIsDismissed(true);
     localStorage.setItem("pwa-banner-dismissed", "true");
   };
 

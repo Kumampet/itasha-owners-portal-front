@@ -27,19 +27,20 @@ export function PWAInstallCard() {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setIsVisible(true);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-    // 既にインストール可能な場合は表示
-    if (deferredPrompt) {
-      setIsVisible(true);
-    }
-
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
+  }, []);
+
+  // deferredPromptが設定されたときに表示
+  useEffect(() => {
+    if (deferredPrompt) {
+      setIsVisible(true);
+    }
   }, [deferredPrompt]);
 
   const handleInstall = async () => {
