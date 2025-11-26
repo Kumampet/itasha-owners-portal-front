@@ -52,49 +52,71 @@ function AdminAuthForm() {
       console.log("[AdminAuth] signIn successful, fetching session...");
 
       // セッションを更新してmustChangePasswordを取得
-      try {
-        const sessionRes = await fetch("/api/auth/session");
-        console.log("[AdminAuth] Session fetch response:", {
-          ok: sessionRes.ok,
-          status: sessionRes.status,
-          statusText: sessionRes.statusText
-        });
+      // セッションが正しく取得できるまでリトライする（最大5回、各500ms待機）
+      let sessionData = null;
+      let retryCount = 0;
+      const maxRetries = 5;
 
-        if (!sessionRes.ok) {
-          throw new Error(`Failed to fetch session: ${sessionRes.status} ${sessionRes.statusText}`);
+      while (retryCount < maxRetries && !sessionData?.user) {
+        try {
+          // セッション更新を待つため、少し待機
+          if (retryCount > 0) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+
+          const sessionRes = await fetch("/api/auth/session?update", {
+            cache: "no-store",
+          });
+          console.log("[AdminAuth] Session fetch response (attempt", retryCount + 1, "):", {
+            ok: sessionRes.ok,
+            status: sessionRes.status,
+            statusText: sessionRes.statusText
+          });
+
+          if (!sessionRes.ok) {
+            throw new Error(`Failed to fetch session: ${sessionRes.status} ${sessionRes.statusText}`);
+          }
+
+          sessionData = await sessionRes.json();
+          console.log("[AdminAuth] Session data:", {
+            user: sessionData?.user ? {
+              id: sessionData.user.id,
+              email: sessionData.user.email,
+              role: sessionData.user.role,
+              mustChangePassword: sessionData.user.mustChangePassword
+            } : null
+          });
+
+          if (sessionData?.user) {
+            break; // セッションが取得できたのでループを抜ける
+          }
+        } catch (sessionError) {
+          console.error("[AdminAuth] Failed to fetch session (attempt", retryCount + 1, "):", sessionError);
         }
 
-        const sessionData = await sessionRes.json();
-        console.log("[AdminAuth] Session data:", {
-          user: sessionData?.user ? {
-            id: sessionData.user.id,
-            email: sessionData.user.email,
-            role: sessionData.user.role,
-            mustChangePassword: sessionData.user.mustChangePassword
-          } : null
-        });
+        retryCount++;
+      }
 
+      // セッションが取得できた場合
+      if (sessionData?.user) {
         // 初回ログイン時はパスワード変更ページにリダイレクト
-        if (sessionData?.user?.mustChangePassword) {
+        if (sessionData.user.mustChangePassword) {
           console.log("[AdminAuth] Redirecting to change-password page");
-          router.push("/admin/change-password");
-          router.refresh();
+          window.location.href = "/admin/change-password";
         } else {
           // callbackUrlが指定されている場合はそれを使用、なければダッシュボードへ
           const redirectUrl = callbackUrl || "/admin/dashboard";
           console.log("[AdminAuth] Redirecting to:", redirectUrl);
-          router.push(redirectUrl);
-          router.refresh();
+          window.location.href = redirectUrl;
         }
         // リダイレクト後はsetIsLoading(false)を呼ばない（ページ遷移するため）
-      } catch (sessionError) {
-        console.error("[AdminAuth] Failed to fetch session:", sessionError);
-        // セッション取得に失敗した場合でも、ログインは成功している可能性があるため
-        // ダッシュボードにリダイレクトを試みる
+      } else {
+        // セッションが取得できなかった場合でも、ログインは成功している可能性があるため
+        // ダッシュボードにリダイレクトを試みる（完全なページリロード）
+        console.warn("[AdminAuth] Session not available after retries, redirecting anyway");
         const redirectUrl = callbackUrl || "/admin/dashboard";
         console.log("[AdminAuth] Fallback redirect to:", redirectUrl);
-        router.push(redirectUrl);
-        router.refresh();
+        window.location.href = redirectUrl;
       }
     } catch (error) {
       console.error("[AdminAuth] Login error:", error);
