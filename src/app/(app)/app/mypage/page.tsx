@@ -127,6 +127,21 @@ export default function MyPage() {
                     </Link>
 
                     <Link
+                        href="/app/event-submission"
+                        className="rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 sm:p-5"
+                    >
+                        <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
+                            イベント掲載依頼
+                        </h2>
+                        <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
+                            イベント情報をご提供いただくことで、より多くの参加者にイベントを知っていただくことができます。
+                        </p>
+                        <p className="mt-3 text-xs font-semibold text-emerald-600">
+                            フォームを開く →
+                        </p>
+                    </Link>
+
+                    <Link
                         href="/app/reminder"
                         className="rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 sm:p-5"
                     >
@@ -197,7 +212,10 @@ export default function MyPage() {
                                 オーガナイザー機能
                             </h2>
                             <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
-                                オーガナイザー権限が必要です。
+                                イベントの作成・管理や参加者の管理など、イベント主催者向けの機能です。
+                            </p>
+                            <p className="mt-2 text-xs text-zinc-600 sm:text-sm">
+                                ご希望のイベント主催者はお問い合わせフォームからお問い合わせください。
                             </p>
                         </div>
                     )}

@@ -18,7 +18,7 @@ const menuItems = [
 // adminのみ表示するメニュー項目
 const adminOnlyMenuItems = [
   { href: "/admin/users", label: "ユーザー管理", icon: "👥" },
-  { href: "/admin/submissions", label: "情報提供フォーム", icon: "📝" },
+  { href: "/admin/submissions", label: "イベント掲載依頼フォーム", icon: "📝" },
   { href: "/admin/organizers/new", label: "オーガナイザー作成", icon: "👤" },
 ];
 

@@ -27,6 +27,7 @@ export async function GET(request: Request) {
     if (status && status !== "ALL") {
       where.status = status;
     }
+    // status === "ALL" の場合はすべてのステータスを表示（処理済みも含む）
     if (search) {
       where.OR = [
         { name: { contains: search } },

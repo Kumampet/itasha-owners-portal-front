@@ -266,12 +266,12 @@ model EventSubmission {
   
   // イベント情報
   name             String
-  theme            String?
-  description      String?      @db.Text
-  original_url     String
-  event_date       DateTime?
-  entry_start_at   DateTime?
-  payment_due_at   DateTime?
+  original_url     String?      // イベント情報URL（HPやSNS等）（推奨・任意）
+  event_date       DateTime?    // 開催日（任意）
+  description      String?      @db.Text // その他備考欄
+  theme            String?      // 旧フィールド（後方互換性のため残す）
+  entry_start_at   DateTime?    // 旧フィールド（後方互換性のため残す）
+  payment_due_at   DateTime?    // 旧フィールド（後方互換性のため残す）
   
   // 処理ステータス (PENDING, PROCESSED, REJECTED)
   status           String       @default("PENDING")

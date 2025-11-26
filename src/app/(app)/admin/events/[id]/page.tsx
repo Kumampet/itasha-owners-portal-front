@@ -66,18 +66,18 @@ export default function AdminEventDetailPage({
   });
 
   // 現在のユーザーがadminまたはイベントのorganizerかどうかを確認
-  const canReapply = 
+  const canReapply =
     event &&
     event.approval_status === "REJECTED" &&
-    (session?.user?.role === "ADMIN" || 
-     (session?.user?.role === "ORGANIZER" && event.organizer_user?.id === session.user.id));
+    (session?.user?.role === "ADMIN" ||
+      (session?.user?.role === "ORGANIZER" && event.organizer_user?.id === session.user.id));
 
   // 一度公開されたイベントを編集する場合（作成者またはadminのみ）
-  const canUpdateDirectly = 
+  const canUpdateDirectly =
     event &&
     event.approval_status === "APPROVED" &&
-    (session?.user?.role === "ADMIN" || 
-     (session?.user?.role === "ORGANIZER" && event.organizer_user?.id === session.user.id));
+    (session?.user?.role === "ADMIN" ||
+      (session?.user?.role === "ORGANIZER" && event.organizer_user?.id === session.user.id));
 
   const fetchEvent = useCallback(async () => {
     try {
@@ -126,7 +126,7 @@ export default function AdminEventDetailPage({
     setSaving(true);
     try {
       // 申請時（PENDING）は、主催者メールアドレスが未設定の場合、ログインユーザーのメールアドレスを自動設定
-      const organizerEmail = 
+      const organizerEmail =
         approvalStatus === "PENDING" && !formData.organizer_email && session?.user?.email
           ? session.user.email
           : formData.organizer_email || null;
@@ -158,7 +158,7 @@ export default function AdminEventDetailPage({
     setSaving(true);
     try {
       // 再申請時は、主催者メールアドレスが未設定の場合、ログインユーザーのメールアドレスを自動設定
-      const organizerEmail = 
+      const organizerEmail =
         !formData.organizer_email && session?.user?.email
           ? session.user.email
           : formData.organizer_email || null;
@@ -344,7 +344,7 @@ export default function AdminEventDetailPage({
         onClose={() => setShowRejectModal(false)}
         onConfirm={handleReject}
         title="このイベントを却下しますか？"
-        message="却下すると、イベントは非公開になります。主催者は再申請することができます。"
+        message="主催者は再申請することができます。"
         confirmLabel="却下"
         cancelLabel="キャンセル"
       />
@@ -397,23 +397,22 @@ export default function AdminEventDetailPage({
           <div>
             <div className="mb-2 flex items-center gap-2">
               <span
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                  event.approval_status === "DRAFT"
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${event.approval_status === "DRAFT"
                     ? "bg-zinc-100 text-zinc-700"
                     : event.approval_status === "PENDING"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : event.approval_status === "APPROVED"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
-                }`}
+                      ? "bg-yellow-100 text-yellow-700"
+                      : event.approval_status === "APPROVED"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                  }`}
               >
                 {event.approval_status === "DRAFT"
                   ? "下書き"
                   : event.approval_status === "PENDING"
-                  ? "承認待ち"
-                  : event.approval_status === "APPROVED"
-                  ? "承認済み"
-                  : "却下"}
+                    ? "承認待ち"
+                    : event.approval_status === "APPROVED"
+                      ? "承認済み"
+                      : "却下"}
               </span>
             </div>
             <h2 className="text-xl font-semibold text-zinc-900">

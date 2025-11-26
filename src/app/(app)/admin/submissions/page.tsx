@@ -31,7 +31,7 @@ export default function AdminSubmissionsPage() {
   const router = useRouter();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("ALL");
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("PENDING");
   const [sortBy, setSortBy] = useState<SortBy>("created_at");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,37 +99,19 @@ export default function AdminSubmissionsPage() {
     }
   };
 
-  const handleCreateEvent = async (submissionId: string) => {
-    if (!selectedSubmission) return;
-
-    setProcessing(true);
-    try {
-      // 情報提供からイベントを作成
-      const eventRes = await fetch("/api/admin/events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: selectedSubmission.name,
-          theme: selectedSubmission.theme || null,
-          description: selectedSubmission.description || null,
-          original_url: selectedSubmission.original_url,
-          event_date: selectedSubmission.event_date || new Date().toISOString(),
-          entry_start_at: selectedSubmission.entry_start_at || null,
-          payment_due_at: selectedSubmission.payment_due_at || null,
-          approval_status: "PENDING",
-        }),
-      });
-
-      if (!eventRes.ok) throw new Error("Failed to create event");
-
-      // 情報提供を処理済みにマーク
-      await handleProcess(submissionId, "PROCESSED");
-    } catch (error) {
-      console.error("Failed to create event from submission:", error);
-      alert("イベントの作成に失敗しました");
-    } finally {
-      setProcessing(false);
-    }
+  const handleCreateEvent = (submission: Submission) => {
+    // イベント作成ページに遷移し、フォームに情報を自動入力
+    const params = new URLSearchParams();
+    params.append("fromSubmission", submission.id);
+    if (submission.name) params.append("name", submission.name);
+    if (submission.original_url) params.append("original_url", submission.original_url);
+    if (submission.event_date) params.append("event_date", submission.event_date);
+    if (submission.description) params.append("description", submission.description);
+    if (submission.theme) params.append("theme", submission.theme);
+    if (submission.entry_start_at) params.append("entry_start_at", submission.entry_start_at);
+    if (submission.payment_due_at) params.append("payment_due_at", submission.payment_due_at);
+    
+    router.push(`/admin/events/new?${params.toString()}`);
   };
 
   const getStatusBadgeClass = (status: string) => {
@@ -171,10 +153,10 @@ export default function AdminSubmissionsPage() {
     <div className="w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
-          情報提供フォーム
+          イベント掲載依頼フォーム
         </h1>
         <p className="mt-2 text-sm text-zinc-600 sm:text-base">
-          ユーザーからのイベント情報提供を確認・処理します
+          ユーザーからのイベント掲載依頼を確認・処理します
         </p>
       </div>
 
@@ -243,24 +225,28 @@ export default function AdminSubmissionsPage() {
         </div>
       </div>
 
-      {/* 情報提供一覧 */}
+      {/* イベント掲載依頼一覧 */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
         </div>
       ) : submissions.length === 0 ? (
         <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center">
-          <p className="text-sm text-zinc-600">情報提供がありません</p>
+          <p className="text-sm text-zinc-600">イベント掲載依頼がありません</p>
         </div>
       ) : (
         <div className="space-y-3">
           {submissions.map((submission) => (
             <div
               key={submission.id}
-              className="rounded-lg border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 hover:shadow-md"
+              className={`rounded-lg border p-4 transition ${
+                submission.status === "PROCESSED"
+                  ? "border-zinc-200 bg-zinc-50 opacity-60"
+                  : "border-zinc-200 bg-white hover:border-zinc-900 hover:shadow-md"
+              }`}
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex-1">
+                <div className={`flex-1 ${submission.status === "PROCESSED" ? "text-zinc-400" : ""}`}>
                   <div className="mb-2 flex items-center gap-2">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadgeClass(
@@ -269,17 +255,19 @@ export default function AdminSubmissionsPage() {
                     >
                       {getStatusLabel(submission.status)}
                     </span>
-                    <span className="text-xs text-zinc-500">
+                    <span className={`text-xs ${submission.status === "PROCESSED" ? "text-zinc-400" : "text-zinc-500"}`}>
                       {submission.submitter?.email || submission.submitter_email || "匿名"}
                     </span>
                   </div>
-                  <h3 className="text-base font-semibold text-zinc-900">
+                  <h3 className={`text-base font-semibold ${submission.status === "PROCESSED" ? "text-zinc-400" : "text-zinc-900"}`}>
                     {submission.name}
                   </h3>
                   {submission.theme && (
-                    <p className="text-sm text-zinc-600">{submission.theme}</p>
+                    <p className={`text-sm ${submission.status === "PROCESSED" ? "text-zinc-400" : "text-zinc-600"}`}>
+                      {submission.theme}
+                    </p>
                   )}
-                  <div className="mt-2 flex flex-wrap gap-4 text-xs text-zinc-500">
+                  <div className={`mt-2 flex flex-wrap gap-4 text-xs ${submission.status === "PROCESSED" ? "text-zinc-400" : "text-zinc-500"}`}>
                     {submission.event_date && (
                       <span>開催日: {formatDate(submission.event_date)}</span>
                     )}
@@ -297,14 +285,19 @@ export default function AdminSubmissionsPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setSelectedSubmission(submission)}
-                    className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50"
+                    disabled={submission.status === "PROCESSED"}
+                    className={`rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium transition ${
+                      submission.status === "PROCESSED"
+                        ? "cursor-not-allowed text-zinc-300 opacity-50"
+                        : "text-zinc-700 hover:bg-zinc-50"
+                    }`}
                   >
                     詳細
                   </button>
                   {submission.status === "PENDING" && (
                     <>
                       <button
-                        onClick={() => handleCreateEvent(submission.id)}
+                        onClick={() => handleCreateEvent(submission)}
                         disabled={processing}
                         className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-green-700 disabled:opacity-50"
                       >
@@ -331,7 +324,7 @@ export default function AdminSubmissionsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-zinc-200 bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-zinc-900">情報提供の詳細</h2>
+              <h2 className="text-xl font-semibold text-zinc-900">イベント掲載依頼の詳細</h2>
               <button
                 onClick={() => setSelectedSubmission(null)}
                 className="text-zinc-600 hover:text-zinc-900"
@@ -422,11 +415,10 @@ export default function AdminSubmissionsPage() {
               {selectedSubmission.status === "PENDING" && (
                 <div className="flex gap-2 pt-4">
                   <button
-                    onClick={() => handleCreateEvent(selectedSubmission.id)}
-                    disabled={processing}
-                    className="flex-1 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:opacity-50"
+                    onClick={() => handleCreateEvent(selectedSubmission)}
+                    className="flex-1 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
                   >
-                    イベントを作成して処理済みにする
+                    イベント作成画面へ
                   </button>
                   <button
                     onClick={() => handleProcess(selectedSubmission.id, "REJECTED")}

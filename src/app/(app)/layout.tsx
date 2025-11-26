@@ -15,6 +15,7 @@ type AppLayoutProps = {
 const tabs = [
   { href: "/app/mypage", label: "マイページ", key: "mypage" },
   { href: "/events", label: "イベント", key: "events" },
+  { href: "/app/event-submission", label: "イベント掲載依頼", key: "event-submission" },
 ];
 
 function resolveActiveKey(pathname: string) {
@@ -59,7 +60,7 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
     }
     
     // 未ログインで保護されたページにアクセスしようとした場合
-    if (!session && href === "/app/mypage") {
+    if (!session && (href === "/app/mypage" || href === "/app/event-submission")) {
       e.preventDefault();
       router.push(`/app/auth?callbackUrl=${encodeURIComponent(href)}`);
       onClose();

@@ -1,18 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import ConfirmModal from "@/components/confirm-modal";
 import EventForm, { EventFormData } from "@/components/event-form";
 
-export default function AdminNewEventPage() {
+function AdminNewEventPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
   const [saving, setSaving] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
     name: "",
     theme: "",
@@ -28,6 +30,33 @@ export default function AdminNewEventPage() {
     venue_name: "",
     organizer_email: "",
   });
+
+      // クエリパラメータからイベント掲載依頼フォームの情報を取得してフォームに自動入力
+  useEffect(() => {
+    const fromSubmission = searchParams?.get("fromSubmission");
+    if (fromSubmission) {
+      setSubmissionId(fromSubmission);
+      // クエリパラメータから情報を取得してフォームに設定
+      const name = searchParams?.get("name") || "";
+      const original_url = searchParams?.get("original_url") || "";
+      const event_date = searchParams?.get("event_date") || "";
+      const description = searchParams?.get("description") || "";
+      const theme = searchParams?.get("theme") || "";
+      const entry_start_at = searchParams?.get("entry_start_at") || "";
+      const payment_due_at = searchParams?.get("payment_due_at") || "";
+
+      setFormData((prev) => ({
+        ...prev,
+        name,
+        original_url,
+        description,
+        theme,
+        event_date: event_date ? new Date(event_date).toISOString().slice(0, 16) : "",
+        entry_start_at: entry_start_at ? new Date(entry_start_at).toISOString().slice(0, 16) : "",
+        payment_due_at: payment_due_at ? new Date(payment_due_at).toISOString().slice(0, 16) : "",
+      }));
+    }
+  }, [searchParams]);
 
   const handleSave = async (approvalStatus: "DRAFT" | "PENDING") => {
     setSaving(true);
@@ -53,6 +82,21 @@ export default function AdminNewEventPage() {
       if (!res.ok) throw new Error("Failed to create event");
 
       const data = await res.json();
+      
+      // イベント掲載依頼フォームから作成した場合は、処理済みにマーク
+      if (submissionId) {
+        try {
+          await fetch(`/api/admin/submissions/${submissionId}/process`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "PROCESSED" }),
+          });
+        } catch (error) {
+          console.error("Failed to mark submission as processed:", error);
+          // エラーが発生してもイベント作成は成功しているので続行
+        }
+      }
+      
       router.push(`/admin/events/${data.id}`);
     } catch (error) {
       console.error("Failed to create event:", error);
@@ -128,6 +172,20 @@ export default function AdminNewEventPage() {
         </button>
       </EventForm>
     </div>
+  );
+}
+
+export default function AdminNewEventPage() {
+  return (
+    <Suspense fallback={
+      <div className="w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+        </div>
+      </div>
+    }>
+      <AdminNewEventPageContent />
+    </Suspense>
   );
 }
 
