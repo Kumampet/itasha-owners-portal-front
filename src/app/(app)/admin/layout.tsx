@@ -121,6 +121,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const isAuthPage = pathname === "/admin/auth";
   const isChangePasswordPage = pathname === "/admin/change-password";
 
+  // /admin配下のページを検索エンジンから除外
+  useEffect(() => {
+    // noindexメタタグを追加
+    let metaRobots = document.querySelector('meta[name="robots"]');
+    if (!metaRobots) {
+      metaRobots = document.createElement("meta");
+      metaRobots.setAttribute("name", "robots");
+      document.head.appendChild(metaRobots);
+    }
+    metaRobots.setAttribute("content", "noindex, nofollow");
+  }, []);
+
   // メニューが開いている時はスクロールを無効化（すべてのHooksは早期リターンの前に配置）
   useEffect(() => {
     if (isMenuOpen) {

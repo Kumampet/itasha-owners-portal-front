@@ -276,6 +276,26 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [showDisplayNameModal, setShowDisplayNameModal] = useState(false);
   const [hasCheckedDisplayName, setHasCheckedDisplayName] = useState(false);
 
+  // /app配下のページを検索エンジンから除外
+  useEffect(() => {
+    if (pathname?.startsWith("/app")) {
+      // noindexメタタグを追加
+      let metaRobots = document.querySelector('meta[name="robots"]');
+      if (!metaRobots) {
+        metaRobots = document.createElement("meta");
+        metaRobots.setAttribute("name", "robots");
+        document.head.appendChild(metaRobots);
+      }
+      metaRobots.setAttribute("content", "noindex, nofollow");
+    } else {
+      // /app配下でない場合はnoindexメタタグを削除
+      const metaRobots = document.querySelector('meta[name="robots"]');
+      if (metaRobots && metaRobots.getAttribute("content") === "noindex, nofollow") {
+        metaRobots.remove();
+      }
+    }
+  }, [pathname]);
+
   // メニューが開いている時はスクロールを無効化
   // Hooksのルールに従い、早期リターンの前にすべてのHooksを呼ぶ
   useEffect(() => {
