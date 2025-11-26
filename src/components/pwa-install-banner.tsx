@@ -15,25 +15,27 @@ export function PWAInstallBanner() {
   });
   
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
     // PC表示では非表示
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (!isMobile) {
+    const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    setIsMobile(mobile);
+    
+    if (!mobile) {
       return;
     }
 
     // 既にPWAとしてインストールされている場合は非表示
-    if (window.matchMedia("(display-mode: standalone)").matches) {
+    const standalone = window.matchMedia("(display-mode: standalone)").matches;
+    setIsStandalone(standalone);
+    
+    if (standalone) {
       return;
     }
 
-    // 既に非表示にされている場合は何もしない
-    if (isDismissed) {
-      return;
-    }
-
-    // beforeinstallpromptイベントをリッスン
+    // beforeinstallpromptイベントをリッスン（Android Chrome等で利用可能）
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -44,21 +46,31 @@ export function PWAInstallBanner() {
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
-  }, [isDismissed]);
+  }, []);
 
-  // isVisibleはdeferredPromptとisDismissedから計算
-  const isVisible = deferredPrompt !== null && !isDismissed;
+  // モバイルで、PWAとしてインストールされていない場合、かつ非表示にされていない場合は表示
+  const isVisible = isMobile && !isStandalone && !isDismissed;
 
   const handleInstall = async () => {
-    if (!deferredPrompt) {
+    // beforeinstallpromptイベントが利用可能な場合（Android Chrome等）
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      
+      if (outcome === "accepted") {
+        setDeferredPrompt(null);
+      }
       return;
     }
 
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === "accepted") {
-      setDeferredPrompt(null);
+    // iOS Safariの場合、手動でホーム画面に追加する方法を案内
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isIOS) {
+      // iOS Safariの場合は、ブラウザのメニューから「ホーム画面に追加」を案内
+      alert("Safariのメニュー（共有ボタン）から「ホーム画面に追加」を選択してください。");
+    } else {
+      // その他のAndroidブラウザの場合
+      alert("ブラウザのメニューから「ホーム画面に追加」または「アプリをインストール」を選択してください。");
     }
   };
 

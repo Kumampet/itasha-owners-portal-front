@@ -142,9 +142,18 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
                 </div>
               </div>
               <button
-                onClick={() => {
-                  signOut({ callbackUrl: "/app/auth" });
+                onClick={async () => {
                   onClose();
+                  // 現在のパスを確認して適切なログイン画面にリダイレクト
+                  const currentPath = pathname || "/app/mypage";
+                  const isAdminPath = currentPath.startsWith("/admin");
+                  const redirectUrl = isAdminPath ? "/admin/auth" : "/app/auth";
+                  
+                  // ログアウト処理
+                  await signOut({ redirect: false });
+                  
+                  // 明示的にリダイレクト
+                  router.push(redirectUrl);
                 }}
                 className="mt-2 w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-[10px] font-medium text-zinc-700 transition hover:bg-zinc-100"
               >
