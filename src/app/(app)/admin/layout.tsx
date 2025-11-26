@@ -237,7 +237,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* メインコンテンツ */}
-      <div className="flex min-h-screen flex-1 flex-col lg:w-auto w-screen">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden lg:w-auto w-screen">
         {/* ヘッダー（lg未満のみ） */}
         <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white lg:hidden">
           <div className="flex h-14 items-center justify-between px-4">
@@ -266,7 +266,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <span className="text-sm text-zinc-600">{session.user.email}</span>
           </div>
         </header>
-        <main className="flex-1">{children}</main>
+        <main className="min-w-0 flex-1">{children}</main>
       </div>
     </div>
   );

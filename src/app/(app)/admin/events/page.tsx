@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type Event = {
   id: string;
@@ -23,6 +24,7 @@ type SortBy = "created_at" | "event_date" | "name";
 type SortOrder = "asc" | "desc";
 
 export default function AdminEventsPage() {
+  const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("ALL");
@@ -98,13 +100,23 @@ export default function AdminEventsPage() {
 
   return (
     <div className="w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
-          イベント管理
-        </h1>
-        <p className="mt-2 text-sm text-zinc-600 sm:text-base">
-          イベントの作成、編集、承認を行います
-        </p>
+      <div className="mb-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
+              イベント管理
+            </h1>
+            <p className="mt-2 text-sm text-zinc-600 sm:text-base">
+              イベントの作成、編集、承認を行います
+            </p>
+          </div>
+          <Link
+            href="/admin/events/new"
+            className="inline-flex items-center rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 whitespace-nowrap shrink-0"
+          >
+            + 新規イベントを作成
+          </Link>
+        </div>
       </div>
 
       {/* フィルター・ソート・検索 */}
@@ -174,16 +186,6 @@ export default function AdminEventsPage() {
         </div>
       </div>
 
-      {/* 新規作成ボタン */}
-      <div className="mb-4">
-        <Link
-          href="/admin/events/new"
-          className="inline-flex items-center rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
-        >
-          + 新規イベントを作成
-        </Link>
-      </div>
-
       {/* イベント一覧 */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
@@ -222,16 +224,14 @@ export default function AdminEventsPage() {
                 <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
                   作成日
                 </th>
-                <th className="w-20 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
-                  アクション
-                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 bg-white">
               {events.map((event) => (
                 <tr
                   key={event.id}
-                  className="transition hover:bg-zinc-50"
+                  onClick={() => router.push(`/admin/events/${event.id}`)}
+                  className="cursor-pointer transition hover:bg-zinc-50"
                 >
                   <td className="whitespace-nowrap px-4 py-3">
                     <span
@@ -271,14 +271,6 @@ export default function AdminEventsPage() {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600">
                     {formatDate(event.created_at)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <Link
-                      href={`/admin/events/${event.id}`}
-                      className="text-zinc-900 hover:text-zinc-700 hover:underline"
-                    >
-                      詳細
-                    </Link>
                   </td>
                 </tr>
               ))}
