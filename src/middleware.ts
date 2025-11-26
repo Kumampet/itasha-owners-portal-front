@@ -5,6 +5,15 @@ import type { NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // 静的ファイル（manifest.json、アイコンファイルなど）は早期リターン
+  if (
+    pathname === "/manifest.json" ||
+    pathname.startsWith("/icon-") ||
+    pathname === "/favicon.ico"
+  ) {
+    return NextResponse.next();
+  }
+
   // LP（/）は認証チェックをスキップ
   // イベントページ（/events）は(app)グループ内に移動したため、レイアウトは適用されるが認証は不要
   if (pathname === "/") {
