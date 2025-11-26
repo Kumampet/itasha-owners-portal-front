@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import ConfirmModal from "@/components/confirm-modal";
 import { ShareMenu } from "@/components/share-menu";
 
@@ -33,23 +32,14 @@ function formatDateTime(dateString: string) {
   }).format(new Date(dateString));
 }
 
-function formatDate(dateString: string) {
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(dateString));
-}
-
 export default function ReminderPage() {
-  const router = useRouter();
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc"); // デフォルトは期日が近い順（昇順）
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const fetchReminders = async () => {
+  const fetchReminders = useCallback(async () => {
     try {
       const res = await fetch(`/api/reminders?sortOrder=${sortOrder}`);
       if (!res.ok) throw new Error("Failed to fetch reminders");
@@ -60,11 +50,11 @@ export default function ReminderPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sortOrder]);
 
   useEffect(() => {
     fetchReminders();
-  }, [sortOrder]);
+  }, [fetchReminders]);
 
   // 過去のリマインダーと未来のリマインダーを分ける
   const now = new Date();
@@ -246,7 +236,6 @@ export default function ReminderPage() {
                           <ShareMenu
                             reminderId={reminder.id}
                             reminderLabel={reminder.label}
-                            reminderDatetime={reminder.datetime}
                             eventName={reminder.event.name}
                             eventId={reminder.event.id}
                             onDeleteClick={() => handleDeleteClick(reminder.id)}
@@ -303,7 +292,6 @@ export default function ReminderPage() {
                           <ShareMenu
                             reminderId={reminder.id}
                             reminderLabel={reminder.label}
-                            reminderDatetime={reminder.datetime}
                             eventName={reminder.event.name}
                             eventId={reminder.event.id}
                             onDeleteClick={() => handleDeleteClick(reminder.id)}

@@ -77,7 +77,7 @@ export async function GET(
     const summary = escapeICalText(`${reminderData.label} - ${reminder.event.name}`);
     
     // 説明文を構築（備考がある場合は含める）
-    let descriptionParts = [reminder.event.name];
+    const descriptionParts = [reminder.event.name];
     if (reminder.event.theme) {
       descriptionParts.push(reminder.event.theme);
     }

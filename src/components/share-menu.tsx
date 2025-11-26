@@ -6,7 +6,6 @@ import Link from "next/link";
 type ShareMenuProps = {
   reminderId: string;
   reminderLabel: string;
-  reminderDatetime: string;
   eventName: string;
   eventId: string;
   onDeleteClick: () => void;
@@ -15,7 +14,6 @@ type ShareMenuProps = {
 export function ShareMenu({
   reminderId,
   reminderLabel,
-  reminderDatetime,
   eventName,
   eventId,
   onDeleteClick,
