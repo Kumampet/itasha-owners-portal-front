@@ -18,56 +18,86 @@ function AdminAuthForm() {
     setError("");
     setIsLoading(true);
 
+    console.log("[AdminAuth] Login attempt started", { email });
+
     try {
+      console.log("[AdminAuth] Calling signIn...");
       const result = await signIn("credentials", {
         email,
         password,
         redirect: false,
       });
 
+      console.log("[AdminAuth] signIn result:", {
+        ok: result?.ok,
+        error: result?.error,
+        status: result?.status,
+        url: result?.url
+      });
+
       if (result?.error) {
+        console.error("[AdminAuth] signIn error:", result.error);
         setError("メールアドレスまたはパスワードが正しくありません。");
         setIsLoading(false);
         return;
       }
 
       if (!result?.ok) {
+        console.error("[AdminAuth] signIn failed - result.ok is false");
         setError("ログインに失敗しました。もう一度お試しください。");
         setIsLoading(false);
         return;
       }
 
+      console.log("[AdminAuth] signIn successful, fetching session...");
+
       // セッションを更新してmustChangePasswordを取得
       try {
         const sessionRes = await fetch("/api/auth/session");
-        
+        console.log("[AdminAuth] Session fetch response:", {
+          ok: sessionRes.ok,
+          status: sessionRes.status,
+          statusText: sessionRes.statusText
+        });
+
         if (!sessionRes.ok) {
-          throw new Error("Failed to fetch session");
+          throw new Error(`Failed to fetch session: ${sessionRes.status} ${sessionRes.statusText}`);
         }
-        
+
         const sessionData = await sessionRes.json();
+        console.log("[AdminAuth] Session data:", {
+          user: sessionData?.user ? {
+            id: sessionData.user.id,
+            email: sessionData.user.email,
+            role: sessionData.user.role,
+            mustChangePassword: sessionData.user.mustChangePassword
+          } : null
+        });
 
         // 初回ログイン時はパスワード変更ページにリダイレクト
         if (sessionData?.user?.mustChangePassword) {
+          console.log("[AdminAuth] Redirecting to change-password page");
           router.push("/admin/change-password");
           router.refresh();
         } else {
           // callbackUrlが指定されている場合はそれを使用、なければダッシュボードへ
           const redirectUrl = callbackUrl || "/admin/dashboard";
+          console.log("[AdminAuth] Redirecting to:", redirectUrl);
           router.push(redirectUrl);
           router.refresh();
         }
         // リダイレクト後はsetIsLoading(false)を呼ばない（ページ遷移するため）
       } catch (sessionError) {
-        console.error("Failed to fetch session:", sessionError);
+        console.error("[AdminAuth] Failed to fetch session:", sessionError);
         // セッション取得に失敗した場合でも、ログインは成功している可能性があるため
         // ダッシュボードにリダイレクトを試みる
         const redirectUrl = callbackUrl || "/admin/dashboard";
+        console.log("[AdminAuth] Fallback redirect to:", redirectUrl);
         router.push(redirectUrl);
         router.refresh();
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("[AdminAuth] Login error:", error);
       setError("ログインに失敗しました。もう一度お試しください。");
       setIsLoading(false);
     }
