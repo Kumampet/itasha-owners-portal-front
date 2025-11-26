@@ -42,6 +42,10 @@ function createPrismaClient() {
       throw new Error("DATABASE_URL is empty after conversion to string");
     }
     // mysql:// を http:// に置換してURLとしてパース
+    // dbUrlStringが確実に文字列であることを確認してからreplaceを呼び出す
+    if (typeof dbUrlString !== "string") {
+      throw new Error(`DATABASE_URL is not a string after conversion. Type: ${typeof dbUrlString}, Value: ${dbUrlString}`);
+    }
     const normalizedUrl = dbUrlString.replace(/^mysql:\/\//, "http://");
     if (!normalizedUrl || normalizedUrl === "http://") {
       throw new Error("DATABASE_URL is invalid or empty after processing");

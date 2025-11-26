@@ -44,3 +44,7 @@ next-env.d.ts
 
 # docs directory
 /docs
+
+# temporary scripts
+scripts/view-users.ts
+scripts/fix-user-account.ts

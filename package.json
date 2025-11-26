@@ -12,6 +12,8 @@
     "check": "npm run prisma:generate && npm run type-check && npm run lint",
     "db:seed": "tsx prisma/seed.ts",
     "db:clear-sessions": "tsx scripts/clear-sessions.ts",
+    "db:view-users": "tsx scripts/view-users.ts",
+    "db:fix-user-account": "tsx scripts/fix-user-account.ts",
     "prisma:generate": "prisma generate"
   },
   "dependencies": {

@@ -31,6 +31,8 @@ declare module "next-auth/jwt" {
     id: string;
     role: string; // "USER" | "ADMIN" | "ORGANIZER"
     isBanned: boolean;
+    email?: string; // 既存ユーザー検索用
+    mustChangePassword?: boolean;
   }
 }
 
