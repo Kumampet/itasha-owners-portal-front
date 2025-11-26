@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
 
 export default function EventSubmissionPage() {
   const router = useRouter();
-  const { data: session } = useSession();
   const [submitting, setSubmitting] = useState(false);
   const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
   const [formData, setFormData] = useState({
