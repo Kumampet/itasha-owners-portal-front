@@ -58,6 +58,9 @@ model User {
   
   // 通知設定
   notification_settings UserNotificationSettings?
+  
+  // Push通知サブスクリプション
+  push_subscriptions PushSubscription[]
 
   @@map("users")
 }
@@ -293,8 +296,8 @@ model Reminder {
   id               String       @id @default(uuid()) @db.VarChar(36)
   user             User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
   user_id          String       @db.VarChar(36)
-  event            Event        @relation(fields: [event_id], references: [id], onDelete: Cascade)
-  event_id         String       @db.VarChar(36)
+  event            Event?       @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  event_id         String?      @db.VarChar(36)
   
   // リマインダーの種類（将来の仕様変更に対応するため、JSONで柔軟に保存）
   // 例: {"type": "entry_start", "datetime": "2025-01-01T00:00:00Z", "label": "エントリー開始"}
@@ -332,6 +335,27 @@ model UserNotificationSettings {
   updated_at       DateTime     @updatedAt
   
   @@map("user_notification_settings")
+}
+
+// Push通知サブスクリプション
+model PushSubscription {
+  id               String       @id @default(uuid()) @db.VarChar(36)
+  user             User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id          String       @db.VarChar(36)
+  
+  // Push通知のエンドポイントURL
+  endpoint         String       @db.VarChar(500)
+  
+  // Push通知のキー（Base64エンコードされた文字列）
+  p256dh           String       @db.Text
+  auth             String       @db.Text
+  
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+  
+  @@unique([user_id, endpoint])
+  @@index([user_id])
+  @@map("push_subscriptions")
 }
 
 // お問い合わせフォーム

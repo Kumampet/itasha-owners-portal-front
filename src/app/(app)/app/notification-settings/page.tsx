@@ -2,6 +2,25 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import {
+  requestNotificationPermission,
+  registerServiceWorker,
+  subscribeToPushNotifications,
+  unsubscribeFromPushNotifications,
+} from "@/lib/push-client";
+
+// ArrayBufferをBase64URLエンコードに変換
+function arrayBufferToBase64URL(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+}
 
 type NotificationSettings = {
   id: string;
@@ -13,6 +32,8 @@ export default function NotificationSettingsPage() {
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -28,11 +49,132 @@ export default function NotificationSettingsPage() {
       }
     };
 
+    // Push通知のサポート状況を確認
+    const checkPushSupport = async () => {
+      if (
+        "serviceWorker" in navigator &&
+        "PushManager" in window &&
+        "Notification" in window
+      ) {
+        setPushSupported(true);
+        
+        // Service Workerが登録されているか確認
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          const subscription = await registration.pushManager.getSubscription();
+          setPushSubscribed(!!subscription);
+        } catch (error) {
+          console.error("Failed to check push subscription:", error);
+        }
+      }
+    };
+
     fetchSettings();
+    checkPushSupport();
   }, []);
 
   const handleToggle = async (field: "browser_notification_enabled" | "email_notification_enabled") => {
     if (!settings || saving) return;
+
+    // ブラウザ通知を有効にする場合、Push通知の許可を取得
+    if (field === "browser_notification_enabled" && !settings.browser_notification_enabled) {
+      if (!pushSupported) {
+        alert("このブラウザはPush通知をサポートしていません");
+        return;
+      }
+
+      try {
+        // VAPID公開キーが設定されているか確認
+        const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+        if (!vapidPublicKey || vapidPublicKey.trim() === "") {
+          alert(
+            "Push通知の設定が完了していません。管理者にお問い合わせください。\n" +
+            "（VAPID公開キーが設定されていません）"
+          );
+          return;
+        }
+
+        // 通知許可を取得
+        const permission = await requestNotificationPermission();
+        if (permission !== "granted") {
+          alert("通知の許可が必要です。ブラウザの設定から通知を許可してください。");
+          return;
+        }
+
+        // Service Workerを登録
+        const registration = await registerServiceWorker();
+        
+        // Push通知にサブスクライブ
+        const subscription = await subscribeToPushNotifications(registration);
+        
+        if (subscription) {
+          // サブスクリプションをサーバーに送信
+          const p256dhKey = subscription.getKey("p256dh");
+          const authKey = subscription.getKey("auth");
+          
+          if (!p256dhKey || !authKey) {
+            throw new Error("Failed to get subscription keys");
+          }
+
+          // Base64URLエンコード（web-pushライブラリが期待する形式）
+          const p256dh = arrayBufferToBase64URL(p256dhKey);
+          const auth = arrayBufferToBase64URL(authKey);
+
+          const res = await fetch("/api/push/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              endpoint: subscription.endpoint,
+              keys: {
+                p256dh,
+                auth,
+              },
+            }),
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
+            throw new Error(
+              errorData.error || `Failed to subscribe to push notifications (${res.status})`
+            );
+          }
+
+          setPushSubscribed(true);
+        }
+      } catch (error) {
+        console.error("Failed to enable push notifications:", error);
+        alert(
+          error instanceof Error
+            ? error.message
+            : "Push通知の有効化に失敗しました"
+        );
+        return;
+      }
+    }
+
+    // ブラウザ通知を無効にする場合、Push通知のサブスクリプションを解除
+    if (field === "browser_notification_enabled" && settings.browser_notification_enabled) {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        await unsubscribeFromPushNotifications(registration);
+        
+        const subscription = await registration.pushManager.getSubscription();
+        if (subscription) {
+          await fetch("/api/push/subscribe", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              endpoint: subscription.endpoint,
+            }),
+          });
+        }
+        
+        setPushSubscribed(false);
+      } catch (error) {
+        console.error("Failed to unsubscribe from push notifications:", error);
+        // エラーが発生しても設定の更新は続行
+      }
+    }
 
     setSaving(true);
     try {
@@ -101,6 +243,16 @@ export default function NotificationSettingsPage() {
                 <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
                   ブラウザの通知機能を使用してリマインダーをお知らせします。
                 </p>
+                {!pushSupported && (
+                  <p className="mt-1 text-xs text-red-600">
+                    このブラウザはPush通知をサポートしていません
+                  </p>
+                )}
+                {pushSupported && pushSubscribed && (
+                  <p className="mt-1 text-xs text-emerald-600">
+                    Push通知が有効になっています
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => handleToggle("browser_notification_enabled")}

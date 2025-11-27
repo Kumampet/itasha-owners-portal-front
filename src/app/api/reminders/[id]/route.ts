@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { updateReminderSchedule, deleteReminderSchedule } from "@/lib/reminder-scheduler";
 
 // GET /api/reminders/[id]
 // リマインダー詳細を取得
@@ -54,19 +55,19 @@ export async function GET(
       type: string;
       datetime: string;
       label: string;
-      event_id: string;
-      event_name: string;
+      event_id: string | null;
+      event_name: string | null;
     };
 
     return NextResponse.json({
       id: reminder.id,
-      event: {
+      event: reminder.event ? {
         id: reminder.event.id,
         name: reminder.event.name,
         theme: reminder.event.theme,
         event_date: reminder.event.event_date,
         original_url: reminder.event.original_url,
-      },
+      } : null,
       type: reminderData.type,
       datetime: reminderData.datetime,
       label: reminderData.label,
@@ -124,20 +125,23 @@ export async function PATCH(
     const body = await request.json();
     const { label, datetime, event_id, note } = body;
 
-    // イベント情報を取得
-    const event = await prisma.event.findUnique({
-      where: { id: event_id },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
+    // event_idが指定されている場合のみイベント情報を取得
+    let event = null;
+    if (event_id) {
+      event = await prisma.event.findUnique({
+        where: { id: event_id },
+        select: {
+          id: true,
+          name: true,
+        },
+      });
 
-    if (!event) {
-      return NextResponse.json(
-        { error: "Event not found" },
-        { status: 404 }
-      );
+      if (!event) {
+        return NextResponse.json(
+          { error: "Event not found" },
+          { status: 404 }
+        );
+      }
     }
 
     // リマインダーデータを更新
@@ -145,25 +149,25 @@ export async function PATCH(
       type: string;
       datetime: string;
       label: string;
-      event_id: string;
-      event_name: string;
+      event_id: string | null;
+      event_name: string | null;
     };
 
     const updatedReminder = await prisma.reminder.update({
       where: { id },
       data: {
-        event_id: event_id,
+        event_id: event_id || null,
         reminder_data: {
           type: reminderData.type || "custom",
           datetime: datetime,
           label: label,
-          event_id: event_id,
-          event_name: event.name,
+          event_id: event_id || null,
+          event_name: event?.name || null,
         },
         note: note || null,
       },
       include: {
-        event: {
+        event: event ? {
           select: {
             id: true,
             name: true,
@@ -171,7 +175,7 @@ export async function PATCH(
             event_date: true,
             original_url: true,
           },
-        },
+        } : false,
       },
     });
 
@@ -179,19 +183,41 @@ export async function PATCH(
       type: string;
       datetime: string;
       label: string;
-      event_id: string;
-      event_name: string;
+      event_id: string | null;
+      event_name: string | null;
     };
+
+    // EventBridge Schedulerのスケジュールを更新（通知時刻が未来の場合のみ）
+    const reminderDate = new Date(updatedReminderData.datetime);
+    if (reminderDate > new Date() && !updatedReminder.notified) {
+      try {
+        const scheduleResult = await updateReminderSchedule(updatedReminder.id, reminderDate);
+        if (!scheduleResult.success) {
+          console.warn(`[Reminder API] Failed to update schedule for reminder ${updatedReminder.id}: ${scheduleResult.error}`);
+          // スケジュール更新に失敗してもリマインダー更新は成功とする
+        }
+      } catch (error) {
+        console.error(`[Reminder API] Error updating schedule for reminder ${updatedReminder.id}:`, error);
+        // スケジュール更新に失敗してもリマインダー更新は成功とする
+      }
+    } else if (reminderDate <= new Date() || updatedReminder.notified) {
+      // 過去のリマインダーまたは既に通知済みの場合はスケジュールを削除
+      try {
+        await deleteReminderSchedule(updatedReminder.id);
+      } catch (error) {
+        console.error(`[Reminder API] Error deleting schedule for reminder ${updatedReminder.id}:`, error);
+      }
+    }
 
     return NextResponse.json({
       id: updatedReminder.id,
-      event: {
+      event: updatedReminder.event ? {
         id: updatedReminder.event.id,
         name: updatedReminder.event.name,
         theme: updatedReminder.event.theme,
         event_date: updatedReminder.event.event_date,
         original_url: updatedReminder.event.original_url,
-      },
+      } : null,
       type: updatedReminderData.type,
       datetime: updatedReminderData.datetime,
       label: updatedReminderData.label,
@@ -244,6 +270,14 @@ export async function DELETE(
         { error: "Unauthorized" },
         { status: 403 }
       );
+    }
+
+    // EventBridge Schedulerのスケジュールを削除
+    try {
+      await deleteReminderSchedule(id);
+    } catch (error) {
+      console.error(`[Reminder API] Error deleting schedule for reminder ${id}:`, error);
+      // スケジュール削除に失敗してもリマインダー削除は続行
     }
 
     await prisma.reminder.delete({

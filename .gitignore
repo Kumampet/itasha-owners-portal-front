@@ -48,3 +48,4 @@ next-env.d.ts
 # temporary scripts
 scripts/view-users.ts
 scripts/fix-user-account.ts
+scripts/test-reminder-check.ts

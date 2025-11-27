@@ -17,7 +17,7 @@ type Reminder = {
     id: string;
     name: string;
     theme: string | null;
-  };
+  } | null;
   label: string;
   datetime: string;
   note?: string | null;
@@ -56,15 +56,15 @@ export default function EditReminderPage({
         if (!reminderRes.ok) throw new Error("Failed to fetch reminder");
         const reminderData = await reminderRes.json();
         setReminder(reminderData);
-        
+
         // datetime-local形式に変換（ISO形式から）
         const datetimeValue = new Date(reminderData.datetime);
         const localDateTime = new Date(datetimeValue.getTime() - datetimeValue.getTimezoneOffset() * 60000)
           .toISOString()
           .slice(0, 16);
-        
+
         setFormData({
-          event_id: reminderData.event.id,
+          event_id: reminderData.event?.id || "",
           label: reminderData.label,
           datetime: localDateTime,
           note: reminderData.note || "",
@@ -181,7 +181,7 @@ export default function EditReminderPage({
         >
           <div>
             <label className="block text-sm font-medium text-zinc-700">
-              イベント *
+              イベント
             </label>
             <select
               value={formData.event_id}
@@ -189,9 +189,8 @@ export default function EditReminderPage({
                 setFormData({ ...formData, event_id: e.target.value })
               }
               className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-              required
             >
-              <option value="">選択してください</option>
+              <option value="">選択してください（任意）</option>
               {events.map((event) => (
                 <option key={event.id} value={event.id}>
                   {event.name}
@@ -293,7 +292,7 @@ export default function EditReminderPage({
           onClose={() => setIsDeleteModalOpen(false)}
           onConfirm={handleDeleteConfirm}
           title="リマインダーを削除"
-          message="本当にこのリマインダーを削除しますか？\n削除すると元に戻せません。"
+          message="本当にこのリマインダーを削除しますか？削除すると元に戻せません。"
           confirmLabel="削除"
           cancelLabel="キャンセル"
         />

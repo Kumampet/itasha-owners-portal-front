@@ -105,7 +105,7 @@ export default function NewReminderPage() {
         >
           <div>
             <label className="block text-sm font-medium text-zinc-700">
-              イベント *
+              イベント
             </label>
             <select
               value={formData.event_id}
@@ -113,9 +113,8 @@ export default function NewReminderPage() {
                 setFormData({ ...formData, event_id: e.target.value })
               }
               className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-              required
             >
-              <option value="">選択してください</option>
+              <option value="">選択してください（任意）</option>
               {events.map((event) => (
                 <option key={event.id} value={event.id}>
                   {event.name}
