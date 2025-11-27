@@ -201,15 +201,22 @@ export async function POST(request: Request) {
 
     // EventBridge Schedulerにスケジュールを作成（通知時刻が未来の場合のみ）
     const reminderDate = new Date(reminderData.datetime);
+    let scheduleResult = null;
     if (reminderDate > new Date() && !reminder.notified) {
       try {
-        const scheduleResult = await createReminderSchedule(reminder.id, reminderDate);
+        scheduleResult = await createReminderSchedule(reminder.id, reminderDate);
         if (!scheduleResult.success) {
           console.warn(`[Reminder API] Failed to create schedule for reminder ${reminder.id}: ${scheduleResult.error}`);
           // スケジュール作成に失敗してもリマインダー作成は成功とする
+        } else {
+          console.log(`[Reminder API] Successfully created schedule for reminder ${reminder.id}: ${scheduleResult.scheduleArn}`);
         }
       } catch (error) {
         console.error(`[Reminder API] Error creating schedule for reminder ${reminder.id}:`, error);
+        scheduleResult = {
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+        };
         // スケジュール作成に失敗してもリマインダー作成は成功とする
       }
     }
@@ -230,6 +237,11 @@ export async function POST(request: Request) {
       notified: reminder.notified,
       notified_at: reminder.notified_at,
       created_at: reminder.created_at,
+      schedule: scheduleResult ? {
+        created: scheduleResult.success,
+        scheduleArn: scheduleResult.scheduleArn || null,
+        error: scheduleResult.error || null,
+      } : null,
     });
   } catch (error) {
     console.error("Error creating reminder:", error);

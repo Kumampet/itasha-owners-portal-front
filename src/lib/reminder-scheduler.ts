@@ -47,10 +47,18 @@ export async function createReminderSchedule(
     }
 
     // スケジュールを作成
+    // EventBridge Schedulerのat()式は、ミリ秒とタイムゾーン指定を含まないISO 8601形式を要求
+    // 形式: at(yyyy-mm-ddThh:mm:ss)
+    const scheduleTime = new Date(scheduledTime);
+    scheduleTime.setMilliseconds(0);
+    // ミリ秒部分（.000）とタイムゾーン（Z）を削除
+    const isoString = scheduleTime.toISOString().replace(/\.\d{3}Z$/, '');
+    const scheduleExpression = `at(${isoString})`;
+    
     const command = new CreateScheduleCommand({
       Name: scheduleName,
       GroupName: SCHEDULE_GROUP_NAME,
-      ScheduleExpression: `at(${scheduledTime.toISOString()})`,
+      ScheduleExpression: scheduleExpression,
       Target: {
         Arn: lambdaArn, // Lambda関数のARN
         RoleArn: roleArn, // EventBridgeがLambdaを呼び出すためのIAMロールARN
@@ -117,10 +125,18 @@ export async function updateReminderSchedule(
       return { success: false, error: "EventBridge configuration is missing" };
     }
 
+    // EventBridge Schedulerのat()式は、ミリ秒とタイムゾーン指定を含まないISO 8601形式を要求
+    // 形式: at(yyyy-mm-ddThh:mm:ss)
+    const scheduleTime = new Date(scheduledTime);
+    scheduleTime.setMilliseconds(0);
+    // ミリ秒部分（.000）とタイムゾーン（Z）を削除
+    const isoString = scheduleTime.toISOString().replace(/\.\d{3}Z$/, '');
+    const scheduleExpression = `at(${isoString})`;
+
     const command = new UpdateScheduleCommand({
       Name: scheduleName,
       GroupName: SCHEDULE_GROUP_NAME,
-      ScheduleExpression: `at(${scheduledTime.toISOString()})`,
+      ScheduleExpression: scheduleExpression,
       Target: {
         Arn: lambdaArn,
         RoleArn: roleArn,
