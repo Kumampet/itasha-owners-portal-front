@@ -74,11 +74,14 @@ export async function GET(
         .replace(/\r/g, "");
     };
 
-    const summary = escapeICalText(`${reminderData.label} - ${reminder.event.name}`);
+    // eventがnullの場合はevent_nameを使用
+    const eventName = reminder.event?.name || reminderData.event_name || "イベント";
+    
+    const summary = escapeICalText(`${reminderData.label} - ${eventName}`);
     
     // 説明文を構築（備考がある場合は含める）
-    const descriptionParts = [reminder.event.name];
-    if (reminder.event.theme) {
+    const descriptionParts = [eventName];
+    if (reminder.event?.theme) {
       descriptionParts.push(reminder.event.theme);
     }
     descriptionParts.push(reminderData.label);
@@ -107,7 +110,7 @@ export async function GET(
     ].join("\r\n");
 
     // ファイル名をエンコード
-    const fileName = `${reminder.event.name}_${reminderData.label}.ics`
+    const fileName = `${eventName}_${reminderData.label}.ics`
       .replace(/[^\w\s-]/g, "_")
       .replace(/\s+/g, "_");
 
