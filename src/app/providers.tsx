@@ -1,6 +1,7 @@
 "use client";
 
 import { SessionProvider } from "next-auth/react";
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 
 type ProvidersProps = {
@@ -8,8 +9,20 @@ type ProvidersProps = {
 };
 
 export function Providers({ children }: ProvidersProps) {
-  // next-pwaが自動的にService Workerを登録するため、手動登録は不要
-  // 既存のPush通知機能は、next-pwaの生成するService Workerに統合される
+  useEffect(() => {
+    // Service Workerを登録（Push通知の許可取得は通知設定ページで行う）
+    // next-pwaの設定でregister: falseにしているため、手動登録が必要
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((registration) => {
+          console.log("Service Worker registered:", registration);
+        })
+        .catch((error) => {
+          console.error("Service Worker registration failed:", error);
+        });
+    }
+  }, []);
 
   return (
     <SessionProvider

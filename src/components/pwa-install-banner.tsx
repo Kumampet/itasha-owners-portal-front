@@ -31,24 +31,40 @@ export function PWAInstallBanner() {
     const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
     const isAndroid = /Android/i.test(userAgent);
     
-    // iOSの場合は基本的にSafariとして扱う（iOS ChromeもSafariの手順を表示）
+    // Chrome系の判定（Edgeは除外、iOS Chromeも含む）
+    const isChrome = /Chrome/i.test(userAgent) && !/Edg/i.test(userAgent) && !/CriOS/i.test(userAgent);
+    // iOS Chromeの判定（CriOSはiOS ChromeのUser Agentに含まれる）
+    const isIOSChrome = /CriOS/i.test(userAgent);
+    
+    // Safari系の判定（Chromeが含まれていないSafari、macOS Safari等）
+    const isSafari = /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent) && !/Edg/i.test(userAgent) && !/CriOS/i.test(userAgent);
+    
+    // iOS Chromeの場合はChromeの手順を表示
+    if (isIOSChrome || (isIOS && isChrome)) {
+      return "chrome";
+    }
+    
+    // iOSでSafariの場合はSafariの手順を表示
+    if (isIOS && isSafari) {
+      return "safari";
+    }
+    
+    // その他のiOSブラウザはSafariの手順を表示（デフォルト）
     if (isIOS) {
       return "safari";
     }
     
-    // Safari系の判定（Chromeが含まれていないSafari、macOS Safari等）
-    const isSafari = /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent) && !/Edg/i.test(userAgent);
+    // AndroidまたはChrome系の場合はChromeの手順を表示
+    if (isChrome || isAndroid) {
+      return "chrome";
+    }
     
-    // Chrome系の判定（Edgeは除外）
-    const isChrome = /Chrome/i.test(userAgent) && !/Edg/i.test(userAgent);
-    
+    // Safari系の場合はSafariの手順を表示
     if (isSafari) {
       return "safari";
-    } else if (isChrome || isAndroid) {
-      return "chrome";
-    } else {
-      return "other";
     }
+    
+    return "other";
   });
 
   const [isStandalone] = useState(() => {

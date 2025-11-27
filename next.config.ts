@@ -4,11 +4,11 @@ import type { NextConfig } from "next";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const withPWA = require("next-pwa")({
   dest: "public",
-  register: true,
+  register: false, // 手動登録に変更（既存のPush通知機能を維持するため）
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
   // カスタムService Workerを使用（既存のPush通知機能を含む）
-  // 既存のsw.jsはworkboxと統合される
+  // 既存のsw.jsをそのまま使用
   sw: "sw.js",
 });
 

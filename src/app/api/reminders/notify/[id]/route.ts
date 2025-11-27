@@ -126,6 +126,17 @@ export async function POST(
       email_notification_enabled: true,
     };
 
+    console.log(`[Reminder Notify] Notification settings for user ${reminder.user_id}:`, {
+      browser_notification_enabled: settings.browser_notification_enabled,
+      email_notification_enabled: settings.email_notification_enabled,
+    });
+
+    // ユーザーのPushサブスクリプション数を確認
+    const subscriptionCount = await prisma.pushSubscription.count({
+      where: { user_id: reminder.user_id },
+    });
+    console.log(`[Reminder Notify] User ${reminder.user_id} has ${subscriptionCount} push subscription(s)`);
+
     // 通知を送信
     const results = await sendReminderNotification(
       reminder.user_id,

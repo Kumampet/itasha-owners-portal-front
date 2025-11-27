@@ -35,7 +35,8 @@ export async function sendPushNotification(
 
     if (subscriptions.length === 0) {
       console.warn(`[Push Notification] No push subscriptions found for user ${userId}`);
-      return { success: false, message: "No push subscriptions found" };
+      console.warn(`[Push Notification] User may need to enable push notifications in notification settings`);
+      return { success: false, sent: 0, message: "No push subscriptions found" };
     }
 
     const payload = JSON.stringify({
@@ -52,6 +53,7 @@ export async function sendPushNotification(
       subscriptions.map(async (subscription) => {
         try {
           console.log(`[Push Notification] Sending to subscription ${subscription.id}`);
+          console.log(`[Push Notification] Endpoint: ${subscription.endpoint.substring(0, 50)}...`);
           await webpush.sendNotification(
             {
               endpoint: subscription.endpoint,
@@ -66,14 +68,18 @@ export async function sendPushNotification(
           return { success: true, subscriptionId: subscription.id };
         } catch (error) {
           console.error(`[Push Notification] Failed to send to subscription ${subscription.id}:`, error);
-          // 無効なサブスクリプションは削除
-          if (error instanceof Error && "statusCode" in error) {
-            const statusCode = (error as { statusCode?: number }).statusCode;
-            if (statusCode === 410 || statusCode === 404) {
-              console.log(`[Push Notification] Deleting invalid subscription ${subscription.id}`);
-              await prisma.pushSubscription.delete({
-                where: { id: subscription.id },
-              });
+          if (error instanceof Error) {
+            console.error(`[Push Notification] Error message: ${error.message}`);
+            if ("statusCode" in error) {
+              const statusCode = (error as { statusCode?: number }).statusCode;
+              console.error(`[Push Notification] Error status code: ${statusCode}`);
+              // 無効なサブスクリプションは削除
+              if (statusCode === 410 || statusCode === 404) {
+                console.log(`[Push Notification] Deleting invalid subscription ${subscription.id} (status: ${statusCode})`);
+                await prisma.pushSubscription.delete({
+                  where: { id: subscription.id },
+                });
+              }
             }
           }
           throw error;
@@ -85,10 +91,26 @@ export async function sendPushNotification(
       (r) => r.status === "fulfilled"
     ).length;
 
+    const failed = results.filter(
+      (r) => r.status === "rejected"
+    );
+
+    if (failed.length > 0) {
+      console.error(`[Push Notification] ${failed.length} subscription(s) failed:`);
+      failed.forEach((result, index) => {
+        if (result.status === "rejected") {
+          console.error(`[Push Notification] Failed subscription ${index + 1}:`, result.reason);
+        }
+      });
+    }
+
+    console.log(`[Push Notification] Summary: ${successful}/${subscriptions.length} sent successfully`);
+
     return {
       success: successful > 0,
       sent: successful,
       total: subscriptions.length,
+      failed: failed.length,
     };
   } catch (error) {
     console.error("Error sending push notification:", error);
@@ -135,6 +157,7 @@ export async function sendReminderNotification(
   if (notificationSettings.browser_notification_enabled) {
     try {
       console.log(`[Reminder Notification] Sending push notification for reminder ${reminder.id}`);
+      console.log(`[Reminder Notification] User ID: ${userId}, Title: ${title}, Body: ${body}`);
       const pushResult = await sendPushNotification(userId, title, body, {
         reminderId: reminder.id,
         url: reminderUrl,
@@ -143,12 +166,20 @@ export async function sendReminderNotification(
         success: pushResult.success,
         sent: pushResult.sent || 0,
       };
-      console.log(`[Reminder Notification] Push notification result:`, pushResult);
+      console.log(`[Reminder Notification] Push notification result:`, JSON.stringify(pushResult, null, 2));
+      if (!pushResult.success) {
+        console.error(`[Reminder Notification] Push notification failed. Message: ${pushResult.message || 'Unknown error'}`);
+      }
     } catch (error) {
       console.error(`[Reminder Notification] Failed to send push notification for reminder ${reminder.id}:`, error);
+      if (error instanceof Error) {
+        console.error(`[Reminder Notification] Error message: ${error.message}`);
+        console.error(`[Reminder Notification] Error stack: ${error.stack}`);
+      }
     }
   } else {
     console.log(`[Reminder Notification] Browser notifications disabled for user ${userId}`);
+    results.push = { success: false, sent: 0 };
   }
 
   // メール通知
