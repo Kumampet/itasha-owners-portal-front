@@ -2,11 +2,11 @@ import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
 // AWS SESクライアントの初期化
 const sesClient = new SESClient({
-  region: process.env.AWS_REGION || "ap-northeast-1",
-  credentials: process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
+  region: process.env.APP_AWS_REGION || "ap-northeast-1",
+  credentials: process.env.APP_AWS_ACCESS_KEY_ID && process.env.APP_AWS_SECRET_ACCESS_KEY
     ? {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        accessKeyId: process.env.APP_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.APP_AWS_SECRET_ACCESS_KEY,
       }
     : undefined,
 });
