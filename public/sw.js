@@ -8,14 +8,14 @@ self.addEventListener("push", function (event) {
       // まずjson()メソッドを試す
       try {
         data = event.data.json();
-      } catch (jsonError) {
+      } catch {
         // json()が失敗した場合、text()で取得してJSONパースを試みる
         try {
           const text = event.data.text();
           if (text) {
             data = JSON.parse(text);
           }
-        } catch (parseError) {
+        } catch {
           // JSONでない場合は、テキストをそのまま使用（開発者ツールからのテストなど）
           const text = event.data.text();
           console.log("[Service Worker] Push data is not JSON, using as text:", text);

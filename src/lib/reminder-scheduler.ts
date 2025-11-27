@@ -204,7 +204,7 @@ export async function scheduleExists(reminderId: string): Promise<boolean> {
 
     await schedulerClient.send(command);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
