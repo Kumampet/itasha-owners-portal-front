@@ -49,3 +49,11 @@ next-env.d.ts
 scripts/view-users.ts
 scripts/fix-user-account.ts
 scripts/test-reminder-check.ts
+
+# next-pwa generated files
+# 注意: /public/sw.jsは既存のPush通知機能を含むため、コミットが必要です
+# next-pwaが生成するworkboxファイルのみを除外
+/public/workbox-*.js
+/public/fallback-*.js
+/public/workbox-*.js.map
+/public/fallback-*.js.map

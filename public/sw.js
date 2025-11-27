@@ -1,4 +1,5 @@
 // Service Worker for Push Notifications
+// next-pwaが自動的にworkboxを統合するため、手動でインポートする必要はありません
 self.addEventListener("push", function (event) {
   let data = {};
   

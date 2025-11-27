@@ -34,6 +34,8 @@ export default function NotificationSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -59,18 +61,24 @@ export default function NotificationSettingsPage() {
       // HTTPS接続かどうか確認（localhostも許可）
       const isSecure = window.location.protocol === "https:" || window.location.hostname === "localhost";
 
+      // PWAとしてインストールされているか確認
+      const isStandaloneMode = window.matchMedia("(display-mode: standalone)").matches;
+      setIsStandalone(isStandaloneMode);
+
       // モバイルブラウザの判定（情報表示用）
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isAndroid = /Android/.test(navigator.userAgent);
-      const isMobile = isIOS || isAndroid;
+      const isAndroidDevice = /Android/.test(navigator.userAgent);
+      setIsAndroid(isAndroidDevice);
+      const isMobile = isIOS || isAndroidDevice;
 
       console.log("[Push Support Check]", {
         hasServiceWorker,
         hasPushManager,
         hasNotification,
         isSecure,
+        isStandaloneMode,
         isIOS,
-        isAndroid,
+        isAndroid: isAndroidDevice,
         isMobile,
         userAgent: navigator.userAgent,
       });
@@ -304,14 +312,60 @@ export default function NotificationSettingsPage() {
                           {!("serviceWorker" in navigator) && (
                             <span>※ Service Workerがサポートされていません</span>
                           )}
-                          {!("PushManager" in window) && (
+                          {!("PushManager" in window) && /iPhone|iPad|iPod/i.test(navigator.userAgent) && (
+                            <span>※ iOS Safariでは、ホーム画面に追加（PWAとしてインストール）する必要があります</span>
+                          )}
+                          {!("PushManager" in window) && !/iPhone|iPad|iPod/i.test(navigator.userAgent) && (
                             <span>※ Push APIがサポートされていません</span>
                           )}
-                          {!("Notification" in window) && (
+                          {!("Notification" in window) && /iPhone|iPad|iPod/i.test(navigator.userAgent) && (
+                            <span>※ iOS Safariでは、ホーム画面に追加（PWAとしてインストール）する必要があります</span>
+                          )}
+                          {!("Notification" in window) && !/iPhone|iPad|iPod/i.test(navigator.userAgent) && (
                             <span>※ Notification APIがサポートされていません</span>
                           )}
                         </>
                       )}
+                    </p>
+                    {typeof window !== "undefined" && (
+                      <>
+                        {/iPhone|iPad|iPod/i.test(navigator.userAgent) && !isStandalone && (
+                          <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                            <p className="text-xs font-semibold text-amber-800">
+                              ⚠️ 重要: PWAとして開かれていません
+                            </p>
+                            <p className="mt-1 text-xs text-amber-700">
+                              現在、Safariブラウザ内で開いています。Push通知を利用するには、ホーム画面に追加したアイコンからアプリを開く必要があります。
+                            </p>
+                            <ol className="mt-2 list-decimal list-inside space-y-1 text-xs text-amber-700">
+                              <li>Safariの共有ボタン（□↑）をタップ</li>
+                              <li>「ホーム画面に追加」を選択</li>
+                              <li><strong className="font-semibold">ホーム画面のアイコンからアプリを開く</strong>（重要）</li>
+                              <li>再度このページで通知設定を有効にする</li>
+                            </ol>
+                          </div>
+                        )}
+                        {!/iPhone|iPad|iPod/i.test(navigator.userAgent) && !isStandalone && isAndroid && (
+                          <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                            <p className="text-xs font-semibold text-amber-800">
+                              ⚠️ 重要: PWAとして開かれていません
+                            </p>
+                            <p className="mt-1 text-xs text-amber-700">
+                              現在、ブラウザ内で開いています。Push通知を利用するには、ホーム画面に追加したアイコンからアプリを開く必要があります。
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+                {pushSupported && !isStandalone && typeof window !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) && (
+                  <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
+                    <p className="text-xs font-semibold text-blue-800">
+                      💡 より良い体験のために
+                    </p>
+                    <p className="mt-1 text-xs text-blue-700">
+                      Push通知は現在利用可能ですが、ホーム画面に追加したアイコンからアプリを開くと、より安定して動作します。
                     </p>
                   </div>
                 )}

@@ -1,6 +1,25 @@
 import type { NextConfig } from "next";
 
+// next-pwaの型定義がないため、requireを使用
+const withPWA = require("next-pwa")({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === "development",
+  // カスタムService Workerを使用（既存のPush通知機能を含む）
+  // 既存のsw.jsはworkboxと統合される
+  sw: "sw.js",
+});
+
 const nextConfig: NextConfig = {
+  // next-pwaはwebpackを使用するため、Turbopackを無効化
+  turbopack: {},
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // クライアント側のwebpack設定
+    }
+    return config;
+  },
   images: {
     remotePatterns: [
       {
@@ -25,4 +44,4 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@auth/core"],
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);

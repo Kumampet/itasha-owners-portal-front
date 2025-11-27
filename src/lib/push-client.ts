@@ -23,6 +23,8 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
   }
 
   try {
+    // next-pwaが生成するService Workerを登録
+    // 既存のPush通知機能は、next-pwaの生成するService Workerに統合される
     const registration = await navigator.serviceWorker.register("/sw.js");
     return registration;
   } catch (error) {

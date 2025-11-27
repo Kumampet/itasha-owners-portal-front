@@ -9,19 +9,8 @@ type ProvidersProps = {
 };
 
 export function Providers({ children }: ProvidersProps) {
-  useEffect(() => {
-    // Service Workerを登録（Push通知の許可取得は通知設定ページで行う）
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/sw.js")
-        .then((registration) => {
-          console.log("Service Worker registered:", registration);
-        })
-        .catch((error) => {
-          console.error("Service Worker registration failed:", error);
-        });
-    }
-  }, []);
+  // next-pwaが自動的にService Workerを登録するため、手動登録は不要
+  // 既存のPush通知機能は、next-pwaの生成するService Workerに統合される
 
   return (
     <SessionProvider
