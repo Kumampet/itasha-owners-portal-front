@@ -51,21 +51,68 @@ export default function NotificationSettingsPage() {
 
     // Push通知のサポート状況を確認
     const checkPushSupport = async () => {
-      if (
-        "serviceWorker" in navigator &&
-        "PushManager" in window &&
-        "Notification" in window
-      ) {
+      // 基本的なAPIの存在確認
+      const hasServiceWorker = "serviceWorker" in navigator;
+      const hasPushManager = "PushManager" in window;
+      const hasNotification = "Notification" in window;
+
+      // HTTPS接続かどうか確認（localhostも許可）
+      const isSecure = window.location.protocol === "https:" || window.location.hostname === "localhost";
+
+      // モバイルブラウザの判定（情報表示用）
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+      const isMobile = isIOS || isAndroid;
+
+      console.log("[Push Support Check]", {
+        hasServiceWorker,
+        hasPushManager,
+        hasNotification,
+        isSecure,
+        isIOS,
+        isAndroid,
+        isMobile,
+        userAgent: navigator.userAgent,
+      });
+
+      // 基本的なAPIがすべて存在し、HTTPS接続である必要がある
+      // 注意: モバイルブラウザでもPush通知はサポートされています
+      // - Android Chrome/Firefox: 完全にサポート
+      // - iOS Safari: iOS 16.4以降でサポート（APIが存在すれば動作可能）
+      if (hasServiceWorker && hasPushManager && hasNotification && isSecure) {
         setPushSupported(true);
-        
+
         // Service Workerが登録されているか確認
         try {
-          const registration = await navigator.serviceWorker.ready;
-          const subscription = await registration.pushManager.getSubscription();
-          setPushSubscribed(!!subscription);
+          // 既存のService Workerを確認
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          if (registrations.length > 0) {
+            const registration = registrations[0];
+            const subscription = await registration.pushManager.getSubscription();
+            setPushSubscribed(!!subscription);
+          } else {
+            // Service Workerが登録されていない場合、登録を試みる
+            try {
+              const registration = await navigator.serviceWorker.register("/sw.js");
+              const subscription = await registration.pushManager.getSubscription();
+              setPushSubscribed(!!subscription);
+            } catch (error) {
+              console.warn("[Push Support] Service Worker registration failed:", error);
+              // 登録に失敗しても、APIが存在すればサポートされているとみなす
+            }
+          }
         } catch (error) {
-          console.error("Failed to check push subscription:", error);
+          console.error("[Push Support] Failed to check push subscription:", error);
+          // エラーが発生しても、APIが存在すればサポートされているとみなす
         }
+      } else {
+        console.warn("[Push Support] 必要な条件を満たしていません", {
+          hasServiceWorker,
+          hasPushManager,
+          hasNotification,
+          isSecure,
+        });
+        setPushSupported(false);
       }
     };
 
@@ -103,15 +150,15 @@ export default function NotificationSettingsPage() {
 
         // Service Workerを登録
         const registration = await registerServiceWorker();
-        
+
         // Push通知にサブスクライブ
         const subscription = await subscribeToPushNotifications(registration);
-        
+
         if (subscription) {
           // サブスクリプションをサーバーに送信
           const p256dhKey = subscription.getKey("p256dh");
           const authKey = subscription.getKey("auth");
-          
+
           if (!p256dhKey || !authKey) {
             throw new Error("Failed to get subscription keys");
           }
@@ -157,7 +204,7 @@ export default function NotificationSettingsPage() {
       try {
         const registration = await navigator.serviceWorker.ready;
         await unsubscribeFromPushNotifications(registration);
-        
+
         const subscription = await registration.pushManager.getSubscription();
         if (subscription) {
           await fetch("/api/push/subscribe", {
@@ -168,7 +215,7 @@ export default function NotificationSettingsPage() {
             }),
           });
         }
-        
+
         setPushSubscribed(false);
       } catch (error) {
         console.error("Failed to unsubscribe from push notifications:", error);
@@ -244,9 +291,29 @@ export default function NotificationSettingsPage() {
                   ブラウザの通知機能を使用してリマインダーをお知らせします。
                 </p>
                 {!pushSupported && (
-                  <p className="mt-1 text-xs text-red-600">
-                    このブラウザはPush通知をサポートしていません
-                  </p>
+                  <div className="mt-1 space-y-1">
+                    <p className="text-xs text-red-600">
+                      このブラウザはPush通知をサポートしていません
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      {typeof window !== "undefined" && (
+                        <>
+                          {window.location.protocol !== "https:" && window.location.hostname !== "localhost" && (
+                            <span>※ HTTPS接続が必要です</span>
+                          )}
+                          {!("serviceWorker" in navigator) && (
+                            <span>※ Service Workerがサポートされていません</span>
+                          )}
+                          {!("PushManager" in window) && (
+                            <span>※ Push APIがサポートされていません</span>
+                          )}
+                          {!("Notification" in window) && (
+                            <span>※ Notification APIがサポートされていません</span>
+                          )}
+                        </>
+                      )}
+                    </p>
+                  </div>
                 )}
                 {pushSupported && pushSubscribed && (
                   <p className="mt-1 text-xs text-emerald-600">
@@ -257,18 +324,16 @@ export default function NotificationSettingsPage() {
               <button
                 onClick={() => handleToggle("browser_notification_enabled")}
                 disabled={saving}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
-                  settings.browser_notification_enabled
-                    ? "bg-emerald-600"
-                    : "bg-zinc-200"
-                } ${saving ? "opacity-50" : ""}`}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${settings.browser_notification_enabled
+                  ? "bg-emerald-600"
+                  : "bg-zinc-200"
+                  } ${saving ? "opacity-50" : ""}`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    settings.browser_notification_enabled
-                      ? "translate-x-5"
-                      : "translate-x-0"
-                  }`}
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${settings.browser_notification_enabled
+                    ? "translate-x-5"
+                    : "translate-x-0"
+                    }`}
                 />
               </button>
             </div>
@@ -285,18 +350,16 @@ export default function NotificationSettingsPage() {
               <button
                 onClick={() => handleToggle("email_notification_enabled")}
                 disabled={saving}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
-                  settings.email_notification_enabled
-                    ? "bg-emerald-600"
-                    : "bg-zinc-200"
-                } ${saving ? "opacity-50" : ""}`}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${settings.email_notification_enabled
+                  ? "bg-emerald-600"
+                  : "bg-zinc-200"
+                  } ${saving ? "opacity-50" : ""}`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    settings.email_notification_enabled
-                      ? "translate-x-5"
-                      : "translate-x-0"
-                  }`}
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${settings.email_notification_enabled
+                    ? "translate-x-5"
+                    : "translate-x-0"
+                    }`}
                 />
               </button>
             </div>

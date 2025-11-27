@@ -25,7 +25,7 @@ export async function sendPushNotification(
 ) {
   try {
     console.log(`[Push Notification] Sending push notification to user ${userId}: ${title}`);
-    
+
     // ユーザーのPushサブスクリプションを取得
     const subscriptions = await prisma.pushSubscription.findMany({
       where: { user_id: userId },
@@ -113,7 +113,17 @@ export async function sendReminderNotification(
 ) {
   const eventName = reminder.event?.name || "（イベント未設定）";
   const title = reminder.label;
-  const body = `${eventName} - ${new Date(reminder.datetime).toLocaleString("ja-JP")}`;
+  // JST（日本標準時）で時刻を表示
+  const formattedDateTime = new Date(reminder.datetime).toLocaleString("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  const body = `${eventName} - ${formattedDateTime}`;
   const reminderUrl = `/app/reminder`;
 
   const results = {
@@ -149,7 +159,7 @@ export async function sendReminderNotification(
 
 ${title}
 ${eventName}
-${new Date(reminder.datetime).toLocaleString("ja-JP")}
+${formattedDateTime}
 
 リマインダーを確認: ${process.env.NEXTAUTH_URL || "https://example.com"}${reminderUrl}
 
