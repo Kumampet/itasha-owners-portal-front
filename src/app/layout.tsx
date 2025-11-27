@@ -21,6 +21,14 @@ export const metadata: Metadata = {
     typeof window === "undefined"
       ? new URL("https://example.com")
       : new URL(window.location.origin),
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
   openGraph: {
     title: "痛車オーナーズポータル",
     description:
@@ -47,9 +55,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen`}
       >
         <Providers>
-        <div className="min-h-screen flex flex-col">
-          {children}
-        </div>
+          <div className="min-h-screen flex flex-col">
+            {children}
+          </div>
         </Providers>
       </body>
     </html>

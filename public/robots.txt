@@ -1,4 +1,42 @@
+# すべてのボットを拒否
 User-agent: *
-Disallow: /admin/
-Disallow: /app/
+Disallow: /
+Crawl-delay: 86400
+
+# 主要な検索エンジンボットを明示的に拒否
+User-agent: Googlebot
+Disallow: /
+
+User-agent: Googlebot-Image
+Disallow: /
+
+User-agent: Googlebot-Mobile
+Disallow: /
+
+User-agent: Bingbot
+Disallow: /
+
+User-agent: Slurp
+Disallow: /
+
+User-agent: DuckDuckBot
+Disallow: /
+
+User-agent: Baiduspider
+Disallow: /
+
+User-agent: YandexBot
+Disallow: /
+
+User-agent: Sogou
+Disallow: /
+
+User-agent: Exabot
+Disallow: /
+
+User-agent: facebot
+Disallow: /
+
+User-agent: ia_archiver
+Disallow: /
 
