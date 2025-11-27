@@ -43,6 +43,9 @@ self.addEventListener("activate", function (event) {
 
 // Push通知の処理
 self.addEventListener("push", function (event) {
+  console.log("[Service Worker] Push event received");
+  console.log("[Service Worker] Event data:", event.data ? "present" : "missing");
+  
   let data = {};
   
   try {
@@ -51,12 +54,16 @@ self.addEventListener("push", function (event) {
       // まずjson()メソッドを試す
       try {
         data = event.data.json();
-      } catch {
+        console.log("[Service Worker] Parsed push data as JSON:", data);
+      } catch (jsonError) {
+        console.log("[Service Worker] Failed to parse as JSON, trying text:", jsonError);
         // json()が失敗した場合、text()で取得してJSONパースを試みる
         try {
           const text = event.data.text();
+          console.log("[Service Worker] Push data as text:", text);
           if (text) {
             data = JSON.parse(text);
+            console.log("[Service Worker] Parsed push data from text:", data);
           }
         } catch {
           // JSONでない場合は、テキストをそのまま使用（開発者ツールからのテストなど）
@@ -65,6 +72,8 @@ self.addEventListener("push", function (event) {
           data = { body: text, title: "通知" };
         }
       }
+    } else {
+      console.warn("[Service Worker] Push event has no data");
     }
   } catch (error) {
     console.error("[Service Worker] Error processing push data:", error);
@@ -72,19 +81,33 @@ self.addEventListener("push", function (event) {
   }
 
   const title = data.title || "リマインダー";
-  const options: NotificationOptions = {
-    body: data.body || "リマインダーが設定時刻になりました",
+  const body = data.body || "リマインダーが設定時刻になりました";
+  
+  // iOS SafariのPush通知に対応するため、オプションを調整
+  const options = {
+    body: body,
     tag: data.tag || "reminder",
     data: data.data || {},
+    // iOS Safariでは、requireInteraction: falseが推奨される
     requireInteraction: false,
+    // iOS Safariでは、silent: falseが必須（trueの場合、通知が表示されない）
     silent: false,
     // アイコンとバッジを追加（データに含まれている場合はそれを使用）
     icon: data.icon || "/icon-192.png",
     badge: data.badge || "/icon-192.png",
+    // iOS Safariでは、vibrateとsoundは無視されるが、エラーを避けるため設定しない
   };
+
+  console.log("[Service Worker] Showing notification:", { title, options });
 
   event.waitUntil(
     self.registration.showNotification(title, options)
+      .then(() => {
+        console.log("[Service Worker] Notification shown successfully");
+      })
+      .catch((error) => {
+        console.error("[Service Worker] Failed to show notification:", error);
+      })
   );
 });
 

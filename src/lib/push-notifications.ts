@@ -40,6 +40,7 @@ export async function sendPushNotification(
     }
 
     // 参考サイトの実装に合わせて、payloadをJSON形式で送信
+    // iOS SafariのPush通知に対応するため、シンプルな構造にする
     const payload = JSON.stringify({
       title,
       body,
@@ -50,6 +51,7 @@ export async function sendPushNotification(
     });
     
     console.log(`[Push Notification] Payload: ${payload}`);
+    console.log(`[Push Notification] Payload length: ${payload.length} bytes`);
 
     const results = await Promise.allSettled(
       subscriptions.map(async (subscription) => {
