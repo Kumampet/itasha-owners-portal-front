@@ -35,7 +35,8 @@ export const handler = async (event) => {
 
         // 通知APIのURL（環境変数から取得）
         const notifyApiUrl = process.env.NOTIFY_API_URL || 'https://main.da1pjhpif1fug.amplifyapp.com/api/reminders/notify';
-        const apiKey = process.env.REMINDER_NOTIFY_API_KEY;
+        // 環境変数から取得したAPIキーをトリム（前後の空白文字を削除）
+        const apiKey = process.env.REMINDER_NOTIFY_API_KEY?.trim();
 
         // デバッグログ
         console.log('[Lambda] NOTIFY_API_URL:', notifyApiUrl);

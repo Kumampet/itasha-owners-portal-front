@@ -11,26 +11,45 @@ export async function POST(
   try {
     // 認証チェック（APIキーまたは内部リクエストのみ許可）
     const authHeader = _request.headers.get("authorization");
-    const apiKey = process.env.REMINDER_NOTIFY_API_KEY;
+    // 環境変数から取得したAPIキーをトリム（前後の空白文字を削除）
+    const apiKey = process.env.REMINDER_NOTIFY_API_KEY?.trim();
     
     // デバッグログ
     console.log('[Notify API] REMINDER_NOTIFY_API_KEY is set:', !!apiKey);
     if (apiKey) {
       console.log('[Notify API] REMINDER_NOTIFY_API_KEY length:', apiKey.length);
+      console.log('[Notify API] REMINDER_NOTIFY_API_KEY first 10 chars:', apiKey.substring(0, 10));
+      console.log('[Notify API] REMINDER_NOTIFY_API_KEY last 10 chars:', apiKey.substring(apiKey.length - 10));
     }
     console.log('[Notify API] Authorization header received:', authHeader ? 'present' : 'missing');
     if (authHeader) {
       console.log('[Notify API] Authorization header length:', authHeader.length);
+      // Bearer プレフィックスを削除してAPIキー部分を取得
+      const receivedKey = authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : authHeader.trim();
+      console.log('[Notify API] Received key length:', receivedKey.length);
+      console.log('[Notify API] Received key first 10 chars:', receivedKey.substring(0, 10));
+      console.log('[Notify API] Received key last 10 chars:', receivedKey.substring(receivedKey.length - 10));
     }
     
-    if (apiKey && authHeader !== `Bearer ${apiKey}`) {
-      console.error('[Notify API] Authentication failed');
-      console.error('[Notify API] Expected:', `Bearer ${apiKey}`);
-      console.error('[Notify API] Received:', authHeader);
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+    if (apiKey) {
+      // AuthorizationヘッダーからBearerプレフィックスを削除して比較
+      const receivedKey = authHeader?.startsWith('Bearer ') 
+        ? authHeader.substring(7).trim() 
+        : authHeader?.trim() || '';
+      
+      if (receivedKey !== apiKey) {
+        console.error('[Notify API] Authentication failed');
+        console.error('[Notify API] Expected key length:', apiKey.length);
+        console.error('[Notify API] Received key length:', receivedKey.length);
+        console.error('[Notify API] Expected key first 10 chars:', apiKey.substring(0, 10));
+        console.error('[Notify API] Received key first 10 chars:', receivedKey.substring(0, 10));
+        console.error('[Notify API] Expected key last 10 chars:', apiKey.substring(apiKey.length - 10));
+        console.error('[Notify API] Received key last 10 chars:', receivedKey.substring(receivedKey.length - 10));
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
     }
 
     const { id } = await params;
