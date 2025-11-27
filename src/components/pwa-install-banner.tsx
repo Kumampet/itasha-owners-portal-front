@@ -16,7 +16,6 @@ export function PWAInstallBanner() {
 
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
-  const [browserType, setBrowserType] = useState<"safari" | "chrome" | "other">("other");
 
   // モバイル判定とPWAインストール状態を初期値として設定
   const [isMobile] = useState(() => {
@@ -24,9 +23,9 @@ export function PWAInstallBanner() {
     return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   });
 
-  // ブラウザ判定
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  // ブラウザ判定（初期値として設定）
+  const [browserType] = useState<"safari" | "chrome" | "other">(() => {
+    if (typeof window === "undefined") return "other";
 
     const userAgent = navigator.userAgent;
     const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
@@ -34,8 +33,7 @@ export function PWAInstallBanner() {
     
     // iOSの場合は基本的にSafariとして扱う（iOS ChromeもSafariの手順を表示）
     if (isIOS) {
-      setBrowserType("safari");
-      return;
+      return "safari";
     }
     
     // Safari系の判定（Chromeが含まれていないSafari、macOS Safari等）
@@ -45,13 +43,13 @@ export function PWAInstallBanner() {
     const isChrome = /Chrome/i.test(userAgent) && !/Edg/i.test(userAgent);
     
     if (isSafari) {
-      setBrowserType("safari");
+      return "safari";
     } else if (isChrome || isAndroid) {
-      setBrowserType("chrome");
+      return "chrome";
     } else {
-      setBrowserType("other");
+      return "other";
     }
-  }, []);
+  });
 
   const [isStandalone] = useState(() => {
     if (typeof window === "undefined") return false;
