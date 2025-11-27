@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { shouldRedirectToNotificationSettings } from "@/lib/notification-check";
 
 type Event = {
   id: string;
@@ -44,6 +45,15 @@ export default function NewReminderPage() {
     setSaving(true);
 
     try {
+      // 通知設定をチェック
+      const shouldRedirect = await shouldRedirectToNotificationSettings();
+      if (shouldRedirect) {
+        const currentPath = window.location.pathname;
+        router.push(`/app/notification-settings?callbackUrl=${encodeURIComponent(currentPath)}`);
+        setSaving(false);
+        return;
+      }
+
       // datetime-local形式をISO形式に変換
       const datetimeISO = new Date(formData.datetime).toISOString();
 

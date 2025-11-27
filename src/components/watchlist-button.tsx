@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Tooltip } from "@/components/tooltip";
+import { shouldRedirectToNotificationSettings } from "@/lib/notification-check";
 
 type WatchlistButtonProps = {
   eventId: string;
@@ -12,6 +14,7 @@ type WatchlistButtonProps = {
 
 export function WatchlistButton({ eventId, className, onToggle }: WatchlistButtonProps) {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [isWatching, setIsWatching] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -45,6 +48,20 @@ export function WatchlistButton({ eventId, className, onToggle }: WatchlistButto
 
   const handleToggle = async () => {
     if (!session || isLoading) return;
+
+    // ウォッチリストに追加する場合のみ通知設定をチェック
+    if (!isWatching) {
+      try {
+        const shouldRedirect = await shouldRedirectToNotificationSettings();
+        if (shouldRedirect) {
+          const currentPath = window.location.pathname;
+          router.push(`/app/notification-settings?callbackUrl=${encodeURIComponent(currentPath)}`);
+          return;
+        }
+      } catch (error) {
+        console.error("Error checking notification settings:", error);
+      }
+    }
 
     const newIsWatching = !isWatching;
     

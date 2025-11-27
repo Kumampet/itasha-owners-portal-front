@@ -326,10 +326,10 @@ model UserNotificationSettings {
   user_id          String       @unique @db.VarChar(36)
   
   // ブラウザ通知を有効にするか
-  browser_notification_enabled Boolean @default(true)
+  browser_notification_enabled Boolean @default(false)
   
   // メール通知を有効にするか
-  email_notification_enabled Boolean @default(true)
+  email_notification_enabled Boolean @default(false)
   
   created_at       DateTime     @default(now())
   updated_at       DateTime     @updatedAt

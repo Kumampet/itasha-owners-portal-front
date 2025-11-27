@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   requestNotificationPermission,
@@ -28,7 +29,10 @@ type NotificationSettings = {
   email_notification_enabled: boolean;
 };
 
-export default function NotificationSettingsPage() {
+function NotificationSettingsPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -156,8 +160,34 @@ export default function NotificationSettingsPage() {
           return;
         }
 
-        // Service Workerを登録
+        // Service Workerを登録（PWA環境でも正しく動作するように）
         const registration = await registerServiceWorker();
+
+        // Service Workerがアクティブになるまで待つ
+        if (registration.installing) {
+          await new Promise<void>((resolve) => {
+            registration.installing!.addEventListener("statechange", function () {
+              if (this.state === "activated") {
+                resolve();
+              }
+            });
+          });
+        } else if (registration.waiting) {
+          // 待機中のService Workerがある場合は、skipWaitingを呼び出す
+          registration.waiting.postMessage({ type: "SKIP_WAITING" });
+          await new Promise<void>((resolve) => {
+            registration.addEventListener("updatefound", () => {
+              const newWorker = registration.installing;
+              if (newWorker) {
+                newWorker.addEventListener("statechange", function () {
+                  if (this.state === "activated") {
+                    resolve();
+                  }
+                });
+              }
+            });
+          });
+        }
 
         // Push通知にサブスクライブ
         const subscription = await subscribeToPushNotifications(registration);
@@ -210,6 +240,7 @@ export default function NotificationSettingsPage() {
     // ブラウザ通知を無効にする場合、Push通知のサブスクリプションを解除
     if (field === "browser_notification_enabled" && settings.browser_notification_enabled) {
       try {
+        // 既存のService Worker登録を取得
         const registration = await navigator.serviceWorker.ready;
         await unsubscribeFromPushNotifications(registration);
 
@@ -248,6 +279,14 @@ export default function NotificationSettingsPage() {
 
       const data = await res.json();
       setSettings(data);
+
+      // 通知設定が有効になったら、callbackUrlがある場合は元のページに戻る
+      if (callbackUrl && (data.browser_notification_enabled || data.email_notification_enabled)) {
+        // 少し待ってからリダイレクト（ユーザーに設定が保存されたことを確認させる）
+        setTimeout(() => {
+          router.push(callbackUrl);
+        }, 500);
+      }
     } catch (error) {
       console.error("Failed to update notification settings:", error);
       alert("設定の更新に失敗しました");
@@ -424,3 +463,20 @@ export default function NotificationSettingsPage() {
   );
 }
 
+export default function NotificationSettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex-1">
+          <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
+            <div className="flex items-center justify-center py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+            </div>
+          </section>
+        </main>
+      }
+    >
+      <NotificationSettingsPageContent />
+    </Suspense>
+  );
+}

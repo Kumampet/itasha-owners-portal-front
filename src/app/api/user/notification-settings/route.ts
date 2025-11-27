@@ -25,8 +25,8 @@ export async function GET() {
       settings = await prisma.userNotificationSettings.create({
         data: {
           user_id: userId,
-          browser_notification_enabled: true,
-          email_notification_enabled: true,
+          browser_notification_enabled: false,
+          email_notification_enabled: false,
         },
       });
     }
@@ -59,13 +59,13 @@ export async function PATCH(request: Request) {
     const settings = await prisma.userNotificationSettings.upsert({
       where: { user_id: userId },
       update: {
-        browser_notification_enabled: body.browser_notification_enabled ?? true,
-        email_notification_enabled: body.email_notification_enabled ?? true,
+        browser_notification_enabled: body.browser_notification_enabled ?? false,
+        email_notification_enabled: body.email_notification_enabled ?? false,
       },
       create: {
         user_id: userId,
-        browser_notification_enabled: body.browser_notification_enabled ?? true,
-        email_notification_enabled: body.email_notification_enabled ?? true,
+        browser_notification_enabled: body.browser_notification_enabled ?? false,
+        email_notification_enabled: body.email_notification_enabled ?? false,
       },
     });
 

@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DisplayNameModal } from "@/components/display-name-modal";
 import { PWAInstallCard } from "@/components/pwa-install-card";
+import { shouldRedirectToNotificationSettings } from "@/lib/notification-check";
 
 type Reminder = {
     id: string;
@@ -26,10 +28,33 @@ type Reminder = {
 
 export default function MyPage() {
     const { data: session, status, update } = useSession();
+    const router = useRouter();
     const isLoading = status === "loading";
     const [isDisplayNameModalOpen, setIsDisplayNameModalOpen] = useState(false);
     const [upcomingReminders, setUpcomingReminders] = useState<Reminder[]>([]);
     const [isLoadingReminders, setIsLoadingReminders] = useState(true);
+
+    // 初回ログイン時に通知設定をチェック
+    useEffect(() => {
+        if (isLoading || !session?.user?.id) {
+            return;
+        }
+
+        const checkNotificationSettings = async () => {
+            try {
+                const shouldRedirect = await shouldRedirectToNotificationSettings();
+                if (shouldRedirect) {
+                    // 通知設定ページにリダイレクト（元のページに戻るためのcallbackUrlを付与）
+                    const currentPath = window.location.pathname;
+                    router.push(`/app/notification-settings?callbackUrl=${encodeURIComponent(currentPath)}`);
+                }
+            } catch (error) {
+                console.error("Error checking notification settings:", error);
+            }
+        };
+
+        checkNotificationSettings();
+    }, [isLoading, session?.user?.id, router]);
 
     // 72時間以内のリマインダーを取得
     useEffect(() => {
