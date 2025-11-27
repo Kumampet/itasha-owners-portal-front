@@ -23,9 +23,57 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
   }
 
   try {
-    // next-pwaが生成するService Workerを登録
-    // 既存のPush通知機能は、next-pwaの生成するService Workerに統合される
-    const registration = await navigator.serviceWorker.register("/sw.js");
+    // 既存のService Worker登録を確認（すべての登録を確認）
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    console.log(`[Service Worker] Found ${registrations.length} existing registration(s)`);
+    
+    // /sw.jsで登録されているService Workerを探す（PWA環境でも正しく動作するように）
+    for (const registration of registrations) {
+      const scriptURL = registration.active?.scriptURL || registration.waiting?.scriptURL || registration.installing?.scriptURL;
+      if (scriptURL && scriptURL.includes("/sw.js")) {
+        console.log("[Service Worker] Existing registration found:", registration.scope);
+        console.log("[Service Worker] Script URL:", scriptURL);
+        // アクティブなService Workerを返す（なければ待機中のものを返す）
+        if (registration.active) {
+          return registration;
+        }
+      }
+    }
+
+    // Service Workerを登録（参考サイトの実装に合わせて）
+    const registration = await navigator.serviceWorker.register("/sw.js", {
+      scope: "/",
+    });
+    console.log("[Service Worker] Registered:", registration.scope);
+    
+    // アクティベーションを待つ（PWA環境でも正しく動作するように）
+    if (registration.installing) {
+      await new Promise<void>((resolve) => {
+        registration.installing!.addEventListener("statechange", function () {
+          if (this.state === "activated") {
+            console.log("[Service Worker] Activated");
+            resolve();
+          }
+        });
+      });
+    } else if (registration.waiting) {
+      // 待機中のService Workerがある場合は、skipWaitingを呼び出す
+      registration.waiting.postMessage({ type: "SKIP_WAITING" });
+      await new Promise<void>((resolve) => {
+        registration.addEventListener("updatefound", () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener("statechange", function () {
+              if (this.state === "activated") {
+                console.log("[Service Worker] Activated after skipWaiting");
+                resolve();
+              }
+            });
+          }
+        });
+      });
+    }
+    
     return registration;
   } catch (error) {
     console.error("Service Worker registration failed:", error);

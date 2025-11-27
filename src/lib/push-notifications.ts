@@ -39,15 +39,17 @@ export async function sendPushNotification(
       return { success: false, sent: 0, message: "No push subscriptions found" };
     }
 
+    // 参考サイトの実装に合わせて、payloadをJSON形式で送信
     const payload = JSON.stringify({
       title,
       body,
       tag: "reminder",
       data: data || {},
-      // アイコンはオプション（存在する場合のみ）
-      // icon: "/icon-192.png",
-      // badge: "/icon-192.png",
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
     });
+    
+    console.log(`[Push Notification] Payload: ${payload}`);
 
     const results = await Promise.allSettled(
       subscriptions.map(async (subscription) => {
