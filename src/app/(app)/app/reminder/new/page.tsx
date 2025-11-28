@@ -9,7 +9,6 @@ import {
   generateICalContent,
   downloadICalFile,
   isIOS,
-  isAndroid,
 } from "@/lib/calendar";
 import { ModalBase } from "@/components/modal-base";
 
@@ -82,8 +81,6 @@ export default function NewReminderPage() {
       });
 
       if (!res.ok) throw new Error("Failed to create reminder");
-
-      const reminderData = await res.json();
 
       // 作成したリマインダー情報を保存してカレンダー登録モーダルを表示
       const selectedEvent = events.find((e) => e.id === formData.event_id);

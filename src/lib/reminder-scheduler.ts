@@ -10,7 +10,8 @@
  */
 export async function createReminderSchedule(
   reminderId: string,
-  scheduledTime: Date
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _scheduledTime: Date
 ): Promise<{ success: boolean; scheduleArn?: string; error?: string }> {
   // TODO: EventBridge Scheduler機能を削除しました。将来的に再実装する場合は、ここにスケジュール作成ロジックを追加してください。
   console.log(`[Reminder Scheduler] Schedule creation skipped for reminder ${reminderId} (EventBridge Scheduler disabled)`);
@@ -23,7 +24,8 @@ export async function createReminderSchedule(
  */
 export async function updateReminderSchedule(
   reminderId: string,
-  scheduledTime: Date
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _scheduledTime: Date
 ): Promise<{ success: boolean; scheduleArn?: string; error?: string }> {
   // TODO: EventBridge Scheduler機能を削除しました。将来的に再実装する場合は、ここにスケジュール更新ロジックを追加してください。
   console.log(`[Reminder Scheduler] Schedule update skipped for reminder ${reminderId} (EventBridge Scheduler disabled)`);
@@ -46,7 +48,10 @@ export async function deleteReminderSchedule(
  * スケジュールの存在確認
  * EventBridge Scheduler機能が削除されたため、常にfalseを返します
  */
-export async function scheduleExists(reminderId: string): Promise<boolean> {
+export async function scheduleExists(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _reminderId: string
+): Promise<boolean> {
   // TODO: EventBridge Scheduler機能を削除しました。将来的に再実装する場合は、ここにスケジュール存在確認ロジックを追加してください。
   return false;
 }
