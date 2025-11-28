@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { ReactNode, MouseEvent } from "react";
 import { Card } from "@/components/card";
 
 interface LinkCardProps {
@@ -17,8 +17,28 @@ export function LinkCard({
     className = "",
     cardClassName = "",
 }: LinkCardProps) {
+    const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
+        // クリックされた要素がボタン、リンク、またはその子要素の場合はナビゲーションを防ぐ
+        const target = e.target as HTMLElement;
+        const isButton = target.closest("button") !== null;
+        const isLink = target.closest("a") !== null;
+        const isActionElement = target.closest("[data-no-link]") !== null;
+
+        if (isButton || isLink || isActionElement) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+
+        // 通常のクリックはそのまま処理（Next.jsのLinkが処理）
+    };
+
     return (
-        <Link href={href} className={`block group transition ${className}`}>
+        <Link 
+            href={href} 
+            className={`block group transition ${className}`}
+            onClick={handleClick}
+        >
             <Card className={`transition group-hover:border-zinc-900 ${cardClassName}`}>
                 {children}
             </Card>

@@ -11,8 +11,19 @@ async function generateRemindersForEvent(eventId: string, userId: string) {
       id: true,
       name: true,
       event_date: true,
-      entry_start_at: true,
-      payment_due_at: true,
+      entries: {
+        select: {
+          entry_number: true,
+          entry_start_at: true,
+          entry_start_public_at: true,
+          entry_deadline_at: true,
+          payment_due_at: true,
+          payment_due_public_at: true,
+        },
+        orderBy: {
+          entry_number: "asc",
+        },
+      },
     },
   });
 
@@ -30,30 +41,49 @@ async function generateRemindersForEvent(eventId: string, userId: string) {
     };
   }> = [];
 
-  // エントリー開始日時
-  if (event.entry_start_at) {
-    reminders.push({
-      reminder_data: {
-        type: "entry_start",
-        datetime: event.entry_start_at.toISOString(),
-        label: "エントリー開始",
-        event_id: event.id,
-        event_name: event.name,
-      },
-    });
-  }
+  const now = new Date();
 
-  // 支払期限
-  if (event.payment_due_at) {
-    reminders.push({
-      reminder_data: {
-        type: "payment_due",
-        datetime: event.payment_due_at.toISOString(),
-        label: "支払期限",
-        event_id: event.id,
-        event_name: event.name,
-      },
-    });
+  // エントリー情報からリマインダーを生成（最初のエントリーのみ）
+  if (event.entries && event.entries.length > 0) {
+    const firstEntry = event.entries[0];
+
+    // エントリー開始日時（公開日時が未来の場合は非表示）
+    const entryStartAt =
+      firstEntry.entry_start_public_at &&
+      new Date(firstEntry.entry_start_public_at) > now
+        ? null
+        : firstEntry.entry_start_at;
+
+    if (entryStartAt) {
+      reminders.push({
+        reminder_data: {
+          type: "entry_start",
+          datetime: entryStartAt.toISOString(),
+          label: "エントリー開始",
+          event_id: event.id,
+          event_name: event.name,
+        },
+      });
+    }
+
+    // 支払期限（公開日時が未来の場合は非表示）
+    const paymentDueAt =
+      firstEntry.payment_due_public_at &&
+      new Date(firstEntry.payment_due_public_at) > now
+        ? null
+        : firstEntry.payment_due_at;
+
+    if (paymentDueAt) {
+      reminders.push({
+        reminder_data: {
+          type: "payment_due",
+          datetime: paymentDueAt.toISOString(),
+          label: "支払期限",
+          event_id: event.id,
+          event_name: event.name,
+        },
+      });
+    }
   }
 
   // イベント開催日

@@ -10,13 +10,22 @@ type WatchlistEvent = {
   event: {
     id: string;
     name: string;
-    theme: string | null;
     description: string | null;
     event_date: string;
-    entry_start_at: string | null;
-    payment_due_at: string | null;
-    original_url: string;
+    event_end_date: string | null;
+    is_multi_day: boolean;
+    keywords: string[] | null;
+    official_urls: string[];
+    image_url: string | null;
     approval_status: string;
+    entries: Array<{
+      entry_number: number;
+      entry_start_at: string;
+      entry_start_public_at: string | null;
+      entry_deadline_at: string;
+      payment_due_at: string;
+      payment_due_public_at: string | null;
+    }>;
     tags: Array<{
       tag: {
         name: string;

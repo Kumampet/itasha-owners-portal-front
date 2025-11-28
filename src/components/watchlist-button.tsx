@@ -47,6 +47,7 @@ export function WatchlistButton({ eventId, className, onToggle }: WatchlistButto
   }, [eventId, session]);
 
   const handleToggle = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     e.stopPropagation();
     if (!session || isLoading) return;
 

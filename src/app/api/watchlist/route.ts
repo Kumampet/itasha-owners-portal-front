@@ -25,12 +25,27 @@ export async function GET() {
           select: {
             id: true,
             name: true,
-            theme: true,
+            description: true,
             event_date: true,
-            entry_start_at: true,
-            payment_due_at: true,
-            original_url: true,
+            event_end_date: true,
+            is_multi_day: true,
+            keywords: true,
+            official_urls: true,
+            image_url: true,
             approval_status: true,
+            entries: {
+              select: {
+                entry_number: true,
+                entry_start_at: true,
+                entry_start_public_at: true,
+                entry_deadline_at: true,
+                payment_due_at: true,
+                payment_due_public_at: true,
+              },
+              orderBy: {
+                entry_number: "asc",
+              },
+            },
             tags: {
               select: {
                 tag: {
