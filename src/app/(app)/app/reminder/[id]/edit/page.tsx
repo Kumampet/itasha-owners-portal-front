@@ -305,8 +305,6 @@ export default function EditReminderPage({
           confirmLabel="削除"
           cancelLabel="キャンセル"
         />
-          </>
-        )}
       </section>
     </main>
   );
