@@ -11,23 +11,33 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 type Event = {
   id: string;
   name: string;
-  theme: string | null;
   description: string | null;
-  original_url: string;
   event_date: string;
-  entry_start_at: string | null;
-  payment_due_at: string | null;
+  event_end_date: string | null;
+  is_multi_day: boolean;
   postal_code: string | null;
   prefecture: string | null;
   city: string | null;
   street_address: string | null;
   venue_name: string | null;
+  keywords: string[] | null;
+  official_urls: string[];
+  image_url: string | null;
   approval_status: string;
   organizer_email: string | null;
   organizer_user: {
     id: string;
     email: string;
   } | null;
+  entries: Array<{
+    id: string;
+    entry_number: number;
+    entry_start_at: string;
+    entry_start_public_at: string | null;
+    entry_deadline_at: string;
+    payment_due_at: string;
+    payment_due_public_at: string | null;
+  }>;
   tags: Array<{
     tag: {
       id: string;
@@ -50,21 +60,22 @@ export default function AdminEventDetailPage({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [tags, setTags] = useState<string[]>([]);
+  const [keywords, setKeywords] = useState<string[]>([]);
   const [formData, setFormData] = useState<EventFormData>({
     name: "",
-    theme: "",
     description: "",
-    original_url: "",
     event_date: "",
-    entry_start_at: "",
-    payment_due_at: "",
+    is_multi_day: false,
+    event_end_date: "",
     postal_code: "",
     prefecture: "",
     city: "",
     street_address: "",
     venue_name: "",
     organizer_email: "",
+    image_url: "",
+    official_urls: [""],
+    entries: [],
   });
 
   // 現在のユーザーがadminまたはイベントのorganizerかどうかを確認
@@ -90,19 +101,36 @@ export default function AdminEventDetailPage({
       }
       const data = await res.json();
       setEvent(data);
+      
+      // エントリー情報をフォーマット
+      const formattedEntries = (data.entries || []).map((entry: any) => ({
+        entry_number: entry.entry_number,
+        entry_start_at: entry.entry_start_at
+          ? new Date(entry.entry_start_at).toISOString().slice(0, 16)
+          : "",
+        entry_start_public_at: entry.entry_start_public_at
+          ? new Date(entry.entry_start_public_at).toISOString().slice(0, 16)
+          : "",
+        entry_deadline_at: entry.entry_deadline_at
+          ? new Date(entry.entry_deadline_at).toISOString().slice(0, 16)
+          : "",
+        payment_due_at: entry.payment_due_at
+          ? new Date(entry.payment_due_at).toISOString().slice(0, 16)
+          : "",
+        payment_due_public_at: entry.payment_due_public_at
+          ? new Date(entry.payment_due_public_at).toISOString().slice(0, 16)
+          : "",
+      }));
+
       setFormData({
         name: data.name || "",
-        theme: data.theme || "",
         description: data.description || "",
-        original_url: data.original_url || "",
         event_date: data.event_date
           ? new Date(data.event_date).toISOString().split("T")[0]
           : "",
-        entry_start_at: data.entry_start_at
-          ? new Date(data.entry_start_at).toISOString().split("T")[0]
-          : "",
-        payment_due_at: data.payment_due_at
-          ? new Date(data.payment_due_at).toISOString().split("T")[0]
+        is_multi_day: data.is_multi_day || false,
+        event_end_date: data.event_end_date
+          ? new Date(data.event_end_date).toISOString().split("T")[0]
           : "",
         postal_code: data.postal_code || "",
         prefecture: data.prefecture || "",
@@ -110,8 +138,20 @@ export default function AdminEventDetailPage({
         street_address: data.street_address || "",
         venue_name: data.venue_name || "",
         organizer_email: data.organizer_email || data.organizer_user?.email || "",
+        image_url: data.image_url || "",
+        official_urls: (data.official_urls && Array.isArray(data.official_urls) && data.official_urls.length > 0)
+          ? data.official_urls
+          : [""],
+        entries: formattedEntries.length > 0 ? formattedEntries : [{
+          entry_number: 1,
+          entry_start_at: "",
+          entry_start_public_at: "",
+          entry_deadline_at: "",
+          payment_due_at: "",
+          payment_due_public_at: "",
+        }],
       });
-      setTags(data.tags.map((eventTag: { tag: { name: string } }) => eventTag.tag.name));
+      setKeywords((data.keywords && Array.isArray(data.keywords)) ? data.keywords : []);
     } catch (error) {
       console.error("Failed to fetch event:", error);
       alert(`イベントの取得に失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -139,7 +179,7 @@ export default function AdminEventDetailPage({
         body: JSON.stringify({
           ...formData,
           organizer_email: organizerEmail,
-          tags: tags,
+          keywords: keywords,
           approval_status: approvalStatus,
         }),
       });
@@ -364,8 +404,8 @@ export default function AdminEventDetailPage({
         <EventForm
           formData={formData}
           onFormDataChange={setFormData}
-          tags={tags}
-          onTagsChange={setTags}
+          keywords={keywords}
+          onKeywordsChange={setKeywords}
         >
           <Button
             variant="secondary"
@@ -433,14 +473,22 @@ export default function AdminEventDetailPage({
             <h2 className="text-xl font-semibold text-zinc-900">
               {event.name}
             </h2>
-            {event.theme && (
-              <p className="mt-1 text-sm text-zinc-600">{event.theme}</p>
-            )}
           </div>
+
+          {event.image_url && (
+            <div>
+              <img
+                src={event.image_url}
+                alt={event.name}
+                className="w-full rounded-md object-cover"
+                style={{ maxHeight: "300px" }}
+              />
+            </div>
+          )}
 
           {event.description && (
             <div>
-              <h3 className="text-sm font-medium text-zinc-700">説明</h3>
+              <h3 className="text-sm font-medium text-zinc-700">イベント概要</h3>
               <p className="mt-1 text-sm text-zinc-600 whitespace-pre-wrap">
                 {event.description}
               </p>
@@ -452,40 +500,80 @@ export default function AdminEventDetailPage({
               <h3 className="text-sm font-medium text-zinc-700">開催日</h3>
               <p className="mt-1 text-sm text-zinc-600">
                 {new Date(event.event_date).toLocaleDateString("ja-JP")}
+                {event.is_multi_day && event.event_end_date && (
+                  <span className="ml-2">
+                    〜 {new Date(event.event_end_date).toLocaleDateString("ja-JP")}
+                  </span>
+                )}
               </p>
             </div>
 
-            {event.entry_start_at && (
+            {event.official_urls && event.official_urls.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium text-zinc-700">
-                  エントリー開始日
-                </h3>
-                <p className="mt-1 text-sm text-zinc-600">
-                  {new Date(event.entry_start_at).toLocaleDateString("ja-JP")}
-                </p>
+                <h3 className="text-sm font-medium text-zinc-700">公式URL</h3>
+                <div className="mt-1 space-y-1">
+                  {event.official_urls.map((url, index) => (
+                    <a
+                      key={index}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-sm text-blue-600 hover:underline"
+                    >
+                      {url}
+                    </a>
+                  ))}
+                </div>
               </div>
             )}
 
-            {event.payment_due_at && (
-              <div>
-                <h3 className="text-sm font-medium text-zinc-700">支払期限</h3>
-                <p className="mt-1 text-sm text-zinc-600">
-                  {new Date(event.payment_due_at).toLocaleDateString("ja-JP")}
-                </p>
+            {event.entries && event.entries.length > 0 && (
+              <div className="col-span-1 sm:col-span-2">
+                <h3 className="text-sm font-medium text-zinc-700">エントリー情報</h3>
+                <div className="mt-2 space-y-3">
+                  {event.entries.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="rounded-md border border-zinc-200 bg-zinc-50 p-3"
+                    >
+                      <h4 className="text-xs font-medium text-zinc-700 mb-2">
+                        {entry.entry_number}次エントリー
+                      </h4>
+                      <div className="space-y-2 text-xs text-zinc-600">
+                        <div>
+                          <span className="font-medium">エントリー開始日時:</span>{" "}
+                          {new Date(entry.entry_start_at).toLocaleString("ja-JP")}
+                        </div>
+                        <div>
+                          <span className="font-medium">エントリー開始日時公開日時:</span>{" "}
+                          {entry.entry_start_public_at ? (
+                            <span>{new Date(entry.entry_start_public_at).toLocaleString("ja-JP")}</span>
+                          ) : (
+                            <span className="text-zinc-500">未設定（即時公開）</span>
+                          )}
+                        </div>
+                        <div>
+                          <span className="font-medium">エントリー締切日時:</span>{" "}
+                          {new Date(entry.entry_deadline_at).toLocaleString("ja-JP")}
+                        </div>
+                        <div>
+                          <span className="font-medium">支払期限日時:</span>{" "}
+                          {new Date(entry.payment_due_at).toLocaleString("ja-JP")}
+                        </div>
+                        <div>
+                          <span className="font-medium">支払期限日時公開日時:</span>{" "}
+                          {entry.payment_due_public_at ? (
+                            <span>{new Date(entry.payment_due_public_at).toLocaleString("ja-JP")}</span>
+                          ) : (
+                            <span className="text-zinc-500">未設定（即時公開）</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-
-            <div>
-              <h3 className="text-sm font-medium text-zinc-700">公式URL</h3>
-              <a
-                href={event.original_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 text-sm text-blue-600 hover:underline"
-              >
-                {event.original_url}
-              </a>
-            </div>
 
             {(event.organizer_email || event.organizer_user) && (
               <div>
@@ -508,6 +596,22 @@ export default function AdminEventDetailPage({
               </div>
             )}
           </div>
+
+          {event.keywords && event.keywords.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-zinc-700">キーワード</h3>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {event.keywords.map((keyword, index) => (
+                  <span
+                    key={index}
+                    className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700"
+                  >
+                    {keyword}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {event.tags.length > 0 && (
             <div>

@@ -83,7 +83,33 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(event);
+    const now = new Date();
+
+    // 公開日時が未来の場合は該当日時を非公開にする
+    const filteredEvent = {
+      ...event,
+      entries: (event.entries || []).map((entry: any) => {
+        const entryStartAt =
+          entry.entry_start_public_at &&
+          new Date(entry.entry_start_public_at) > now
+            ? null
+            : entry.entry_start_at;
+
+        const paymentDueAt =
+          entry.payment_due_public_at &&
+          new Date(entry.payment_due_public_at) > now
+            ? null
+            : entry.payment_due_at;
+
+        return {
+          ...entry,
+          entry_start_at: entryStartAt,
+          payment_due_at: paymentDueAt,
+        };
+      }),
+    };
+
+    return NextResponse.json(filteredEvent);
   } catch (error) {
     console.error("Error fetching event:", error);
     return NextResponse.json(

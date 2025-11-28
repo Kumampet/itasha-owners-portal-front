@@ -72,7 +72,6 @@ export async function GET(request: Request) {
           select: {
             id: true,
             name: true,
-            theme: true,
             event_date: true,
             official_urls: true,
           },
@@ -99,7 +98,6 @@ export async function GET(request: Request) {
         event: reminder.event ? {
           id: reminder.event.id,
           name: reminder.event.name,
-          theme: reminder.event.theme,
           event_date: reminder.event.event_date,
           original_url: firstUrl,
         } : null,
@@ -155,7 +153,6 @@ export async function POST(request: Request) {
         select: {
           id: true,
           name: true,
-          theme: true,
           event_date: true,
           official_urls: true,
         },
@@ -188,7 +185,6 @@ export async function POST(request: Request) {
           select: {
             id: true,
             name: true,
-            theme: true,
             event_date: true,
             official_urls: true,
           },
@@ -235,7 +231,6 @@ export async function POST(request: Request) {
       event: reminder.event ? {
         id: reminder.event.id,
         name: reminder.event.name,
-        theme: reminder.event.theme,
         event_date: reminder.event.event_date,
         original_url: reminderFirstUrl,
       } : null,

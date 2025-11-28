@@ -28,7 +28,6 @@ export async function GET(
           select: {
             id: true,
             name: true,
-            theme: true,
             event_date: true,
             official_urls: true,
           },
@@ -68,7 +67,6 @@ export async function GET(
       event: reminder.event ? {
         id: reminder.event.id,
         name: reminder.event.name,
-        theme: reminder.event.theme,
         event_date: reminder.event.event_date,
         original_url: firstUrl,
       } : null,
@@ -175,7 +173,6 @@ export async function PATCH(
           select: {
             id: true,
             name: true,
-            theme: true,
             event_date: true,
             official_urls: true,
           },
@@ -222,7 +219,6 @@ export async function PATCH(
       event: updatedReminder.event ? {
         id: updatedReminder.event.id,
         name: updatedReminder.event.name,
-        theme: updatedReminder.event.theme,
         event_date: updatedReminder.event.event_date,
         original_url: updatedFirstUrl,
       } : null,

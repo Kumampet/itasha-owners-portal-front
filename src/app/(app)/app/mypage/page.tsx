@@ -13,7 +13,6 @@ type Reminder = {
     event: {
         id: string;
         name: string;
-        theme: string | null;
         event_date: Date | null;
         original_url: string | null;
     } | null;

@@ -49,23 +49,38 @@ export async function GET(
       select: {
         id: true,
         name: true,
-        theme: true,
         description: true,
-        original_url: true,
         event_date: true,
-        entry_start_at: true,
-        payment_due_at: true,
+        event_end_date: true,
+        is_multi_day: true,
         postal_code: true,
         prefecture: true,
         city: true,
         street_address: true,
         venue_name: true,
+        keywords: true,
+        official_urls: true,
+        image_url: true,
         approval_status: true,
         organizer_email: true,
         organizer_user: {
           select: {
             id: true,
             email: true,
+          },
+        },
+        entries: {
+          select: {
+            id: true,
+            entry_number: true,
+            entry_start_at: true,
+            entry_start_public_at: true,
+            entry_deadline_at: true,
+            payment_due_at: true,
+            payment_due_public_at: true,
+          },
+          orderBy: {
+            entry_number: "asc",
           },
         },
         tags: {
@@ -160,26 +175,49 @@ export async function PATCH(
         where: { id },
         data: {
           name: body.name,
-          theme: body.theme || null,
           description: body.description || null,
-          original_url: body.original_url,
           event_date: new Date(body.event_date),
-          entry_start_at: body.entry_start_at
-            ? new Date(body.entry_start_at)
-            : null,
-          payment_due_at: body.payment_due_at
-            ? new Date(body.payment_due_at)
-            : null,
+          event_end_date: body.event_end_date ? new Date(body.event_end_date) : null,
+          is_multi_day: body.is_multi_day || false,
           postal_code: body.postal_code || null,
           prefecture: body.prefecture || null,
           city: body.city || null,
           street_address: body.street_address || null,
           venue_name: body.venue_name || null,
+          keywords: body.keywords || null,
+          official_urls: body.official_urls || [],
+          image_url: body.image_url || null,
           approval_status: body.approval_status,
           organizer_email: body.organizer_email || null,
           organizer_user_id: organizerUserId,
         },
       });
+
+      // 既存のエントリー情報を削除
+      await tx.eventEntry.deleteMany({
+        where: { event_id: id },
+      });
+
+      // 新しいエントリー情報を作成
+      if (body.entries && Array.isArray(body.entries)) {
+        for (const entry of body.entries) {
+          await tx.eventEntry.create({
+            data: {
+              event_id: id,
+              entry_number: entry.entry_number,
+              entry_start_at: new Date(entry.entry_start_at),
+              entry_start_public_at: entry.entry_start_public_at
+                ? new Date(entry.entry_start_public_at)
+                : null,
+              entry_deadline_at: new Date(entry.entry_deadline_at),
+              payment_due_at: new Date(entry.payment_due_at),
+              payment_due_public_at: entry.payment_due_public_at
+                ? new Date(entry.payment_due_public_at)
+                : null,
+            },
+          });
+        }
+      }
 
       // タグを処理
       if (tags.length > 0) {
@@ -214,18 +252,38 @@ export async function PATCH(
         select: {
           id: true,
           name: true,
-          theme: true,
           description: true,
-          original_url: true,
           event_date: true,
-          entry_start_at: true,
-          payment_due_at: true,
+          event_end_date: true,
+          is_multi_day: true,
+          postal_code: true,
+          prefecture: true,
+          city: true,
+          street_address: true,
+          venue_name: true,
+          keywords: true,
+          official_urls: true,
+          image_url: true,
           approval_status: true,
           organizer_email: true,
           organizer_user: {
             select: {
               id: true,
               email: true,
+            },
+          },
+          entries: {
+            select: {
+              id: true,
+              entry_number: true,
+              entry_start_at: true,
+              entry_start_public_at: true,
+              entry_deadline_at: true,
+              payment_due_at: true,
+              payment_due_public_at: true,
+            },
+            orderBy: {
+              entry_number: "asc",
             },
           },
           tags: {

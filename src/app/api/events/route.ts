@@ -18,6 +18,7 @@ const getCachedEvents = unstable_cache(
         name: true,
         description: true, // 詳細情報も取得
         event_date: true,
+        // @ts-expect-error - Prisma型が更新されていない可能性があるが、スキーマには存在する
         event_end_date: true,
         is_multi_day: true,
         prefecture: true,
@@ -82,7 +83,33 @@ const getCachedEvents = unstable_cache(
 export async function GET() {
   try {
     const events = await getCachedEvents();
-    return NextResponse.json(events);
+    const now = new Date();
+
+    // 公開日時が未来の場合は該当日時を非公開にする
+    const filteredEvents = events.map((event: any) => ({
+      ...event,
+      entries: (event.entries || []).map((entry: any) => {
+        const entryStartAt =
+          entry.entry_start_public_at &&
+            new Date(entry.entry_start_public_at) > now
+            ? null
+            : entry.entry_start_at;
+
+        const paymentDueAt =
+          entry.payment_due_public_at &&
+            new Date(entry.payment_due_public_at) > now
+            ? null
+            : entry.payment_due_at;
+
+        return {
+          ...entry,
+          entry_start_at: entryStartAt,
+          payment_due_at: paymentDueAt,
+        };
+      }),
+    }));
+
+    return NextResponse.json(filteredEvents);
   } catch (error) {
     console.error("Error fetching events:", error);
     const errorMessage =

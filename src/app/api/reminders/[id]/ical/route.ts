@@ -27,7 +27,6 @@ export async function GET(
           select: {
             id: true,
             name: true,
-            theme: true,
           },
         },
       },
@@ -81,9 +80,6 @@ export async function GET(
     
     // 説明文を構築（備考がある場合は含める）
     const descriptionParts = [eventName];
-    if (reminder.event?.theme) {
-      descriptionParts.push(reminder.event.theme);
-    }
     descriptionParts.push(reminderData.label);
     if (reminder.note) {
       descriptionParts.push(`\\n備考: ${reminder.note}`);

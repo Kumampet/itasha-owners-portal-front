@@ -9,8 +9,8 @@ type EventDetailPageProps = {
 
 function formatDateRange(
   date: Date,
-  entryStart: Date | null,
-  deadline: Date | null
+  endDate: Date | null,
+  isMultiDay: boolean
 ) {
   const main = new Intl.DateTimeFormat("ja-JP", {
     year: "numeric",
@@ -19,19 +19,73 @@ function formatDateRange(
     weekday: "long",
   }).format(date);
 
+  const end = endDate && isMultiDay
+    ? new Intl.DateTimeFormat("ja-JP", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "long",
+    }).format(endDate)
+    : null;
+
   return {
-    main,
-    entryStart: entryStart
+    main: end ? `${main} 〜 ${end}` : main,
+    end,
+  };
+}
+
+function formatEntryInfo(entries: Array<{
+  entry_number: number;
+  entry_start_at: Date;
+  entry_start_public_at: Date | null;
+  entry_deadline_at: Date;
+  payment_due_at: Date;
+  payment_due_public_at: Date | null;
+}>) {
+  if (!entries || entries.length === 0) {
+    return {
+      entryStart: "未定",
+      deadline: "未定",
+    };
+  }
+
+  // 最初のエントリー情報を使用
+  const firstEntry = entries[0];
+  const now = new Date();
+
+  // 公開日時が未来の場合は日時を非表示
+  const entryStartAt = firstEntry.entry_start_public_at && new Date(firstEntry.entry_start_public_at) > now
+    ? null
+    : firstEntry.entry_start_at;
+
+  const paymentDueAt = firstEntry.payment_due_public_at && new Date(firstEntry.payment_due_public_at) > now
+    ? null
+    : firstEntry.payment_due_at;
+
+  return {
+    entryStart: entryStartAt
       ? new Intl.DateTimeFormat("ja-JP", {
-          month: "short",
-          day: "numeric",
-        }).format(entryStart)
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(entryStartAt)
       : "未定",
-    deadline: deadline
+    deadline: firstEntry.entry_deadline_at
       ? new Intl.DateTimeFormat("ja-JP", {
-          month: "short",
-          day: "numeric",
-        }).format(deadline)
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(firstEntry.entry_deadline_at)
+      : "未定",
+    paymentDue: paymentDueAt
+      ? new Intl.DateTimeFormat("ja-JP", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(paymentDueAt)
       : "未定",
   };
 }
@@ -40,7 +94,7 @@ export default async function EventDetailPage({
   params,
 }: EventDetailPageProps) {
   const { slug } = await params;
-  
+
   const event = await prisma.event.findUnique({
     where: {
       id: slug,
@@ -48,17 +102,32 @@ export default async function EventDetailPage({
     select: {
       id: true,
       name: true,
-      theme: true,
       description: true,
       event_date: true,
-      entry_start_at: true,
-      payment_due_at: true,
-      original_url: true,
+      // @ts-expect-error - Prisma型が更新されていない可能性があるが、スキーマには存在する
+      event_end_date: true,
+      is_multi_day: true,
       approval_status: true,
       prefecture: true,
       city: true,
       street_address: true,
       venue_name: true,
+      keywords: true,
+      official_urls: true,
+      image_url: true,
+      entries: {
+        select: {
+          entry_number: true,
+          entry_start_at: true,
+          entry_start_public_at: true,
+          entry_deadline_at: true,
+          payment_due_at: true,
+          payment_due_public_at: true,
+        },
+        orderBy: {
+          entry_number: "asc",
+        },
+      },
       tags: {
         select: {
           tag: {
@@ -77,9 +146,10 @@ export default async function EventDetailPage({
 
   const formatted = formatDateRange(
     event.event_date,
-    event.entry_start_at,
-    event.payment_due_at,
+    (event as any).event_end_date,
+    (event as any).is_multi_day,
   );
+  const entryInfo = formatEntryInfo((event as any).entries || []);
 
   return (
     <main className="flex-1 px-4 pb-20 pt-6 sm:pb-16 sm:pt-10">
@@ -94,12 +164,32 @@ export default async function EventDetailPage({
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             {event.name}
           </h1>
+          {(event as any).image_url && (
+            <img
+              src={(event as any).image_url}
+              alt={event.name}
+              className="w-full rounded-lg object-cover"
+              style={{ maxHeight: "400px" }}
+            />
+          )}
           {event.description && (
             <p className="text-sm text-zinc-600 sm:text-base">{event.description}</p>
           )}
-          {event.tags.length > 0 && (
+          {(event as any).keywords && Array.isArray((event as any).keywords) && (event as any).keywords.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {event.tags.map((eventTag: { tag: { name: string } }, idx: number) => (
+              {(event as any).keywords.map((keyword: string, idx: number) => (
+                <span
+                  key={idx}
+                  className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700"
+                >
+                  {keyword}
+                </span>
+              ))}
+            </div>
+          )}
+          {(event as any).tags && (event as any).tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {(event as any).tags.map((eventTag: { tag: { name: string } }, idx: number) => (
                 <span
                   key={idx}
                   className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700"
@@ -119,12 +209,11 @@ export default async function EventDetailPage({
             <p className="text-lg font-semibold text-zinc-900">
               {formatted.main}
             </p>
-            {event.theme && (
-              <p className="text-sm text-zinc-600">{event.theme}</p>
-            )}
             {event.prefecture && (
               <p className="text-sm text-zinc-600">
                 開催地: {event.prefecture}
+                {event.city && ` ${event.city}`}
+                {event.street_address && ` ${event.street_address}`}
               </p>
             )}
             {event.venue_name && (
@@ -138,8 +227,13 @@ export default async function EventDetailPage({
               エントリー
             </p>
             <p className="text-sm text-zinc-700">
-              開始: {formatted.entryStart} / 締切: {formatted.deadline}
+              開始: {entryInfo.entryStart} / 締切: {entryInfo.deadline}
             </p>
+            {entryInfo.paymentDue !== "未定" && (
+              <p className="text-sm text-zinc-700">
+                支払期限: {entryInfo.paymentDue}
+              </p>
+            )}
             <EventDetailActions eventId={event.id} />
           </div>
         </section>
@@ -177,19 +271,26 @@ export default async function EventDetailPage({
                 </p>
               </div>
             )}
-            <Link
-              href={event.original_url}
-              className="rounded-2xl border border-zinc-200 p-4 transition hover:border-zinc-900"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                公式サイト
-              </p>
-              <p className="mt-1 break-all text-sm text-zinc-800">
-                {event.original_url}
-              </p>
-            </Link>
+            {(event as any).official_urls && Array.isArray((event as any).official_urls) && (event as any).official_urls.length > 0 && (
+              <div className="space-y-2">
+                {(event as any).official_urls.map((url: string, idx: number) => (
+                  <Link
+                    key={idx}
+                    href={url}
+                    className="block rounded-2xl border border-zinc-200 p-4 transition hover:border-zinc-900"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                      公式サイト{(event as any).official_urls.length > 1 ? ` ${idx + 1}` : ""}
+                    </p>
+                    <p className="mt-1 break-all text-sm text-zinc-800">
+                      {url}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </article>
