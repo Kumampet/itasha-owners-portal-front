@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { sendEmail } from "@/lib/ses";
+// TODO: 一斉連絡用メール通知機能は未実装です。将来的に実装する場合は、sendEmailをインポートして使用してください。
+// import { sendEmail } from "@/lib/ses";
 
 // GET /api/groups/[id]/messages
 // 団体メッセージ一覧を取得
@@ -176,44 +177,45 @@ export async function POST(
       },
     });
 
+    // TODO: 一斉連絡用メール通知機能は未実装です。将来的に実装する場合は、以下のロジックを追加してください。
     // 一斉連絡の場合、メール通知を送信
-    if (isAnnouncement === true) {
-      try {
-        const senderName = session.user.name || session.user.email;
-        const subject = `【${group.name}】一斉連絡: ${group.event.name}`;
-        const emailBody = `
-${senderName}さんからの一斉連絡です。
-
-${content.trim()}
-
----
-団体: ${group.name}
-イベント: ${group.event.name}
-`;
-
-        // 送信者以外の全メンバーにメール送信
-        const recipients = group.members
-          .filter((m) => m.user_id !== session.user.id)
-          .map((m) => m.user.email);
-
-        // メール送信（エラーが発生してもメッセージ作成は成功とする）
-        for (const recipient of recipients) {
-          try {
-            await sendEmail({
-              to: recipient,
-              subject,
-              body: emailBody,
-            });
-          } catch (emailError) {
-            console.error(`Failed to send email to ${recipient}:`, emailError);
-            // 個別のメール送信エラーはログに記録するだけで続行
-          }
-        }
-      } catch (emailError) {
-        console.error("Failed to send announcement emails:", emailError);
-        // メール送信エラーはログに記録するだけで、メッセージ作成は成功とする
-      }
-    }
+    // if (isAnnouncement === true) {
+    //   try {
+    //     const senderName = session.user.name || session.user.email;
+    //     const subject = `【${group.name}】一斉連絡: ${group.event.name}`;
+    //     const emailBody = `
+    // ${senderName}さんからの一斉連絡です。
+    //
+    // ${content.trim()}
+    //
+    // ---
+    // 団体: ${group.name}
+    // イベント: ${group.event.name}
+    // `;
+    //
+    //     // 送信者以外の全メンバーにメール送信
+    //     const recipients = group.members
+    //       .filter((m) => m.user_id !== session.user.id)
+    //       .map((m) => m.user.email);
+    //
+    //     // メール送信（エラーが発生してもメッセージ作成は成功とする）
+    //     for (const recipient of recipients) {
+    //       try {
+    //         await sendEmail({
+    //           to: recipient,
+    //           subject,
+    //           body: emailBody,
+    //         });
+    //       } catch (emailError) {
+    //         console.error(`Failed to send email to ${recipient}:`, emailError);
+    //         // 個別のメール送信エラーはログに記録するだけで続行
+    //       }
+    //     }
+    //   } catch (emailError) {
+    //     console.error("Failed to send announcement emails:", emailError);
+    //     // メール送信エラーはログに記録するだけで、メッセージ作成は成功とする
+    //   }
+    // }
 
     return NextResponse.json({
       id: message.id,

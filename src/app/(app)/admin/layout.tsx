@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 type AdminLayoutProps = {
@@ -36,10 +37,17 @@ function SidebarContent({ onLinkClick, pathname, session }: SidebarContentProps)
       <div className="hidden border-b border-zinc-200 p-4 lg:block">
         <Link
           href="/admin/dashboard"
-          className="text-lg font-semibold text-zinc-900 hover:text-zinc-700"
+          className="flex items-center justify-center"
           onClick={onLinkClick}
         >
-          オーガナイザー機能
+          <Image
+            src="/images/main_logo.png"
+            alt="いたなび！痛車オーナーズナビ"
+            width={200}
+            height={80}
+            className="h-auto w-full max-w-[180px]"
+            priority
+          />
         </Link>
       </div>
       <nav className="flex-1 p-4">
@@ -228,10 +236,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <div className="flex items-center justify-between border-b border-zinc-200 p-4">
             <Link
               href="/admin/dashboard"
-              className="text-lg font-semibold text-zinc-900 hover:text-zinc-700"
+              className="flex items-center justify-center flex-1"
               onClick={() => setIsMenuOpen(false)}
             >
-              オーガナイザー機能
+              <Image
+                src="/images/main_logo.png"
+                alt="いたなび！痛車オーナーズナビ"
+                width={200}
+                height={80}
+                className="h-auto w-full max-w-[180px]"
+                priority
+              />
             </Link>
             <button
               onClick={() => setIsMenuOpen(false)}
@@ -281,8 +296,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 />
               </svg>
             </button>
-            <Link href="/admin/dashboard" className="text-lg font-semibold text-zinc-900">
-              オーガナイザー機能
+            <Link href="/admin/dashboard" className="flex items-center">
+              <Image
+                src="/images/main_logo.png"
+                alt="いたなび！痛車オーナーズナビ"
+                width={150}
+                height={60}
+                className="h-8 w-auto"
+                priority
+              />
             </Link>
             <span className="text-sm text-zinc-600">{session.user.email}</span>
           </div>

@@ -499,7 +499,7 @@ export default function GroupDetailPage({
                     className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
                   />
                   <span className="text-xs text-zinc-700">
-                    一斉連絡として送信（メール通知も送信されます）
+                    一斉連絡として送信
                   </span>
                 </label>
               )}

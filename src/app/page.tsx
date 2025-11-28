@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Home() {
   return (
@@ -6,6 +7,17 @@ export default function Home() {
       <section className="mx-auto flex max-w-5xl flex-col gap-10 px-4 pb-16 pt-10 sm:pt-16">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1 space-y-4">
+            {/* ロゴ */}
+            <div className="mb-4 flex justify-center">
+              <Image
+                src="/images/main_logo.png"
+                alt="いたなび！痛車オーナーズナビ"
+                width={300}
+                height={120}
+                className="h-auto w-full max-w-sm"
+                priority
+              />
+            </div>
             <p className="inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700 sm:text-sm">
               痛車イベントの「併せ」と「締切」、XのDM制限から解放されるためのツール
             </p>
@@ -20,7 +32,7 @@ export default function Home() {
             </p>
             <ul className="space-y-2 text-sm text-zinc-700 sm:text-base">
               <li>・イベントごとのエントリー開始・締切を自動でリマインド</li>
-              <li>・団体参加（併せ）のメンバー募集と一斉連絡をメールで確実に通知</li>
+              <li>・団体参加（併せ）のメンバー募集と一斉連絡機能</li>
               <li>・フォロー/いいね/ランキングのない、穏やかな情報プラットフォーム</li>
             </ul>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -86,7 +98,7 @@ export default function Home() {
               XのDM制限に依存しない併せ管理
             </h2>
             <p className="mt-2 text-xs leading-relaxed text-zinc-600 sm:text-sm">
-              団体チャットの一斉連絡はメール通知が必須。
+              団体チャットの一斉連絡機能で、メンバー全員に確実に情報を共有できます。
               DM制限やアカウント凍結に左右されない、安心できる連絡手段を提供します。
             </p>
           </div>

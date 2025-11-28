@@ -90,9 +90,16 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
       >
         {/* 閉じるボタン（SP版のみ） */}
         <div className="mb-4 flex items-center justify-between sm:mb-6">
-          <div className="text-sm font-semibold text-zinc-900">
-            痛車オーナーズポータル
-          </div>
+          <Link href="/app/mypage" className="flex items-center">
+            <Image
+              src="/images/main_logo.png"
+              alt="いたなび！痛車オーナーズナビ"
+              width={200}
+              height={80}
+              className="h-auto w-full max-w-[180px]"
+              priority
+            />
+          </Link>
           <button
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100 sm:hidden"
@@ -245,9 +252,16 @@ function MobileHeader({
       className={`fixed top-0 left-0 right-0 z-30 flex h-14 items-center justify-between border-b border-zinc-200 bg-white/90 px-4 backdrop-blur transition-transform duration-300 ease-in-out sm:hidden ${isVisible ? "translate-y-0" : "-translate-y-full"
         }`}
     >
-      <h1 className="text-sm font-semibold text-zinc-900">
-        痛車オーナーズポータル
-      </h1>
+      <Link href="/app/mypage" className="flex items-center">
+        <Image
+          src="/images/main_logo.png"
+          alt="いたなび！痛車オーナーズナビ"
+          width={150}
+          height={60}
+          className="h-8 w-auto"
+          priority
+        />
+      </Link>
       <button
         onClick={onMenuClick}
         className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 bg-white shadow-sm"
