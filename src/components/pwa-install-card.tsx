@@ -63,7 +63,7 @@ export function PWAInstallCard() {
             ホーム画面に追加
           </h2>
           <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
-            アプリのように使えます。プッシュ通知やオフライン機能も利用できます。
+            アプリのように使えます。オフライン機能も利用できます。
           </p>
         </div>
         <button

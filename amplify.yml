@@ -16,16 +16,9 @@ applications:
             - 'echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env'
             - 'echo "TWITTER_CLIENT_ID=$TWITTER_CLIENT_ID" >> .env'
             - 'echo "TWITTER_CLIENT_SECRET=$TWITTER_CLIENT_SECRET" >> .env'
-            - 'echo "NEXT_PUBLIC_VAPID_PUBLIC_KEY=$NEXT_PUBLIC_VAPID_PUBLIC_KEY" >> .env'
-            - 'echo "VAPID_PRIVATE_KEY=$VAPID_PRIVATE_KEY" >> .env'
-            - 'echo "VAPID_SUBJECT=$VAPID_SUBJECT" >> .env'
             - 'echo "APP_AWS_REGION=$APP_AWS_REGION" >> .env'
             - 'echo "APP_AWS_ACCESS_KEY_ID=$APP_AWS_ACCESS_KEY_ID" >> .env'
             - 'echo "APP_AWS_SECRET_ACCESS_KEY=$APP_AWS_SECRET_ACCESS_KEY" >> .env'
-            - 'echo "EVENTBRIDGE_SCHEDULER_GROUP_NAME=$EVENTBRIDGE_SCHEDULER_GROUP_NAME" >> .env'
-            - 'echo "EVENTBRIDGE_TARGET_ARN=$EVENTBRIDGE_TARGET_ARN" >> .env'
-            - 'echo "EVENTBRIDGE_ROLE_ARN=$EVENTBRIDGE_ROLE_ARN" >> .env'
-            - 'echo "REMINDER_NOTIFY_API_KEY=$REMINDER_NOTIFY_API_KEY" >> .env'
             - npm run build
       artifacts:
         baseDirectory: .next

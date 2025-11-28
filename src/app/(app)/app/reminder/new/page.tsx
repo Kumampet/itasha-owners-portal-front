@@ -4,6 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { shouldRedirectToNotificationSettings } from "@/lib/notification-check";
+import {
+  generateGoogleCalendarUrl,
+  generateICalContent,
+  downloadICalFile,
+  isIOS,
+  isAndroid,
+} from "@/lib/calendar";
+import { ModalBase } from "@/components/modal-base";
 
 type Event = {
   id: string;
@@ -16,6 +24,13 @@ export default function NewReminderPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [createdReminder, setCreatedReminder] = useState<{
+    label: string;
+    datetime: string;
+    note: string | null;
+    eventName: string | null;
+  } | null>(null);
   const [formData, setFormData] = useState({
     event_id: "",
     label: "",
@@ -68,7 +83,17 @@ export default function NewReminderPage() {
 
       if (!res.ok) throw new Error("Failed to create reminder");
 
-      router.push("/app/reminder");
+      const reminderData = await res.json();
+
+      // 作成したリマインダー情報を保存してカレンダー登録モーダルを表示
+      const selectedEvent = events.find((e) => e.id === formData.event_id);
+      setCreatedReminder({
+        label: formData.label,
+        datetime: formData.datetime,
+        note: formData.note || null,
+        eventName: selectedEvent?.name || null,
+      });
+      setShowCalendarModal(true);
     } catch (error) {
       console.error("Failed to create reminder:", error);
       alert("リマインダーの作成に失敗しました");
@@ -88,6 +113,55 @@ export default function NewReminderPage() {
       </main>
     );
   }
+
+  const handleGoogleCalendar = () => {
+    if (!createdReminder) return;
+
+    const startDate = new Date(createdReminder.datetime);
+    const title = createdReminder.eventName
+      ? `${createdReminder.eventName} - ${createdReminder.label}`
+      : createdReminder.label;
+    const description = createdReminder.note || "";
+
+    const url = generateGoogleCalendarUrl({
+      title,
+      startDate,
+      description,
+    });
+
+    window.open(url, "_blank");
+  };
+
+  const handleIOSCalendar = () => {
+    if (!createdReminder) return;
+
+    const startDate = new Date(createdReminder.datetime);
+    const title = createdReminder.eventName
+      ? `${createdReminder.eventName} - ${createdReminder.label}`
+      : createdReminder.label;
+    const description = createdReminder.note || "";
+
+    const icalContent = generateICalContent({
+      title,
+      startDate,
+      description,
+    });
+
+    const filename = `${title.replace(/[^a-zA-Z0-9]/g, "_")}.ics`;
+    downloadICalFile(icalContent, filename);
+  };
+
+  const handleSkip = () => {
+    setShowCalendarModal(false);
+    router.push("/app/reminder");
+  };
+
+  const handleCloseModal = () => {
+    setShowCalendarModal(false);
+    router.push("/app/reminder");
+  };
+
+  const iosDevice = isIOS();
 
   return (
     <main className="flex-1">
@@ -196,6 +270,68 @@ export default function NewReminderPage() {
             </button>
           </div>
         </form>
+
+        {/* カレンダー登録モーダル */}
+        {createdReminder && (
+          <ModalBase
+            isOpen={showCalendarModal}
+            onClose={handleCloseModal}
+            title="カレンダーに登録"
+            footer={
+              <>
+                <button
+                  onClick={handleSkip}
+                  className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                >
+                  スキップ
+                </button>
+              </>
+            }
+          >
+            <div className="space-y-2">
+              <p className="text-sm text-zinc-600">
+                リマインダーが作成されました。カレンダーアプリにも登録しますか？
+              </p>
+
+              <div className="mt-4 space-y-3">
+                {/* Googleカレンダー（全デバイスで表示） */}
+                <button
+                  onClick={handleGoogleCalendar}
+                  className="w-full rounded-md border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 flex items-center justify-center gap-2"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                  </svg>
+                  Googleカレンダーに登録
+                </button>
+
+                {/* iOSカレンダー（iOSデバイスのみ） */}
+                {iosDevice && (
+                  <button
+                    onClick={handleIOSCalendar}
+                    className="w-full rounded-md border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 flex items-center justify-center gap-2"
+                  >
+                    <svg
+                      className="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM5 7V6h14v1H5zm7 4H7v-2h5v2zm5 0h-4v-2h4v2zm-5 4H7v-2h5v2zm5 0h-4v-2h4v2z" />
+                    </svg>
+                    iOSカレンダーに登録
+                  </button>
+                )}
+              </div>
+            </div>
+          </ModalBase>
+        )}
       </section>
     </main>
   );

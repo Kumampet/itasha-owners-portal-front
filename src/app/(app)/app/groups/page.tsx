@@ -140,7 +140,7 @@ export default function GroupsPage() {
             </h2>
             <ul className="mt-2 space-y-1 text-xs text-zinc-700 sm:text-sm">
               <li>・団体メッセージで「一斉連絡」として投稿されたものは必ずメール通知。</li>
-              <li>・プッシュ通知は補助として利用し、メール未達のリスクを前提に設計。</li>
+              <li>・メール通知を基本とし、メール未達のリスクを前提に設計。</li>
               <li>・メールのオプトアウト・バウンス率監視はSES側で実装予定。</li>
             </ul>
           </section>

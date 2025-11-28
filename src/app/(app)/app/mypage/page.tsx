@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+// TODO: 通知設定機能を削除しました。将来的に再実装する場合は、useRouterをインポートして使用してください。
 import { DisplayNameModal } from "@/components/display-name-modal";
 import { PWAInstallCard } from "@/components/pwa-install-card";
-import { shouldRedirectToNotificationSettings } from "@/lib/notification-check";
+// TODO: 通知設定機能を削除しました。将来的に再実装する場合は、shouldRedirectToNotificationSettingsをインポートして使用してください。
 
 type Reminder = {
     id: string;
@@ -28,33 +28,12 @@ type Reminder = {
 
 export default function MyPage() {
     const { data: session, status, update } = useSession();
-    const router = useRouter();
     const isLoading = status === "loading";
     const [isDisplayNameModalOpen, setIsDisplayNameModalOpen] = useState(false);
     const [upcomingReminders, setUpcomingReminders] = useState<Reminder[]>([]);
     const [isLoadingReminders, setIsLoadingReminders] = useState(true);
 
-    // 初回ログイン時に通知設定をチェック
-    useEffect(() => {
-        if (isLoading || !session?.user?.id) {
-            return;
-        }
-
-        const checkNotificationSettings = async () => {
-            try {
-                const shouldRedirect = await shouldRedirectToNotificationSettings();
-                if (shouldRedirect) {
-                    // 通知設定ページにリダイレクト（元のページに戻るためのcallbackUrlを付与）
-                    const currentPath = window.location.pathname;
-                    router.push(`/app/notification-settings?callbackUrl=${encodeURIComponent(currentPath)}`);
-                }
-            } catch (error) {
-                console.error("Error checking notification settings:", error);
-            }
-        };
-
-        checkNotificationSettings();
-    }, [isLoading, session?.user?.id, router]);
+    // TODO: 通知設定機能を削除しました。将来的に再実装する場合は、初回ログイン時に通知設定をチェックするロジックを追加してください。
 
     // 72時間以内のリマインダーを取得
     useEffect(() => {
@@ -280,21 +259,7 @@ export default function MyPage() {
                         </p>
                     </Link>
 
-                    <Link
-                        href="/app/notification-settings"
-                        className="rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 sm:p-5"
-                    >
-                        <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
-                            通知設定
-                        </h2>
-                        <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
-                            ブラウザ通知とメール通知の
-                            有効/無効を設定できます。
-                        </p>
-                        <p className="mt-3 text-xs font-semibold text-emerald-600">
-                            詳細を見る →
-                        </p>
-                    </Link>
+                    {/* TODO: 通知設定機能を削除しました。将来的に再実装する場合は、ここに通知設定へのリンクを追加してください。 */}
 
                     <Link
                         href="/app/groups"

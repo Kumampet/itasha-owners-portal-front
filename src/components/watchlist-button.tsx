@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+// TODO: 通知設定機能を削除しました。将来的に再実装する場合は、useRouterをインポートして使用してください。
 import { Tooltip } from "@/components/tooltip";
-import { shouldRedirectToNotificationSettings } from "@/lib/notification-check";
+// TODO: 通知設定機能を削除しました。将来的に再実装する場合は、shouldRedirectToNotificationSettingsをインポートして使用してください。
 
 type WatchlistButtonProps = {
   eventId: string;
@@ -14,7 +14,6 @@ type WatchlistButtonProps = {
 
 export function WatchlistButton({ eventId, className, onToggle }: WatchlistButtonProps) {
   const { data: session, status } = useSession();
-  const router = useRouter();
   const [isWatching, setIsWatching] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -49,19 +48,7 @@ export function WatchlistButton({ eventId, className, onToggle }: WatchlistButto
   const handleToggle = async () => {
     if (!session || isLoading) return;
 
-    // ウォッチリストに追加する場合のみ通知設定をチェック
-    if (!isWatching) {
-      try {
-        const shouldRedirect = await shouldRedirectToNotificationSettings();
-        if (shouldRedirect) {
-          const currentPath = window.location.pathname;
-          router.push(`/app/notification-settings?callbackUrl=${encodeURIComponent(currentPath)}`);
-          return;
-        }
-      } catch (error) {
-        console.error("Error checking notification settings:", error);
-      }
-    }
+    // TODO: 通知設定機能を削除しました。将来的に再実装する場合は、ウォッチリストに追加する際に通知設定をチェックするロジックを追加してください。
 
     const newIsWatching = !isWatching;
     

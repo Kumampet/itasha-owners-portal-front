@@ -78,7 +78,7 @@ export default function Home() {
             </h2>
             <p className="mt-2 text-xs leading-relaxed text-zinc-600 sm:text-sm">
               イベントのエントリー開始・締切・支払期限を1つのタイムラインで確認。
-              重要なタイミングはプッシュ通知とメールで事前にお知らせします。
+              重要なタイミングはメールで事前にお知らせします。
             </p>
           </div>
           <div>

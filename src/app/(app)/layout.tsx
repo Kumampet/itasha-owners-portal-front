@@ -278,6 +278,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   // /app配下のページを検索エンジンから除外
   useEffect(() => {
+    if (typeof window === "undefined" || !document.head) {
+      return;
+    }
     if (pathname?.startsWith("/app")) {
       // noindexメタタグを追加
       let metaRobots = document.querySelector('meta[name="robots"]');
@@ -303,13 +306,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
       // 管理画面ではスクロール制御は不要
       return;
     }
+    if (typeof window === "undefined" || !document.body) {
+      return;
+    }
     if (isMenuOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
     }
     return () => {
-      document.body.style.overflow = "";
+      if (typeof window !== "undefined" && document.body) {
+        document.body.style.overflow = "";
+      }
     };
   }, [isMenuOpen, pathname]);
 

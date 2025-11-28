@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendReminderNotification } from "@/lib/push-notifications";
 
 // POST /api/reminders/notify/[id]
 // EventBridge Schedulerから呼び出される通知送信エンドポイント
+// TODO: 通知機能（プッシュ通知・メール通知）を削除しました。将来的に再実装する場合は、ここに通知送信ロジックを追加してください。
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -115,45 +115,8 @@ export async function POST(
       }
     }
 
-    // ユーザーの通知設定を取得
-    const notificationSettings = await prisma.userNotificationSettings.findUnique({
-      where: { user_id: reminder.user_id },
-    });
-
-    // デフォルト設定（通知設定が存在しない場合）
-    const settings = notificationSettings || {
-      browser_notification_enabled: true,
-      email_notification_enabled: true,
-    };
-
-    console.log(`[Reminder Notify] Notification settings for user ${reminder.user_id}:`, {
-      browser_notification_enabled: settings.browser_notification_enabled,
-      email_notification_enabled: settings.email_notification_enabled,
-    });
-
-    // ユーザーのPushサブスクリプション数を確認
-    const subscriptionCount = await prisma.pushSubscription.count({
-      where: { user_id: reminder.user_id },
-    });
-    console.log(`[Reminder Notify] User ${reminder.user_id} has ${subscriptionCount} push subscription(s)`);
-
-    // 通知を送信
-    const results = await sendReminderNotification(
-      reminder.user_id,
-      {
-        id: reminder.id,
-        label: reminderData.label,
-        datetime: reminderData.datetime,
-        event: reminder.event
-          ? {
-              id: reminder.event.id,
-              name: reminder.event.name,
-            }
-          : null,
-      },
-      reminder.user.email,
-      settings
-    );
+    // TODO: 通知送信機能を削除しました。将来的に再実装する場合は、ここに通知送信ロジックを追加してください。
+    // 現在は通知送信済みフラグのみを更新します。
 
     // 通知送信済みフラグを更新
     await prisma.reminder.update({
@@ -164,22 +127,21 @@ export async function POST(
       },
     });
 
-    console.log(`[Reminder Notify] Successfully sent notification for reminder ${id}`);
+    console.log(`[Reminder Notify] Successfully processed reminder ${id} (notifications disabled)`);
 
     return NextResponse.json({
       success: true,
       reminderId: id,
-      results,
+      message: "Reminder processed (notifications disabled)",
     });
   } catch (error) {
-    console.error(`[Reminder Notify] Error sending notification:`, error);
+    console.error(`[Reminder Notify] Error processing reminder:`, error);
     return NextResponse.json(
       {
-        error: "Failed to send notification",
+        error: "Failed to process reminder",
         details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
   }
 }
-

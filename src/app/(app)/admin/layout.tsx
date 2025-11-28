@@ -123,6 +123,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   // /admin配下のページを検索エンジンから除外
   useEffect(() => {
+    if (typeof window === "undefined" || !document.head) {
+      return;
+    }
     // noindexメタタグを追加
     let metaRobots = document.querySelector('meta[name="robots"]');
     if (!metaRobots) {
@@ -135,13 +138,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   // メニューが開いている時はスクロールを無効化（すべてのHooksは早期リターンの前に配置）
   useEffect(() => {
+    if (typeof window === "undefined" || !document.body) {
+      return;
+    }
     if (isMenuOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
     }
     return () => {
-      document.body.style.overflow = "";
+      if (typeof window !== "undefined" && document.body) {
+        document.body.style.overflow = "";
+      }
     };
   }, [isMenuOpen]);
 

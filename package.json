@@ -19,7 +19,6 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
-    "@aws-sdk/client-scheduler": "^3.940.0",
     "@aws-sdk/client-ses": "^3.939.0",
     "@prisma/adapter-mariadb": "^7.0.0",
     "@prisma/client": "^7.0.0",
@@ -30,8 +29,7 @@
     "next-auth": "^5.0.0-beta.30",
     "next-pwa": "^5.6.0",
     "react": "19.2.0",
-    "react-dom": "19.2.0",
-    "web-push": "^3.6.7"
+    "react-dom": "19.2.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -39,7 +37,6 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
     "husky": "^9.1.7",

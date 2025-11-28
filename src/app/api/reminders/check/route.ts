@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendReminderNotification } from "@/lib/push-notifications";
 
 // GET /api/reminders/check
 // 通知時刻になったリマインダーをチェックして通知を送信
 // このエンドポイントは定期的に呼び出される（cronジョブなど）
+// TODO: 通知機能（プッシュ通知・メール通知）を削除しました。将来的に再実装する場合は、ここに通知送信ロジックを追加してください。
 export async function GET(request: Request) {
   try {
     // 認証チェック（オプション: 環境変数でAPIキーを設定）
@@ -85,39 +85,8 @@ export async function GET(request: Request) {
 
     for (const reminder of dueReminders) {
       try {
-        // ユーザーの通知設定を取得
-        const notificationSettings = await prisma.userNotificationSettings.findUnique({
-          where: { user_id: reminder.user_id },
-        });
-
-        // デフォルト設定（通知設定が存在しない場合）
-        const settings = notificationSettings || {
-          browser_notification_enabled: true,
-          email_notification_enabled: true,
-        };
-
-        const reminderData = reminder.reminder_data as {
-          datetime: string;
-          label: string;
-        };
-
-        // 通知を送信
-        await sendReminderNotification(
-          reminder.user_id,
-          {
-            id: reminder.id,
-            label: reminderData.label,
-            datetime: reminderData.datetime,
-            event: reminder.event
-              ? {
-                  id: reminder.event.id,
-                  name: reminder.event.name,
-                }
-              : null,
-          },
-          reminder.user.email,
-          settings
-        );
+        // TODO: 通知送信機能を削除しました。将来的に再実装する場合は、ここに通知送信ロジックを追加してください。
+        // 現在は通知送信済みフラグのみを更新します。
 
         // 通知送信済みフラグを更新
         await prisma.reminder.update({
@@ -133,7 +102,7 @@ export async function GET(request: Request) {
           success: true,
         });
       } catch (error) {
-        console.error(`Failed to send notification for reminder ${reminder.id}:`, error);
+        console.error(`Failed to process reminder ${reminder.id}:`, error);
         results.push({
           reminderId: reminder.id,
           success: false,
@@ -151,7 +120,7 @@ export async function GET(request: Request) {
       timestamp: now.toISOString(),
     };
 
-    console.log(`[Reminder Check] Checked ${reminders.length} reminders, ${dueReminders.length} due, ${response.sent} sent, ${response.failed} failed`);
+    console.log(`[Reminder Check] Checked ${reminders.length} reminders, ${dueReminders.length} due, ${response.sent} processed, ${response.failed} failed`);
 
     return NextResponse.json(response);
   } catch (error) {
@@ -162,4 +131,3 @@ export async function GET(request: Request) {
     );
   }
 }
-
