@@ -8,13 +8,22 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 type DbEvent = {
   id: string;
   name: string;
-  theme: string | null;
   description: string | null;
   event_date: string;
-  entry_start_at: string | null;
-  payment_due_at: string | null;
-  original_url: string;
+  event_end_date: string | null;
+  is_multi_day: boolean;
+  official_urls: string[];
+  keywords: string[] | null;
+  image_url: string | null;
   approval_status: string;
+  entries: Array<{
+    entry_number: number;
+    entry_start_at: string;
+    entry_start_public_at: string | null;
+    entry_deadline_at: string;
+    payment_due_at: string;
+    payment_due_public_at: string | null;
+  }>;
   tags: Array<{
     tag: {
       name: string;
@@ -53,35 +62,35 @@ export default function EventsPage() {
         ) : (
           <>
             <header className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600">
-            イベントカレンダー
-          </p>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            痛車イベントをまとめてチェック
-          </h1>
-          <p className="text-sm text-zinc-600 sm:text-base">
-            気になるイベントを一気にチェック！<br />ウォッチリストに入れておくと最新情報を逃しません。
-          </p>
-        </header>
+              <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600">
+                イベントカレンダー
+              </p>
+              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                痛車イベントをまとめてチェック
+              </h1>
+              <p className="text-sm text-zinc-600 sm:text-base">
+                気になるイベントを一気にチェック！<br />ウォッチリストに入れておくと最新情報を逃しません。
+              </p>
+            </header>
 
-        <div className="space-y-3">
-          {events.length === 0 ? (
-            <p className="text-sm text-zinc-600">
-              イベントが登録されていません。
-            </p>
-          ) : (
-            events.map((event) => (
-              <LinkCard
-                key={event.id}
-                href={`/events/${event.id}`}
-                className="hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-                cardClassName="rounded-3xl"
-              >
-                <EventsCardContent event={event} />
-              </LinkCard>
-            ))
-          )}
-        </div>
+            <div className="space-y-3">
+              {events.length === 0 ? (
+                <p className="text-sm text-zinc-600">
+                  イベントが登録されていません。
+                </p>
+              ) : (
+                events.map((event) => (
+                  <LinkCard
+                    key={event.id}
+                    href={`/events/${event.id}`}
+                    className="hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                    cardClassName="rounded-3xl"
+                  >
+                    <EventsCardContent event={event} />
+                  </LinkCard>
+                ))
+              )}
+            </div>
           </>
         )}
       </section>

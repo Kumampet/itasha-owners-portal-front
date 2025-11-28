@@ -74,7 +74,7 @@ export async function GET(request: Request) {
             name: true,
             theme: true,
             event_date: true,
-            original_url: true,
+            official_urls: true,
           },
         },
       },
@@ -90,6 +90,10 @@ export async function GET(request: Request) {
         event_name: string | null;
       };
 
+      // official_urlsは配列なので、最初のURLをoriginal_urlとして返す（後方互換性のため）
+      const officialUrls = reminder.event?.official_urls as string[] | null;
+      const firstUrl = officialUrls && officialUrls.length > 0 ? officialUrls[0] : null;
+
       return {
         id: reminder.id,
         event: reminder.event ? {
@@ -97,7 +101,7 @@ export async function GET(request: Request) {
           name: reminder.event.name,
           theme: reminder.event.theme,
           event_date: reminder.event.event_date,
-          original_url: reminder.event.original_url,
+          original_url: firstUrl,
         } : null,
         type: reminderData.type,
         datetime: reminderData.datetime,
@@ -119,8 +123,9 @@ export async function GET(request: Request) {
     return NextResponse.json(formattedReminders);
   } catch (error) {
     console.error("Error fetching reminders:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to fetch reminders" },
+      { error: "Failed to fetch reminders", details: errorMessage },
       { status: 500 }
     );
   }
@@ -152,7 +157,7 @@ export async function POST(request: Request) {
           name: true,
           theme: true,
           event_date: true,
-          original_url: true,
+          official_urls: true,
         },
       });
 
@@ -185,7 +190,7 @@ export async function POST(request: Request) {
             name: true,
             theme: true,
             event_date: true,
-            original_url: true,
+            official_urls: true,
           },
         } : false,
       },
@@ -221,6 +226,10 @@ export async function POST(request: Request) {
       }
     }
 
+    // official_urlsは配列なので、最初のURLをoriginal_urlとして返す（後方互換性のため）
+    const reminderOfficialUrls = reminder.event?.official_urls as string[] | null;
+    const reminderFirstUrl = reminderOfficialUrls && reminderOfficialUrls.length > 0 ? reminderOfficialUrls[0] : null;
+
     return NextResponse.json({
       id: reminder.id,
       event: reminder.event ? {
@@ -228,7 +237,7 @@ export async function POST(request: Request) {
         name: reminder.event.name,
         theme: reminder.event.theme,
         event_date: reminder.event.event_date,
-        original_url: reminder.event.original_url,
+        original_url: reminderFirstUrl,
       } : null,
       type: reminderData.type,
       datetime: reminderData.datetime,

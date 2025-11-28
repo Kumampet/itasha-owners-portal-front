@@ -30,7 +30,6 @@ export async function GET(request: Request) {
     if (search) {
       where.OR = [
         { name: { contains: search } },
-        { theme: { contains: search } },
         { description: { contains: search } },
       ];
     }
@@ -45,16 +44,26 @@ export async function GET(request: Request) {
       select: {
         id: true,
         name: true,
-        theme: true,
         description: true,
         event_date: true,
-        entry_start_at: true,
-        payment_due_at: true,
+        event_end_date: true,
+        is_multi_day: true,
         approval_status: true,
         created_at: true,
         organizer_user: {
           select: {
             email: true,
+          },
+        },
+        entries: {
+          select: {
+            entry_number: true,
+            entry_start_at: true,
+            entry_deadline_at: true,
+            payment_due_at: true,
+          },
+          orderBy: {
+            entry_number: "asc",
           },
         },
       },
@@ -85,7 +94,42 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const tags: string[] = body.tags || [];
+    const keywords: string[] = body.keywords || [];
+    const entries = body.entries || [];
+
+    // バリデーション
+    if (!body.name || !body.description || !body.event_date) {
+      return NextResponse.json(
+        { error: "必須項目が不足しています" },
+        { status: 400 }
+      );
+    }
+    // 空文字列を除外してバリデーション
+    const validUrls = (body.official_urls || []).filter((url: string) => url && url.trim() !== "");
+    if (validUrls.length === 0) {
+      return NextResponse.json(
+        { error: "最低1つの公式サイトURLが必要です" },
+        { status: 400 }
+      );
+    }
+    if (!entries || entries.length === 0) {
+      return NextResponse.json(
+        { error: "最低1つのエントリー情報が必要です" },
+        { status: 400 }
+      );
+    }
+    if (body.is_multi_day && !body.event_end_date) {
+      return NextResponse.json(
+        { error: "複数日開催の場合、終了日が必要です" },
+        { status: 400 }
+      );
+    }
+    if (!body.organizer_email) {
+      return NextResponse.json(
+        { error: "主催者メールアドレスが必要です" },
+        { status: 400 }
+      );
+    }
 
     // 主催者メールアドレスからユーザーを検索
     let organizerUserId: string | null = null;
@@ -97,85 +141,79 @@ export async function POST(request: Request) {
       organizerUserId = organizerUser?.id || null;
     }
 
-    // トランザクションでイベントとタグを同時に作成
+    // トランザクションでイベント、エントリー情報、キーワードを同時に作成
     const event = await prisma.$transaction(async (tx) => {
       // イベントを作成
       const createdEvent = await tx.event.create({
         data: {
           name: body.name,
-          theme: body.theme || null,
-          description: body.description || null,
-          original_url: body.original_url,
+          description: body.description,
           event_date: new Date(body.event_date),
-          entry_start_at: body.entry_start_at
-            ? new Date(body.entry_start_at)
-            : null,
-          payment_due_at: body.payment_due_at
-            ? new Date(body.payment_due_at)
-            : null,
+          is_multi_day: body.is_multi_day || false,
+          event_end_date: body.event_end_date ? new Date(body.event_end_date) : null,
           postal_code: body.postal_code || null,
           prefecture: body.prefecture || null,
           city: body.city || null,
           street_address: body.street_address || null,
           venue_name: body.venue_name || null,
+          keywords: keywords.length > 0 ? keywords : null,
+          official_urls: validUrls, // 空文字列を除外したURL配列
+          image_url: body.image_url || null,
           approval_status: body.approval_status || "DRAFT",
-          organizer_email: body.organizer_email || null,
+          organizer_email: body.organizer_email,
           organizer_user_id: organizerUserId,
         },
       });
 
-      // タグを処理
-      if (tags.length > 0) {
-        for (const tagName of tags) {
-          // タグが存在するか確認、存在しない場合は作成
-          const tag = await tx.tag.upsert({
-            where: { name: tagName },
-            update: {
-              usage_count: {
-                increment: 1,
-              },
-            },
-            create: {
-              name: tagName,
-              usage_count: 1,
-            },
-          });
-
-          // EventTagを作成
-          await tx.eventTag.create({
-            data: {
-              event_id: createdEvent.id,
-              tag_id: tag.id,
-            },
-          });
-        }
+      // エントリー情報を作成
+      for (const entry of entries) {
+        await tx.eventEntry.create({
+          data: {
+            event_id: createdEvent.id,
+            entry_number: entry.entry_number,
+            entry_start_at: new Date(entry.entry_start_at),
+            entry_start_public_at: entry.entry_start_public_at
+              ? new Date(entry.entry_start_public_at)
+              : null,
+            entry_deadline_at: new Date(entry.entry_deadline_at),
+            payment_due_at: new Date(entry.payment_due_at),
+            payment_due_public_at: entry.payment_due_public_at
+              ? new Date(entry.payment_due_public_at)
+              : null,
+          },
+        });
       }
 
-      // 作成したイベントを取得（タグ情報を含む）
+      // 作成したイベントを取得（エントリー情報を含む）
       return await tx.event.findUnique({
         where: { id: createdEvent.id },
         select: {
           id: true,
           name: true,
-          theme: true,
           description: true,
-          original_url: true,
           event_date: true,
-          entry_start_at: true,
-          payment_due_at: true,
+          event_end_date: true,
+          is_multi_day: true,
           postal_code: true,
           prefecture: true,
           city: true,
           street_address: true,
           venue_name: true,
+          keywords: true,
+          official_urls: true,
+          image_url: true,
           approval_status: true,
-          tags: {
+          entries: {
             select: {
-              tag: {
-                select: {
-                  name: true,
-                },
-              },
+              entry_number: true,
+              entry_start_at: true,
+              entry_start_public_at: true,
+              entry_deadline_at: true,
+              payment_due_at: true,
+              payment_due_public_at: true,
+            },
+            orderBy: {
+              entry_number: "asc",
             },
           },
         },
@@ -185,8 +223,10 @@ export async function POST(request: Request) {
     return NextResponse.json(event);
   } catch (error) {
     console.error("Error creating event:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to create event";
     return NextResponse.json(
-      { error: "Failed to create event" },
+      { error: errorMessage },
       { status: 500 }
     );
   }

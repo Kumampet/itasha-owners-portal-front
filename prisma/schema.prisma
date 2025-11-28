@@ -111,16 +111,13 @@ model VerificationToken {
 model Event {
   id               String       @id @default(uuid()) @db.VarChar(36)
   name             String
-  theme            String?
-  // MySQLのTEXT型は @db.Text で指定
-  description      String?      @db.Text
+  // イベント概要文（必須、最大200文字）
+  description      String       @db.VarChar(200)
   
-  // イベント情報の追跡・更新検知のためのURL (Xの投稿URLも含む)
-  original_url     String       @unique
-  
-  event_date       DateTime
-  entry_start_at   DateTime?
-  payment_due_at   DateTime?
+  // 開催日情報
+  event_date       DateTime     // 開催日（必須）
+  is_multi_day     Boolean      @default(false) // 複数日開催フラグ
+  event_end_date   DateTime?    // 終了日（複数日開催の場合必須）
 
   // 開催地（住所）情報
   postal_code      String?      // 郵便番号（任意）
@@ -128,6 +125,15 @@ model Event {
   city             String?      // 市区町村（必須）
   street_address   String?      // 番地（必須）
   venue_name       String?      // 固有会場名（任意）
+
+  // キーワードタグ（任意、配列で格納）
+  keywords         Json?        @db.Json // ["キーワード1", "キーワード2", ...]
+
+  // 公式サイトURL（1個以上必須、配列で保持）
+  official_urls    Json         @db.Json // ["https://example.com", ...]
+
+  // イメージ画像（任意、16:9推奨）
+  image_url        String?      @db.VarChar(500)
 
   // 承認ステータス (DRAFT, PENDING, APPROVED, REJECTED)
   // DRAFT: 下書き（未公開）、PENDING: 承認待ち、APPROVED: 承認済み、REJECTED: 却下
@@ -140,16 +146,48 @@ model Event {
   organizer_user   User?        @relation("EventOrganizer", fields: [organizer_user_id], references: [id])
   organizer_user_id String?     @db.VarChar(36)
   
-  // 主催者メールアドレス（手動入力可能、申請時に自動設定される）
-  organizer_email  String?      @db.VarChar(255)
+  // 主催者メールアドレス（必須、フロントには出ない）
+  organizer_email  String       @db.VarChar(255)
   
   participants     UserEvent[]
   groups           Group[]
   tags             EventTag[]
   followers        EventFollow[]
   reminders        Reminder[]
+  entries          EventEntry[] // エントリー情報（複数対応）
   
   @@map("events")
+}
+
+// エントリー情報（一次、二次、三次...最大五次まで）
+model EventEntry {
+  id                        String       @id @default(uuid()) @db.VarChar(36)
+  event                     Event        @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  event_id                  String       @db.VarChar(36)
+  
+  // エントリー番号（1次、2次、3次...）
+  entry_number              Int          // 1, 2, 3, 4, 5
+  
+  // エントリー開始日（必須）
+  entry_start_at            DateTime
+  
+  // エントリー開始日公開日時（任意、未入力時即時公開）
+  entry_start_public_at     DateTime?
+  
+  // エントリー締切日（必須、エントリー開始日公開日時と同時公開）
+  entry_deadline_at         DateTime
+  
+  // 支払期限日時（必須）
+  payment_due_at            DateTime
+  
+  // 支払期限日時公開日時（任意、未入力時即時公開）
+  payment_due_public_at     DateTime?
+  
+  created_at                DateTime     @default(now())
+  updated_at                DateTime     @updatedAt
+  
+  @@unique([event_id, entry_number]) // 同一イベント内でエントリー番号はユニーク
+  @@map("event_entries")
 }
 
 // ユーザーとイベントの参加・フォロー状況 (User_Events Tableを代替)

@@ -30,7 +30,7 @@ export async function GET(
             name: true,
             theme: true,
             event_date: true,
-            original_url: true,
+            official_urls: true,
           },
         },
       },
@@ -59,6 +59,10 @@ export async function GET(
       event_name: string | null;
     };
 
+    // official_urlsは配列なので、最初のURLをoriginal_urlとして返す（後方互換性のため）
+    const officialUrls = reminder.event?.official_urls as string[] | null;
+    const firstUrl = officialUrls && officialUrls.length > 0 ? officialUrls[0] : null;
+
     return NextResponse.json({
       id: reminder.id,
       event: reminder.event ? {
@@ -66,7 +70,7 @@ export async function GET(
         name: reminder.event.name,
         theme: reminder.event.theme,
         event_date: reminder.event.event_date,
-        original_url: reminder.event.original_url,
+        original_url: firstUrl,
       } : null,
       type: reminderData.type,
       datetime: reminderData.datetime,
@@ -173,7 +177,7 @@ export async function PATCH(
             name: true,
             theme: true,
             event_date: true,
-            original_url: true,
+            official_urls: true,
           },
         } : false,
       },
@@ -209,6 +213,10 @@ export async function PATCH(
       }
     }
 
+    // official_urlsは配列なので、最初のURLをoriginal_urlとして返す（後方互換性のため）
+    const updatedOfficialUrls = updatedReminder.event?.official_urls as string[] | null;
+    const updatedFirstUrl = updatedOfficialUrls && updatedOfficialUrls.length > 0 ? updatedOfficialUrls[0] : null;
+
     return NextResponse.json({
       id: updatedReminder.id,
       event: updatedReminder.event ? {
@@ -216,7 +224,7 @@ export async function PATCH(
         name: updatedReminder.event.name,
         theme: updatedReminder.event.theme,
         event_date: updatedReminder.event.event_date,
-        original_url: updatedReminder.event.original_url,
+        original_url: updatedFirstUrl,
       } : null,
       type: updatedReminderData.type,
       datetime: updatedReminderData.datetime,

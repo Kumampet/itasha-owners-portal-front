@@ -15,22 +15,32 @@ function AdminNewEventPageContent() {
   const { data: session } = useSession();
   const [saving, setSaving] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [tags, setTags] = useState<string[]>([]);
+  const [keywords, setKeywords] = useState<string[]>([]);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
     name: "",
-    theme: "",
     description: "",
-    original_url: "",
     event_date: "",
-    entry_start_at: "",
-    payment_due_at: "",
+    is_multi_day: false,
+    event_end_date: "",
     postal_code: "",
     prefecture: "",
     city: "",
     street_address: "",
     venue_name: "",
     organizer_email: "",
+    image_url: "",
+    official_urls: [""],
+    entries: [
+      {
+        entry_number: 1,
+        entry_start_at: "",
+        entry_start_public_at: "",
+        entry_deadline_at: "",
+        payment_due_at: "",
+        payment_due_public_at: "",
+      },
+    ],
   });
 
       // クエリパラメータからイベント掲載依頼フォームの情報を取得してフォームに自動入力
@@ -43,24 +53,45 @@ function AdminNewEventPageContent() {
       const original_url = searchParams?.get("original_url") || "";
       const event_date = searchParams?.get("event_date") || "";
       const description = searchParams?.get("description") || "";
-      const theme = searchParams?.get("theme") || "";
       const entry_start_at = searchParams?.get("entry_start_at") || "";
       const payment_due_at = searchParams?.get("payment_due_at") || "";
 
       setFormData((prev) => ({
         ...prev,
         name,
-        original_url,
         description,
-        theme,
-        event_date: event_date ? new Date(event_date).toISOString().slice(0, 16) : "",
-        entry_start_at: entry_start_at ? new Date(entry_start_at).toISOString().slice(0, 16) : "",
-        payment_due_at: payment_due_at ? new Date(payment_due_at).toISOString().slice(0, 16) : "",
+        event_date: event_date ? new Date(event_date).toISOString().slice(0, 10) : "",
+        official_urls: original_url ? [original_url] : [""],
+        entries: [
+          {
+            entry_number: 1,
+            entry_start_at: entry_start_at ? new Date(entry_start_at).toISOString().slice(0, 16) : "",
+            entry_start_public_at: "",
+            entry_deadline_at: "",
+            payment_due_at: payment_due_at ? new Date(payment_due_at).toISOString().slice(0, 16) : "",
+            payment_due_public_at: "",
+          },
+        ],
       }));
     }
   }, [searchParams]);
 
   const handleSave = async (approvalStatus: "DRAFT" | "PENDING") => {
+    // バリデーション
+    const validUrls = formData.official_urls.filter((url) => url.trim() !== "");
+    if (validUrls.length === 0) {
+      alert("最低1つの公式サイトURLを入力してください");
+      return;
+    }
+    if (formData.entries.length === 0) {
+      alert("最低1つのエントリー情報を入力してください");
+      return;
+    }
+    if (formData.is_multi_day && !formData.event_end_date) {
+      alert("複数日開催の場合、終了日を入力してください");
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -68,7 +99,7 @@ function AdminNewEventPageContent() {
       const organizerEmail = 
         approvalStatus === "PENDING" && !formData.organizer_email && session?.user?.email
           ? session.user.email
-          : formData.organizer_email || null;
+          : formData.organizer_email || "";
 
       const res = await fetch("/api/admin/events", {
         method: "POST",
@@ -76,12 +107,15 @@ function AdminNewEventPageContent() {
         body: JSON.stringify({
           ...formData,
           organizer_email: organizerEmail,
-          tags: tags,
+          keywords: keywords,
           approval_status: approvalStatus,
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to create event");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to create event");
+      }
 
       const data = await res.json();
       
@@ -102,7 +136,7 @@ function AdminNewEventPageContent() {
       router.push(`/admin/events/${data.id}`);
     } catch (error) {
       console.error("Failed to create event:", error);
-      alert("保存に失敗しました");
+      alert(error instanceof Error ? error.message : "保存に失敗しました");
     } finally {
       setSaving(false);
     }
@@ -145,8 +179,8 @@ function AdminNewEventPageContent() {
       <EventForm
         formData={formData}
         onFormDataChange={setFormData}
-        tags={tags}
-        onTagsChange={setTags}
+        keywords={keywords}
+        onKeywordsChange={setKeywords}
       >
         <Button
           variant="secondary"

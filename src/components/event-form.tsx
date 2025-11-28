@@ -1,55 +1,153 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "./button";
+import { DateTimeInput } from "./date-time-input";
+
+// エントリー情報の型
+export type EventEntryData = {
+  entry_number: number;
+  entry_start_at: string;
+  entry_start_public_at: string;
+  entry_deadline_at: string;
+  payment_due_at: string;
+  payment_due_public_at: string;
+};
 
 export type EventFormData = {
   name: string;
-  theme: string;
   description: string;
-  original_url: string;
   event_date: string;
-  entry_start_at: string;
-  payment_due_at: string;
+  is_multi_day: boolean;
+  event_end_date: string;
   postal_code: string;
   prefecture: string;
   city: string;
   street_address: string;
   venue_name: string;
   organizer_email: string;
+  image_url: string;
+  official_urls: string[];
+  entries: EventEntryData[];
 };
 
 interface EventFormProps {
   formData: EventFormData;
   onFormDataChange: (data: EventFormData) => void;
-  tags: string[];
-  onTagsChange: (tags: string[]) => void;
+  keywords: string[];
+  onKeywordsChange: (keywords: string[]) => void;
   children?: React.ReactNode; // ボタン部分を親から受け取る
 }
 
 export default function EventForm({
   formData,
   onFormDataChange,
-  tags,
-  onTagsChange,
+  keywords,
+  onKeywordsChange,
   children,
 }: EventFormProps) {
-  const [tagInput, setTagInput] = useState("");
+  const [keywordInput, setKeywordInput] = useState("");
   const [searchingPostalCode, setSearchingPostalCode] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleAddKeyword = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      const trimmedTag = tagInput.trim();
-      if (trimmedTag && !tags.includes(trimmedTag)) {
-        onTagsChange([...tags, trimmedTag]);
-        setTagInput("");
+      const trimmedKeyword = keywordInput.trim();
+      if (trimmedKeyword && !keywords.includes(trimmedKeyword)) {
+        onKeywordsChange([...keywords, trimmedKeyword]);
+        setKeywordInput("");
       }
     }
   };
 
-  const handleRemoveTag = (tagToRemove: string) => {
-    onTagsChange(tags.filter((tag) => tag !== tagToRemove));
+  const handleRemoveKeyword = (keywordToRemove: string) => {
+    onKeywordsChange(keywords.filter((keyword) => keyword !== keywordToRemove));
+  };
+
+  const handleAddUrlInput = () => {
+    if (formData.official_urls.length >= 10) {
+      alert("URLは最大10個まで追加できます");
+      return;
+    }
+    onFormDataChange({
+      ...formData,
+      official_urls: [...formData.official_urls, ""],
+    });
+  };
+
+  const handleUrlChange = (index: number, value: string) => {
+    const newUrls = [...formData.official_urls];
+    newUrls[index] = value;
+    onFormDataChange({
+      ...formData,
+      official_urls: newUrls,
+    });
+  };
+
+  const handleRemoveUrl = (index: number) => {
+    if (formData.official_urls.length <= 1) {
+      alert("最低1つのURL入力欄が必要です");
+      return;
+    }
+    const newUrls = formData.official_urls.filter((_, i) => i !== index);
+    onFormDataChange({
+      ...formData,
+      official_urls: newUrls,
+    });
+  };
+
+  const handleAddEntry = () => {
+    if (formData.entries.length >= 5) {
+      alert("エントリーは最大5つまで追加できます");
+      return;
+    }
+    const newEntryNumber = formData.entries.length + 1;
+    onFormDataChange({
+      ...formData,
+      entries: [
+        ...formData.entries,
+        {
+          entry_number: newEntryNumber,
+          entry_start_at: "",
+          entry_start_public_at: "",
+          entry_deadline_at: "",
+          payment_due_at: "",
+          payment_due_public_at: "",
+        },
+      ],
+    });
+  };
+
+  const handleRemoveEntry = (entryNumber: number) => {
+    if (formData.entries.length <= 1) {
+      alert("最低1つのエントリー情報が必要です");
+      return;
+    }
+    const updatedEntries = formData.entries
+      .filter((entry) => entry.entry_number !== entryNumber)
+      .map((entry, index) => ({
+        ...entry,
+        entry_number: index + 1,
+      }));
+    onFormDataChange({
+      ...formData,
+      entries: updatedEntries,
+    });
+  };
+
+  const handleEntryChange = (
+    entryNumber: number,
+    field: keyof EventEntryData,
+    value: string
+  ) => {
+    onFormDataChange({
+      ...formData,
+      entries: formData.entries.map((entry) =>
+        entry.entry_number === entryNumber ? { ...entry, [field]: value } : entry
+      ),
+    });
   };
 
   const handlePostalCodeSearch = async () => {
@@ -85,11 +183,65 @@ export default function EventForm({
     }
   };
 
+  const handleImageFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // ファイルタイプの検証
+    if (!file.type.startsWith("image/")) {
+      alert("画像ファイルのみアップロード可能です");
+      return;
+    }
+
+    // ファイルサイズの検証（5MBまで）
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      alert("ファイルサイズは5MB以下にしてください");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+
+      const response = await fetch("/api/upload/image", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(errorData.error || "画像のアップロードに失敗しました");
+      }
+
+      const data = await response.json();
+      onFormDataChange({ ...formData, image_url: data.url });
+    } catch (error) {
+      console.error("Failed to upload image:", error);
+      alert(error instanceof Error ? error.message : "画像のアップロードに失敗しました");
+    } finally {
+      setUploadingImage(false);
+      // ファイル入力をリセット（同じファイルを再度選択できるように）
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleImageRemove = () => {
+    onFormDataChange({ ...formData, image_url: "" });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <form
       onSubmit={(e) => e.preventDefault()}
       className="space-y-6 rounded-lg border border-zinc-200 bg-white p-6"
     >
+      {/* イベント名 */}
       <div>
         <label className="block text-sm font-medium text-zinc-700">
           イベント名 *
@@ -105,47 +257,118 @@ export default function EventForm({
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-zinc-700">
-          副題
-        </label>
-        <input
-          type="text"
-          value={formData.theme}
-          onChange={(e) =>
-            onFormDataChange({ ...formData, theme: e.target.value })
-          }
-          className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-          placeholder="副題（任意）"
-        />
+      {/* 開催日 */}
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-zinc-700">
+            開催日 *
+          </label>
+          <div className="mt-1">
+            <DateTimeInput
+              type="date"
+              value={formData.event_date}
+              onChange={(value) =>
+                onFormDataChange({ ...formData, event_date: value })
+              }
+              required
+            />
+          </div>
+        </div>
+
+        {/* 複数日開催チェックボックス */}
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="is_multi_day"
+            checked={formData.is_multi_day}
+            onChange={(e) =>
+              onFormDataChange({
+                ...formData,
+                is_multi_day: e.target.checked,
+                event_end_date: e.target.checked ? formData.event_end_date : "",
+              })
+            }
+            className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+          />
+          <label htmlFor="is_multi_day" className="ml-2 text-sm text-zinc-700">
+            複数日開催
+          </label>
+        </div>
+
+        {/* 終了日（複数日開催の場合） */}
+        {formData.is_multi_day && (
+          <div>
+            <label className="block text-sm font-medium text-zinc-700">
+              終了日 *
+            </label>
+            <div className="mt-1">
+              <DateTimeInput
+                type="date"
+                value={formData.event_end_date}
+                onChange={(value) =>
+                  onFormDataChange({
+                    ...formData,
+                    event_end_date: value,
+                  })
+                }
+                required={formData.is_multi_day}
+                min={formData.event_date}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* イベント概要文 */}
       <div>
         <label className="block text-sm font-medium text-zinc-700">
-          タグ
+          イベント概要文 * <span className="text-xs text-zinc-500">（最大200文字）</span>
+        </label>
+        <textarea
+          value={formData.description}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value.length <= 200) {
+              onFormDataChange({ ...formData, description: value });
+            }
+          }}
+          rows={4}
+          maxLength={200}
+          className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+          required
+        />
+        <p className="mt-1 text-xs text-zinc-500">
+          {formData.description.length} / 200文字
+        </p>
+      </div>
+
+      {/* キーワードタグ */}
+      <div>
+        <label className="block text-sm font-medium text-zinc-700">
+          キーワードタグ
         </label>
         <div className="mt-1">
           <input
             type="text"
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={handleAddTag}
-            placeholder="タグを入力してEnterで確定"
+            value={keywordInput}
+            onChange={(e) => setKeywordInput(e.target.value)}
+            onKeyDown={handleAddKeyword}
+            placeholder="キーワードを入力してEnterで確定"
             className="block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
           />
-          {tags.length > 0 && (
+          {keywords.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
-              {tags.map((tag) => (
+              {keywords.map((keyword) => (
                 <span
-                  key={tag}
+                  key={keyword}
                   className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700"
                 >
-                  {tag}
+                  {keyword}
                   <Button
                     variant="secondary"
                     size="sm"
                     rounded="md"
-                    onClick={() => handleRemoveTag(tag)}
+                    onClick={() => handleRemoveKeyword(keyword)}
                     className="ml-1 h-auto p-0 border-0 bg-transparent text-zinc-500 hover:text-zinc-900"
                   >
                     ×
@@ -157,101 +380,293 @@ export default function EventForm({
         </div>
       </div>
 
+      {/* 公式サイトURL */}
+      <div>
+        <div className="flex items-center justify-between">
+          <label className="block text-sm font-medium text-zinc-700">
+            公式サイトURL * <span className="text-xs text-zinc-500">（1個以上必須）</span>
+          </label>
+          {formData.official_urls.length < 10 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              rounded="md"
+              onClick={handleAddUrlInput}
+            >
+              + URL入力欄を追加
+            </Button>
+          )}
+        </div>
+        <div className="mt-2 space-y-2">
+          {formData.official_urls.map((url, index) => (
+            <div key={index} className="flex gap-2">
+              <input
+                type="url"
+                value={url}
+                onChange={(e) => handleUrlChange(index, e.target.value)}
+                placeholder="https://example.com"
+                className="block flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                required={index === 0}
+              />
+              {formData.official_urls.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveUrl(index)}
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  aria-label="URLを削除"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+        {formData.official_urls.length === 0 && (
+          <p className="mt-1 text-xs text-red-500">
+            最低1つのURL入力欄が必要です
+          </p>
+        )}
+      </div>
+
+      {/* イメージ画像 */}
       <div>
         <label className="block text-sm font-medium text-zinc-700">
-          説明
+          イメージ画像 <span className="text-xs text-zinc-500">（16:9推奨）</span>
         </label>
-        <textarea
-          value={formData.description}
-          onChange={(e) =>
-            onFormDataChange({ ...formData, description: e.target.value })
-          }
-          rows={5}
-          className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-zinc-700">
-          公式URL *
-        </label>
-        <input
-          type="url"
-          value={formData.original_url}
-          onChange={(e) =>
-            onFormDataChange({ ...formData, original_url: e.target.value })
-          }
-          className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-zinc-700">
-          主催者メールアドレス
-        </label>
-        <input
-          type="email"
-          value={formData.organizer_email}
-          onChange={(e) =>
-            onFormDataChange({ ...formData, organizer_email: e.target.value })
-          }
-          className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-          placeholder="example@example.com"
-        />
-        <p className="mt-1 text-xs text-zinc-500">
-          申請ボタンを押すと、ログインユーザーのメールアドレスが自動的に設定されます。
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div>
-          <label className="block text-sm font-medium text-zinc-700">
-            開催日 *
-          </label>
+        <div className="mt-1 space-y-2">
           <input
-            type="date"
-            value={formData.event_date}
-            onChange={(e) =>
-              onFormDataChange({ ...formData, event_date: e.target.value })
-            }
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-            required
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageFileSelect}
+            disabled={uploadingImage}
+            className="block w-full text-sm text-zinc-700 file:mr-4 file:rounded-md file:border-0 file:bg-zinc-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-zinc-700 hover:file:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed"
           />
+          {uploadingImage && (
+            <p className="text-xs text-zinc-500">アップロード中...</p>
+          )}
+        </div>
+        {formData.image_url && (
+          <div className="mt-2 relative">
+            <img
+              src={formData.image_url}
+              alt="プレビュー"
+              className="max-h-48 w-full rounded-md object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleImageRemove}
+              className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-md bg-red-500 text-white transition-colors hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              aria-label="画像を削除"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* エントリー情報 */}
+      <div className="space-y-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-zinc-900">エントリー情報</h3>
+          {formData.entries.length < 5 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              rounded="md"
+              onClick={handleAddEntry}
+            >
+              + エントリーを追加
+            </Button>
+          )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-zinc-700">
-            エントリー開始日
-          </label>
-          <input
-            type="date"
-            value={formData.entry_start_at}
-            onChange={(e) =>
-              onFormDataChange({
-                ...formData,
-                entry_start_at: e.target.value,
-              })
-            }
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-          />
+        {/* 公開仕様の説明 */}
+        <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
+          <p className="text-xs text-zinc-700 leading-relaxed">
+            エントリー開始日時公開日時はエントリー開始日時情報をこの設定日時にこのページで公開されるように設定されます。
+            <br />
+            エントリー終了日時はエントリー公開日時の公開日時と同時に公開されます。
+            <br />
+            支払期限日時公開日時も同様の仕様です。
+          </p>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-zinc-700">
-            支払期限
-          </label>
-          <input
-            type="date"
-            value={formData.payment_due_at}
-            onChange={(e) =>
-              onFormDataChange({ ...formData, payment_due_at: e.target.value })
-            }
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-          />
-        </div>
+        {formData.entries.map((entry) => (
+          <div
+            key={entry.entry_number}
+            className="space-y-3 rounded-md border border-zinc-200 bg-white p-4"
+          >
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-medium text-zinc-700">
+                {entry.entry_number}次エントリー
+              </h4>
+              {formData.entries.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveEntry(entry.entry_number)}
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  aria-label="エントリーを削除"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              {/* エントリー開始日時とエントリー開始日公開日時、エントリー締切日時 */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700">
+                    エントリー開始日時 *
+                  </label>
+                  <div className="mt-1">
+                    <DateTimeInput
+                      type="datetime-local"
+                      value={entry.entry_start_at}
+                      onChange={(value) =>
+                        handleEntryChange(
+                          entry.entry_number,
+                          "entry_start_at",
+                          value
+                        )
+                      }
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700">
+                    エントリー開始日公開日時
+                  </label>
+                  <div className="mt-1">
+                    <DateTimeInput
+                      type="datetime-local"
+                      value={entry.entry_start_public_at}
+                      onChange={(value) =>
+                        handleEntryChange(
+                          entry.entry_number,
+                          "entry_start_public_at",
+                          value
+                        )
+                      }
+                      placeholder="未入力時は即時公開"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700">
+                    エントリー終了日時 *
+                  </label>
+                  <div className="mt-1">
+                    <DateTimeInput
+                      type="datetime-local"
+                      value={entry.entry_deadline_at}
+                      onChange={(value) =>
+                        handleEntryChange(
+                          entry.entry_number,
+                          "entry_deadline_at",
+                          value
+                        )
+                      }
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 支払期限日時と支払期限日時公開日時（2列グリッド） */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700">
+                    支払期限日時 *
+                  </label>
+                  <div className="mt-1">
+                    <DateTimeInput
+                      type="datetime-local"
+                      value={entry.payment_due_at}
+                      onChange={(value) =>
+                        handleEntryChange(
+                          entry.entry_number,
+                          "payment_due_at",
+                          value
+                        )
+                      }
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700">
+                    支払期限日時公開日時
+                  </label>
+                  <div className="mt-1">
+                    <DateTimeInput
+                      type="datetime-local"
+                      value={entry.payment_due_public_at}
+                      onChange={(value) =>
+                        handleEntryChange(
+                          entry.entry_number,
+                          "payment_due_public_at",
+                          value
+                        )
+                      }
+                      placeholder="未入力時は即時公開"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
+      {/* 開催地（住所） */}
       <div className="space-y-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
         <h3 className="text-sm font-semibold text-zinc-900">開催地（住所）</h3>
 
@@ -398,8 +813,11 @@ export default function EventForm({
         </div>
       </div>
 
-      {children && <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">{children}</div>}
+      {children && (
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+          {children}
+        </div>
+      )}
     </form>
   );
 }
-
