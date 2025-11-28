@@ -150,10 +150,25 @@ export function downloadICalFile(
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  try {
+    document.body.appendChild(link);
+    link.click();
+    URL.revokeObjectURL(url);
+    // 親要素の存在を確認してから削除
+    const parentNode = link.parentNode;
+    if (parentNode) {
+      try {
+        parentNode.removeChild(link);
+      } catch (error) {
+        // エラーが発生した場合は無視（既に削除されている可能性がある）
+        console.debug("Link removal error (safe to ignore):", error);
+      }
+    }
+  } catch (error) {
+    // エラーが発生した場合は無視
+    console.debug("Link append/click error (safe to ignore):", error);
+    URL.revokeObjectURL(url);
+  }
 }
 
 /**

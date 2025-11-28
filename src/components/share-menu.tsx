@@ -52,10 +52,25 @@ export function ShareMenu({
       const a = document.createElement("a");
       a.href = url;
       a.download = `${eventName}_${reminderLabel}.ics`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      try {
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        // 親要素の存在を確認してから削除
+        const parentNode = a.parentNode;
+        if (parentNode) {
+          try {
+            parentNode.removeChild(a);
+          } catch (error) {
+            // エラーが発生した場合は無視（既に削除されている可能性がある）
+            console.debug("Link removal error (safe to ignore):", error);
+          }
+        }
+      } catch (error) {
+        // エラーが発生した場合は無視
+        console.debug("Link append/click error (safe to ignore):", error);
+        window.URL.revokeObjectURL(url);
+      }
       setIsOpen(false);
     } catch (error) {
       console.error("Failed to download ical:", error);

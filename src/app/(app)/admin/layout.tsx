@@ -136,12 +136,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     if (typeof window === "undefined" || !document.head) {
       return;
     }
-    // noindexメタタグを追加
-    let metaRobots = document.querySelector('meta[name="robots"]');
+    // noindexメタタグを追加または更新（削除しない）
+    let metaRobots = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
     if (!metaRobots) {
       metaRobots = document.createElement("meta");
       metaRobots.setAttribute("name", "robots");
-      document.head.appendChild(metaRobots);
+      try {
+        document.head.appendChild(metaRobots);
+      } catch (error) {
+        // エラーが発生した場合は無視
+        console.debug("Meta tag append error (safe to ignore):", error);
+        return;
+      }
     }
     metaRobots.setAttribute("content", "noindex, nofollow");
   }, []);

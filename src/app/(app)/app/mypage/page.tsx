@@ -172,29 +172,11 @@ export default function MyPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                     <LinkCard href="/app/profile/edit">
                         <CardTitle>基本情報</CardTitle>
-                        <CardContent className="mt-3 space-y-3">
-                            <div>
-                                <h3 className="text-xs font-medium text-zinc-700 sm:text-sm">
-                                    表示名
-                                </h3>
-                                {session?.user?.displayName ? (
-                                    <div className="mt-1">
-                                        <p className="text-xs text-zinc-900 sm:text-sm">
-                                            {session.user.displayName}
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="mt-1">
-                                        <p className="text-xs text-zinc-500 sm:text-sm">
-                                            未設定（ログインしたアカウントの名前を使用）
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
+                        <CardContent className="mt-1">
+                            <p className="text-xs text-zinc-700 sm:text-sm">
+                                プロフィールなどの情報を編集できるようにします。
+                            </p>
                         </CardContent>
-                        <p className="mt-3 text-xs text-zinc-700 sm:text-sm">
-                            プロフィールなどの情報を表示し、編集できるようにします。
-                        </p>
                         <p className="mt-3 text-xs font-semibold text-emerald-600">
                             詳細を見る →
                         </p>
@@ -204,8 +186,7 @@ export default function MyPage() {
                         <CardTitle>ウォッチリスト</CardTitle>
                         <CardContent className="mt-1">
                             <p className="text-xs text-zinc-700 sm:text-sm">
-                                気になるイベントをまとめて管理します。
-                                ウォッチリストに追加したイベントのリマインダーが自動的に設定されます。
+                                ウォッチリストに追加したイベント管理できます。
                             </p>
                         </CardContent>
                         <p className="mt-3 text-xs font-semibold text-emerald-600">

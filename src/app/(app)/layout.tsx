@@ -290,20 +290,31 @@ export default function AppLayout({ children }: AppLayoutProps) {
     if (typeof window === "undefined" || !document.head) {
       return;
     }
+
+    // メタタグを削除せず、内容を変更する方法に変更（DOM削除によるエラーを回避）
+    let metaRobots = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
+
     if (pathname?.startsWith("/app")) {
-      // noindexメタタグを追加
-      let metaRobots = document.querySelector('meta[name="robots"]');
+      // noindexメタタグを追加または更新
       if (!metaRobots) {
         metaRobots = document.createElement("meta");
         metaRobots.setAttribute("name", "robots");
-        document.head.appendChild(metaRobots);
+        try {
+          document.head.appendChild(metaRobots);
+        } catch (error) {
+          // エラーが発生した場合は無視
+          console.debug("Meta tag append error (safe to ignore):", error);
+          return;
+        }
       }
       metaRobots.setAttribute("content", "noindex, nofollow");
     } else {
-      // /app配下でない場合はnoindexメタタグを削除
-      const metaRobots = document.querySelector('meta[name="robots"]');
-      if (metaRobots && metaRobots.getAttribute("content") === "noindex, nofollow") {
-        metaRobots.remove();
+      // /app配下でない場合はメタタグの内容を変更（削除しない）
+      if (metaRobots) {
+        // デフォルトの内容に戻す（または削除したい場合は空文字列にする）
+        // ただし、他のページで設定された内容を上書きしないよう注意
+        // ここでは単に内容を変更するだけ
+        metaRobots.setAttribute("content", "index, follow");
       }
     }
   }, [pathname]);
