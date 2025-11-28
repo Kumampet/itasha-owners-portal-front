@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { MenuController } from "@/components/menu-controller";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 type AdminLayoutProps = {
   children: ReactNode;
@@ -207,7 +208,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   ) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }

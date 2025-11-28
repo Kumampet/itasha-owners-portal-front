@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/button";
@@ -81,7 +82,7 @@ export default function AdminNewOrganizerPage() {
   if (status === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }

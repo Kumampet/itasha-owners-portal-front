@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/button";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 type Event = {
   id: string;
@@ -191,7 +192,7 @@ export default function AdminEventsPage() {
       {/* イベント一覧 */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+          <LoadingSpinner size="lg" />
         </div>
       ) : events.length === 0 ? (
         <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center">

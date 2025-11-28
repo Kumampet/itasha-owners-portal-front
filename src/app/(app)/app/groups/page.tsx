@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 type Group = {
   id: string;
@@ -89,7 +90,7 @@ export default function GroupsPage() {
             </h2>
             {loading ? (
               <div className="mt-4 flex items-center justify-center py-8">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+                <LoadingSpinner size="md" />
               </div>
             ) : groups.length === 0 ? (
               <p className="mt-1 text-xs text-zinc-700 sm:text-sm">

@@ -10,6 +10,7 @@ import { DisplayNameModal } from "@/components/display-name-modal";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 import { MenuController } from "@/components/menu-controller";
 import { Button } from "@/components/button";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -17,7 +18,10 @@ type AppLayoutProps = {
 
 const tabs = [
   { href: "/app/mypage", label: "マイページ", key: "mypage" },
-  { href: "/events", label: "イベント", key: "events" },
+  { href: "/events", label: "イベント一覧", key: "events" },
+  { href: "/app/watchlist", label: "ウォッチリスト", key: "watchlist", requiresAuth: true },
+  { href: "/app/reminder", label: "リマインダー管理", key: "reminder", requiresAuth: true },
+  { href: "/app/groups", label: "団体管理", key: "groups", requiresAuth: true },
   { href: "/app/event-submission", label: "イベント掲載依頼", key: "event-submission" },
   { href: "/app/contact", label: "お問い合わせ", key: "contact" },
 ];
@@ -39,6 +43,7 @@ function resolveActiveKey(pathname: string) {
     if (segments[1] === "mypage") {
       return "mypage";
     }
+    // /app/watchlist, /app/reminder, /app/groups などの場合はそのまま返す
     return segments[1];
   }
 
@@ -64,7 +69,14 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
     }
 
     // 未ログインで保護されたページにアクセスしようとした場合
-    if (!session && (href === "/app/mypage" || href === "/app/event-submission")) {
+    const protectedPaths = [
+      "/app/mypage",
+      "/app/event-submission",
+      "/app/watchlist",
+      "/app/reminder",
+      "/app/groups",
+    ];
+    if (!session && protectedPaths.includes(href)) {
       e.preventDefault();
       router.push(`/app/auth?callbackUrl=${encodeURIComponent(href)}`);
       onClose();
@@ -112,7 +124,7 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
         <div className="mb-4 min-h-[80px] rounded-lg border border-zinc-200 bg-zinc-50 p-3">
           {isLoading ? (
             <div className="flex items-center justify-center py-2">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+              <LoadingSpinner size="sm" />
             </div>
           ) : session ? (
             <>
@@ -173,6 +185,10 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
         </div>
         <nav className="space-y-1 text-sm flex-1">
           {tabs.map((tab) => {
+            // ログインが必要なメニュー項目は、ログインしていない場合は非表示
+            if (tab.requiresAuth && !session) {
+              return null;
+            }
             const isActive = tab.key === activeKey;
             return (
               <Link

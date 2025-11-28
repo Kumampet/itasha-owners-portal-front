@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { shouldRedirectToNotificationSettings } from "@/lib/notification-check";
@@ -105,7 +106,7 @@ export default function NewReminderPage() {
       <main className="flex-1">
         <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
           <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+            <LoadingSpinner size="lg" />
           </div>
         </section>
       </main>
@@ -344,6 +345,8 @@ export default function NewReminderPage() {
               </div>
             </div>
           </ModalBase>
+        )}
+          </>
         )}
       </section>
     </main>

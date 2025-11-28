@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { PWAInstallCard } from "@/components/pwa-install-card";
 import { LinkCard } from "@/components/link-card";
 import { Card, CardTitle, CardContent } from "@/components/card";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 type Reminder = {
     id: string;
@@ -95,7 +96,7 @@ export default function MyPage() {
                     <div className="mt-1 min-h-[20px]">
                         {isLoading ? (
                             <div className="flex items-center gap-2">
-                                <div className="h-3 w-3 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+                                <LoadingSpinner size="xs" />
                                 <span className="text-xs text-zinc-500">読み込み中...</span>
                             </div>
                         ) : session ? (
@@ -122,7 +123,7 @@ export default function MyPage() {
                     <CardContent>
                         {isLoadingReminders ? (
                             <div className="mt-3 flex items-center gap-2">
-                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+                                <LoadingSpinner size="sm" />
                                 <span className="text-xs text-zinc-500">読み込み中...</span>
                             </div>
                         ) : upcomingReminders.length === 0 ? (

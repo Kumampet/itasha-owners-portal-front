@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/button";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 type Submission = {
   id: string;
@@ -230,7 +231,7 @@ export default function AdminSubmissionsPage() {
       {/* イベント掲載依頼一覧 */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+          <LoadingSpinner size="lg" />
         </div>
       ) : submissions.length === 0 ? (
         <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center">

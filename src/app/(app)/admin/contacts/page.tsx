@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { ModalBase } from "@/components/modal-base";
 import { Button } from "@/components/button";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 type Contact = {
   id: string;
@@ -257,7 +258,7 @@ export default function AdminContactsPage() {
       {/* お問い合わせ一覧 */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+          <LoadingSpinner size="lg" />
         </div>
       ) : contacts.length === 0 ? (
         <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center">

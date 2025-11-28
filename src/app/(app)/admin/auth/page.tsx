@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/button";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 function AdminAuthForm() {
   const searchParams = useSearchParams();
@@ -206,7 +207,7 @@ export default function AdminAuthPage() {
       <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4">
         <div className="w-full max-w-md space-y-8 rounded-lg border border-zinc-200 bg-white p-8 shadow-sm">
           <div className="text-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900 mx-auto"></div>
+            <LoadingSpinner size="lg" className="mx-auto" />
             <p className="mt-2 text-sm text-zinc-600">読み込み中...</p>
           </div>
         </div>

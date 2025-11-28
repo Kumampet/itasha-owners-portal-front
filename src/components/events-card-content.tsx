@@ -21,9 +21,10 @@ interface EventsCardContentProps {
             };
         }>;
     };
+    onToggle?: () => void;
 }
 
-export function EventsCardContent({ event }: EventsCardContentProps) {
+export function EventsCardContent({ event, onToggle }: EventsCardContentProps) {
     const router = useRouter();
 
     const handleDetailClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -80,6 +81,7 @@ export function EventsCardContent({ event }: EventsCardContentProps) {
                     <WatchlistButton
                         eventId={event.id}
                         className="w-full flex items-center justify-center rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                        onToggle={onToggle}
                     />
                 </div>
             </div>

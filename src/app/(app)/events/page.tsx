@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { LinkCard } from "@/components/link-card";
 import { EventsCardContent } from "@/components/events-card-content";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 type DbEvent = {
   id: string;
@@ -42,20 +43,16 @@ export default function EventsPage() {
     fetchEvents();
   }, []);
 
-  if (loading) {
-    return (
-      <main className="flex-1 px-4 pb-16 pt-6 sm:pb-12 sm:pt-8">
-        <section className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-          <p className="text-sm text-zinc-600">読み込み中...</p>
-        </section>
-      </main>
-    );
-  }
-
   return (
     <main className="flex-1 px-4 pb-16 pt-6 sm:pb-12 sm:pt-8">
       <section className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-        <header className="space-y-2">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : (
+          <>
+            <header className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600">
             イベントカレンダー
           </p>
@@ -63,8 +60,7 @@ export default function EventsPage() {
             痛車イベントをまとめてチェック
           </h1>
           <p className="text-sm text-zinc-600 sm:text-base">
-            エントリー開始前にウォッチリストに追加しておくと、リマインダーとメール通知で
-            申込チャンスを逃しません。
+            気になるイベントを一気にチェック！<br />ウォッチリストに入れておくと最新情報を逃しません。
           </p>
         </header>
 
@@ -86,6 +82,8 @@ export default function EventsPage() {
             ))
           )}
         </div>
+          </>
+        )}
       </section>
     </main>
   );

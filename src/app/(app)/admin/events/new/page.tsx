@@ -7,6 +7,7 @@ import Link from "next/link";
 import ConfirmModal from "@/components/confirm-modal";
 import EventForm, { EventFormData } from "@/components/event-form";
 import { Button } from "@/components/button";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 function AdminNewEventPageContent() {
   const router = useRouter();
@@ -184,7 +185,7 @@ export default function AdminNewEventPage() {
     <Suspense fallback={
       <div className="w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+          <LoadingSpinner size="lg" />
         </div>
       </div>
     }>

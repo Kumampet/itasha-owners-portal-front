@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import EventForm, { EventFormData } from "@/components/event-form";
 import ConfirmModal from "@/components/confirm-modal";
 import { Button } from "@/components/button";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 type Event = {
   id: string;
@@ -244,7 +245,7 @@ export default function AdminEventDetailPage({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }

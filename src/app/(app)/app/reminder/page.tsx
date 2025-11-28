@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import ConfirmModal from "@/components/confirm-modal";
 import { ShareMenu } from "@/components/share-menu";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 type Reminder = {
   id: string;
@@ -90,22 +91,16 @@ export default function ReminderPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <main className="flex-1">
-        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-          <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-        <header className="space-y-2">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : (
+          <>
+            <header className="space-y-2">
           <Link
             href="/app/mypage"
             className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
@@ -335,6 +330,8 @@ export default function ReminderPage() {
           confirmLabel="削除"
           cancelLabel="キャンセル"
         />
+          </>
+        )}
       </section>
     </main>
   );

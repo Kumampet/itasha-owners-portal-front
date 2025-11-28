@@ -8,6 +8,7 @@ import ConfirmModal from "@/components/confirm-modal";
 import { TransferOwnershipModal } from "@/components/transfer-ownership-modal";
 import { Button } from "@/components/button";
 import { Tabs, Tab } from "@/components/tabs";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 type GroupDetail = {
   id: string;
@@ -266,40 +267,26 @@ export default function GroupDetailPage({
     }
   };
 
-  if (loading) {
-    return (
-      <main className="flex-1">
-        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
+  return (
+    <main className="flex-1">
+      <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
+        {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+            <LoadingSpinner size="lg" />
           </div>
-        </section>
-      </main>
-    );
-  }
-
-  if (!group) {
-    return (
-      <main className="flex-1">
-        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
+        ) : !group ? (
           <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center">
             <p className="text-sm text-zinc-600">団体が見つかりません</p>
             <Link
               href="/app/groups"
-              className="mt-4 inline-block text-sm text-zinc-900 hover:underline"
+              className="mt-4 inline-block text-sm text-emerald-600 hover:text-emerald-700"
             >
-              ← 団体一覧に戻る
+              団体一覧に戻る
             </Link>
           </div>
-        </section>
-      </main>
-    );
-  }
-
-  return (
-    <main className="flex-1 overflow-hidden">
-      <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8 h-full">
-        <header className="space-y-2">
+        ) : (
+          <>
+            <header className="space-y-2">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <Link
@@ -441,7 +428,7 @@ export default function GroupDetailPage({
             <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3 pb-24 sm:pb-4" data-messages-container>
               {messagesLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+                  <LoadingSpinner size="md" />
                 </div>
               ) : messages.length === 0 ? (
                 <p className="py-8 text-center text-sm text-zinc-500">
@@ -577,6 +564,8 @@ export default function GroupDetailPage({
           confirmLabel="抜ける"
           cancelLabel="キャンセル"
         />
+          </>
+        )}
       </section>
     </main>
   );

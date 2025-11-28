@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 // TODO: 通知設定機能（プッシュ通知・メール通知）を削除しました。将来的に再実装する場合は、以下の機能を実装してください：
 // - プッシュ通知の設定UI
@@ -41,7 +42,7 @@ export default function NotificationSettingsPage() {
         <main className="flex-1">
           <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
             <div className="flex items-center justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+              <LoadingSpinner size="lg" />
             </div>
           </section>
         </main>

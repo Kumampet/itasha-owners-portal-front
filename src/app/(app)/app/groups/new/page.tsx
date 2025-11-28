@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/button";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 type Event = {
   id: string;
@@ -148,7 +149,7 @@ function NewGroupForm() {
             </h2>
             {eventsLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+                <LoadingSpinner size="md" />
               </div>
             ) : events.length === 0 ? (
               <p className="py-8 text-center text-sm text-zinc-500">
@@ -206,7 +207,7 @@ function NewGroupForm() {
 
             {eventLoading ? (
               <div className="flex items-center justify-center py-4">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+                <LoadingSpinner size="sm" />
               </div>
             ) : selectedEvent ? (
               <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
@@ -308,7 +309,7 @@ export default function NewGroupPage() {
       <main className="flex-1">
         <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
           <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+            <LoadingSpinner size="lg" />
           </div>
         </section>
       </main>

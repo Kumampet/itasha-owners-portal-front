@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -34,7 +35,7 @@ export default function AdminPage() {
   // ローディング中
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900"></div>
+      <LoadingSpinner size="lg" />
     </div>
   );
 }

@@ -164,7 +164,7 @@ export default function ContactPage() {
               variant="primary"
               size="md"
               rounded="md"
-              className="flex-1"
+              fullWidth
               disabled={submitting}
             >
               {submitting ? "送信中..." : "送信する"}
