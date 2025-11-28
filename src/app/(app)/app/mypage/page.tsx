@@ -3,10 +3,7 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
-// TODO: 通知設定機能を削除しました。将来的に再実装する場合は、useRouterをインポートして使用してください。
-import { DisplayNameModal } from "@/components/display-name-modal";
 import { PWAInstallCard } from "@/components/pwa-install-card";
-// TODO: 通知設定機能を削除しました。将来的に再実装する場合は、shouldRedirectToNotificationSettingsをインポートして使用してください。
 
 type Reminder = {
     id: string;
@@ -27,9 +24,8 @@ type Reminder = {
 };
 
 export default function MyPage() {
-    const { data: session, status, update } = useSession();
+    const { data: session, status } = useSession();
     const isLoading = status === "loading";
-    const [isDisplayNameModalOpen, setIsDisplayNameModalOpen] = useState(false);
     const [upcomingReminders, setUpcomingReminders] = useState<Reminder[]>([]);
     const [isLoadingReminders, setIsLoadingReminders] = useState(true);
 
@@ -171,7 +167,10 @@ export default function MyPage() {
 
                 {/* 基本情報、リマインダー管理、団体管理、オーガナイザー機能（2x2グリッド） */}
                 <div className="grid gap-4 sm:grid-cols-2">
-                    <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
+                    <Link
+                        href="/app/profile/edit"
+                        className="rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 sm:p-5"
+                    >
                         <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
                             基本情報
                         </h2>
@@ -181,28 +180,16 @@ export default function MyPage() {
                                     表示名
                                 </h3>
                                 {session?.user?.displayName ? (
-                                    <div className="mt-1 flex items-center justify-between">
+                                    <div className="mt-1">
                                         <p className="text-xs text-zinc-900 sm:text-sm">
                                             {session.user.displayName}
                                         </p>
-                                        <button
-                                            onClick={() => setIsDisplayNameModalOpen(true)}
-                                            className="text-xs text-emerald-600 hover:text-emerald-700 sm:text-sm"
-                                        >
-                                            編集
-                                        </button>
                                     </div>
                                 ) : (
                                     <div className="mt-1">
                                         <p className="text-xs text-zinc-500 sm:text-sm">
                                             未設定（ログインしたアカウントの名前を使用）
                                         </p>
-                                        <button
-                                            onClick={() => setIsDisplayNameModalOpen(true)}
-                                            className="mt-2 text-xs font-semibold text-emerald-600 hover:text-emerald-700 sm:text-sm"
-                                        >
-                                            表示名を設定 →
-                                        </button>
                                     </div>
                                 )}
                             </div>
@@ -210,7 +197,10 @@ export default function MyPage() {
                         <p className="mt-3 text-xs text-zinc-700 sm:text-sm">
                             プロフィールなどの情報を表示し、編集できるようにします。
                         </p>
-                    </section>
+                        <p className="mt-3 text-xs font-semibold text-emerald-600">
+                            詳細を見る →
+                        </p>
+                    </Link>
 
                     <Link
                         href="/app/watchlist"
@@ -309,36 +299,6 @@ export default function MyPage() {
                     )}
                 </div>
             </section>
-
-            <DisplayNameModal
-                isOpen={isDisplayNameModalOpen}
-                onClose={() => setIsDisplayNameModalOpen(false)}
-                onSave={async (displayName: string) => {
-                    try {
-                        const response = await fetch("/api/user/display-name", {
-                            method: "PATCH",
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify({ displayName }),
-                        });
-
-                        if (!response.ok) {
-                            throw new Error("Failed to save display name");
-                        }
-
-                        // セッションを更新
-                        await update();
-                        setIsDisplayNameModalOpen(false);
-                    } catch (error) {
-                        console.error("Failed to save display name:", error);
-                        throw error;
-                    }
-                }}
-                onLater={() => setIsDisplayNameModalOpen(false)}
-                initialDisplayName={session?.user?.displayName || null}
-                showLaterButton={false}
-            />
         </main>
     );
 }
