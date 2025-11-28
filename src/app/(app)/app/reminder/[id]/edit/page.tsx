@@ -4,6 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ConfirmModal from "@/components/confirm-modal";
+import { Button } from "@/components/button";
 
 type Event = {
   id: string;
@@ -247,10 +248,12 @@ export default function EditReminderPage({
           </div>
 
           <div className="flex gap-2 justify-between">
-            <button
-              type="button"
+            <Button
+              variant="danger"
+              size="sm"
+              rounded="md"
               onClick={handleDeleteClick}
-              className="inline-flex items-center gap-1 rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-50"
+              className="border-red-300 bg-white text-red-700 hover:bg-red-50"
               title="削除"
             >
               <svg
@@ -267,21 +270,26 @@ export default function EditReminderPage({
                 />
               </svg>
               <span>削除</span>
-            </button>
+            </Button>
             <div className="flex gap-2">
-              <Link
+              <Button
+                as="link"
                 href="/app/reminder"
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                variant="secondary"
+                size="md"
+                rounded="md"
               >
                 キャンセル
-              </Link>
-              <button
+              </Button>
+              <Button
                 type="submit"
+                variant="primary"
+                size="md"
+                rounded="md"
                 disabled={saving}
-                className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
               >
                 {saving ? "更新中..." : "更新"}
-              </button>
+              </Button>
             </div>
           </div>
         </form>

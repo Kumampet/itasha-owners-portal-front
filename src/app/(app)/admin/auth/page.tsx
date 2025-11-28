@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import { Button } from "@/components/button";
 
 function AdminAuthForm() {
   const searchParams = useSearchParams();
@@ -183,13 +184,16 @@ function AdminAuthForm() {
             />
           </div>
 
-          <button
+          <Button
             type="submit"
+            variant="primary"
+            size="md"
+            rounded="md"
+            fullWidth
             disabled={isLoading}
-            className="w-full rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading ? "ログイン中..." : "ログイン"}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

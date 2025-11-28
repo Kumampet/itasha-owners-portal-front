@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { WatchlistButton } from "@/components/watchlist-button";
+import { LinkCard } from "@/components/link-card";
+import { EventsCardContent } from "@/components/events-card-content";
 
 type DbEvent = {
   id: string;
@@ -21,23 +21,6 @@ type DbEvent = {
   }>;
 };
 
-function formatDate(dateString: string) {
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    weekday: "short",
-  }).format(new Date(dateString));
-}
-
-function formatDateShort(dateString: string | null) {
-  if (!dateString) return "未定";
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(dateString));
-}
 
 export default function EventsPage() {
   const [events, setEvents] = useState<DbEvent[]>([]);
@@ -92,71 +75,14 @@ export default function EventsPage() {
             </p>
           ) : (
             events.map((event) => (
-              <article
+              <LinkCard
                 key={event.id}
-                className="rounded-3xl border border-zinc-200 bg-white p-4 ring-offset-white transition hover:-translate-y-0.5 hover:border-zinc-900 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:p-5"
+                href={`/events/${event.id}`}
+                className="hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                cardClassName="rounded-3xl"
               >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                  <div className="flex-1 space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
-                      {formatDate(event.event_date)}
-                    </p>
-                    <div>
-                      <h2 className="text-lg font-semibold text-zinc-900">
-                        {event.name}
-                      </h2>
-                      {event.theme && (
-                        <p className="text-sm text-zinc-600">{event.theme}</p>
-                      )}
-                    </div>
-                    {event.description && (
-                      <p className="text-sm text-zinc-700">{event.description}</p>
-                    )}
-                    {event.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {event.tags.map((eventTag: { tag: { name: string } }, idx: number) => (
-                          <span
-                            key={idx}
-                            className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700"
-                          >
-                            {eventTag.tag.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-start gap-2 text-xs text-zinc-500 sm:w-48">
-                    {event.entry_start_at && (
-                      <div>
-                        エントリー開始:{" "}
-                        <span className="font-semibold text-zinc-700">
-                          {formatDateShort(event.entry_start_at)}
-                        </span>
-                      </div>
-                    )}
-                    {event.payment_due_at && (
-                      <div>
-                        支払期限:{" "}
-                        <span className="font-semibold text-zinc-700">
-                          {formatDateShort(event.payment_due_at)}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex w-full flex-col gap-2">
-                      <Link
-                        href={`/events/${event.id}`}
-                        className="inline-flex items-center justify-center rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
-                      >
-                        詳細
-                      </Link>
-                      <WatchlistButton
-                        eventId={event.id}
-                        className="inline-flex items-center justify-center rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </article>
+                <EventsCardContent event={event} />
+              </LinkCard>
             ))
           )}
         </div>

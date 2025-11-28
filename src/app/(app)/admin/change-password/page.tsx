@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { Button } from "@/components/button";
 
 export default function ChangePasswordPage() {
   const router = useRouter();
@@ -143,13 +144,16 @@ export default function ChangePasswordPage() {
             />
           </div>
 
-          <button
+          <Button
             type="submit"
+            variant="primary"
+            size="md"
+            rounded="md"
+            fullWidth
             disabled={saving}
-            className="w-full rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? "変更中..." : "パスワードを変更"}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

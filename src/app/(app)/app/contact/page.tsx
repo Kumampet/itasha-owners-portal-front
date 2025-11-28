@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { ModalBase } from "@/components/modal-base";
+import { Button } from "@/components/button";
 
 export default function ContactPage() {
   const router = useRouter();
@@ -148,19 +149,26 @@ export default function ContactPage() {
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Link
+            <Button
+              as="link"
               href="/app/mypage"
-              className="flex-1 rounded-md border border-zinc-300 bg-white px-4 py-2 text-center text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+              variant="secondary"
+              size="md"
+              rounded="md"
+              fullWidth
             >
               キャンセル
-            </Link>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
+              size="md"
+              rounded="md"
+              className="flex-1"
               disabled={submitting}
-              className="flex-1 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
             >
               {submitting ? "送信中..." : "送信する"}
-            </button>
+            </Button>
           </div>
         </form>
       </section>
@@ -174,16 +182,17 @@ export default function ContactPage() {
         }}
         title="送信完了"
         footer={
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="md"
+            rounded="md"
             onClick={() => {
               setIsSuccessModalOpen(false);
               router.push("/app/mypage");
             }}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
           >
             OK
-          </button>
+          </Button>
         }
       >
         <p className="text-sm text-zinc-600">
@@ -197,13 +206,14 @@ export default function ContactPage() {
         onClose={() => setIsErrorModalOpen(false)}
         title="送信エラー"
         footer={
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="md"
+            rounded="md"
             onClick={() => setIsErrorModalOpen(false)}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
           >
             OK
-          </button>
+          </Button>
         }
       >
         <p className="text-sm text-zinc-600">

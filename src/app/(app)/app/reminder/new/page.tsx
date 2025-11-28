@@ -11,6 +11,7 @@ import {
   isIOS,
 } from "@/lib/calendar";
 import { ModalBase } from "@/components/modal-base";
+import { Button } from "@/components/button";
 
 type Event = {
   id: string;
@@ -252,19 +253,24 @@ export default function NewReminderPage() {
           </div>
 
           <div className="flex gap-2 justify-end">
-            <Link
+            <Button
+              as="link"
               href="/app/reminder"
-              className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+              variant="secondary"
+              size="md"
+              rounded="md"
             >
               キャンセル
-            </Link>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
+              size="md"
+              rounded="md"
               disabled={saving}
-              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
             >
               {saving ? "作成中..." : "作成"}
-            </button>
+            </Button>
           </div>
         </form>
 
@@ -276,12 +282,14 @@ export default function NewReminderPage() {
             title="カレンダーに登録"
             footer={
               <>
-                <button
+                <Button
+                  variant="secondary"
+                  size="md"
+                  rounded="md"
                   onClick={handleSkip}
-                  className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
                 >
                   スキップ
-                </button>
+                </Button>
               </>
             }
           >
@@ -292,9 +300,13 @@ export default function NewReminderPage() {
 
               <div className="mt-4 space-y-3">
                 {/* Googleカレンダー（全デバイスで表示） */}
-                <button
+                <Button
+                  variant="secondary"
+                  size="md"
+                  rounded="md"
+                  fullWidth
                   onClick={handleGoogleCalendar}
-                  className="w-full rounded-md border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 flex items-center justify-center gap-2"
+                  className="flex items-center justify-center gap-2 py-3"
                 >
                   <svg
                     className="h-5 w-5"
@@ -311,9 +323,13 @@ export default function NewReminderPage() {
 
                 {/* iOSカレンダー（iOSデバイスのみ） */}
                 {iosDevice && (
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    rounded="md"
+                    fullWidth
                     onClick={handleIOSCalendar}
-                    className="w-full rounded-md border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 flex items-center justify-center gap-2"
+                    className="flex items-center justify-center gap-2 py-3"
                   >
                     <svg
                       className="h-5 w-5"
@@ -323,7 +339,7 @@ export default function NewReminderPage() {
                       <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM5 7V6h14v1H5zm7 4H7v-2h5v2zm5 0h-4v-2h4v2zm-5 4H7v-2h5v2zm5 0h-4v-2h4v2z" />
                     </svg>
                     iOSカレンダーに登録
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>

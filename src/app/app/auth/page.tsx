@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useState, Suspense } from "react";
+import { Button } from "@/components/button";
 
 function AuthForm() {
   const searchParams = useSearchParams();
@@ -34,20 +35,26 @@ function AuthForm() {
         </div>
 
         <div className="space-y-3">
-          <button
+          <Button
+            variant="secondary"
+            size="md"
+            rounded="full"
+            fullWidth
             onClick={() => handleSignIn("google")}
             disabled={isLoading !== null}
-            className="w-full rounded-full border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading === "google" ? "ログイン中..." : "Googleでログイン"}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            rounded="full"
+            fullWidth
             onClick={() => handleSignIn("twitter")}
             disabled={isLoading !== null}
-            className="w-full rounded-full border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading === "twitter" ? "ログイン中..." : "X（Twitter）でログイン"}
-          </button>
+          </Button>
         </div>
 
         <div className="text-center text-xs text-zinc-500">

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { ModalBase } from "@/components/modal-base";
+import { Button } from "@/components/button";
 
 type Contact = {
   id: string;
@@ -205,14 +206,13 @@ export default function AdminContactsPage() {
           <div className="flex gap-2">
             {(["ALL", "PENDING", "PROCESSING", "RESOLVED"] as FilterStatus[]).map(
               (status) => (
-                <button
+                <Button
                   key={status}
+                  variant={filterStatus === status ? "primary" : "secondary"}
+                  size="sm"
+                  rounded="md"
                   onClick={() => setFilterStatus(status)}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                    filterStatus === status
-                      ? "bg-zinc-900 text-white"
-                      : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                  }`}
+                  className={filterStatus === status ? "" : "bg-zinc-100 hover:bg-zinc-200"}
                 >
                   {status === "ALL"
                     ? "すべて"
@@ -221,7 +221,7 @@ export default function AdminContactsPage() {
                     : status === "PROCESSING"
                     ? "処理中"
                     : "対応済"}
-                </button>
+                </Button>
               )
             )}
           </div>
@@ -240,14 +240,16 @@ export default function AdminContactsPage() {
               <option value="title">タイトル</option>
               <option value="name">お名前</option>
             </select>
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
+              rounded="md"
               onClick={() =>
                 setSortOrder(sortOrder === "asc" ? "desc" : "asc")
               }
-              className="rounded-md border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50"
             >
               {sortOrder === "asc" ? "↑" : "↓"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -297,17 +299,15 @@ export default function AdminContactsPage() {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    rounded="md"
                     onClick={() => setSelectedContact(contact)}
                     disabled={contact.status === "RESOLVED"}
-                    className={`rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium transition ${
-                      contact.status === "RESOLVED"
-                        ? "cursor-not-allowed text-zinc-300 opacity-50"
-                        : "text-zinc-700 hover:bg-zinc-50"
-                    }`}
                   >
                     詳細
-                  </button>
+                  </Button>
                   {contact.status !== "RESOLVED" && (
                     <select
                       value={contact.status}
@@ -333,12 +333,15 @@ export default function AdminContactsPage() {
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-zinc-200 bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-zinc-900">お問い合わせの詳細</h2>
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
+                rounded="md"
                 onClick={() => setSelectedContact(null)}
-                className="text-zinc-600 hover:text-zinc-900"
+                className="text-zinc-600 hover:text-zinc-900 border-0 bg-transparent p-0"
               >
                 ×
-              </button>
+              </Button>
             </div>
 
             <div className="space-y-4">
@@ -427,22 +430,26 @@ export default function AdminContactsPage() {
         title="対応済みにする"
         footer={
           <>
-            <button
+            <Button
+              variant="secondary"
+              size="md"
+              rounded="md"
               onClick={() => {
                 setIsResolveModalOpen(false);
                 setResolveNote("");
               }}
-              className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
             >
               キャンセル
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              rounded="md"
               onClick={handleResolveConfirm}
               disabled={processing}
-              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
             >
               {processing ? "処理中..." : "対応済みにする"}
-            </button>
+            </Button>
           </>
         }
       >

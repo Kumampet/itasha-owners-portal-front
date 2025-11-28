@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Button } from "./button";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -66,12 +67,15 @@ export function PWAInstallCard() {
             アプリのように使えます。オフライン機能も利用できます。
           </p>
         </div>
-        <button
+        <Button
+          variant="primary"
+          size="sm"
+          rounded="md"
           onClick={handleInstall}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-xs font-medium text-white transition hover:bg-zinc-800 whitespace-nowrap shrink-0"
+          className="whitespace-nowrap shrink-0"
         >
           追加
-        </button>
+        </Button>
       </div>
     </div>
   );

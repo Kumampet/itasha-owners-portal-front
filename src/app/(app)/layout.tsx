@@ -8,6 +8,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { DisplayNameModal } from "@/components/display-name-modal";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
+import { MenuController } from "@/components/menu-controller";
+import { Button } from "@/components/button";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -100,23 +102,11 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
               priority
             />
           </Link>
-          <button
+          <MenuController
+            variant="close"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100 sm:hidden"
-            aria-label="メニューを閉じる"
-          >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+            className="sm:hidden"
+          />
         </div>
         {/* ユーザー情報表示領域（固定サイズでレイアウトシフトを防止） */}
         <div className="mb-4 min-h-[80px] rounded-lg border border-zinc-200 bg-zinc-50 p-3">
@@ -148,24 +138,25 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
                   )}
                 </div>
               </div>
-              <button
+              <Button
+                as="action"
                 onClick={async () => {
                   onClose();
                   // 現在のパスを確認して適切なログイン画面にリダイレクト
                   const currentPath = pathname || "/app/mypage";
                   const isAdminPath = currentPath.startsWith("/admin");
                   const redirectUrl = isAdminPath ? "/admin/auth" : "/app/auth";
-                  
+
                   // ログアウト処理
                   await signOut({ redirect: false });
-                  
+
                   // 明示的にリダイレクト
                   router.push(redirectUrl);
                 }}
-                className="mt-2 w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-[10px] font-medium text-zinc-700 transition hover:bg-zinc-100"
+                className="mt-2 text-[10px] rounded-md border border-zinc-300 bg-white px-2 py-1 text-zinc-700 hover:bg-zinc-100"
               >
                 ログアウト
-              </button>
+              </Button>
             </>
           ) : (
             <div className="flex flex-col items-center justify-center py-2">
@@ -204,8 +195,8 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
               href="/admin/dashboard"
               onClick={(e) => handleNavClick(e, "/admin/dashboard")}
               className={`block rounded-lg px-3 py-2 text-sm ${pathname?.startsWith("/admin")
-                  ? "bg-zinc-900 text-white"
-                  : "text-zinc-700 hover:bg-zinc-50"
+                ? "bg-zinc-900 text-white"
+                : "text-zinc-700 hover:bg-zinc-50"
                 }`}
             >
               オーガナイザー機能
@@ -262,23 +253,11 @@ function MobileHeader({
           priority
         />
       </Link>
-      <button
+      <MenuController
+        variant="open"
         onClick={onMenuClick}
-        className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 bg-white shadow-sm"
-        aria-label="メニューを開く"
-      >
-        <svg
-          className="h-6 w-6 text-zinc-700"
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
+        className="h-10 w-10 border border-zinc-200 bg-white shadow-sm"
+      />
     </header>
   );
 }

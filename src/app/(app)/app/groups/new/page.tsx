@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/button";
 
 type Event = {
   id: string;
@@ -156,10 +157,14 @@ function NewGroupForm() {
             ) : (
               <div className="space-y-2">
                 {events.map((event) => (
-                  <button
+                  <Button
                     key={event.id}
+                    variant="secondary"
+                    size="md"
+                    rounded="md"
+                    fullWidth
                     onClick={() => handleEventSelect(event.id)}
-                    className="w-full rounded-lg border border-zinc-200 bg-white p-4 text-left transition hover:border-zinc-900 hover:bg-zinc-50"
+                    className="p-4 text-left justify-start hover:border-zinc-900"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
@@ -183,7 +188,7 @@ function NewGroupForm() {
                         選択 →
                       </span>
                     </div>
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -273,13 +278,16 @@ function NewGroupForm() {
           </div>
 
           <div className="flex gap-2">
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="md"
+              rounded="md"
+              fullWidth
               disabled={saving}
-              className="flex-1 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
             >
               {saving ? "作成中..." : "作成する"}
-            </button>
+            </Button>
             <Link
               href="/app/groups"
               className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"

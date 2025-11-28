@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 // TODO: 通知設定機能を削除しました。将来的に再実装する場合は、useRouterをインポートして使用してください。
 import { Tooltip } from "@/components/tooltip";
+import { Button } from "@/components/button";
 // TODO: 通知設定機能を削除しました。将来的に再実装する場合は、shouldRedirectToNotificationSettingsをインポートして使用してください。
 
 type WatchlistButtonProps = {
@@ -26,7 +27,7 @@ export function WatchlistButton({ eventId, className, onToggle }: WatchlistButto
       return;
     }
 
-        const checkWatchlistStatus = async () => {
+    const checkWatchlistStatus = async () => {
       try {
         const res = await fetch(`/api/events/${eventId}/watchlist`);
         if (res.ok) {
@@ -45,17 +46,18 @@ export function WatchlistButton({ eventId, className, onToggle }: WatchlistButto
     checkWatchlistStatus();
   }, [eventId, session]);
 
-  const handleToggle = async () => {
+  const handleToggle = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
     if (!session || isLoading) return;
 
     // TODO: 通知設定機能を削除しました。将来的に再実装する場合は、ウォッチリストに追加する際に通知設定をチェックするロジックを追加してください。
 
     const newIsWatching = !isWatching;
-    
+
     // アニメーション開始時に表示状態を更新（回転アニメーションで切り替わる）
     setDisplayWatching(newIsWatching);
     setIsAnimating(true);
-    
+
     try {
       const method = isWatching ? "DELETE" : "POST";
       const res = await fetch(`/api/events/${eventId}/watchlist`, {
@@ -81,12 +83,17 @@ export function WatchlistButton({ eventId, className, onToggle }: WatchlistButto
 
   if (status === "loading" || isLoading) {
     return (
-      <button disabled className={className}>
+      <Button
+        as="action"
+        disabled
+        onClick={(e) => e.stopPropagation()}
+        className={className}
+      >
         <span className="flex items-center gap-1 text-zinc-400">
           <span className="text-lg font-light">+</span>
           <span>ウォッチリスト</span>
         </span>
-      </button>
+      </Button>
     );
   }
 
@@ -97,18 +104,20 @@ export function WatchlistButton({ eventId, className, onToggle }: WatchlistButto
         disabled={false}
         arrowPosition="right"
       >
-        <button
-          aria-disabled="true"
+        <Button
+          as="action"
+          disabled
           onClick={(e) => {
             e.preventDefault();
+            e.stopPropagation();
           }}
-          className={`${className} cursor-not-allowed opacity-50`}
+          className={className}
         >
           <span className="flex items-center gap-1 text-zinc-400">
             <span className="text-lg font-light">+</span>
             <span>ウォッチリスト</span>
           </span>
-        </button>
+        </Button>
       </Tooltip>
     );
   }
@@ -118,15 +127,16 @@ export function WatchlistButton({ eventId, className, onToggle }: WatchlistButto
   const baseClasses = className || "";
   const buttonClassName = displayWatching
     ? baseClasses
-        .replace(/border-zinc-\d+|bg-white|bg-zinc-\d+|hover:bg-zinc-\d+/g, "")
-        .trim() + " bg-emerald-50 border-emerald-200 hover:bg-emerald-100"
+      .replace(/border-zinc-\d+|bg-white|bg-zinc-\d+|hover:bg-zinc-\d+/g, "")
+      .trim() + " bg-emerald-50 border-emerald-200 hover:bg-emerald-100"
     : baseClasses;
 
   // テキストの色を決定（表示状態に基づく）
   const textColor = displayWatching ? "text-emerald-700" : "text-zinc-700";
 
   return (
-    <button
+    <Button
+      as="action"
       onClick={handleToggle}
       className={`${buttonClassName} relative flex items-center justify-center gap-1`}
       disabled={isAnimating}
@@ -139,32 +149,30 @@ export function WatchlistButton({ eventId, className, onToggle }: WatchlistButto
         >
           {/* ＋アイコン */}
           <span
-            className={`absolute text-lg font-light transition-all duration-200 ${
-              displayWatching
-                ? "rotate-90 scale-0 opacity-0"
-                : isAnimating
+            className={`absolute text-lg font-light transition-all duration-200 ${displayWatching
+              ? "rotate-90 scale-0 opacity-0"
+              : isAnimating
                 ? "rotate-180 scale-0 opacity-0"
                 : "rotate-0 scale-100 opacity-100"
-            } text-zinc-400`}
+              } text-zinc-400`}
           >
             +
           </span>
           {/* -アイコン */}
           <span
-            className={`absolute text-lg font-light transition-all duration-200 ${
-              !displayWatching
-                ? "-rotate-90 scale-0 opacity-0"
-                : isAnimating
+            className={`absolute text-lg font-light transition-all duration-200 ${!displayWatching
+              ? "-rotate-90 scale-0 opacity-0"
+              : isAnimating
                 ? "rotate-0 scale-100 opacity-100"
                 : "rotate-0 scale-100 opacity-100"
-            } text-emerald-600`}
+              } text-emerald-600`}
           >
             −
           </span>
         </span>
         <span className={textColor}>ウォッチリスト</span>
       </span>
-    </button>
+    </Button>
   );
 }
 

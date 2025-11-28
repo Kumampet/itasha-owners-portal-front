@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
+import { MenuController } from "@/components/menu-controller";
 
 type AdminLayoutProps = {
   children: ReactNode;
@@ -248,25 +249,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 priority
               />
             </Link>
-            <button
+            <MenuController
+              variant="close"
               onClick={() => setIsMenuOpen(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100"
-              aria-label="メニューを閉じる"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
+            />
           </div>
           <SidebarContent onLinkClick={() => setIsMenuOpen(false)} pathname={pathname} session={session} />
         </div>
@@ -277,25 +263,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {/* ヘッダー（lg未満のみ） */}
         <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white lg:hidden">
           <div className="flex h-14 items-center justify-between px-4">
-            <button
+            <MenuController
+              variant="open"
               onClick={() => setIsMenuOpen(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100"
-              aria-label="メニューを開く"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </button>
+            />
             <Link href="/admin/dashboard" className="flex items-center">
               <Image
                 src="/images/main_logo.png"

@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/button";
+import { Accordion, AccordionItem } from "@/components/accordion";
 
 export default function EventSubmissionPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-  const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     original_url: "",
@@ -142,79 +143,60 @@ export default function EventSubmissionPage() {
           </div>
 
           {/* 詳細情報アコーディオン */}
-          <div className="border-t border-zinc-200 pt-6">
-            <button
-              type="button"
-              onClick={() => setIsDetailsExpanded(!isDetailsExpanded)}
-              className="flex w-full items-center justify-between text-left"
+          <Accordion>
+            <AccordionItem
+              value="details"
+              title={
+                <span className="text-sm font-medium text-zinc-700">
+                  詳細情報 <span className="ml-1 text-xs text-zinc-500">（任意）</span>
+                </span>
+              }
+              contentClassName="space-y-4"
             >
-              <span className="text-sm font-medium text-zinc-700">
-                詳細情報 <span className="ml-1 text-xs text-zinc-500">（任意）</span>
-              </span>
-              <svg
-                className={`h-5 w-5 text-zinc-500 transition-transform ${
-                  isDetailsExpanded ? "rotate-180" : ""
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
+              <div>
+                <label className="block text-sm font-medium text-zinc-700">
+                  副題
+                </label>
+                <input
+                  type="text"
+                  value={formData.theme}
+                  onChange={(e) =>
+                    setFormData({ ...formData, theme: e.target.value })
+                  }
+                  className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  placeholder="副題（任意）"
                 />
-              </svg>
-            </button>
-
-            {isDetailsExpanded && (
-              <div className="mt-4 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700">
-                    副題
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.theme}
-                    onChange={(e) =>
-                      setFormData({ ...formData, theme: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                    placeholder="副題（任意）"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700">
-                    エントリー開始日時
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={formData.entry_start_at}
-                    onChange={(e) =>
-                      setFormData({ ...formData, entry_start_at: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700">
-                    支払期限
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={formData.payment_due_at}
-                    onChange={(e) =>
-                      setFormData({ ...formData, payment_due_at: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                  />
-                </div>
               </div>
-            )}
-          </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-700">
+                  エントリー開始日時
+                </label>
+                <input
+                  type="datetime-local"
+                  value={formData.entry_start_at}
+                  onChange={(e) =>
+                    setFormData({ ...formData, entry_start_at: e.target.value })
+                  }
+                  className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-700">
+                  支払期限
+                </label>
+                <input
+                  type="datetime-local"
+                  value={formData.payment_due_at}
+                  onChange={(e) =>
+                    setFormData({ ...formData, payment_due_at: e.target.value })
+                  }
+                  className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                />
+              </div>
+            </AccordionItem>
+          </Accordion>
 
           <div className="flex gap-2 justify-end">
             <Link
@@ -223,13 +205,15 @@ export default function EventSubmissionPage() {
             >
               キャンセル
             </Link>
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="md"
+              rounded="md"
               disabled={submitting}
-              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
             >
               {submitting ? "送信中..." : "送信"}
-            </button>
+            </Button>
           </div>
         </form>
       </section>

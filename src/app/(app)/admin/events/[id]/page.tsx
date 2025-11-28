@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import EventForm, { EventFormData } from "@/components/event-form";
 import ConfirmModal from "@/components/confirm-modal";
+import { Button } from "@/components/button";
 
 type Event = {
   id: string;
@@ -281,37 +282,46 @@ export default function AdminEventDetailPage({
           <div className="flex gap-2">
             {event.approval_status === "PENDING" && session?.user?.role === "ADMIN" && (
               <>
-                <button
+                <Button
+                  variant="success"
+                  size="md"
+                  rounded="md"
                   onClick={handleApproveClick}
                   disabled={saving}
-                  className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:opacity-50"
                 >
                   承認
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="danger"
+                  size="md"
+                  rounded="md"
                   onClick={handleRejectClick}
                   disabled={saving}
-                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
                 >
                   却下
-                </button>
+                </Button>
               </>
             )}
             {canReapply && (
-              <button
+              <Button
+                variant="primary"
+                size="md"
+                rounded="md"
                 onClick={handleReapply}
                 disabled={saving}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:hover:bg-blue-400"
               >
                 再申請
-              </button>
+              </Button>
             )}
-            <button
+            <Button
+              variant="secondary"
+              size="md"
+              rounded="md"
               onClick={() => setIsEditing(true)}
-              className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
             >
               編集
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -356,40 +366,44 @@ export default function AdminEventDetailPage({
           tags={tags}
           onTagsChange={setTags}
         >
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="md"
+            rounded="md"
             onClick={handleCancel}
             disabled={saving}
-            className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50"
           >
             キャンセル
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            rounded="md"
             onClick={() => handleSave("DRAFT")}
             disabled={saving}
-            className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50"
           >
             {saving ? "保存中..." : "下書き"}
-          </button>
+          </Button>
           {canUpdateDirectly ? (
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="md"
+              rounded="md"
               onClick={() => handleSave("APPROVED")}
               disabled={saving}
-              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
             >
               {saving ? "保存中..." : "保存して更新"}
-            </button>
+            </Button>
           ) : (
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="md"
+              rounded="md"
               onClick={() => handleSave("PENDING")}
               disabled={saving}
-              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
             >
               {saving ? "保存中..." : event?.approval_status === "REJECTED" ? "保存して再申請" : "保存して申請"}
-            </button>
+            </Button>
           )}
         </EventForm>
       ) : (

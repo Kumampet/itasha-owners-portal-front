@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/button";
 
 type Submission = {
   id: string;
@@ -178,14 +179,13 @@ export default function AdminSubmissionsPage() {
           <div className="flex gap-2">
             {(["ALL", "PENDING", "PROCESSED", "REJECTED"] as FilterStatus[]).map(
               (status) => (
-                <button
+                <Button
                   key={status}
+                  variant={filterStatus === status ? "primary" : "secondary"}
+                  size="sm"
+                  rounded="md"
                   onClick={() => setFilterStatus(status)}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                    filterStatus === status
-                      ? "bg-zinc-900 text-white"
-                      : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                  }`}
+                  className={filterStatus === status ? "" : "bg-zinc-100 hover:bg-zinc-200"}
                 >
                   {status === "ALL"
                     ? "すべて"
@@ -194,7 +194,7 @@ export default function AdminSubmissionsPage() {
                     : status === "PROCESSED"
                     ? "処理済み"
                     : "却下"}
-                </button>
+                </Button>
               )
             )}
           </div>
@@ -213,14 +213,16 @@ export default function AdminSubmissionsPage() {
               <option value="event_date">開催日</option>
               <option value="name">イベント名</option>
             </select>
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
+              rounded="md"
               onClick={() =>
                 setSortOrder(sortOrder === "asc" ? "desc" : "asc")
               }
-              className="rounded-md border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50"
             >
               {sortOrder === "asc" ? "↑" : "↓"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -283,33 +285,35 @@ export default function AdminSubmissionsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    rounded="md"
                     onClick={() => setSelectedSubmission(submission)}
                     disabled={submission.status === "PROCESSED"}
-                    className={`rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium transition ${
-                      submission.status === "PROCESSED"
-                        ? "cursor-not-allowed text-zinc-300 opacity-50"
-                        : "text-zinc-700 hover:bg-zinc-50"
-                    }`}
                   >
                     詳細
-                  </button>
+                  </Button>
                   {submission.status === "PENDING" && (
                     <>
-                      <button
+                      <Button
+                        variant="success"
+                        size="sm"
+                        rounded="md"
                         onClick={() => handleCreateEvent(submission)}
                         disabled={processing}
-                        className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-green-700 disabled:opacity-50"
                       >
                         イベント作成
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        rounded="md"
                         onClick={() => handleProcess(submission.id, "REJECTED")}
                         disabled={processing}
-                        className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
                       >
                         却下
-                      </button>
+                      </Button>
                     </>
                   )}
                 </div>
@@ -325,12 +329,15 @@ export default function AdminSubmissionsPage() {
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-zinc-200 bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-zinc-900">イベント掲載依頼の詳細</h2>
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
+                rounded="md"
                 onClick={() => setSelectedSubmission(null)}
-                className="text-zinc-600 hover:text-zinc-900"
+                className="text-zinc-600 hover:text-zinc-900 border-0 bg-transparent p-0"
               >
                 ×
-              </button>
+              </Button>
             </div>
 
             <div className="space-y-4">
@@ -414,19 +421,24 @@ export default function AdminSubmissionsPage() {
 
               {selectedSubmission.status === "PENDING" && (
                 <div className="flex gap-2 pt-4">
-                  <button
+                  <Button
+                    variant="success"
+                    size="md"
+                    rounded="md"
+                    fullWidth
                     onClick={() => handleCreateEvent(selectedSubmission)}
-                    className="flex-1 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
                   >
                     イベント作成画面へ
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="md"
+                    rounded="md"
                     onClick={() => handleProcess(selectedSubmission.id, "REJECTED")}
                     disabled={processing}
-                    className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
                   >
                     却下
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>

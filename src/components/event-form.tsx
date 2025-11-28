@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "./button";
 
 export type EventFormData = {
   name: string;
@@ -140,13 +141,15 @@ export default function EventForm({
                   className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700"
                 >
                   {tag}
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    rounded="md"
                     onClick={() => handleRemoveTag(tag)}
-                    className="ml-1 text-zinc-500 hover:text-zinc-900"
+                    className="ml-1 h-auto p-0 border-0 bg-transparent text-zinc-500 hover:text-zinc-900"
                   >
                     ×
-                  </button>
+                  </Button>
                 </span>
               ))}
             </div>
@@ -270,14 +273,15 @@ export default function EventForm({
               maxLength={7}
               className="block w-32 rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
             />
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="md"
+              rounded="md"
               onClick={handlePostalCodeSearch}
               disabled={searchingPostalCode || !formData.postal_code}
-              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
             >
               {searchingPostalCode ? "検索中..." : "検索"}
-            </button>
+            </Button>
           </div>
         </div>
 

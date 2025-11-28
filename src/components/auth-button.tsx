@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { Tooltip } from "@/components/tooltip";
+import { Button } from "@/components/button";
 
 type AuthButtonProps = {
   eventId: string;
@@ -19,9 +20,9 @@ export function AuthButton({ eventId: _eventId, className, children }: AuthButto
 
   if (status === "loading") {
     return (
-      <button disabled className={className}>
+      <Button disabled className={className}>
         {children}
-      </button>
+      </Button>
     );
   }
 
@@ -32,21 +33,21 @@ export function AuthButton({ eventId: _eventId, className, children }: AuthButto
         disabled={false}
         arrowPosition="right"
       >
-        <button
-          aria-disabled="true"
+        <Button
+          disabled
           onClick={(e) => {
             e.preventDefault();
           }}
-          className={`${className} cursor-not-allowed opacity-50`}
+          className={className}
         >
           {children}
-        </button>
+        </Button>
       </Tooltip>
     );
   }
 
   return (
-    <button
+    <Button
       className={className}
       onClick={() => {
         // TODO: 実際の「気になる」機能を実装
@@ -54,7 +55,7 @@ export function AuthButton({ eventId: _eventId, className, children }: AuthButto
       }}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 

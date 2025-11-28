@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Button } from "./button";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -30,40 +31,40 @@ export function PWAInstallBanner() {
     const userAgent = navigator.userAgent;
     const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
     const isAndroid = /Android/i.test(userAgent);
-    
+
     // Chrome系の判定（Edgeは除外、iOS Chromeも含む）
     const isChrome = /Chrome/i.test(userAgent) && !/Edg/i.test(userAgent) && !/CriOS/i.test(userAgent);
     // iOS Chromeの判定（CriOSはiOS ChromeのUser Agentに含まれる）
     const isIOSChrome = /CriOS/i.test(userAgent);
-    
+
     // Safari系の判定（Chromeが含まれていないSafari、macOS Safari等）
     const isSafari = /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent) && !/Edg/i.test(userAgent) && !/CriOS/i.test(userAgent);
-    
+
     // iOS Chromeの場合はChromeの手順を表示
     if (isIOSChrome || (isIOS && isChrome)) {
       return "chrome";
     }
-    
+
     // iOSでSafariの場合はSafariの手順を表示
     if (isIOS && isSafari) {
       return "safari";
     }
-    
+
     // その他のiOSブラウザはSafariの手順を表示（デフォルト）
     if (isIOS) {
       return "safari";
     }
-    
+
     // AndroidまたはChrome系の場合はChromeの手順を表示
     if (isChrome || isAndroid) {
       return "chrome";
     }
-    
+
     // Safari系の場合はSafariの手順を表示
     if (isSafari) {
       return "safari";
     }
-    
+
     return "other";
   });
 
@@ -137,15 +138,18 @@ export function PWAInstallBanner() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="primary"
+              size="sm"
+              rounded="md"
               onClick={handleInstall}
-              className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-zinc-800"
             >
               追加
-            </button>
-            <button
+            </Button>
+            <Button
+              as="action"
               onClick={handleDismiss}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100 transition"
+              className="h-8 w-8 justify-center rounded-lg text-zinc-600 hover:bg-zinc-100"
               aria-label="閉じる"
             >
               <svg
@@ -161,7 +165,7 @@ export function PWAInstallBanner() {
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -175,8 +179,8 @@ export function PWAInstallBanner() {
                 {browserType === "safari"
                   ? "ホーム画面に追加する方法 (Safari)"
                   : browserType === "chrome"
-                  ? "アプリをインストールする方法 (Chrome)"
-                  : "ホーム画面に追加する方法"}
+                    ? "アプリをインストールする方法 (Chrome)"
+                    : "ホーム画面に追加する方法"}
               </h2>
               <p className="mt-1 text-sm text-zinc-600">
                 アプリのように使うには、以下の手順でホーム画面に追加してください。
@@ -294,12 +298,15 @@ export function PWAInstallBanner() {
             )}
 
             <div className="mt-6 flex gap-3">
-              <button
+              <Button
+                variant="secondary"
+                size="md"
+                rounded="md"
+                fullWidth
                 onClick={() => setShowInstructions(false)}
-                className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
               >
                 閉じる
-              </button>
+              </Button>
             </div>
           </div>
         </div>

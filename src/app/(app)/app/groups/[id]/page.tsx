@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import ConfirmModal from "@/components/confirm-modal";
 import { TransferOwnershipModal } from "@/components/transfer-ownership-modal";
+import { Button } from "@/components/button";
+import { Tabs, Tab } from "@/components/tabs";
 
 type GroupDetail = {
   id: string;
@@ -150,7 +152,7 @@ export default function GroupDetailPage({
       setMessages([...messages, newMessage]);
       setMessageContent("");
       setIsAnnouncement(false);
-      
+
       // スクロールを最下部に移動
       setTimeout(() => {
         const messagesContainer = document.querySelector('[data-messages-container]');
@@ -328,57 +330,58 @@ export default function GroupDetailPage({
             <div className="flex flex-col gap-2">
               {group.isLeader ? (
                 <>
-                  <button
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    rounded="md"
                     onClick={() => setShowDisbandModal(true)}
                     disabled={processing}
-                    className="rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-50 whitespace-nowrap"
+                    className="border-red-300 bg-white text-red-700 hover:bg-red-50 whitespace-nowrap"
                   >
                     解散する
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    rounded="md"
                     onClick={() => setShowTransferModal(true)}
                     disabled={processing}
-                    className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50 whitespace-nowrap"
+                    className="whitespace-nowrap"
                   >
                     オーナー権限譲渡
-                  </button>
+                  </Button>
                 </>
               ) : (
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  rounded="md"
                   onClick={() => setShowLeaveModal(true)}
                   disabled={processing}
-                  className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50 whitespace-nowrap"
+                  className="whitespace-nowrap"
                 >
                   団体を抜ける
-                </button>
+                </Button>
               )}
             </div>
           </div>
         </header>
 
         {/* タブ */}
-        <div className="flex gap-2 border-b border-zinc-200">
-          <button
+        <Tabs>
+          <Tab
+            isActive={activeTab === "info"}
             onClick={() => setActiveTab("info")}
-            className={`px-4 py-2 text-sm font-medium transition ${
-              activeTab === "info"
-                ? "border-b-2 border-zinc-900 text-zinc-900"
-                : "text-zinc-600 hover:text-zinc-900"
-            }`}
           >
             団体情報
-          </button>
-          <button
+          </Tab>
+          <Tab
+            isActive={activeTab === "messages"}
             onClick={() => setActiveTab("messages")}
-            className={`px-4 py-2 text-sm font-medium transition ${
-              activeTab === "messages"
-                ? "border-b-2 border-zinc-900 text-zinc-900"
-                : "text-zinc-600 hover:text-zinc-900"
-            }`}
           >
             団体メッセージ
-          </button>
-        </div>
+          </Tab>
+        </Tabs>
 
         {/* タブコンテンツ */}
         {activeTab === "info" ? (
@@ -454,15 +457,14 @@ export default function GroupDetailPage({
                       className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"}`}
                     >
                       <div
-                        className={`max-w-[75vw] sm:max-w-[75%] rounded-2xl px-4 py-2 break-words ${
-                          isOwnMessage
-                            ? message.isAnnouncement
-                              ? "bg-emerald-500 text-white"
-                              : "bg-zinc-900 text-white"
-                            : message.isAnnouncement
+                        className={`max-w-[75vw] sm:max-w-[75%] rounded-2xl px-4 py-2 break-words ${isOwnMessage
+                          ? message.isAnnouncement
+                            ? "bg-emerald-500 text-white"
+                            : "bg-zinc-900 text-white"
+                          : message.isAnnouncement
                             ? "bg-emerald-50 border border-emerald-200 text-zinc-900"
                             : "bg-zinc-100 text-zinc-900"
-                        }`}
+                          }`}
                       >
                         {message.isAnnouncement && (
                           <p className="text-xs font-medium mb-1 opacity-80">
@@ -470,9 +472,8 @@ export default function GroupDetailPage({
                           </p>
                         )}
                         <p
-                          className={`text-sm whitespace-pre-wrap break-words ${
-                            isOwnMessage ? "text-white" : "text-zinc-700"
-                          }`}
+                          className={`text-sm whitespace-pre-wrap break-words ${isOwnMessage ? "text-white" : "text-zinc-700"
+                            }`}
                         >
                           {message.content}
                         </p>
@@ -527,13 +528,16 @@ export default function GroupDetailPage({
                       }
                     }}
                   />
-                  <button
+                  <Button
+                    variant="primary"
+                    size="md"
+                    rounded="md"
                     onClick={handleSendMessage}
                     disabled={sending || !messageContent.trim()}
-                    className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap self-end"
+                    className="whitespace-nowrap self-end"
                   >
                     {sending ? "送信中..." : "送信"}
-                  </button>
+                  </Button>
                 </div>
                 <div className="flex justify-end">
                   <p className="text-xs text-zinc-500">

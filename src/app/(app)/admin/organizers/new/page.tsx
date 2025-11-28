@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/button";
 
 export default function AdminNewOrganizerPage() {
   const { data: session, status } = useSession();
@@ -185,13 +186,15 @@ export default function AdminNewOrganizerPage() {
         </div>
 
         <div className="flex gap-2">
-          <button
+          <Button
             type="submit"
+            variant="primary"
+            size="md"
+            rounded="md"
             disabled={saving}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
           >
             {saving ? "作成中..." : "アカウントを作成"}
-          </button>
+          </Button>
           <Link
             href="/admin"
             className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"

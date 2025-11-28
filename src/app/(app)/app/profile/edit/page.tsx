@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { Button } from "@/components/button";
 
 export default function ProfileEditPage() {
     const router = useRouter();
@@ -146,19 +147,24 @@ export default function ProfileEditPage() {
                         </div>
 
                         <div className="flex gap-3">
-                            <Link
+                            <Button
+                                as="link"
                                 href="/app/mypage"
-                                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                                variant="secondary"
+                                size="md"
+                                rounded="md"
                             >
                                 キャンセル
-                            </Link>
-                            <button
+                            </Button>
+                            <Button
                                 type="submit"
+                                variant="primary"
+                                size="md"
+                                rounded="md"
                                 disabled={saving || !displayName.trim()}
-                                className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {saving ? "保存中..." : "保存"}
-                            </button>
+                            </Button>
                         </div>
                     </form>
                 </div>

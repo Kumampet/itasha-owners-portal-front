@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/button";
 
 type Event = {
   id: string;
@@ -137,14 +138,13 @@ export default function AdminEventsPage() {
           <div className="flex flex-wrap gap-2 shrink-0">
             {(["ALL", "DRAFT", "PENDING", "APPROVED", "REJECTED"] as FilterStatus[]).map(
               (status) => (
-                <button
+                <Button
                   key={status}
+                  variant={filterStatus === status ? "primary" : "secondary"}
+                  size="sm"
+                  rounded="md"
                   onClick={() => setFilterStatus(status)}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition whitespace-nowrap ${
-                    filterStatus === status
-                      ? "bg-zinc-900 text-white"
-                      : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                  }`}
+                  className={filterStatus === status ? "whitespace-nowrap" : "bg-zinc-100 hover:bg-zinc-200 whitespace-nowrap"}
                 >
                   {status === "ALL"
                     ? "すべて"
@@ -155,7 +155,7 @@ export default function AdminEventsPage() {
                     : status === "APPROVED"
                     ? "承認済み"
                     : "却下"}
-                </button>
+                </Button>
               )
             )}
           </div>
@@ -174,14 +174,16 @@ export default function AdminEventsPage() {
               <option value="event_date">開催日</option>
               <option value="name">イベント名</option>
             </select>
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
+              rounded="md"
               onClick={() =>
                 setSortOrder(sortOrder === "asc" ? "desc" : "asc")
               }
-              className="rounded-md border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50"
             >
               {sortOrder === "asc" ? "↑" : "↓"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

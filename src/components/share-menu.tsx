@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { Button } from "./button";
 
 type ShareMenuProps = {
   reminderId: string;
@@ -65,9 +66,12 @@ export function ShareMenu({
 
   return (
     <div className="relative" ref={menuRef}>
-      <button
+      <Button
+        variant="secondary"
+        size="sm"
+        rounded="full"
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white p-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50 sm:text-sm"
+        className="p-1.5 sm:text-sm"
         title="メニュー"
       >
         <svg
@@ -83,7 +87,7 @@ export function ShareMenu({
             d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
           />
         </svg>
-      </button>
+      </Button>
 
       {isOpen && (
         <div className="absolute right-0 top-full z-10 mt-1 w-48 rounded-md border border-zinc-200 bg-white shadow-lg">
@@ -128,9 +132,10 @@ export function ShareMenu({
               </svg>
               <span>編集</span>
             </Link>
-            <button
+            <Button
+              as="action"
               onClick={handleDownloadIcal}
-              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
+              className="text-zinc-700 hover:bg-zinc-50"
             >
               <svg
                 className="h-4 w-4"
@@ -146,13 +151,14 @@ export function ShareMenu({
                 />
               </svg>
               <span>カレンダーに追加</span>
-            </button>
-            <button
+            </Button>
+            <Button
+              as="action"
               onClick={() => {
                 setIsOpen(false);
                 onDeleteClick();
               }}
-              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-700 transition hover:bg-red-50"
+              className="text-red-700 hover:bg-red-50"
             >
               <svg
                 className="h-4 w-4"
@@ -168,7 +174,7 @@ export function ShareMenu({
                 />
               </svg>
               <span>削除</span>
-            </button>
+            </Button>
           </div>
         </div>
       )}

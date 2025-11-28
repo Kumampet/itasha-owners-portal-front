@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/button";
 
 type User = {
   id: string;
@@ -156,17 +157,16 @@ export default function AdminUsersPage() {
           {/* ロールフィルター */}
           <div className="flex gap-2">
             {(["ALL", "USER", "ADMIN", "ORGANIZER"] as const).map((role) => (
-              <button
+              <Button
                 key={role}
+                variant={filterRole === role ? "primary" : "secondary"}
+                size="sm"
+                rounded="md"
                 onClick={() => setFilterRole(role)}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                  filterRole === role
-                    ? "bg-zinc-900 text-white"
-                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                }`}
+                className={filterRole === role ? "" : "bg-zinc-100 hover:bg-zinc-200"}
               >
                 {role === "ALL" ? "すべて" : role === "USER" ? "ユーザー" : role === "ADMIN" ? "管理者" : "主催者"}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -184,14 +184,16 @@ export default function AdminUsersPage() {
               <option value="email">メールアドレス</option>
               <option value="role">権限</option>
             </select>
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
+              rounded="md"
               onClick={() =>
                 setSortOrder(sortOrder === "asc" ? "desc" : "asc")
               }
-              className="rounded-md border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50"
             >
               {sortOrder === "asc" ? "↑" : "↓"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -256,43 +258,44 @@ export default function AdminUsersPage() {
                     </select>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <button
+                    <Button
+                      variant={user.role === "ORGANIZER" ? "success" : "secondary"}
+                      size="sm"
+                      rounded="md"
                       onClick={() =>
                         handleToggleOrganizer(user.id, user.role)
                       }
-                      className={`rounded-md px-2 py-1 text-xs font-medium transition ${
-                        user.role === "ORGANIZER"
-                          ? "bg-green-100 text-green-700 hover:bg-green-200"
-                          : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                      }`}
+                      className={user.role === "ORGANIZER" ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-zinc-100 hover:bg-zinc-200"}
                     >
                       {user.role === "ORGANIZER" ? "有効" : "無効"}
-                    </button>
+                    </Button>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <button
+                    <Button
+                      variant={user.is_banned ? "danger" : "secondary"}
+                      size="sm"
+                      rounded="md"
                       onClick={() => handleToggleBan(user.id, user.is_banned)}
-                      className={`rounded-md px-2 py-1 text-xs font-medium transition ${
-                        user.is_banned
-                          ? "bg-red-100 text-red-700 hover:bg-red-200"
-                          : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                      }`}
+                      className={user.is_banned ? "bg-red-100 text-red-700 hover:bg-red-200" : "bg-zinc-100 hover:bg-zinc-200"}
                     >
                       {user.is_banned ? "BAN中" : "正常"}
-                    </button>
+                    </Button>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600">
                     {formatDate(user.created_at)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <button
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      rounded="md"
                       onClick={() =>
                         handleToggleBan(user.id, user.is_banned)
                       }
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 border-0 bg-transparent p-0"
                     >
                       {user.is_banned ? "BAN解除" : "BAN"}
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}

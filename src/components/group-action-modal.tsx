@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "./button";
 
 type GroupActionModalProps = {
   isOpen: boolean;
@@ -68,24 +69,33 @@ export function GroupActionModal({
               新規で団体を作成するか、既存の団体に加入してください。
             </p>
             <div className="flex flex-col gap-3">
-              <button
+              <Button
+                variant="primary"
+                size="md"
+                rounded="md"
+                fullWidth
                 onClick={() => setAction("create")}
-                className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
               >
                 新規で団体を組む
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                rounded="md"
+                fullWidth
                 onClick={() => setAction("join")}
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
               >
                 既存の団体に加入する
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                rounded="md"
+                fullWidth
                 onClick={onClose}
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
               >
                 キャンセル
-              </button>
+              </Button>
             </div>
           </>
         ) : action === "create" ? (
@@ -97,18 +107,23 @@ export function GroupActionModal({
               あなたが団体オーナーとなり、団体コードが自動で発行されます。
             </p>
             <div className="flex gap-2">
-              <button
+              <Button
+                variant="primary"
+                size="md"
+                rounded="md"
+                className="flex-1"
                 onClick={handleCreate}
-                className="flex-1 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
               >
                 作成する
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                rounded="md"
                 onClick={() => setAction(null)}
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
               >
                 戻る
-              </button>
+              </Button>
             </div>
           </>
         ) : (
@@ -128,22 +143,27 @@ export function GroupActionModal({
               maxLength={8}
             />
             <div className="flex gap-2">
-              <button
+              <Button
+                variant="primary"
+                size="md"
+                rounded="md"
+                className="flex-1"
                 onClick={handleJoin}
                 disabled={groupCode.length !== 8}
-                className="flex-1 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 加入する
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                rounded="md"
                 onClick={() => {
                   setAction(null);
                   setGroupCode("");
                 }}
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
               >
                 戻る
-              </button>
+              </Button>
             </div>
           </>
         )}
