@@ -104,7 +104,6 @@ export default async function EventDetailPage({
       name: true,
       description: true,
       event_date: true,
-      // @ts-expect-error - Prisma型が更新されていない可能性があるが、スキーマには存在する
       event_end_date: true,
       is_multi_day: true,
       approval_status: true,

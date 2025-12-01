@@ -18,7 +18,6 @@ const getCachedEvents = unstable_cache(
         name: true,
         description: true, // 詳細情報も取得
         event_date: true,
-        // @ts-expect-error - Prisma型が更新されていない可能性があるが、スキーマには存在する
         event_end_date: true,
         is_multi_day: true,
         prefecture: true,

@@ -156,7 +156,7 @@ export async function POST(request: Request) {
           city: body.city || null,
           street_address: body.street_address || null,
           venue_name: body.venue_name || null,
-          keywords: keywords.length > 0 ? keywords : null,
+          keywords: keywords.length > 0 ? keywords : undefined,
           official_urls: validUrls, // 空文字列を除外したURL配列
           image_url: body.image_url || null,
           approval_status: body.approval_status || "DRAFT",

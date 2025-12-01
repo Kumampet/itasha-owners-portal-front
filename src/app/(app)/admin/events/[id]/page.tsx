@@ -211,7 +211,7 @@ export default function AdminEventDetailPage({
         body: JSON.stringify({
           ...formData,
           organizer_email: organizerEmail,
-          tags: tags,
+          tags: event?.tags.map(t => t.tag.id) || [],
           approval_status: "PENDING",
         }),
       });

@@ -138,6 +138,7 @@ function generateEvents(count: number) {
       city: city,
       street_address: Math.random() > 0.2 ? randomStreetAddress() : null,
       venue_name: Math.random() > 0.3 ? venueName : null,
+      official_urls: [],
       approval_status: randomElement(["DRAFT", "PENDING", "APPROVED", "REJECTED"]),
       organizer_email: `organizer${i}@example.com`,
     });
