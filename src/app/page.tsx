@@ -118,29 +118,9 @@ export default function Home() {
             </h2>
             <p className="mt-2 text-xs leading-relaxed text-zinc-600 sm:text-sm">
               管理者に申請することで、イベント主催者用アカウントを作成できます。
-              未公開のイベント情報も、公開管理を時限的に操作できます。
+              一部の未公開のイベント情報も、公開管理を時限的に操作できます。
             </p>
           </div>
-        </section>
-
-        <section className="space-y-4 rounded-3xl border border-dashed border-zinc-300 bg-white p-5 sm:p-7">
-          <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
-            今後のロードマップ
-          </h2>
-          <ul className="space-y-2 text-xs text-zinc-700 sm:text-sm">
-            <li>
-              <span className="font-semibold">Phase 1:</span>{" "}
-              PWA/リマインダー、管理者向けCMS、マイページの提供
-            </li>
-            <li>
-              <span className="font-semibold">Phase 2:</span>{" "}
-              団体機能・検索機能・公開プロフィール・更新検知ボット
-            </li>
-            <li>
-              <span className="font-semibold">Phase 3–4:</span>{" "}
-              オーガナイザー向け機能とネイティブアプリ化の検討
-            </li>
-          </ul>
         </section>
       </section>
     </main>
