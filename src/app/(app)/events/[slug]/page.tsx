@@ -182,7 +182,7 @@ export default async function EventDetailPage({
           )}
           {event.keywords && Array.isArray(event.keywords) && event.keywords.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {event.keywords.map((keyword: string, idx: number) => (
+              {(event.keywords as string[]).map((keyword: string, idx: number) => (
                 <span
                   key={idx}
                   className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700"
@@ -278,7 +278,7 @@ export default async function EventDetailPage({
             )}
             {event.official_urls && Array.isArray(event.official_urls) && event.official_urls.length > 0 && (
               <div className="space-y-2">
-                {event.official_urls.map((url: string, idx: number) => (
+                {(event.official_urls as string[]).map((url: string, idx: number) => (
                   <Link
                     key={idx}
                     href={url}
@@ -287,7 +287,7 @@ export default async function EventDetailPage({
                     rel="noopener noreferrer"
                   >
                     <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                      公式サイト{event.official_urls.length > 1 ? ` ${idx + 1}` : ""}
+                      公式サイト{(event.official_urls as string[]).length > 1 ? ` ${idx + 1}` : ""}
                     </p>
                     <p className="mt-1 break-all text-sm text-zinc-800">
                       {url}
