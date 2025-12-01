@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -58,6 +59,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen`}
       >
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5239358801885177"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         <Providers>
           <div className="min-h-screen flex flex-col">
             {children}
