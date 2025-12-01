@@ -85,9 +85,11 @@ export async function GET() {
     const now = new Date();
 
     // 公開日時が未来の場合は該当日時を非公開にする
-    const filteredEvents = events.map((event: any) => ({
+    type EventType = (typeof events)[number];
+    type EntryType = NonNullable<EventType["entries"]>[number];
+    const filteredEvents = events.map((event: EventType) => ({
       ...event,
-      entries: (event.entries || []).map((entry: any) => {
+      entries: (event.entries || []).map((entry: EntryType) => {
         const entryStartAt =
           entry.entry_start_public_at &&
             new Date(entry.entry_start_public_at) > now

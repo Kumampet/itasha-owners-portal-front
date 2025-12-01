@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { EventDetailActions } from "@/components/event-detail-actions";
@@ -145,10 +146,10 @@ export default async function EventDetailPage({
 
   const formatted = formatDateRange(
     event.event_date,
-    (event as any).event_end_date,
-    (event as any).is_multi_day,
+    event.event_end_date,
+    event.is_multi_day,
   );
-  const entryInfo = formatEntryInfo((event as any).entries || []);
+  const entryInfo = formatEntryInfo(event.entries || []);
 
   return (
     <main className="flex-1 px-4 pb-20 pt-6 sm:pb-16 sm:pt-10">
@@ -163,20 +164,25 @@ export default async function EventDetailPage({
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             {event.name}
           </h1>
-          {(event as any).image_url && (
-            <img
-              src={(event as any).image_url}
-              alt={event.name}
-              className="w-full rounded-lg object-cover"
-              style={{ maxHeight: "400px" }}
-            />
+          {event.image_url && (
+            <div className="relative w-full" style={{ maxHeight: "400px" }}>
+              <Image
+                src={event.image_url}
+                alt={event.name}
+                width={1200}
+                height={400}
+                className="w-full rounded-lg object-cover"
+                style={{ maxHeight: "400px" }}
+                unoptimized
+              />
+            </div>
           )}
           {event.description && (
             <p className="text-sm text-zinc-600 sm:text-base">{event.description}</p>
           )}
-          {(event as any).keywords && Array.isArray((event as any).keywords) && (event as any).keywords.length > 0 && (
+          {event.keywords && Array.isArray(event.keywords) && event.keywords.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {(event as any).keywords.map((keyword: string, idx: number) => (
+              {event.keywords.map((keyword: string, idx: number) => (
                 <span
                   key={idx}
                   className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700"
@@ -186,9 +192,9 @@ export default async function EventDetailPage({
               ))}
             </div>
           )}
-          {(event as any).tags && (event as any).tags.length > 0 && (
+          {event.tags && event.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {(event as any).tags.map((eventTag: { tag: { name: string } }, idx: number) => (
+              {event.tags.map((eventTag: { tag: { name: string } }, idx: number) => (
                 <span
                   key={idx}
                   className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700"
@@ -270,9 +276,9 @@ export default async function EventDetailPage({
                 </p>
               </div>
             )}
-            {(event as any).official_urls && Array.isArray((event as any).official_urls) && (event as any).official_urls.length > 0 && (
+            {event.official_urls && Array.isArray(event.official_urls) && event.official_urls.length > 0 && (
               <div className="space-y-2">
-                {(event as any).official_urls.map((url: string, idx: number) => (
+                {event.official_urls.map((url: string, idx: number) => (
                   <Link
                     key={idx}
                     href={url}
@@ -281,7 +287,7 @@ export default async function EventDetailPage({
                     rel="noopener noreferrer"
                   >
                     <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                      公式サイト{(event as any).official_urls.length > 1 ? ` ${idx + 1}` : ""}
+                      公式サイト{event.official_urls.length > 1 ? ` ${idx + 1}` : ""}
                     </p>
                     <p className="mt-1 break-all text-sm text-zinc-800">
                       {url}

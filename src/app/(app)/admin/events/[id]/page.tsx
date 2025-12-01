@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 import EventForm, { EventFormData } from "@/components/event-form";
 import ConfirmModal from "@/components/confirm-modal";
@@ -103,7 +104,7 @@ export default function AdminEventDetailPage({
       setEvent(data);
       
       // エントリー情報をフォーマット
-      const formattedEntries = (data.entries || []).map((entry: any) => ({
+      const formattedEntries = (data.entries || []).map((entry: Event["entries"][number]) => ({
         entry_number: entry.entry_number,
         entry_start_at: entry.entry_start_at
           ? new Date(entry.entry_start_at).toISOString().slice(0, 16)
@@ -476,12 +477,15 @@ export default function AdminEventDetailPage({
           </div>
 
           {event.image_url && (
-            <div>
-              <img
+            <div className="relative w-full" style={{ maxHeight: "300px" }}>
+              <Image
                 src={event.image_url}
                 alt={event.name}
+                width={800}
+                height={300}
                 className="w-full rounded-md object-cover"
                 style={{ maxHeight: "300px" }}
+                unoptimized
               />
             </div>
           )}

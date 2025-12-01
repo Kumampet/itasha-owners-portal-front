@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { Button } from "./button";
 import { DateTimeInput } from "./date-time-input";
 
@@ -461,13 +462,16 @@ export default function EventForm({
         </div>
         {formData.image_url && (
           <div className="mt-2 relative">
-            <img
+            <Image
               src={formData.image_url}
               alt="プレビュー"
+              width={800}
+              height={192}
               className="max-h-48 w-full rounded-md object-cover"
               onError={(e) => {
                 e.currentTarget.style.display = "none";
               }}
+              unoptimized
             />
             <button
               type="button"
