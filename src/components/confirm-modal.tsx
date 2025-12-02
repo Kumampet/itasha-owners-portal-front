@@ -6,11 +6,13 @@ import { Button } from "./button";
 interface ConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm?: () => void;
   title: string;
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  variant?: "success" | "error" | "info";
+  showCancel?: boolean;
 }
 
 export default function ConfirmModal({
@@ -21,7 +23,26 @@ export default function ConfirmModal({
   message,
   confirmLabel = "はい",
   cancelLabel = "いいえ",
+  variant = "info",
+  showCancel = true,
 }: ConfirmModalProps) {
+  const variantColors = {
+    success: "text-green-600",
+    error: "text-red-600",
+    info: "text-zinc-600",
+  };
+
+  // onConfirmが指定されていない、またはshowCancelがfalseの場合はメッセージ表示モード（OKボタンのみ）
+  const isMessageMode = !onConfirm || !showCancel;
+
+  const handleConfirm = () => {
+    if (onConfirm) {
+      onConfirm();
+    } else {
+      onClose();
+    }
+  };
+
   return (
     <ModalBase
       isOpen={isOpen}
@@ -29,28 +50,30 @@ export default function ConfirmModal({
       title={title}
       footer={
         <>
-          <Button
-            variant="secondary"
-            size="md"
-            rounded="md"
-            onClick={onClose}
-          >
-            {cancelLabel}
-          </Button>
+          {showCancel && (
+            <Button
+              variant="secondary"
+              size="md"
+              rounded="md"
+              onClick={onClose}
+            >
+              {cancelLabel}
+            </Button>
+          )}
           <Button
             variant="primary"
             size="md"
             rounded="md"
-            onClick={onConfirm}
+            onClick={handleConfirm}
           >
-            {confirmLabel}
+            {isMessageMode ? "OK" : confirmLabel}
           </Button>
         </>
       }
     >
       <div className="space-y-2">
         {message.split("\n").map((line, index) => (
-          <p key={index} className="text-sm text-zinc-600">
+          <p key={index} className={`text-sm ${variantColors[variant]}`}>
             {line}
           </p>
         ))}

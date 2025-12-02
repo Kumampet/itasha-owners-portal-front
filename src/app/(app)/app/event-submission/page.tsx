@@ -1,23 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/button";
 import { Accordion, AccordionItem } from "@/components/accordion";
+import ConfirmModal from "@/components/confirm-modal";
+
+const initialFormData = {
+  name: "",
+  original_url: "",
+  event_date: "",
+  description: "",
+  theme: "",
+  entry_start_at: "",
+  payment_due_at: "",
+};
 
 export default function EventSubmissionPage() {
-  const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    original_url: "",
-    event_date: "",
-    description: "",
-    theme: "",
-    entry_start_at: "",
-    payment_due_at: "",
-  });
+  const [formData, setFormData] = useState(initialFormData);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,12 +47,15 @@ export default function EventSubmissionPage() {
         throw new Error(errorData.error || "Failed to submit event");
       }
 
-      alert("イベント掲載依頼を送信しました。ありがとうございます。");
-      router.push("/app/mypage");
+      // 成功時：フォームをクリア、成功モーダルを表示
+      setFormData(initialFormData);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("Failed to submit event:", error);
-      const errorMessage = error instanceof Error ? error.message : "イベント掲載依頼の送信に失敗しました";
-      alert(errorMessage);
+      const errorMsg = error instanceof Error ? error.message : "イベント掲載依頼の送信に失敗しました";
+      setErrorMessage(errorMsg);
+      setShowErrorModal(true);
+      // エラー時は入力内容を保持したままフォーム画面にとどまる
     } finally {
       setSubmitting(false);
     }
@@ -217,6 +224,26 @@ export default function EventSubmissionPage() {
           </div>
         </form>
       </section>
+
+      {/* 成功モーダル */}
+      <ConfirmModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="送信完了"
+        message="イベント掲載依頼を送信しました。ありがとうございます。"
+        variant="success"
+        showCancel={false}
+      />
+
+      {/* エラーモーダル */}
+      <ConfirmModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="送信失敗"
+        message={errorMessage}
+        variant="error"
+        showCancel={false}
+      />
     </main>
   );
 }

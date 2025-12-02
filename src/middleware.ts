@@ -25,6 +25,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // イベント掲載依頼フォームは認証不要（未ログインでもアクセス可能）
+  if (pathname === "/app/event-submission") {
+    return NextResponse.next();
+  }
+
   // 認証が必要なパスでのみauth()を呼び出す
   let session = null;
   try {
@@ -103,8 +108,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/app/mypage", request.url));
   }
 
-  // ログインページ（/app/auth）は認証が必要なパスではない（ログイン画面なので）
-  const isDashboard = pathname.startsWith("/app/") && pathname !== "/app/auth";
+  // ログインページ（/app/auth）とイベント掲載依頼フォーム（/app/event-submission）は認証が必要なパスではない
+  const isDashboard = pathname.startsWith("/app/") && pathname !== "/app/auth" && pathname !== "/app/event-submission";
 
   // 認証が必要なパスにアクセスしている場合
   const isProtectedPath = protectedPaths.some((path) =>

@@ -62,8 +62,8 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
   const activeKey = resolveActiveKey(pathname);
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    // イベントページとお問い合わせフォームは常にアクセス可能
-    if (href === "/events" || href === "/app/contact") {
+    // イベントページ、お問い合わせフォーム、イベント掲載依頼フォームは常にアクセス可能
+    if (href === "/events" || href === "/app/contact" || href === "/app/event-submission") {
       onClose();
       return;
     }
@@ -71,7 +71,6 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
     // 未ログインで保護されたページにアクセスしようとした場合
     const protectedPaths = [
       "/app/mypage",
-      "/app/event-submission",
       "/app/watchlist",
       "/app/reminder",
       "/app/groups",
