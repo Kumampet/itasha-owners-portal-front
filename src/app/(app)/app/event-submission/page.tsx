@@ -89,7 +89,7 @@ export default function EventSubmissionPage() {
                 setFormData({ ...formData, name: e.target.value })
               }
               className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-              placeholder="例: 痛車天国2026"
+              placeholder="例: 痛車ヘブン夏"
               required
             />
           </div>

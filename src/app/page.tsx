@@ -60,7 +60,7 @@ export default function Home() {
                   Today
                 </p>
                 <p className="mt-1 text-sm font-semibold">
-                  痛車天国 in お台場 2025
+                  痛車ヘブン in お台場 2025
                 </p>
                 <p className="text-[11px] text-zinc-300">
                   エントリー支払期限まで あと 3 日
@@ -74,7 +74,7 @@ export default function Home() {
                   直近のリマインダー
                 </p>
                 <ul className="mt-1 space-y-1 text-[11px] text-zinc-700">
-                  <li>・12/01 痛Gふぇすた – エントリー開始</li>
+                  <li>・12/01 痛ふぇす – エントリー開始</li>
                   <li>・12/05 痛車ミーティング – 併せメンバー確定〆切</li>
                   <li>・12/10 イベント参加費支払期限</li>
                 </ul>
