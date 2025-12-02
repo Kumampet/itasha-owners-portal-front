@@ -55,9 +55,9 @@ export function ShareMenu({
       a.href = url;
       a.download = `${eventName}_${reminderLabel}.ics`;
       try {
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
         // 親要素の存在を確認してから削除
         const parentNode = a.parentNode;
         if (parentNode) {
