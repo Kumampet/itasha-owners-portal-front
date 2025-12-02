@@ -231,7 +231,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       )}
 
       {/* サイドバー（PC版 - lg以上で表示） */}
-      <aside className="hidden w-64 flex-shrink-0 border-r border-zinc-200 bg-white lg:block">
+      <aside className="hidden w-64 flex-shrink-0 border-r border-zinc-200 bg-white lg:block lg:h-screen lg:sticky lg:top-0">
         <SidebarContent pathname={pathname} session={session} />
       </aside>
 
