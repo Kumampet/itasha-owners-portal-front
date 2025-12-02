@@ -57,16 +57,44 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 Amplifyコンソールの「Build details」から各デプロイ状況を確認できます。
 
+### ブランチ管理
+
+#### 本番環境（mainブランチ）
+- `main`ブランチへのpushで自動デプロイされます
+- 本番環境のURLに反映されます
+
+#### ステージング環境（stagingブランチ）
+- `staging`ブランチをAmplifyのstaging環境として接続するには、AWS Amplifyコンソールでの設定が必要です
+
+**設定手順：**
+1. [AWS Amplifyコンソール](https://console.aws.amazon.com/amplify/)にアクセス
+2. 対象のアプリを選択
+3. 左メニューから「**App settings**」→「**Branch management**」を選択
+4. 「**Add branch**」ボタンをクリック
+5. ブランチ名に「`staging`」を入力
+6. 「**Save**」をクリック
+7. 作成された`staging`ブランチの行で「**Actions**」→「**Manage app**」をクリック
+8. 左メニューから「**App settings**」→「**Environment variables**」を選択
+9. `main`ブランチと同じ環境変数を設定（必要に応じてstaging用の値を設定）
+
+**注意：**
+- `staging`ブランチへのpushで自動的にstaging環境にデプロイされます
+- 環境変数はブランチごとに個別に設定できます（staging用のデータベースURLなど）
+
 ### Amplifyでの環境変数設定
 
 Amplifyコンソールで以下の環境変数を設定してください：
 
 - `DATABASE_URL`
 - `NEXTAUTH_SECRET`
+- `NEXTAUTH_URL`（ブランチごとに異なるURLを設定可能）
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `TWITTER_CLIENT_ID`
 - `TWITTER_CLIENT_SECRET`
+- `APP_AWS_REGION`
+- `APP_AWS_ACCESS_KEY_ID`
+- `APP_AWS_SECRET_ACCESS_KEY`
 
 設定場所: Amplify Console → App settings → Environment variables
 

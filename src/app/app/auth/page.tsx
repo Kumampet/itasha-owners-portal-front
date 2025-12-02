@@ -60,11 +60,11 @@ function AuthForm() {
         <div className="text-center text-xs text-zinc-500">
           <p>
             ログインすることで、
-            <Link href="/terms" className="underline hover:text-zinc-700">
+            <Link href="/term" className="underline hover:text-zinc-700">
               利用規約
             </Link>
             および
-            <Link href="/privacy" className="underline hover:text-zinc-700">
+            <Link href="/privacy-policy" className="underline hover:text-zinc-700">
               プライバシーポリシー
             </Link>
             に同意したものとみなされます。
