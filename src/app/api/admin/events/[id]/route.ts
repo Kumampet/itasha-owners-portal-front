@@ -76,7 +76,9 @@ export async function GET(
             entry_start_at: true,
             entry_start_public_at: true,
             entry_deadline_at: true,
+            payment_due_type: true,
             payment_due_at: true,
+            payment_due_days_after_entry: true,
             payment_due_public_at: true,
           },
           orderBy: {
@@ -210,7 +212,13 @@ export async function PATCH(
                 ? new Date(entry.entry_start_public_at)
                 : null,
               entry_deadline_at: new Date(entry.entry_deadline_at),
-              payment_due_at: new Date(entry.payment_due_at),
+              payment_due_type: entry.payment_due_type || "ABSOLUTE",
+              payment_due_at: entry.payment_due_type === "ABSOLUTE" && entry.payment_due_at
+                ? new Date(entry.payment_due_at)
+                : null,
+              payment_due_days_after_entry: entry.payment_due_type === "RELATIVE" && entry.payment_due_days_after_entry
+                ? entry.payment_due_days_after_entry
+                : null,
               payment_due_public_at: entry.payment_due_public_at
                 ? new Date(entry.payment_due_public_at)
                 : null,

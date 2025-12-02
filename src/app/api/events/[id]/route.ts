@@ -39,7 +39,9 @@ const getCachedEvent = (id: string) =>
               entry_start_at: true,
               entry_start_public_at: true,
               entry_deadline_at: true,
+              payment_due_type: true,
               payment_due_at: true,
+              payment_due_days_after_entry: true,
               payment_due_public_at: true,
             },
             orderBy: {

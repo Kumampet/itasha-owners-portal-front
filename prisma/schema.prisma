@@ -177,8 +177,14 @@ model EventEntry {
   // エントリー締切日（必須、エントリー開始日公開日時と同時公開）
   entry_deadline_at         DateTime
   
-  // 支払期限日時（必須）
-  payment_due_at            DateTime
+  // 支払期限タイプ（ABSOLUTE: 絶対値, RELATIVE: エントリー申し込みからn日以内）
+  payment_due_type          String       @default("ABSOLUTE") // "ABSOLUTE" | "RELATIVE"
+  
+  // 支払期限日時（絶対値の場合、payment_due_typeがABSOLUTEの時は必須）
+  payment_due_at            DateTime?
+  
+  // 支払期限日数（相対値の場合、エントリー申し込みからn日以内、payment_due_typeがRELATIVEの時は必須）
+  payment_due_days_after_entry Int?
   
   // 支払期限日時公開日時（任意、未入力時即時公開）
   payment_due_public_at     DateTime?

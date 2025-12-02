@@ -31,16 +31,18 @@ function AdminNewEventPageContent() {
     organizer_email: "",
     image_url: "",
     official_urls: [""],
-    entries: [
-      {
-        entry_number: 1,
-        entry_start_at: "",
-        entry_start_public_at: "",
-        entry_deadline_at: "",
-        payment_due_at: "",
-        payment_due_public_at: "",
-      },
-    ],
+        entries: [
+          {
+            entry_number: 1,
+            entry_start_at: "",
+            entry_start_public_at: "",
+            entry_deadline_at: "",
+            payment_due_type: "ABSOLUTE",
+            payment_due_at: "",
+            payment_due_days_after_entry: null,
+            payment_due_public_at: "",
+          },
+        ],
   });
 
       // クエリパラメータからイベント掲載依頼フォームの情報を取得してフォームに自動入力
@@ -68,7 +70,9 @@ function AdminNewEventPageContent() {
             entry_start_at: entry_start_at ? new Date(entry_start_at).toISOString().slice(0, 16) : "",
             entry_start_public_at: "",
             entry_deadline_at: "",
+            payment_due_type: "ABSOLUTE",
             payment_due_at: payment_due_at ? new Date(payment_due_at).toISOString().slice(0, 16) : "",
+            payment_due_days_after_entry: null,
             payment_due_public_at: "",
           },
         ],

@@ -12,7 +12,9 @@ export type EventEntryData = {
   entry_start_at: string;
   entry_start_public_at: string;
   entry_deadline_at: string;
+  payment_due_type: "ABSOLUTE" | "RELATIVE";
   payment_due_at: string;
+  payment_due_days_after_entry: number | null;
   payment_due_public_at: string;
 };
 
@@ -115,7 +117,9 @@ export default function EventForm({
           entry_start_at: "",
           entry_start_public_at: "",
           entry_deadline_at: "",
+          payment_due_type: "ABSOLUTE",
           payment_due_at: "",
+          payment_due_days_after_entry: null,
           payment_due_public_at: "",
         },
       ],
@@ -142,7 +146,7 @@ export default function EventForm({
   const handleEntryChange = (
     entryNumber: number,
     field: keyof EventEntryData,
-    value: string
+    value: string | number | null
   ) => {
     onFormDataChange({
       ...formData,
@@ -630,27 +634,98 @@ export default function EventForm({
                 </div>
               </div>
 
-              {/* 支払期限日時と支払期限日時公開日時（2列グリッド） */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-medium text-zinc-700">
-                    支払期限日時 *
-                  </label>
-                  <div className="mt-1">
-                    <DateTimeInput
-                      type="datetime-local"
-                      value={entry.payment_due_at}
-                      onChange={(value) =>
+              {/* 支払期限タイプ選択 */}
+              <div>
+                <label className="block text-xs font-medium text-zinc-700 mb-2">
+                  支払期限の設定方法 *
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name={`payment_due_type_${entry.entry_number}`}
+                      value="ABSOLUTE"
+                      checked={entry.payment_due_type === "ABSOLUTE"}
+                      onChange={(e) =>
                         handleEntryChange(
                           entry.entry_number,
-                          "payment_due_at",
-                          value
+                          "payment_due_type",
+                          e.target.value
                         )
                       }
-                      required
+                      className="h-4 w-4 border-zinc-300 text-emerald-600 focus:ring-emerald-500"
                     />
-                  </div>
+                    <span className="ml-2 text-xs text-zinc-700">日付の絶対値</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name={`payment_due_type_${entry.entry_number}`}
+                      value="RELATIVE"
+                      checked={entry.payment_due_type === "RELATIVE"}
+                      onChange={(e) =>
+                        handleEntryChange(
+                          entry.entry_number,
+                          "payment_due_type",
+                          e.target.value
+                        )
+                      }
+                      className="h-4 w-4 border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span className="ml-2 text-xs text-zinc-700">エントリー申し込みからn日以内</span>
+                  </label>
                 </div>
+              </div>
+
+              {/* 支払期限日時と支払期限日時公開日時（2列グリッド） */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {entry.payment_due_type === "ABSOLUTE" ? (
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-700">
+                      支払期限日時 *
+                    </label>
+                    <div className="mt-1">
+                      <DateTimeInput
+                        type="datetime-local"
+                        value={entry.payment_due_at}
+                        onChange={(value) =>
+                          handleEntryChange(
+                            entry.entry_number,
+                            "payment_due_at",
+                            value
+                          )
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-700">
+                      エントリー申し込みから何日以内 *
+                    </label>
+                    <div className="mt-1">
+                      <input
+                        type="number"
+                        min="1"
+                        value={entry.payment_due_days_after_entry || ""}
+                        onChange={(e) =>
+                          handleEntryChange(
+                            entry.entry_number,
+                            "payment_due_days_after_entry",
+                            e.target.value ? parseInt(e.target.value, 10) : null
+                          )
+                        }
+                        placeholder="例: 7"
+                        className="block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                        required
+                      />
+                      <p className="mt-1 text-xs text-zinc-500">
+                        エントリー申し込み日から指定した日数以内に支払いが必要です
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-medium text-zinc-700">

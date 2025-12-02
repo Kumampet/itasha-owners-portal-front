@@ -36,7 +36,9 @@ type Event = {
     entry_start_at: string;
     entry_start_public_at: string | null;
     entry_deadline_at: string;
-    payment_due_at: string;
+    payment_due_type: string;
+    payment_due_at: string | null;
+    payment_due_days_after_entry: number | null;
     payment_due_public_at: string | null;
   }>;
   tags: Array<{
@@ -115,9 +117,11 @@ export default function AdminEventDetailPage({
         entry_deadline_at: entry.entry_deadline_at
           ? new Date(entry.entry_deadline_at).toISOString().slice(0, 16)
           : "",
+        payment_due_type: entry.payment_due_type || "ABSOLUTE",
         payment_due_at: entry.payment_due_at
           ? new Date(entry.payment_due_at).toISOString().slice(0, 16)
           : "",
+        payment_due_days_after_entry: entry.payment_due_days_after_entry || null,
         payment_due_public_at: entry.payment_due_public_at
           ? new Date(entry.payment_due_public_at).toISOString().slice(0, 16)
           : "",
@@ -148,7 +152,9 @@ export default function AdminEventDetailPage({
           entry_start_at: "",
           entry_start_public_at: "",
           entry_deadline_at: "",
+          payment_due_type: "ABSOLUTE",
           payment_due_at: "",
+          payment_due_days_after_entry: null,
           payment_due_public_at: "",
         }],
       });

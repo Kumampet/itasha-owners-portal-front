@@ -118,6 +118,21 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    // エントリー情報のバリデーション
+    for (const entry of entries) {
+      if (entry.payment_due_type === "ABSOLUTE" && !entry.payment_due_at) {
+        return NextResponse.json(
+          { error: `エントリー${entry.entry_number}の支払期限日時が必要です` },
+          { status: 400 }
+        );
+      }
+      if (entry.payment_due_type === "RELATIVE" && (!entry.payment_due_days_after_entry || entry.payment_due_days_after_entry < 1)) {
+        return NextResponse.json(
+          { error: `エントリー${entry.entry_number}の支払期限日数が必要です（1日以上）` },
+          { status: 400 }
+        );
+      }
+    }
     if (body.is_multi_day && !body.event_end_date) {
       return NextResponse.json(
         { error: "複数日開催の場合、終了日が必要です" },
@@ -176,7 +191,13 @@ export async function POST(request: Request) {
               ? new Date(entry.entry_start_public_at)
               : null,
             entry_deadline_at: new Date(entry.entry_deadline_at),
-            payment_due_at: new Date(entry.payment_due_at),
+            payment_due_type: entry.payment_due_type || "ABSOLUTE",
+            payment_due_at: entry.payment_due_type === "ABSOLUTE" && entry.payment_due_at
+              ? new Date(entry.payment_due_at)
+              : null,
+            payment_due_days_after_entry: entry.payment_due_type === "RELATIVE" && entry.payment_due_days_after_entry
+              ? entry.payment_due_days_after_entry
+              : null,
             payment_due_public_at: entry.payment_due_public_at
               ? new Date(entry.payment_due_public_at)
               : null,
@@ -209,7 +230,9 @@ export async function POST(request: Request) {
               entry_start_at: true,
               entry_start_public_at: true,
               entry_deadline_at: true,
+              payment_due_type: true,
               payment_due_at: true,
+              payment_due_days_after_entry: true,
               payment_due_public_at: true,
             },
             orderBy: {
