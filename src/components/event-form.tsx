@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Image from "next/image";
 import { Button } from "./button";
 import { DateTimeInput } from "./date-time-input";
+import { Tooltip } from "./tooltip";
 
 // エントリー情報の型
 export type EventEntryData = {
@@ -448,14 +449,20 @@ export default function EventForm({
           イメージ画像 <span className="text-xs text-zinc-500">（16:9推奨）</span>
         </label>
         <div className="mt-1 space-y-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageFileSelect}
-            disabled={uploadingImage}
-            className="block w-full text-sm text-zinc-700 file:mr-4 file:rounded-md file:border-0 file:bg-zinc-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-zinc-700 hover:file:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          />
+          <Tooltip
+            content="この機能は将来実装予定です。"
+            disabled={false}
+            arrowPosition="center"
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageFileSelect}
+              disabled={true}
+              className="block w-full text-sm text-zinc-700 file:mr-4 file:rounded-md file:border-0 file:bg-zinc-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-zinc-700 hover:file:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+          </Tooltip>
           {uploadingImage && (
             <p className="text-xs text-zinc-500">アップロード中...</p>
           )}
