@@ -155,9 +155,27 @@ export async function PATCH(
     const body = await request.json();
     const tags: string[] = body.tags || [];
 
-    // 主催者メールアドレスからユーザーを検索
+    // 主催者ユーザーIDの設定
     let organizerUserId: string | null = null;
-    if (body.organizer_email) {
+    
+    // 管理者権限の場合、organizer_user_idが直接指定されている場合はそれを使用
+    if (session.user?.role === "ADMIN" && body.organizer_user_id) {
+      // 指定されたユーザーがORGANIZER権限かどうかを確認
+      const organizerUser = await prisma.user.findUnique({
+        where: { id: body.organizer_user_id },
+        select: { id: true, role: true, email: true },
+      });
+      
+      if (organizerUser && organizerUser.role === "ORGANIZER") {
+        organizerUserId = organizerUser.id;
+      } else {
+        return NextResponse.json(
+          { error: "指定されたユーザーはORGANIZER権限ではありません" },
+          { status: 400 }
+        );
+      }
+    } else if (body.organizer_email) {
+      // メールアドレスからユーザーを検索（既存のロジック）
       const organizerUser = await prisma.user.findUnique({
         where: { email: body.organizer_email },
         select: { id: true },

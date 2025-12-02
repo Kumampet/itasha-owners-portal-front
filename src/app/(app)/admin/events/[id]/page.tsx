@@ -64,6 +64,7 @@ export default function AdminEventDetailPage({
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
+  const [organizerUsers, setOrganizerUsers] = useState<Array<{ id: string; email: string; name: string | null }>>([]);
   const [formData, setFormData] = useState<EventFormData>({
     name: "",
     description: "",
@@ -76,6 +77,7 @@ export default function AdminEventDetailPage({
     street_address: "",
     venue_name: "",
     organizer_email: "",
+    organizer_user_id: null,
     image_url: "",
     official_urls: [""],
     entries: [],
@@ -143,6 +145,7 @@ export default function AdminEventDetailPage({
         street_address: data.street_address || "",
         venue_name: data.venue_name || "",
         organizer_email: data.organizer_email || data.organizer_user?.email || "",
+        organizer_user_id: data.organizer_user?.id || null,
         image_url: data.image_url || "",
         official_urls: (data.official_urls && Array.isArray(data.official_urls) && data.official_urls.length > 0)
           ? data.official_urls
@@ -167,9 +170,24 @@ export default function AdminEventDetailPage({
     }
   }, [id]);
 
+  // ORGANIZER権限のユーザー一覧を取得
+  const fetchOrganizerUsers = useCallback(async () => {
+    if (session?.user?.role !== "ADMIN") return;
+    
+    try {
+      const res = await fetch("/api/admin/users?role=ORGANIZER");
+      if (!res.ok) throw new Error("Failed to fetch organizer users");
+      const data = await res.json();
+      setOrganizerUsers(data);
+    } catch (error) {
+      console.error("Failed to fetch organizer users:", error);
+    }
+  }, [session?.user?.role]);
+
   useEffect(() => {
     fetchEvent();
-  }, [fetchEvent]);
+    fetchOrganizerUsers();
+  }, [fetchEvent, fetchOrganizerUsers]);
 
   const handleSave = async (approvalStatus: "DRAFT" | "PENDING" | "APPROVED") => {
     setSaving(true);
@@ -186,6 +204,7 @@ export default function AdminEventDetailPage({
         body: JSON.stringify({
           ...formData,
           organizer_email: organizerEmail,
+          organizer_user_id: session?.user?.role === "ADMIN" ? formData.organizer_user_id : undefined,
           keywords: keywords,
           approval_status: approvalStatus,
         }),
@@ -218,6 +237,7 @@ export default function AdminEventDetailPage({
         body: JSON.stringify({
           ...formData,
           organizer_email: organizerEmail,
+          organizer_user_id: session?.user?.role === "ADMIN" ? formData.organizer_user_id : undefined,
           tags: event?.tags.map(t => t.tag.id) || [],
           approval_status: "PENDING",
         }),
@@ -413,6 +433,8 @@ export default function AdminEventDetailPage({
           onFormDataChange={setFormData}
           keywords={keywords}
           onKeywordsChange={setKeywords}
+          isAdmin={session?.user?.role === "ADMIN"}
+          organizerUsers={organizerUsers}
         >
           <Button
             variant="secondary"
