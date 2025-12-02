@@ -8,6 +8,7 @@ import EventForm, { EventFormData } from "@/components/event-form";
 import ConfirmModal from "@/components/confirm-modal";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { EventShareModal } from "@/components/event-share-modal";
 
 type Event = {
   id: string;
@@ -63,6 +64,7 @@ export default function AdminEventDetailPage({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [organizerUsers, setOrganizerUsers] = useState<Array<{ id: string; email: string; name: string | null }>>([]);
   const [formData, setFormData] = useState<EventFormData>({
@@ -278,12 +280,25 @@ export default function AdminEventDetailPage({
 
       await fetchEvent();
       setShowApproveModal(false);
+      // 承認成功時にシェアモーダルを表示
+      setShowShareModal(true);
     } catch (error) {
       console.error("Failed to approve event:", error);
       alert("承認に失敗しました");
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCloseShareModal = () => {
+    setShowShareModal(false);
+  };
+
+  // 参加者アプリ側のイベント詳細URLを生成
+  const getEventDetailUrl = () => {
+    if (typeof window === "undefined" || !event?.id) return "";
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/events/${event.id}`;
   };
 
   const handleRejectClick = () => {
@@ -426,6 +441,16 @@ export default function AdminEventDetailPage({
         confirmLabel="却下"
         cancelLabel="キャンセル"
       />
+
+      {/* イベントシェアモーダル */}
+      {event && (
+        <EventShareModal
+          isOpen={showShareModal}
+          onClose={handleCloseShareModal}
+          eventTitle={event.name}
+          eventUrl={getEventDetailUrl()}
+        />
+      )}
 
       {isEditing ? (
         <EventForm

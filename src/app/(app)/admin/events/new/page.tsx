@@ -31,21 +31,21 @@ function AdminNewEventPageContent() {
     organizer_email: "",
     image_url: "",
     official_urls: [""],
-        entries: [
-          {
-            entry_number: 1,
-            entry_start_at: "",
-            entry_start_public_at: "",
-            entry_deadline_at: "",
-            payment_due_type: "ABSOLUTE",
-            payment_due_at: "",
-            payment_due_days_after_entry: null,
-            payment_due_public_at: "",
-          },
-        ],
+    entries: [
+      {
+        entry_number: 1,
+        entry_start_at: "",
+        entry_start_public_at: "",
+        entry_deadline_at: "",
+        payment_due_type: "ABSOLUTE",
+        payment_due_at: "",
+        payment_due_days_after_entry: null,
+        payment_due_public_at: "",
+      },
+    ],
   });
 
-      // クエリパラメータからイベント掲載依頼フォームの情報を取得してフォームに自動入力
+  // クエリパラメータからイベント掲載依頼フォームの情報を取得してフォームに自動入力
   useEffect(() => {
     const fromSubmission = searchParams?.get("fromSubmission");
     if (fromSubmission) {
@@ -100,7 +100,7 @@ function AdminNewEventPageContent() {
 
     try {
       // 申請時（PENDING）は、主催者メールアドレスが未設定の場合、ログインユーザーのメールアドレスを自動設定
-      const organizerEmail = 
+      const organizerEmail =
         approvalStatus === "PENDING" && !formData.organizer_email && session?.user?.email
           ? session.user.email
           : formData.organizer_email || "";
@@ -122,7 +122,7 @@ function AdminNewEventPageContent() {
       }
 
       const data = await res.json();
-      
+
       // イベント掲載依頼フォームから作成した場合は、処理済みにマーク
       if (submissionId) {
         try {
@@ -136,7 +136,8 @@ function AdminNewEventPageContent() {
           // エラーが発生してもイベント作成は成功しているので続行
         }
       }
-      
+
+      // 詳細ページに遷移
       router.push(`/admin/events/${data.id}`);
     } catch (error) {
       console.error("Failed to create event:", error);
