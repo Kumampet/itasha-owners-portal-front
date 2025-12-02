@@ -568,7 +568,11 @@ export default function AdminEventDetailPage({
                         </div>
                         <div>
                           <span className="font-medium">支払期限日時:</span>{" "}
-                          {new Date(entry.payment_due_at).toLocaleString("ja-JP")}
+                          {entry.payment_due_at
+                            ? new Date(entry.payment_due_at).toLocaleString("ja-JP")
+                            : entry.payment_due_type === "RELATIVE" && entry.payment_due_days_after_entry
+                            ? `エントリー申し込みから${entry.payment_due_days_after_entry}日以内`
+                            : "未設定"}
                         </div>
                         <div>
                           <span className="font-medium">支払期限日時公開日時:</span>{" "}

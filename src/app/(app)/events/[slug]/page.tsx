@@ -40,7 +40,7 @@ function formatEntryInfo(entries: Array<{
   entry_start_at: Date;
   entry_start_public_at: Date | null;
   entry_deadline_at: Date;
-  payment_due_at: Date;
+  payment_due_at: Date | null;
   payment_due_public_at: Date | null;
 }>) {
   if (!entries || entries.length === 0) {
@@ -121,7 +121,9 @@ export default async function EventDetailPage({
           entry_start_at: true,
           entry_start_public_at: true,
           entry_deadline_at: true,
+          payment_due_type: true,
           payment_due_at: true,
+          payment_due_days_after_entry: true,
           payment_due_public_at: true,
         },
         orderBy: {
