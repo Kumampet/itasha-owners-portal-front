@@ -204,29 +204,23 @@ export default function ReminderPage() {
                             <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
                               {reminder.label}
                             </span>
+                            {reminder.event && (
+                              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                                {reminder.event.name}
+                              </span>
+                            )}
                             {reminder.notified && (
                               <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
                                 通知済み
                               </span>
                             )}
                           </div>
-                          {reminder.event ? (
-                            <>
-                              <Link
-                                href={`/events/${reminder.event.id}`}
-                                className="mt-2 block text-sm font-semibold text-zinc-900 hover:text-emerald-600 sm:text-base"
-                              >
-                                {reminder.event.name}
-                              </Link>
-                              {reminder.event.theme && (
-                                <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
-                                  {reminder.event.theme}
-                                </p>
-                              )}
-                            </>
-                          ) : (
-                            <p className="mt-2 text-sm font-semibold text-zinc-900 sm:text-base">
-                              （イベント未設定）
+                          <p className="mt-2 text-sm font-semibold text-zinc-900 sm:text-base">
+                            {reminder.label}
+                          </p>
+                          {reminder.event?.theme && (
+                            <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+                              {reminder.event.theme}
                             </p>
                           )}
                           <p className="mt-2 text-xs text-zinc-600 sm:text-sm">
@@ -241,6 +235,7 @@ export default function ReminderPage() {
                             reminderLabel={reminder.label}
                             eventName={reminder.event?.name || "（イベント未設定）"}
                             eventId={reminder.event?.id || ""}
+                            hasEvent={!!reminder.event}
                             onDeleteClick={() => handleDeleteClick(reminder.id)}
                           />
                         </div>
@@ -268,29 +263,23 @@ export default function ReminderPage() {
                             <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium text-zinc-600">
                               {reminder.label}
                             </span>
+                            {reminder.event && (
+                              <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium text-zinc-600">
+                                {reminder.event.name}
+                              </span>
+                            )}
                             {reminder.notified && (
                               <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
                                 通知済み
                               </span>
                             )}
                           </div>
-                          {reminder.event ? (
-                            <>
-                              <Link
-                                href={`/events/${reminder.event.id}`}
-                                className="mt-2 block text-sm font-semibold text-zinc-900 hover:text-emerald-600 sm:text-base"
-                              >
-                                {reminder.event.name}
-                              </Link>
-                              {reminder.event.theme && (
-                                <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
-                                  {reminder.event.theme}
-                                </p>
-                              )}
-                            </>
-                          ) : (
-                            <p className="mt-2 text-sm font-semibold text-zinc-900 sm:text-base">
-                              （イベント未設定）
+                          <p className="mt-2 text-sm font-semibold text-zinc-900 sm:text-base">
+                            {reminder.label}
+                          </p>
+                          {reminder.event?.theme && (
+                            <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+                              {reminder.event.theme}
                             </p>
                           )}
                           <p className="mt-2 text-xs text-zinc-500 sm:text-sm">
@@ -305,6 +294,7 @@ export default function ReminderPage() {
                             reminderLabel={reminder.label}
                             eventName={reminder.event?.name || "（イベント未設定）"}
                             eventId={reminder.event?.id || ""}
+                            hasEvent={!!reminder.event}
                             onDeleteClick={() => handleDeleteClick(reminder.id)}
                           />
                         </div>

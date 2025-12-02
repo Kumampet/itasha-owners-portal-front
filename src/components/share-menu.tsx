@@ -9,6 +9,7 @@ type ShareMenuProps = {
   reminderLabel: string;
   eventName: string;
   eventId: string;
+  hasEvent: boolean;
   onDeleteClick: () => void;
 };
 
@@ -17,6 +18,7 @@ export function ShareMenu({
   reminderLabel,
   eventName,
   eventId,
+  hasEvent,
   onDeleteClick,
 }: ShareMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -107,26 +109,28 @@ export function ShareMenu({
       {isOpen && (
         <div className="absolute right-0 top-full z-10 mt-1 w-48 rounded-md border border-zinc-200 bg-white shadow-lg">
           <div className="py-1">
-            <Link
-              href={`/events/${eventId}`}
-              onClick={() => setIsOpen(false)}
-              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            {hasEvent && (
+              <Link
+                href={`/events/${eventId}`}
+                onClick={() => setIsOpen(false)}
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span>イベント詳細</span>
-            </Link>
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span>イベント詳細</span>
+              </Link>
+            )}
             <Link
               href={`/app/reminder/${reminderId}/edit`}
               onClick={() => setIsOpen(false)}
