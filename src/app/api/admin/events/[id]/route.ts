@@ -300,9 +300,10 @@ export async function PATCH(
       });
     });
 
-    // キャッシュを無効化
+    // キャッシュを無効化（一覧と個別イベントの両方）
     const { revalidateTag } = await import("next/cache");
     revalidateTag("events", {});
+    revalidateTag(`event-${id}`, {});
 
     return NextResponse.json(event);
   } catch (error) {

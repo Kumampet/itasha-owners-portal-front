@@ -220,6 +220,13 @@ export async function POST(request: Request) {
       });
     });
 
+    // キャッシュを無効化（新規作成時は一覧と個別の両方）
+    const { revalidateTag } = await import("next/cache");
+    revalidateTag("events", {});
+    if (event?.id) {
+      revalidateTag(`event-${event.id}`, {});
+    }
+
     return NextResponse.json(event);
   } catch (error) {
     console.error("Error creating event:", error);
