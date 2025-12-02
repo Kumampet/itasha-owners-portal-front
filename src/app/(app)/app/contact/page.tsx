@@ -60,10 +60,10 @@ export default function ContactPage() {
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
         <header className="space-y-2">
           <Link
-            href="/app/mypage"
+            href={session ? "/app/mypage" : "/"}
             className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
           >
-            ← マイページへ戻る
+            ← {session ? "マイページへ戻る" : "トップページへ戻る"}
           </Link>
           <div>
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
@@ -151,7 +151,7 @@ export default function ContactPage() {
           <div className="flex gap-3 pt-4">
             <Button
               as="link"
-              href="/app/mypage"
+              href={session ? "/app/mypage" : "/"}
               variant="secondary"
               size="md"
               rounded="md"
@@ -178,7 +178,7 @@ export default function ContactPage() {
         isOpen={isSuccessModalOpen}
         onClose={() => {
           setIsSuccessModalOpen(false);
-          router.push("/app/mypage");
+          router.push(session ? "/app/mypage" : "/");
         }}
         title="送信完了"
         footer={
@@ -188,7 +188,7 @@ export default function ContactPage() {
             rounded="md"
             onClick={() => {
               setIsSuccessModalOpen(false);
-              router.push("/app/mypage");
+              router.push(session ? "/app/mypage" : "/");
             }}
           >
             OK

@@ -25,8 +25,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // イベント掲載依頼フォームは認証不要（未ログインでもアクセス可能）
-  if (pathname === "/app/event-submission") {
+  // イベント掲載依頼フォームとお問い合わせフォームは認証不要（未ログインでもアクセス可能）
+  if (pathname === "/app/event-submission" || pathname === "/app/contact") {
     return NextResponse.next();
   }
 
@@ -108,8 +108,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/app/mypage", request.url));
   }
 
-  // ログインページ（/app/auth）とイベント掲載依頼フォーム（/app/event-submission）は認証が必要なパスではない
-  const isDashboard = pathname.startsWith("/app/") && pathname !== "/app/auth" && pathname !== "/app/event-submission";
+  // ログインページ（/app/auth）、イベント掲載依頼フォーム（/app/event-submission）、お問い合わせフォーム（/app/contact）は認証が必要なパスではない
+  const isDashboard = pathname.startsWith("/app/") && pathname !== "/app/auth" && pathname !== "/app/event-submission" && pathname !== "/app/contact";
 
   // 認証が必要なパスにアクセスしている場合
   const isProtectedPath = protectedPaths.some((path) =>
