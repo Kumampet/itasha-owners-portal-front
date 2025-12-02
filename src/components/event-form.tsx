@@ -34,6 +34,13 @@ export type EventFormData = {
   image_url: string;
   official_urls: string[];
   entries: EventEntryData[];
+  payment_methods?: {
+    bank_transfer: boolean;
+    credit_card: boolean;
+    cash_on_day: boolean;
+    other_cashless: boolean;
+    other_cashless_text?: string;
+  };
 };
 
 interface EventFormProps {
@@ -620,7 +627,7 @@ export default function EventForm({
 
                 <div>
                   <label className="block text-xs font-medium text-zinc-700">
-                    エントリー終了日時 *
+                    エントリー終了日時
                   </label>
                   <div className="mt-1">
                     <DateTimeInput
@@ -633,7 +640,6 @@ export default function EventForm({
                           value
                         )
                       }
-                      required
                     />
                   </div>
                 </div>
@@ -642,7 +648,7 @@ export default function EventForm({
               {/* 支払期限タイプ選択 */}
               <div>
                 <label className="block text-xs font-medium text-zinc-700 mb-2">
-                  支払期限の設定方法 *
+                  支払期限の設定方法
                 </label>
                 <div className="flex gap-4">
                   <label className="flex items-center">
@@ -687,7 +693,7 @@ export default function EventForm({
                 {entry.payment_due_type === "ABSOLUTE" ? (
                   <div>
                     <label className="block text-xs font-medium text-zinc-700">
-                      支払期限日時 *
+                      支払期限日時
                     </label>
                     <div className="mt-1">
                       <DateTimeInput
@@ -700,14 +706,13 @@ export default function EventForm({
                             value
                           )
                         }
-                        required
                       />
                     </div>
                   </div>
                 ) : (
                   <div>
                     <label className="block text-xs font-medium text-zinc-700">
-                      エントリー申し込みから何日以内 *
+                      エントリー申し込みから何日以内
                     </label>
                     <div className="mt-1">
                       <input
@@ -723,7 +728,6 @@ export default function EventForm({
                         }
                         placeholder="例: 7"
                         className="block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                        required
                       />
                       <p className="mt-1 text-xs text-zinc-500">
                         エントリー申し込み日から指定した日数以内に支払いが必要です
@@ -757,6 +761,134 @@ export default function EventForm({
         ))}
       </div>
 
+      {/* 支払方法 */}
+      <div className="space-y-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+        <h3 className="text-sm font-semibold text-zinc-900">支払方法</h3>
+        <div className="space-y-3">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="payment_method_bank_transfer"
+              checked={formData.payment_methods?.bank_transfer || false}
+              onChange={(e) =>
+                onFormDataChange({
+                  ...formData,
+                  payment_methods: {
+                    ...formData.payment_methods,
+                    bank_transfer: e.target.checked,
+                    credit_card: formData.payment_methods?.credit_card || false,
+                    cash_on_day: formData.payment_methods?.cash_on_day || false,
+                    other_cashless: formData.payment_methods?.other_cashless || false,
+                    other_cashless_text: formData.payment_methods?.other_cashless_text || "",
+                  },
+                })
+              }
+              className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            <label htmlFor="payment_method_bank_transfer" className="ml-2 text-sm text-zinc-700">
+              銀行振込
+            </label>
+          </div>
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="payment_method_credit_card"
+              checked={formData.payment_methods?.credit_card || false}
+              onChange={(e) =>
+                onFormDataChange({
+                  ...formData,
+                  payment_methods: {
+                    ...formData.payment_methods,
+                    bank_transfer: formData.payment_methods?.bank_transfer || false,
+                    credit_card: e.target.checked,
+                    cash_on_day: formData.payment_methods?.cash_on_day || false,
+                    other_cashless: formData.payment_methods?.other_cashless || false,
+                    other_cashless_text: formData.payment_methods?.other_cashless_text || "",
+                  },
+                })
+              }
+              className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            <label htmlFor="payment_method_credit_card" className="ml-2 text-sm text-zinc-700">
+              クレジットカード
+            </label>
+          </div>
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="payment_method_cash_on_day"
+              checked={formData.payment_methods?.cash_on_day || false}
+              onChange={(e) =>
+                onFormDataChange({
+                  ...formData,
+                  payment_methods: {
+                    ...formData.payment_methods,
+                    bank_transfer: formData.payment_methods?.bank_transfer || false,
+                    credit_card: formData.payment_methods?.credit_card || false,
+                    cash_on_day: e.target.checked,
+                    other_cashless: formData.payment_methods?.other_cashless || false,
+                    other_cashless_text: formData.payment_methods?.other_cashless_text || "",
+                  },
+                })
+              }
+              className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            <label htmlFor="payment_method_cash_on_day" className="ml-2 text-sm text-zinc-700">
+              当日現金支払
+            </label>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="payment_method_other_cashless"
+                checked={formData.payment_methods?.other_cashless || false}
+                onChange={(e) =>
+                  onFormDataChange({
+                    ...formData,
+                    payment_methods: {
+                      ...formData.payment_methods,
+                      bank_transfer: formData.payment_methods?.bank_transfer || false,
+                      credit_card: formData.payment_methods?.credit_card || false,
+                      cash_on_day: formData.payment_methods?.cash_on_day || false,
+                      other_cashless: e.target.checked,
+                      other_cashless_text: formData.payment_methods?.other_cashless_text || "",
+                    },
+                  })
+                }
+                className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <label htmlFor="payment_method_other_cashless" className="ml-2 text-sm text-zinc-700">
+                その他キャッシュレス決済
+              </label>
+            </div>
+            {formData.payment_methods?.other_cashless && (
+              <div className="ml-6">
+                <input
+                  type="text"
+                  value={formData.payment_methods?.other_cashless_text || ""}
+                  onChange={(e) =>
+                    onFormDataChange({
+                      ...formData,
+                      payment_methods: {
+                        ...formData.payment_methods,
+                        bank_transfer: formData.payment_methods?.bank_transfer || false,
+                        credit_card: formData.payment_methods?.credit_card || false,
+                        cash_on_day: formData.payment_methods?.cash_on_day || false,
+                        other_cashless: true,
+                        other_cashless_text: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="例: PayPay、LINE Payなど"
+                  className="block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* 開催地（住所） */}
       <div className="space-y-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
         <h3 className="text-sm font-semibold text-zinc-900">開催地（住所）</h3>
@@ -769,12 +901,14 @@ export default function EventForm({
             <input
               type="text"
               value={formData.postal_code}
-              onChange={(e) =>
+              onChange={(e) => {
+                // ハイフンを削除して数字のみを許可
+                const value = e.target.value.replace(/[^0-9]/g, "");
                 onFormDataChange({
                   ...formData,
-                  postal_code: e.target.value,
-                })
-              }
+                  postal_code: value,
+                });
+              }}
               placeholder="1234567"
               maxLength={7}
               className="block w-32 rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"

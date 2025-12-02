@@ -210,6 +210,7 @@ export async function PATCH(
           approval_status: body.approval_status,
           organizer_email: body.organizer_email || null,
           organizer_user_id: organizerUserId,
+          payment_methods: body.payment_methods || null,
         },
       });
 
@@ -229,7 +230,9 @@ export async function PATCH(
               entry_start_public_at: entry.entry_start_public_at
                 ? new Date(entry.entry_start_public_at)
                 : null,
-              entry_deadline_at: new Date(entry.entry_deadline_at),
+              entry_deadline_at: entry.entry_deadline_at
+                ? new Date(entry.entry_deadline_at)
+                : null,
               payment_due_type: entry.payment_due_type || "ABSOLUTE",
               payment_due_at: entry.payment_due_type === "ABSOLUTE" && entry.payment_due_at
                 ? new Date(entry.payment_due_at)

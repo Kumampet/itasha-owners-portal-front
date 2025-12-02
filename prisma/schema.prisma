@@ -132,6 +132,9 @@ model Event {
   // 公式サイトURL（1個以上必須、配列で保持）
   official_urls    Json         @db.Json // ["https://example.com", ...]
 
+  // 支払方法（任意）
+  payment_methods  Json?        @db.Json // { bank_transfer: boolean, credit_card: boolean, cash_on_day: boolean, other_cashless: boolean, other_cashless_text?: string }
+
   // イメージ画像（任意、16:9推奨）
   image_url        String?      @db.VarChar(500)
 
@@ -173,9 +176,9 @@ model EventEntry {
   
   // エントリー開始日公開日時（任意、未入力時即時公開）
   entry_start_public_at     DateTime?
-  
-  // エントリー締切日（必須、エントリー開始日公開日時と同時公開）
-  entry_deadline_at         DateTime
+
+  // エントリー締切日（任意、エントリー開始日公開日時と同時公開）
+  entry_deadline_at         DateTime?
   
   // 支払期限タイプ（ABSOLUTE: 絶対値, RELATIVE: エントリー申し込みからn日以内）
   payment_due_type          String       @default("ABSOLUTE") // "ABSOLUTE" | "RELATIVE"

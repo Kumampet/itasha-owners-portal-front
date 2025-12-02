@@ -162,6 +162,7 @@ export default function AdminEventDetailPage({
           payment_due_days_after_entry: null,
           payment_due_public_at: "",
         }],
+        payment_methods: data.payment_methods || undefined,
       });
       setKeywords((data.keywords && Array.isArray(data.keywords)) ? data.keywords : []);
     } catch (error) {

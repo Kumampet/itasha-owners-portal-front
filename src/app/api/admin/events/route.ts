@@ -120,15 +120,11 @@ export async function POST(request: Request) {
     }
     // エントリー情報のバリデーション
     for (const entry of entries) {
-      if (entry.payment_due_type === "ABSOLUTE" && !entry.payment_due_at) {
+      // エントリー締め切り日時と支払期限は任意項目のため、バリデーションを削除
+      // 支払期限タイプがRELATIVEの場合、日数が指定されている場合は1日以上であることを確認
+      if (entry.payment_due_type === "RELATIVE" && entry.payment_due_days_after_entry && entry.payment_due_days_after_entry < 1) {
         return NextResponse.json(
-          { error: `エントリー${entry.entry_number}の支払期限日時が必要です` },
-          { status: 400 }
-        );
-      }
-      if (entry.payment_due_type === "RELATIVE" && (!entry.payment_due_days_after_entry || entry.payment_due_days_after_entry < 1)) {
-        return NextResponse.json(
-          { error: `エントリー${entry.entry_number}の支払期限日数が必要です（1日以上）` },
+          { error: `エントリー${entry.entry_number}の支払期限日数は1日以上である必要があります` },
           { status: 400 }
         );
       }
@@ -177,6 +173,7 @@ export async function POST(request: Request) {
           approval_status: body.approval_status || "DRAFT",
           organizer_email: body.organizer_email,
           organizer_user_id: organizerUserId,
+          payment_methods: body.payment_methods || null,
         },
       });
 
@@ -190,7 +187,9 @@ export async function POST(request: Request) {
             entry_start_public_at: entry.entry_start_public_at
               ? new Date(entry.entry_start_public_at)
               : null,
-            entry_deadline_at: new Date(entry.entry_deadline_at),
+            entry_deadline_at: entry.entry_deadline_at
+              ? new Date(entry.entry_deadline_at)
+              : null,
             payment_due_type: entry.payment_due_type || "ABSOLUTE",
             payment_due_at: entry.payment_due_type === "ABSOLUTE" && entry.payment_due_at
               ? new Date(entry.payment_due_at)
