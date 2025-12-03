@@ -46,6 +46,7 @@ export async function GET(request: Request) {
         name: true,
         description: true,
         event_date: true,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         event_end_date: true as any,
         is_multi_day: true,
         approval_status: true,
@@ -66,6 +67,7 @@ export async function GET(request: Request) {
             entry_number: "asc",
           },
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
     });
 

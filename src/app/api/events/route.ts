@@ -14,6 +14,7 @@ export async function GET(request: Request) {
     const now = new Date();
 
     // 検索条件とソート条件を構築
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {
       approval_status: "APPROVED",
     };
