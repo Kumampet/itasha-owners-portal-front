@@ -115,6 +115,7 @@ export default async function EventDetailPage({
       keywords: true,
       official_urls: true,
       image_url: true,
+      entry_selection_method: true,
       entries: {
         select: {
           entry_number: true,
@@ -231,7 +232,7 @@ export default async function EventDetailPage({
           </div>
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              エントリー
+              エントリー{event.entry_selection_method === "FIRST_COME" ? "（先着）" : event.entry_selection_method === "LOTTERY" ? "（抽選）" : event.entry_selection_method === "SELECTION" ? "（選考）" : ""}
             </p>
             <p className="text-sm text-zinc-700">
               開始: {entryInfo.entryStart} / 締切: {entryInfo.deadline}
