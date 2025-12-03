@@ -28,6 +28,10 @@ export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState<string>("ALL");
 
+  useEffect(() => {
+    document.title = "いたなび管理画面 | ユーザー管理";
+  }, []);
+
   // organizerはアクセス不可
   useEffect(() => {
     if (status === "loading") return;

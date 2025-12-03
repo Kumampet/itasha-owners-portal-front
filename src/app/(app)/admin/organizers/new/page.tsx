@@ -22,6 +22,10 @@ export default function AdminNewOrganizerPage() {
     password: string;
   } | null>(null);
 
+  useEffect(() => {
+    document.title = "いたなび管理画面 | オーガナイザー作成";
+  }, []);
+
   // organizerはアクセス不可
   useEffect(() => {
     if (status === "loading") return;

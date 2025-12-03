@@ -74,6 +74,10 @@ export default function EventsPage() {
     fetchEvents();
   }, [fetchEvents]);
 
+  useEffect(() => {
+    document.title = "イベント一覧 | 痛車オーナーズナビ | いたなび！";
+  }, []);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1); // 検索時は1ページ目に戻る

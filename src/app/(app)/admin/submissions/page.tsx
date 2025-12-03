@@ -40,6 +40,10 @@ export default function AdminSubmissionsPage() {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [processing, setProcessing] = useState(false);
 
+  useEffect(() => {
+    document.title = "いたなび管理画面 | イベント掲載依頼フォーム";
+  }, []);
+
   // organizerはアクセス不可
   useEffect(() => {
     if (status === "loading") return;

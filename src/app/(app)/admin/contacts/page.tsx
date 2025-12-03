@@ -40,6 +40,10 @@ export default function AdminContactsPage() {
   const [isResolveModalOpen, setIsResolveModalOpen] = useState(false);
   const [resolveNote, setResolveNote] = useState("");
 
+  useEffect(() => {
+    document.title = "いたなび管理画面 | お問い合わせ管理";
+  }, []);
+
   // adminのみアクセス可能
   useEffect(() => {
     if (status === "loading") return;

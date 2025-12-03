@@ -15,6 +15,10 @@ export default function ProfileEditPage() {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
 
+    useEffect(() => {
+        document.title = "プロフィール編集 | 痛車オーナーズナビ | いたなび！";
+    }, []);
+
     // セッションから初期値を設定
     useEffect(() => {
         if (session?.user?.displayName) {

@@ -39,6 +39,10 @@ export default function WatchlistPage() {
   const [watchlist, setWatchlist] = useState<WatchlistEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    document.title = "ウォッチリスト | 痛車オーナーズナビ | いたなび！";
+  }, []);
+
   const fetchWatchlist = async () => {
     try {
       const res = await fetch("/api/watchlist");

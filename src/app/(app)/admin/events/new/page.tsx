@@ -13,6 +13,10 @@ function AdminNewEventPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+
+  useEffect(() => {
+    document.title = "いたなび管理画面 | 新規イベント作成";
+  }, []);
   const [saving, setSaving] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);

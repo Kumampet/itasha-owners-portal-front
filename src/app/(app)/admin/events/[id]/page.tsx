@@ -198,6 +198,14 @@ export default function AdminEventDetailPage({
     fetchOrganizerUsers();
   }, [fetchEvent, fetchOrganizerUsers]);
 
+  useEffect(() => {
+    if (event) {
+      document.title = `いたなび管理画面 | ${event.name}`;
+    } else {
+      document.title = "いたなび管理画面 | イベント詳細";
+    }
+  }, [event]);
+
   const handleSave = async (approvalStatus: "DRAFT" | "PENDING" | "APPROVED") => {
     // 下書き状態から申請に変更する場合はバリデーションを適用
     if (event?.approval_status === "DRAFT" && approvalStatus === "PENDING") {

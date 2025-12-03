@@ -40,7 +40,10 @@ export default function MyPage() {
             return;
         }
 
-        const fetchUpcomingReminders = async () => {
+        // タイトルを設定
+    document.title = "マイページ | 痛車オーナーズナビ | いたなび！";
+
+    const fetchUpcomingReminders = async () => {
             try {
                 const response = await fetch("/api/reminders");
                 if (!response.ok) {

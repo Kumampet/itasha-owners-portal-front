@@ -62,6 +62,10 @@ export default function AdminEventsPage() {
     fetchEvents();
   }, [fetchEvents]);
 
+  useEffect(() => {
+    document.title = "いたなび管理画面 | イベント管理";
+  }, []);
+
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case "DRAFT":

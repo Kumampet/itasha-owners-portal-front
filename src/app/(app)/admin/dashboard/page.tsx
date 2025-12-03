@@ -1,10 +1,15 @@
 "use client";
 
+import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 
 export default function AdminDashboard() {
   const { data: session } = useSession();
+
+  useEffect(() => {
+    document.title = "いたなび管理画面 | ダッシュボード";
+  }, []);
 
   const menuItems = [
     {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/button";
 import { Accordion, AccordionItem } from "@/components/accordion";
@@ -22,6 +22,10 @@ export default function EventSubmissionPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    document.title = "イベント掲載依頼 | 痛車オーナーズナビ | いたなび！";
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

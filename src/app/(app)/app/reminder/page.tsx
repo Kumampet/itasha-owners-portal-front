@@ -40,6 +40,10 @@ export default function ReminderPage() {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
+  useEffect(() => {
+    document.title = "リマインダー管理 | 痛車オーナーズナビ | いたなび！";
+  }, []);
+
   const fetchReminders = useCallback(async () => {
     try {
       const res = await fetch(`/api/reminders?sortOrder=${sortOrder}`);

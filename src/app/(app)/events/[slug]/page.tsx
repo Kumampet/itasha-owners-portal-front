@@ -1,12 +1,33 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { EventDetailActions } from "@/components/event-detail-actions";
 
 type EventDetailPageProps = {
   params: Promise<{ slug: string }>;
 };
+
+export async function generateMetadata({
+  params,
+}: EventDetailPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const event = await prisma.event.findUnique({
+    where: { id: slug },
+    select: { name: true },
+  });
+
+  if (!event) {
+    return {
+      title: "イベント詳細 | 痛車オーナーズナビ | いたなび！",
+    };
+  }
+
+  return {
+    title: `${event.name} | 痛車オーナーズナビ | いたなび！`,
+  };
+}
 
 function formatDateRange(
   date: Date,

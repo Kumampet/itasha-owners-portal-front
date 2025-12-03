@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "痛車オーナーズポータル",
+  title: "痛車オーナーズナビ | いたなび！",
   description:
     "痛車イベントの予定管理・団体参加（併せ）管理に特化した、モバイルファーストの情報プラットフォーム",
   metadataBase:
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "痛車オーナーズポータル",
+    title: "痛車オーナーズナビ | いたなび！",
     description:
       "痛車イベントのエントリー開始・支払期限・併せ連絡をまとめて管理できるPWA",
     type: "website",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "痛車オーナーズポータル",
+    title: "痛車オーナーズナビ | いたなび！",
   },
   icons: {
     apple: "/images/main_logo_square.png",

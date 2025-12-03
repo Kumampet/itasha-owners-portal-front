@@ -1,6 +1,6 @@
 {
-  "name": "痛車オーナーズポータル",
-  "short_name": "痛車ポータル",
+  "name": "痛車オーナーズナビ | いたなび！",
+  "short_name": "いたなび！",
   "description": "痛車イベントの予定管理・団体参加（併せ）管理に特化した、モバイルファーストの情報プラットフォーム",
   "start_url": "/events",
   "display": "standalone",

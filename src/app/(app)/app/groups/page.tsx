@@ -30,6 +30,10 @@ export default function GroupsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.title = "団体（併せ）管理 | 痛車オーナーズナビ | いたなび！";
+  }, []);
+
+  useEffect(() => {
     fetchGroups();
   }, []);
 
