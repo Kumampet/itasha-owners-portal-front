@@ -45,7 +45,7 @@ function NewGroupForm() {
       const res = await fetch("/api/events");
       if (!res.ok) throw new Error("Failed to fetch events");
       const data = await res.json();
-      const event = data.find((e: Event) => e.id === id);
+      const event = (data.events || []).find((e: Event) => e.id === id);
       if (event) {
         setSelectedEvent(event);
       }
@@ -62,7 +62,7 @@ function NewGroupForm() {
       const res = await fetch("/api/events");
       if (!res.ok) throw new Error("Failed to fetch events");
       const data = await res.json();
-      setEvents(data);
+      setEvents(data.events || []);
     } catch (error) {
       console.error("Failed to fetch events:", error);
       setError("イベントの取得に失敗しました");
