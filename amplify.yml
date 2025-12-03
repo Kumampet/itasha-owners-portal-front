@@ -10,6 +10,8 @@ applications:
         build:
           commands:
             - 'echo "DATABASE_URL=$DATABASE_URL" >> .env'
+            - 'echo "DATABASE_POOL_SIZE=$DATABASE_POOL_SIZE" >> .env'
+            - 'echo "DATABASE_DEBUG=$DATABASE_DEBUG" >> .env'
             - 'echo "NEXTAUTH_SECRET=$NEXTAUTH_SECRET" >> .env'
             - 'echo "NEXTAUTH_URL=$NEXTAUTH_URL" >> .env'
             - 'echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env'

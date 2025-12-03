@@ -57,28 +57,42 @@ function createPrismaClient() {
 
     // PrismaMariaDbはPoolConfigまたは接続文字列を受け取る
     // サーバーレス環境での接続リークを防ぐため、接続プールの設定を調整
+    // 環境変数で接続プールサイズを制御可能にする（デフォルト: 10）
+    const connectionLimit = parseInt(process.env.DATABASE_POOL_SIZE || "10", 10);
+    
     const poolConfig = {
       host: dbUrl.hostname,
       port: parseInt(dbUrl.port || "3306"),
       user: dbUrl.username,
       password: password,
       database: dbUrl.pathname.slice(1), // 先頭の/を削除
-      connectionLimit: 5, // 接続数を削減（サーバーレス環境では少ない接続数で運用）
+      connectionLimit, // 環境変数で制御可能（デフォルト: 10）
       connectTimeout: 10000, // 10秒（Amplifyのサーバーレス関数のタイムアウトに合わせて短縮）
       acquireTimeout: 10000, // 10秒
-      idleTimeout: 60000, // 1分（アイドル接続を早めに解放）
+      idleTimeout: 30000, // 30秒（アイドル接続を早めに解放して接続数を削減）
       queueLimit: 0, // 接続待ちキューを無制限（タイムアウトで制御）
+      // 接続の再利用を最適化
+      reuseConnection: true,
+      // 接続の最大生存時間（1時間）
+      maxLifetime: 3600000,
     };
 
     const adapter = new PrismaMariaDb(poolConfig);
 
-    return new PrismaClient({
+    const client = new PrismaClient({
       adapter,
       log:
         process.env.NODE_ENV === "development"
           ? ["query", "info", "warn", "error"]
           : ["error"],
     });
+
+    // 接続プールの設定をログ出力（初回のみ）
+    if (process.env.NODE_ENV === "development" || process.env.DATABASE_DEBUG === "true") {
+      console.log(`[Prisma] Connection pool initialized with limit: ${connectionLimit}`);
+    }
+
+    return client;
   } catch (error) {
     throw error;
   }
@@ -109,8 +123,40 @@ function getPrisma(): PrismaClient {
 
 export const prisma = new Proxy({} as PrismaClient, {
   get(_target, prop) {
-    return getPrisma()[prop as keyof PrismaClient];
+    const instance = getPrisma();
+    
+    // $disconnectが呼ばれた場合、接続を適切にクローズ
+    if (prop === "$disconnect") {
+      return async () => {
+        try {
+          await instance.$disconnect();
+          // グローバル変数からも削除
+          if (globalForPrisma.prisma === instance) {
+            globalForPrisma.prisma = undefined;
+          }
+          prismaInstance = undefined;
+        } catch (error) {
+          console.error("[Prisma] Error disconnecting:", error);
+          throw error;
+        }
+      };
+    }
+    
+    return instance[prop as keyof PrismaClient];
   },
 });
+
+// プロセス終了時に接続をクローズ（サーバーレス環境では通常不要だが、念のため）
+if (typeof process !== "undefined") {
+  process.on("beforeExit", async () => {
+    try {
+      if (globalForPrisma.prisma) {
+        await globalForPrisma.prisma.$disconnect();
+      }
+    } catch (error) {
+      console.error("[Prisma] Error disconnecting on process exit:", error);
+    }
+  });
+}
 
 
