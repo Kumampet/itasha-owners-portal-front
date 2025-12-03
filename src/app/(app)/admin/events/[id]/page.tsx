@@ -154,6 +154,8 @@ export default function AdminEventDetailPage({
         official_urls: (data.official_urls && Array.isArray(data.official_urls) && data.official_urls.length > 0)
           ? data.official_urls
           : [""],
+        entry_selection_method: data.entry_selection_method || "FIRST_COME",
+        max_participants: data.max_participants || null,
         entries: formattedEntries.length > 0 ? formattedEntries : [{
           entry_number: 1,
           entry_start_at: "",
@@ -195,6 +197,38 @@ export default function AdminEventDetailPage({
   }, [fetchEvent, fetchOrganizerUsers]);
 
   const handleSave = async (approvalStatus: "DRAFT" | "PENDING" | "APPROVED") => {
+    // 下書き状態から申請に変更する場合はバリデーションを適用
+    if (event?.approval_status === "DRAFT" && approvalStatus === "PENDING") {
+      const validUrls = formData.official_urls.filter((url) => url.trim() !== "");
+      if (validUrls.length === 0) {
+        alert("最低1つの公式サイトURLを入力してください");
+        return;
+      }
+      if (formData.entries.length === 0) {
+        alert("最低1つのエントリー情報を入力してください");
+        return;
+      }
+      if (formData.is_multi_day && !formData.event_end_date) {
+        alert("複数日開催の場合、終了日を入力してください");
+        return;
+      }
+      if (!formData.name || !formData.description || !formData.event_date) {
+        alert("必須項目（イベント名、説明、開催日）を入力してください");
+        return;
+      }
+      if (!formData.entry_selection_method) {
+        alert("エントリー決定方法を選択してください");
+        return;
+      }
+      // エントリー情報の必須項目チェック
+      for (const entry of formData.entries) {
+        if (!entry.entry_start_at) {
+          alert(`エントリー${entry.entry_number}の開始日時を入力してください`);
+          return;
+        }
+      }
+    }
+
     setSaving(true);
     try {
       // 編集時は、既存のorganizer_emailとorganizer_user_idを保持
@@ -467,28 +501,44 @@ export default function AdminEventDetailPage({
             onClick={handleCancel}
             disabled={saving}
           >
-            キャンセル
+            {event?.approval_status === "DRAFT" ? "変更を破棄" : "キャンセル"}
           </Button>
-          <Button
-            variant="secondary"
-            size="md"
-            rounded="md"
-            onClick={() => handleSave("DRAFT")}
-            disabled={saving}
-          >
-            {saving ? "保存中..." : "下書き"}
-          </Button>
-          {session?.user?.role === "ADMIN" ? (
-            // 管理者の場合は現在のステータスを維持
+          {event?.approval_status === "DRAFT" && (
             <Button
-              variant="primary"
+              variant="secondary"
               size="md"
               rounded="md"
-              onClick={() => handleSave(event?.approval_status === "APPROVED" ? "APPROVED" : event?.approval_status === "PENDING" ? "PENDING" : "DRAFT")}
+              onClick={() => handleSave("DRAFT")}
               disabled={saving}
             >
-              {saving ? "保存中..." : "保存して更新"}
+              {saving ? "保存中..." : "下書きとして保存"}
             </Button>
+          )}
+          {session?.user?.role === "ADMIN" ? (
+            // 管理者の場合
+            event?.approval_status === "DRAFT" ? (
+              // 下書き状態の場合は承認申請ボタンを表示
+              <Button
+                variant="primary"
+                size="md"
+                rounded="md"
+                onClick={() => handleSave("PENDING")}
+                disabled={saving}
+              >
+                {saving ? "保存中..." : "保存して承認申請"}
+              </Button>
+            ) : (
+              // 下書き以外の場合は現在のステータスを維持
+              <Button
+                variant="primary"
+                size="md"
+                rounded="md"
+                onClick={() => handleSave(event?.approval_status === "APPROVED" ? "APPROVED" : "PENDING")}
+                disabled={saving}
+              >
+                {saving ? "保存中..." : "保存して更新"}
+              </Button>
+            )
           ) : canUpdateDirectly ? (
             <Button
               variant="primary"
@@ -507,7 +557,7 @@ export default function AdminEventDetailPage({
               onClick={() => handleSave("PENDING")}
               disabled={saving}
             >
-              {saving ? "保存中..." : event?.approval_status === "REJECTED" ? "保存して再申請" : "保存して申請"}
+              {saving ? "保存中..." : event?.approval_status === "REJECTED" ? "保存して再申請" : event?.approval_status === "DRAFT" ? "保存して承認申請" : "保存して申請"}
             </Button>
           )}
         </EventForm>

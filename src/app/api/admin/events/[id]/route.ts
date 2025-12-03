@@ -63,6 +63,8 @@ export async function GET(
         image_url: true,
         approval_status: true,
         organizer_email: true,
+        entry_selection_method: true,
+        max_participants: true,
         organizer_user: {
           select: {
             id: true,
@@ -155,6 +157,54 @@ export async function PATCH(
 
     const body = await request.json();
     const tags: string[] = body.tags || [];
+    const approvalStatus = body.approval_status || existingEvent.approval_status;
+
+    // 下書き状態から申請に変更する場合はバリデーションを適用
+    if (existingEvent.approval_status === "DRAFT" && approvalStatus === "PENDING") {
+      // 必須項目のバリデーション
+      if (!body.name || !body.description || !body.event_date) {
+        return NextResponse.json(
+          { error: "必須項目が不足しています" },
+          { status: 400 }
+        );
+      }
+      // エントリー決定方法のバリデーション
+      if (!body.entry_selection_method || !["FIRST_COME", "LOTTERY", "SELECTION"].includes(body.entry_selection_method)) {
+        return NextResponse.json(
+          { error: "エントリー決定方法を選択してください" },
+          { status: 400 }
+        );
+      }
+      // 空文字列を除外してバリデーション
+      const validUrls = (body.official_urls || []).filter((url: string) => url && url.trim() !== "");
+      if (validUrls.length === 0) {
+        return NextResponse.json(
+          { error: "最低1つの公式サイトURLが必要です" },
+          { status: 400 }
+        );
+      }
+      if (!body.entries || body.entries.length === 0) {
+        return NextResponse.json(
+          { error: "最低1つのエントリー情報が必要です" },
+          { status: 400 }
+        );
+      }
+      // エントリー情報の必須項目チェック
+      for (const entry of body.entries) {
+        if (!entry.entry_start_at) {
+          return NextResponse.json(
+            { error: `エントリー${entry.entry_number}の開始日時が必要です` },
+            { status: 400 }
+          );
+        }
+      }
+      if (body.is_multi_day && !body.event_end_date) {
+        return NextResponse.json(
+          { error: "複数日開催の場合、終了日が必要です" },
+          { status: 400 }
+        );
+      }
+    }
 
     // 主催者情報の設定
     // 編集時は、変更が必要な時のみ更新し、それ以外は既存の値を維持
@@ -229,6 +279,8 @@ export async function PATCH(
           organizer_email: organizerEmail,
           organizer_user_id: organizerUserId,
           payment_methods: body.payment_methods || null,
+          entry_selection_method: body.entry_selection_method || "FIRST_COME",
+          max_participants: body.max_participants || null,
           // created_by_user_idは更新しない（最初の作成者を保持）
         },
       });
@@ -241,25 +293,46 @@ export async function PATCH(
       // 新しいエントリー情報を作成
       if (body.entries && Array.isArray(body.entries)) {
         for (const entry of body.entries) {
-          await tx.eventEntry.create({
+          // entry_start_atが必須項目なので、空の場合はスキップ（下書き保存時のみ）
+          if (approvalStatus === "DRAFT" && (!entry.entry_start_at || typeof entry.entry_start_at !== "string" || entry.entry_start_at.trim() === "")) {
+            continue;
+          }
+          
+          // entry_start_atが有効な値かチェック
+          const entryStartAt = entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== ""
+            ? new Date(entry.entry_start_at)
+            : null;
+          
+          if (!entryStartAt || isNaN(entryStartAt.getTime())) {
+            // 下書き保存時はスキップ、申請時はエラー（バリデーションで既にチェック済み）
+            if (approvalStatus === "DRAFT") {
+              continue;
+            }
+            return NextResponse.json(
+              { error: `エントリー${entry.entry_number}の開始日時が無効です` },
+              { status: 400 }
+            );
+          }
+
+          await (tx as any).eventEntry.create({
             data: {
               event_id: id,
               entry_number: entry.entry_number,
-              entry_start_at: new Date(entry.entry_start_at),
-              entry_start_public_at: entry.entry_start_public_at
+              entry_start_at: entryStartAt,
+              entry_start_public_at: entry.entry_start_public_at && typeof entry.entry_start_public_at === "string" && entry.entry_start_public_at.trim() !== ""
                 ? new Date(entry.entry_start_public_at)
                 : null,
               entry_deadline_at: entry.entry_deadline_at && typeof entry.entry_deadline_at === "string" && entry.entry_deadline_at.trim() !== ""
                 ? new Date(entry.entry_deadline_at)
                 : null,
               payment_due_type: entry.payment_due_type || "ABSOLUTE",
-              payment_due_at: entry.payment_due_type === "ABSOLUTE" && entry.payment_due_at
+              payment_due_at: entry.payment_due_type === "ABSOLUTE" && entry.payment_due_at && typeof entry.payment_due_at === "string" && entry.payment_due_at.trim() !== ""
                 ? new Date(entry.payment_due_at)
                 : null,
               payment_due_days_after_entry: entry.payment_due_type === "RELATIVE" && entry.payment_due_days_after_entry
                 ? entry.payment_due_days_after_entry
                 : null,
-              payment_due_public_at: entry.payment_due_public_at
+              payment_due_public_at: entry.payment_due_public_at && typeof entry.payment_due_public_at === "string" && entry.payment_due_public_at.trim() !== ""
                 ? new Date(entry.payment_due_public_at)
                 : null,
             },

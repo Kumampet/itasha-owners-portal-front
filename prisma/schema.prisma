@@ -138,6 +138,12 @@ model Event {
   // 支払方法（任意）
   payment_methods  Json?        @db.Json // { bank_transfer: boolean, credit_card: boolean, cash_on_day: boolean, other_cashless: boolean, other_cashless_text?: string }
 
+  // エントリー決定方法（必須）
+  entry_selection_method String @default("FIRST_COME") // "FIRST_COME" | "LOTTERY" | "SELECTION"
+  
+  // 参加可能台数（任意）
+  max_participants Int?         // 参加可能台数
+
   // イメージ画像（任意、16:9推奨）
   image_url        String?      @db.VarChar(500)
 

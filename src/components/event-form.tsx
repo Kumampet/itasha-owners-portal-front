@@ -34,6 +34,8 @@ export type EventFormData = {
   image_url: string;
   official_urls: string[];
   entries: EventEntryData[];
+  entry_selection_method: "FIRST_COME" | "LOTTERY" | "SELECTION";
+  max_participants: number | null;
   payment_methods?: {
     bank_transfer: boolean;
     credit_card: boolean;
@@ -457,6 +459,86 @@ export default function EventForm({
             最低1つのURL入力欄が必要です
           </p>
         )}
+      </div>
+
+      {/* エントリー決定方法 */}
+      <div>
+        <label className="block text-sm font-medium text-zinc-700 mb-2">
+          エントリー決定方法 *
+        </label>
+        <div className="space-y-2">
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="entry_selection_method"
+              value="FIRST_COME"
+              checked={formData.entry_selection_method === "FIRST_COME"}
+              onChange={(e) =>
+                onFormDataChange({
+                  ...formData,
+                  entry_selection_method: e.target.value as "FIRST_COME" | "LOTTERY" | "SELECTION",
+                })
+              }
+              className="h-4 w-4 border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+              required
+            />
+            <span className="ml-2 text-sm text-zinc-700">先着</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="entry_selection_method"
+              value="LOTTERY"
+              checked={formData.entry_selection_method === "LOTTERY"}
+              onChange={(e) =>
+                onFormDataChange({
+                  ...formData,
+                  entry_selection_method: e.target.value as "FIRST_COME" | "LOTTERY" | "SELECTION",
+                })
+              }
+              className="h-4 w-4 border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+              required
+            />
+            <span className="ml-2 text-sm text-zinc-700">抽選</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="entry_selection_method"
+              value="SELECTION"
+              checked={formData.entry_selection_method === "SELECTION"}
+              onChange={(e) =>
+                onFormDataChange({
+                  ...formData,
+                  entry_selection_method: e.target.value as "FIRST_COME" | "LOTTERY" | "SELECTION",
+                })
+              }
+              className="h-4 w-4 border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+              required
+            />
+            <span className="ml-2 text-sm text-zinc-700">選考</span>
+          </label>
+        </div>
+      </div>
+
+      {/* 参加可能台数 */}
+      <div>
+        <label className="block text-sm font-medium text-zinc-700">
+          参加可能台数 <span className="text-xs text-zinc-500">（任意）</span>
+        </label>
+        <input
+          type="number"
+          min="1"
+          value={formData.max_participants || ""}
+          onChange={(e) =>
+            onFormDataChange({
+              ...formData,
+              max_participants: e.target.value === "" ? null : parseInt(e.target.value, 10),
+            })
+          }
+          className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+          placeholder="例: 100"
+        />
       </div>
 
       {/* イメージ画像 */}

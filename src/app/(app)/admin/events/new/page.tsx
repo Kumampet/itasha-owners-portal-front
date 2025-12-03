@@ -31,6 +31,8 @@ function AdminNewEventPageContent() {
     organizer_email: session?.user?.email || "",
     image_url: "",
     official_urls: [""],
+    entry_selection_method: "FIRST_COME",
+    max_participants: null,
     entries: [
       {
         entry_number: 1,
@@ -81,19 +83,37 @@ function AdminNewEventPageContent() {
   }, [searchParams]);
 
   const handleSave = async (approvalStatus: "DRAFT" | "PENDING") => {
-    // バリデーション
-    const validUrls = formData.official_urls.filter((url) => url.trim() !== "");
-    if (validUrls.length === 0) {
-      alert("最低1つの公式サイトURLを入力してください");
-      return;
-    }
-    if (formData.entries.length === 0) {
-      alert("最低1つのエントリー情報を入力してください");
-      return;
-    }
-    if (formData.is_multi_day && !formData.event_end_date) {
-      alert("複数日開催の場合、終了日を入力してください");
-      return;
+    // 下書き保存の場合はバリデーションをスキップ
+    // 申請の場合は通常のバリデーションを適用
+    if (approvalStatus === "PENDING") {
+      const validUrls = formData.official_urls.filter((url) => url.trim() !== "");
+      if (validUrls.length === 0) {
+        alert("最低1つの公式サイトURLを入力してください");
+        return;
+      }
+      if (formData.entries.length === 0) {
+        alert("最低1つのエントリー情報を入力してください");
+        return;
+      }
+      if (formData.is_multi_day && !formData.event_end_date) {
+        alert("複数日開催の場合、終了日を入力してください");
+        return;
+      }
+      if (!formData.name || !formData.description || !formData.event_date) {
+        alert("必須項目（イベント名、説明、開催日）を入力してください");
+        return;
+      }
+      if (!formData.entry_selection_method) {
+        alert("エントリー決定方法を選択してください");
+        return;
+      }
+      // エントリー情報の必須項目チェック
+      for (const entry of formData.entries) {
+        if (!entry.entry_start_at) {
+          alert(`エントリー${entry.entry_number}の開始日時を入力してください`);
+          return;
+        }
+      }
     }
 
     setSaving(true);

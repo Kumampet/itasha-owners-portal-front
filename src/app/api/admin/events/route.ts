@@ -96,29 +96,57 @@ export async function POST(request: Request) {
     const body = await request.json();
     const keywords: string[] = body.keywords || [];
     const entries = body.entries || [];
+    const approvalStatus = body.approval_status || "DRAFT";
 
-    // バリデーション
-    if (!body.name || !body.description || !body.event_date) {
-      return NextResponse.json(
-        { error: "必須項目が不足しています" },
-        { status: 400 }
-      );
+    // 下書き保存の場合はバリデーションをスキップ
+    // 申請の場合は通常のバリデーションを適用
+    if (approvalStatus === "PENDING") {
+      // 必須項目のバリデーション
+      if (!body.name || !body.description || !body.event_date) {
+        return NextResponse.json(
+          { error: "必須項目が不足しています" },
+          { status: 400 }
+        );
+      }
+      // エントリー決定方法のバリデーション
+      if (!body.entry_selection_method || !["FIRST_COME", "LOTTERY", "SELECTION"].includes(body.entry_selection_method)) {
+        return NextResponse.json(
+          { error: "エントリー決定方法を選択してください" },
+          { status: 400 }
+        );
+      }
+      // 空文字列を除外してバリデーション
+      const validUrls = (body.official_urls || []).filter((url: string) => url && url.trim() !== "");
+      if (validUrls.length === 0) {
+        return NextResponse.json(
+          { error: "最低1つの公式サイトURLが必要です" },
+          { status: 400 }
+        );
+      }
+      if (!entries || entries.length === 0) {
+        return NextResponse.json(
+          { error: "最低1つのエントリー情報が必要です" },
+          { status: 400 }
+        );
+      }
+      // エントリー情報の必須項目チェック
+      for (const entry of entries) {
+        if (!entry.entry_start_at) {
+          return NextResponse.json(
+            { error: `エントリー${entry.entry_number}の開始日時が必要です` },
+            { status: 400 }
+          );
+        }
+      }
+      if (body.is_multi_day && !body.event_end_date) {
+        return NextResponse.json(
+          { error: "複数日開催の場合、終了日が必要です" },
+          { status: 400 }
+        );
+      }
     }
-    // 空文字列を除外してバリデーション
-    const validUrls = (body.official_urls || []).filter((url: string) => url && url.trim() !== "");
-    if (validUrls.length === 0) {
-      return NextResponse.json(
-        { error: "最低1つの公式サイトURLが必要です" },
-        { status: 400 }
-      );
-    }
-    if (!entries || entries.length === 0) {
-      return NextResponse.json(
-        { error: "最低1つのエントリー情報が必要です" },
-        { status: 400 }
-      );
-    }
-    // エントリー情報のバリデーション
+
+    // エントリー情報のバリデーション（下書き・申請共通）
     for (const entry of entries) {
       // エントリー締め切り日時と支払期限は任意項目のため、バリデーションを削除
       // 支払期限タイプがRELATIVEの場合、日数が指定されている場合は1日以上であることを確認
@@ -128,12 +156,6 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
-    }
-    if (body.is_multi_day && !body.event_end_date) {
-      return NextResponse.json(
-        { error: "複数日開催の場合、終了日が必要です" },
-        { status: 400 }
-      );
     }
 
     // イベント作成者（最初にイベントを作成したアカウント）を自動設定
@@ -185,11 +207,13 @@ export async function POST(request: Request) {
         street_address: body.street_address || null,
         venue_name: body.venue_name || null,
         keywords: keywords.length > 0 ? keywords : undefined,
-        official_urls: validUrls, // 空文字列を除外したURL配列
+        official_urls: (body.official_urls || []).filter((url: string) => url && url.trim() !== ""), // 空文字列を除外したURL配列
         image_url: body.image_url || null,
         approval_status: body.approval_status || "DRAFT",
         organizer_email: organizerEmail,
         payment_methods: body.payment_methods || null,
+        entry_selection_method: body.entry_selection_method || "FIRST_COME",
+        max_participants: body.max_participants || null,
       };
 
       // organizer_user_idがnullでない場合のみ設定
@@ -207,12 +231,34 @@ export async function POST(request: Request) {
       });
 
       // エントリー情報を作成
+      // 下書き保存時は、entry_start_atが空の場合はスキップ
       for (const entry of entries) {
+        // entry_start_atが必須項目なので、空の場合はスキップ（下書き保存時のみ）
+        if (approvalStatus === "DRAFT" && (!entry.entry_start_at || typeof entry.entry_start_at !== "string" || entry.entry_start_at.trim() === "")) {
+          continue;
+        }
+
+        // entry_start_atが有効な値かチェック
+        const entryStartAt = entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== ""
+          ? new Date(entry.entry_start_at)
+          : null;
+
+        if (!entryStartAt || isNaN(entryStartAt.getTime())) {
+          // 下書き保存時はスキップ、申請時はエラー（バリデーションで既にチェック済み）
+          if (approvalStatus === "DRAFT") {
+            continue;
+          }
+          return NextResponse.json(
+            { error: `エントリー${entry.entry_number}の開始日時が無効です` },
+            { status: 400 }
+          );
+        }
+
         await (tx as any).eventEntry.create({
           data: {
             event_id: createdEvent.id,
             entry_number: entry.entry_number,
-            entry_start_at: new Date(entry.entry_start_at),
+            entry_start_at: entryStartAt,
             entry_start_public_at: entry.entry_start_public_at && typeof entry.entry_start_public_at === "string" && entry.entry_start_public_at.trim() !== ""
               ? new Date(entry.entry_start_public_at)
               : null,
@@ -252,6 +298,8 @@ export async function POST(request: Request) {
           official_urls: true,
           image_url: true,
           approval_status: true,
+          entry_selection_method: true,
+          max_participants: true,
           entries: {
             select: {
               entry_number: true,
@@ -274,7 +322,7 @@ export async function POST(request: Request) {
     // キャッシュを無効化（新規作成時は一覧と個別の両方）
     const { revalidateTag } = await import("next/cache");
     revalidateTag("events", {});
-    if (event?.id) {
+    if (event && typeof event === "object" && "id" in event) {
       revalidateTag(`event-${event.id}`, {});
     }
 
