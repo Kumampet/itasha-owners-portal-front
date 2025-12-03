@@ -96,7 +96,7 @@ export async function GET(request: Request) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filteredEvents = events.map((event: any) => ({
       ...event,
-      entries: (event.entries || []).map((entry) => {
+      entries: (event.entries || []).map((entry: { entry_start_public_at: Date | null; entry_start_at: Date; payment_due_public_at: Date | null; payment_due_at: Date | null }) => {
         const entryStartAt =
           entry.entry_start_public_at &&
           entry.entry_start_public_at !== null &&
