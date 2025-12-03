@@ -107,7 +107,7 @@ export async function GET(request: Request) {
     }
 
     // ソート条件: デフォルトは現在日から開催日時の近い順（昇順）
-    const orderBy = {
+    const orderBy: { event_date: "asc" | "desc" } = {
       event_date: sortOrder === "desc" ? "desc" : "asc",
     };
 

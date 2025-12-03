@@ -82,6 +82,8 @@ export default function AdminEventDetailPage({
     organizer_user_id: null,
     image_url: "",
     official_urls: [""],
+    entry_selection_method: "FIRST_COME",
+    max_participants: null,
     entries: [],
   });
 

@@ -137,6 +137,7 @@ export async function PATCH(
       select: {
         organizer_user_id: true,
         organizer_email: true,
+        approval_status: true,
       },
     });
 
