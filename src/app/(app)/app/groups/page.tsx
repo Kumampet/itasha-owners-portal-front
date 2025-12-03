@@ -30,7 +30,7 @@ export default function GroupsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = "団体（併せ）管理 | 痛車オーナーズナビ | いたなび！";
+    document.title = "団体管理 | 痛車オーナーズナビ | いたなび！";
   }, []);
 
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function GroupsPage() {
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                団体（併せ）管理
+                団体管理
               </h1>
               <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
                 イベントごとの団体参加（併せ）のメンバー募集・参加状況・一斉連絡を

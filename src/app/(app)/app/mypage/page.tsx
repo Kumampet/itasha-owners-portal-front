@@ -197,7 +197,7 @@ export default function MyPage() {
                     </LinkCard>
 
                     <LinkCard href="/app/groups">
-                        <CardTitle>団体（併せ）管理</CardTitle>
+                        <CardTitle>団体管理</CardTitle>
                         <CardContent className="mt-1">
                             <p className="text-xs text-zinc-700 sm:text-sm">
                                 併せメンバーの募集状況や一斉連絡ポリシーを確認し、

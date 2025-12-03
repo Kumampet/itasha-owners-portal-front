@@ -37,7 +37,7 @@ export default function TermPage() {
           </h2>
           <ul className="list-disc list-inside space-y-2 mb-6">
             <li className="text-zinc-700">
-              <strong className="font-semibold text-zinc-900">「本サービス」</strong>：運営者が提供する痛車イベント情報の一元管理、団体（併せ）管理を主目的とする「痛車オーナーズナビ（いたなび！）」という名称のサービス（ウェブサイトおよび関連するアプリケーションを含みます）。
+              <strong className="font-semibold text-zinc-900">「本サービス」</strong>：運営者が提供する痛車イベント情報の一元管理、団体管理を主目的とする「痛車オーナーズナビ（いたなび！）」という名称のサービス（ウェブサイトおよび関連するアプリケーションを含みます）。
             </li>
             <li className="text-zinc-700">
               <strong className="font-semibold text-zinc-900">「ユーザー」</strong>：本規約に同意し、本サービスを利用するためにアカウント登録を行った個人をいいます。
