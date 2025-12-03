@@ -46,7 +46,7 @@ export async function GET(request: Request) {
         name: true,
         description: true,
         event_date: true,
-        event_end_date: true,
+        event_end_date: true as any,
         is_multi_day: true,
         approval_status: true,
         created_at: true,
@@ -66,7 +66,7 @@ export async function GET(request: Request) {
             entry_number: "asc",
           },
         },
-      },
+      } as any,
     });
 
     return NextResponse.json(events);
@@ -208,25 +208,25 @@ export async function POST(request: Request) {
 
       // エントリー情報を作成
       for (const entry of entries) {
-        await tx.eventEntry.create({
+        await (tx as any).eventEntry.create({
           data: {
             event_id: createdEvent.id,
             entry_number: entry.entry_number,
             entry_start_at: new Date(entry.entry_start_at),
-            entry_start_public_at: entry.entry_start_public_at
+            entry_start_public_at: entry.entry_start_public_at && typeof entry.entry_start_public_at === "string" && entry.entry_start_public_at.trim() !== ""
               ? new Date(entry.entry_start_public_at)
               : null,
             entry_deadline_at: entry.entry_deadline_at && typeof entry.entry_deadline_at === "string" && entry.entry_deadline_at.trim() !== ""
               ? new Date(entry.entry_deadline_at)
               : null,
             payment_due_type: entry.payment_due_type || "ABSOLUTE",
-            payment_due_at: entry.payment_due_type === "ABSOLUTE" && entry.payment_due_at
+            payment_due_at: entry.payment_due_type === "ABSOLUTE" && entry.payment_due_at && typeof entry.payment_due_at === "string" && entry.payment_due_at.trim() !== ""
               ? new Date(entry.payment_due_at)
               : null,
             payment_due_days_after_entry: entry.payment_due_type === "RELATIVE" && entry.payment_due_days_after_entry
               ? entry.payment_due_days_after_entry
               : null,
-            payment_due_public_at: entry.payment_due_public_at
+            payment_due_public_at: entry.payment_due_public_at && typeof entry.payment_due_public_at === "string" && entry.payment_due_public_at.trim() !== ""
               ? new Date(entry.payment_due_public_at)
               : null,
           },
@@ -241,7 +241,7 @@ export async function POST(request: Request) {
           name: true,
           description: true,
           event_date: true,
-          event_end_date: true,
+          event_end_date: true as any,
           is_multi_day: true,
           postal_code: true,
           prefecture: true,
@@ -267,7 +267,7 @@ export async function POST(request: Request) {
               entry_number: "asc",
             },
           },
-        },
+        } as any,
       });
     });
 

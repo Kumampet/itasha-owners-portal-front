@@ -94,12 +94,14 @@ export async function GET() {
       entries: (event.entries || []).map((entry: EntryType) => {
         const entryStartAt =
           entry.entry_start_public_at &&
+          entry.entry_start_public_at !== null &&
             new Date(entry.entry_start_public_at) > now
             ? null
             : entry.entry_start_at;
 
         const paymentDueAt =
           entry.payment_due_public_at &&
+          entry.payment_due_public_at !== null &&
             new Date(entry.payment_due_public_at) > now
             ? null
             : entry.payment_due_at;
