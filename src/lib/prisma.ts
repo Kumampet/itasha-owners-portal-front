@@ -146,17 +146,8 @@ export const prisma = new Proxy({} as PrismaClient, {
   },
 });
 
-// プロセス終了時に接続をクローズ（サーバーレス環境では通常不要だが、念のため）
-if (typeof process !== "undefined") {
-  process.on("beforeExit", async () => {
-    try {
-      if (globalForPrisma.prisma) {
-        await globalForPrisma.prisma.$disconnect();
-      }
-    } catch (error) {
-      console.error("[Prisma] Error disconnecting on process exit:", error);
-    }
-  });
-}
+// プロセス終了時の接続クローズは削除
+// Edge Runtimeではprocess.onが使用できないため
+// Next.jsのサーバーレス環境では接続は自動的に管理されるため、この処理は不要
 
 
