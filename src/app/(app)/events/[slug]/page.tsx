@@ -241,14 +241,17 @@ export default async function EventDetailPage({
                 支払期限: {entryInfo.paymentDue}
               </p>
             )}
-            <EventDetailActions eventId={event.id} />
+            <EventDetailActions 
+              eventId={event.id} 
+              officialUrls={event.official_urls as string[] | undefined}
+            />
           </div>
         </section>
 
         {event.description && (
           <section className="rounded-3xl border border-zinc-200 bg-white p-5 sm:p-7">
             <h2 className="text-lg font-semibold text-zinc-900">イベント紹介</h2>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-700">
+            <p className="mt-2 text-sm leading-relaxed text-zinc-700 whitespace-pre-wrap">
               {event.description}
             </p>
           </section>
