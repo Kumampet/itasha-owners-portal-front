@@ -195,6 +195,7 @@ export async function POST(request: Request) {
     // トランザクションでイベント、エントリー情報、キーワードを同時に作成
     const event = await prisma.$transaction(async (tx) => {
       // イベントを作成
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const eventData: any = {
         name: body.name,
         description: body.description,
@@ -254,6 +255,7 @@ export async function POST(request: Request) {
           );
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (tx as any).eventEntry.create({
           data: {
             event_id: createdEvent.id,
@@ -315,8 +317,8 @@ export async function POST(request: Request) {
               entry_number: "asc",
             },
           },
-        } as any,
-      });
+        },
+      } as any);
     });
 
     // キャッシュを無効化（新規作成時は一覧と個別の両方）

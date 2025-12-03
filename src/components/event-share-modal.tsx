@@ -17,16 +17,13 @@ export function EventShareModal({
     eventTitle,
     eventUrl,
 }: EventShareModalProps) {
-    const [hasWebShare, setHasWebShare] = useState(false);
-
-    useEffect(() => {
+    const [hasWebShare] = useState(() => {
         if (typeof window !== "undefined" && "share" in navigator) {
-            setHasWebShare(true);
+            return true;
         }
-    }, []);
+        return false;
+    });
 
-  const shareText = `${eventTitle}\n${eventUrl}`;
-  const encodedText = encodeURIComponent(shareText);
   const encodedUrl = encodeURIComponent(eventUrl);
 
   // X（Twitter）でシェア
@@ -43,15 +40,10 @@ export function EventShareModal({
         window.open(url, "_blank", "width=550,height=420");
     };
 
-    // Facebookでシェア
-    const handleShareFacebook = () => {
-        const url = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
-        window.open(url, "_blank", "width=550,height=420");
-    };
-
     // Instagramでシェア（URLをコピー）
     const handleShareInstagram = async () => {
         // InstagramはWebから直接シェアできないため、URLとテキストをコピー
+        const shareText = `${eventTitle}\n${eventUrl}`;
         try {
             await navigator.clipboard.writeText(shareText);
             alert("イベント情報をクリップボードにコピーしました。Instagramに貼り付けてシェアしてください。");

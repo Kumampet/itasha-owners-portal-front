@@ -315,6 +315,7 @@ export async function PATCH(
             );
           }
 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await (tx as any).eventEntry.create({
             data: {
               event_id: id,
