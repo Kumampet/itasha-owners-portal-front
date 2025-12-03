@@ -20,7 +20,7 @@ export async function GET(
     }
 
     const { id } = await params;
-    
+
     // イベントを取得して権限チェック
     const eventForCheck = await prisma.event.findUnique({
       where: { id },
@@ -128,12 +128,13 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    
+
     // イベントを取得して権限チェック
     const existingEvent = await prisma.event.findUnique({
       where: { id },
       select: {
         organizer_user_id: true,
+        organizer_email: true,
       },
     });
 
@@ -155,32 +156,48 @@ export async function PATCH(
     const body = await request.json();
     const tags: string[] = body.tags || [];
 
-    // 主催者ユーザーIDの設定
-    let organizerUserId: string | null = null;
-    
-    // 管理者権限の場合、organizer_user_idが直接指定されている場合はそれを使用
-    if (session.user?.role === "ADMIN" && body.organizer_user_id) {
-      // 指定されたユーザーがORGANIZER権限かどうかを確認
-      const organizerUser = await prisma.user.findUnique({
-        where: { id: body.organizer_user_id },
-        select: { id: true, role: true, email: true },
-      });
-      
-      if (organizerUser && organizerUser.role === "ORGANIZER") {
-        organizerUserId = organizerUser.id;
-      } else {
-        return NextResponse.json(
-          { error: "指定されたユーザーはORGANIZER権限ではありません" },
-          { status: 400 }
-        );
-      }
-    } else if (body.organizer_email) {
-      // メールアドレスからユーザーを検索（既存のロジック）
+    // 主催者情報の設定
+    // 編集時は、変更が必要な時のみ更新し、それ以外は既存の値を維持
+    let organizerEmail = existingEvent.organizer_email;
+    let organizerUserId: string | null = existingEvent.organizer_user_id;
+
+    // organizer_emailが変更されている場合のみ更新
+    if (body.organizer_email && body.organizer_email !== existingEvent.organizer_email) {
+      organizerEmail = body.organizer_email;
+
+      // メールアドレスからユーザーを検索
       const organizerUser = await prisma.user.findUnique({
         where: { email: body.organizer_email },
         select: { id: true },
       });
       organizerUserId = organizerUser?.id || null;
+    }
+
+    // 管理者権限の場合、organizer_user_idが直接指定されている場合はそれを使用
+    if (session.user?.role === "ADMIN" && body.organizer_user_id && typeof body.organizer_user_id === "string" && body.organizer_user_id.trim() !== "") {
+      // 既存の値と異なる場合のみ更新
+      if (body.organizer_user_id !== existingEvent.organizer_user_id) {
+        // 指定されたユーザーがORGANIZER権限かどうかを確認
+        const organizerUser = await prisma.user.findUnique({
+          where: { id: body.organizer_user_id },
+          select: { id: true, role: true, email: true },
+        });
+
+        if (organizerUser && organizerUser.role === "ORGANIZER") {
+          organizerUserId = organizerUser.id;
+          // organizer_user_idが変更された場合、対応するメールアドレスも更新
+          if (organizerUser.email) {
+            organizerEmail = organizerUser.email;
+          }
+        } else if (organizerUser) {
+          // ユーザーは存在するが、ORGANIZER権限ではない
+          return NextResponse.json(
+            { error: "指定されたユーザーはORGANIZER権限ではありません" },
+            { status: 400 }
+          );
+        }
+        // organizerUserがnullの場合は、既存の値を維持
+      }
     }
 
     // トランザクションでイベントとタグを同時に更新
@@ -191,6 +208,7 @@ export async function PATCH(
       });
 
       // イベントを更新
+      // created_by_user_idは変更しない（最初にイベントを作成したアカウントを保持）
       await tx.event.update({
         where: { id },
         data: {
@@ -208,9 +226,10 @@ export async function PATCH(
           official_urls: body.official_urls || [],
           image_url: body.image_url || null,
           approval_status: body.approval_status,
-          organizer_email: body.organizer_email || null,
+          organizer_email: organizerEmail,
           organizer_user_id: organizerUserId,
           payment_methods: body.payment_methods || null,
+          // created_by_user_idは更新しない（最初の作成者を保持）
         },
       });
 
@@ -230,7 +249,7 @@ export async function PATCH(
               entry_start_public_at: entry.entry_start_public_at
                 ? new Date(entry.entry_start_public_at)
                 : null,
-              entry_deadline_at: entry.entry_deadline_at
+              entry_deadline_at: entry.entry_deadline_at && typeof entry.entry_deadline_at === "string" && entry.entry_deadline_at.trim() !== ""
                 ? new Date(entry.entry_deadline_at)
                 : null,
               payment_due_type: entry.payment_due_type || "ABSOLUTE",

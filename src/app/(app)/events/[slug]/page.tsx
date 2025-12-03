@@ -39,7 +39,7 @@ function formatEntryInfo(entries: Array<{
   entry_number: number;
   entry_start_at: Date;
   entry_start_public_at: Date | null;
-  entry_deadline_at: Date;
+  entry_deadline_at: Date | null;
   payment_due_at: Date | null;
   payment_due_public_at: Date | null;
 }>) {

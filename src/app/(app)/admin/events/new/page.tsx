@@ -28,7 +28,7 @@ function AdminNewEventPageContent() {
     city: "",
     street_address: "",
     venue_name: "",
-    organizer_email: "",
+    organizer_email: session?.user?.email || "",
     image_url: "",
     official_urls: [""],
     entries: [
@@ -99,11 +99,9 @@ function AdminNewEventPageContent() {
     setSaving(true);
 
     try {
-      // 申請時（PENDING）は、主催者メールアドレスが未設定の場合、ログインユーザーのメールアドレスを自動設定
-      const organizerEmail =
-        approvalStatus === "PENDING" && !formData.organizer_email && session?.user?.email
-          ? session.user.email
-          : formData.organizer_email || "";
+      // イベント作成時は、ログインユーザーの情報を自動設定
+      // organizer_emailが空の場合は、ログインユーザーのメールアドレスを使用
+      const organizerEmail = formData.organizer_email || session?.user?.email || "";
 
       const res = await fetch("/api/admin/events", {
         method: "POST",
@@ -111,6 +109,7 @@ function AdminNewEventPageContent() {
         body: JSON.stringify({
           ...formData,
           organizer_email: organizerEmail,
+          organizer_user_id: session?.user?.id || null,
           keywords: keywords,
           approval_status: approvalStatus,
         }),

@@ -47,6 +47,9 @@ model User {
   // 【修正】主催しているイベントのリスト
   events_organized     Event[]      @relation("EventOrganizer")
   
+  // 作成したイベントのリスト（最初にイベントを作成したアカウント）
+  events_created       Event[]      @relation("EventCreator")
+  
   // 情報提供フォーム
   event_submissions    EventSubmission[]
   
@@ -148,6 +151,10 @@ model Event {
   // リレーション
   organizer_user   User?        @relation("EventOrganizer", fields: [organizer_user_id], references: [id])
   organizer_user_id String?     @db.VarChar(36)
+  
+  // イベント作成者（最初にイベントを作成したアカウント、変更不可）
+  created_by_user  User?        @relation("EventCreator", fields: [created_by_user_id], references: [id])
+  created_by_user_id String?    @db.VarChar(36)
   
   // 主催者メールアドレス（必須、フロントには出ない）
   organizer_email  String       @db.VarChar(255)

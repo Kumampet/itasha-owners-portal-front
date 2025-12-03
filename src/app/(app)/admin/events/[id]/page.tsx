@@ -36,7 +36,7 @@ type Event = {
     entry_number: number;
     entry_start_at: string;
     entry_start_public_at: string | null;
-    entry_deadline_at: string;
+    entry_deadline_at: string | null;
     payment_due_type: string;
     payment_due_at: string | null;
     payment_due_days_after_entry: number | null;
@@ -93,11 +93,13 @@ export default function AdminEventDetailPage({
       (session?.user?.role === "ORGANIZER" && event.organizer_user?.id === session.user.id));
 
   // 一度公開されたイベントを編集する場合（作成者またはadminのみ）
+  // 管理者の場合は常に直接更新可能
   const canUpdateDirectly =
     event &&
-    event.approval_status === "APPROVED" &&
     (session?.user?.role === "ADMIN" ||
-      (session?.user?.role === "ORGANIZER" && event.organizer_user?.id === session.user.id));
+      (event.approval_status === "APPROVED" &&
+        session?.user?.role === "ORGANIZER" &&
+        event.organizer_user?.id === session.user.id));
 
   const fetchEvent = useCallback(async () => {
     try {
@@ -108,7 +110,7 @@ export default function AdminEventDetailPage({
       }
       const data = await res.json();
       setEvent(data);
-      
+
       // エントリー情報をフォーマット
       const formattedEntries = (data.entries || []).map((entry: Event["entries"][number]) => ({
         entry_number: entry.entry_number,
@@ -176,7 +178,7 @@ export default function AdminEventDetailPage({
   // ORGANIZER権限のユーザー一覧を取得
   const fetchOrganizerUsers = useCallback(async () => {
     if (session?.user?.role !== "ADMIN") return;
-    
+
     try {
       const res = await fetch("/api/admin/users?role=ORGANIZER");
       if (!res.ok) throw new Error("Failed to fetch organizer users");
@@ -195,18 +197,14 @@ export default function AdminEventDetailPage({
   const handleSave = async (approvalStatus: "DRAFT" | "PENDING" | "APPROVED") => {
     setSaving(true);
     try {
-      // 申請時（PENDING）は、主催者メールアドレスが未設定の場合、ログインユーザーのメールアドレスを自動設定
-      const organizerEmail =
-        approvalStatus === "PENDING" && !formData.organizer_email && session?.user?.email
-          ? session.user.email
-          : formData.organizer_email || null;
-
+      // 編集時は、既存のorganizer_emailとorganizer_user_idを保持
+      // 変更が必要な場合のみ送信（フォームで変更されていない場合は既存の値が維持される）
       const res = await fetch(`/api/admin/events/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          organizer_email: organizerEmail,
+          organizer_email: formData.organizer_email || null,
           organizer_user_id: session?.user?.role === "ADMIN" ? formData.organizer_user_id : undefined,
           keywords: keywords,
           approval_status: approvalStatus,
@@ -480,7 +478,18 @@ export default function AdminEventDetailPage({
           >
             {saving ? "保存中..." : "下書き"}
           </Button>
-          {canUpdateDirectly ? (
+          {session?.user?.role === "ADMIN" ? (
+            // 管理者の場合は現在のステータスを維持
+            <Button
+              variant="primary"
+              size="md"
+              rounded="md"
+              onClick={() => handleSave(event?.approval_status === "APPROVED" ? "APPROVED" : event?.approval_status === "PENDING" ? "PENDING" : "DRAFT")}
+              disabled={saving}
+            >
+              {saving ? "保存中..." : "保存して更新"}
+            </Button>
+          ) : canUpdateDirectly ? (
             <Button
               variant="primary"
               size="md"
@@ -508,12 +517,12 @@ export default function AdminEventDetailPage({
             <div className="mb-2 flex items-center gap-2">
               <span
                 className={`rounded-full px-2 py-0.5 text-xs font-medium ${event.approval_status === "DRAFT"
-                    ? "bg-zinc-100 text-zinc-700"
-                    : event.approval_status === "PENDING"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : event.approval_status === "APPROVED"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
+                  ? "bg-zinc-100 text-zinc-700"
+                  : event.approval_status === "PENDING"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : event.approval_status === "APPROVED"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
                   }`}
               >
                 {event.approval_status === "DRAFT"
@@ -612,15 +621,19 @@ export default function AdminEventDetailPage({
                         </div>
                         <div>
                           <span className="font-medium">エントリー締切日時:</span>{" "}
-                          {new Date(entry.entry_deadline_at).toLocaleString("ja-JP")}
+                          {entry.entry_deadline_at ? (
+                            <span>{new Date(entry.entry_deadline_at).toLocaleString("ja-JP")}</span>
+                          ) : (
+                            <span className="text-zinc-500">未設定</span>
+                          )}
                         </div>
                         <div>
                           <span className="font-medium">支払期限日時:</span>{" "}
                           {entry.payment_due_at
                             ? new Date(entry.payment_due_at).toLocaleString("ja-JP")
                             : entry.payment_due_type === "RELATIVE" && entry.payment_due_days_after_entry
-                            ? `エントリー申し込みから${entry.payment_due_days_after_entry}日以内`
-                            : "未設定"}
+                              ? `エントリー申し込みから${entry.payment_due_days_after_entry}日以内`
+                              : "未設定"}
                         </div>
                         <div>
                           <span className="font-medium">支払期限日時公開日時:</span>{" "}

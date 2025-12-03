@@ -135,7 +135,11 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    if (!body.organizer_email) {
+
+    // イベント作成者（最初にイベントを作成したアカウント）を自動設定
+    // organizer_emailが指定されていない場合は、ログインユーザーのメールアドレスを使用
+    const organizerEmail = body.organizer_email || session.user?.email || "";
+    if (!organizerEmail) {
       return NextResponse.json(
         { error: "主催者メールアドレスが必要です" },
         { status: 400 }
@@ -143,38 +147,63 @@ export async function POST(request: Request) {
     }
 
     // 主催者メールアドレスからユーザーを検索
+    // organizer_user_idが指定されていない場合は、ログインユーザーのIDを使用
     let organizerUserId: string | null = null;
-    if (body.organizer_email) {
+    if (body.organizer_user_id && typeof body.organizer_user_id === "string" && body.organizer_user_id.trim() !== "") {
+      // 指定されたユーザーIDを使用
       const organizerUser = await prisma.user.findUnique({
-        where: { email: body.organizer_email },
+        where: { id: body.organizer_user_id },
+        select: { id: true },
+      });
+      organizerUserId = organizerUser?.id || null;
+    } else if (organizerEmail) {
+      // メールアドレスからユーザーを検索
+      const organizerUser = await prisma.user.findUnique({
+        where: { email: organizerEmail },
         select: { id: true },
       });
       organizerUserId = organizerUser?.id || null;
     }
 
+    // メールアドレスからユーザーが見つからない場合、ログインユーザーのIDを使用
+    if (!organizerUserId && session.user?.id) {
+      organizerUserId = session.user.id;
+    }
+
     // トランザクションでイベント、エントリー情報、キーワードを同時に作成
     const event = await prisma.$transaction(async (tx) => {
       // イベントを作成
+      const eventData: any = {
+        name: body.name,
+        description: body.description,
+        event_date: new Date(body.event_date),
+        is_multi_day: body.is_multi_day || false,
+        event_end_date: body.event_end_date ? new Date(body.event_end_date) : null,
+        postal_code: body.postal_code || null,
+        prefecture: body.prefecture || null,
+        city: body.city || null,
+        street_address: body.street_address || null,
+        venue_name: body.venue_name || null,
+        keywords: keywords.length > 0 ? keywords : undefined,
+        official_urls: validUrls, // 空文字列を除外したURL配列
+        image_url: body.image_url || null,
+        approval_status: body.approval_status || "DRAFT",
+        organizer_email: organizerEmail,
+        payment_methods: body.payment_methods || null,
+      };
+
+      // organizer_user_idがnullでない場合のみ設定
+      if (organizerUserId) {
+        eventData.organizer_user_id = organizerUserId;
+      }
+
+      // イベント作成者（最初にイベントを作成したアカウント）を設定
+      if (session.user?.id) {
+        eventData.created_by_user_id = session.user.id;
+      }
+
       const createdEvent = await tx.event.create({
-        data: {
-          name: body.name,
-          description: body.description,
-          event_date: new Date(body.event_date),
-          is_multi_day: body.is_multi_day || false,
-          event_end_date: body.event_end_date ? new Date(body.event_end_date) : null,
-          postal_code: body.postal_code || null,
-          prefecture: body.prefecture || null,
-          city: body.city || null,
-          street_address: body.street_address || null,
-          venue_name: body.venue_name || null,
-          keywords: keywords.length > 0 ? keywords : undefined,
-          official_urls: validUrls, // 空文字列を除外したURL配列
-          image_url: body.image_url || null,
-          approval_status: body.approval_status || "DRAFT",
-          organizer_email: body.organizer_email,
-          organizer_user_id: organizerUserId,
-          payment_methods: body.payment_methods || null,
-        },
+        data: eventData,
       });
 
       // エントリー情報を作成
@@ -187,7 +216,7 @@ export async function POST(request: Request) {
             entry_start_public_at: entry.entry_start_public_at
               ? new Date(entry.entry_start_public_at)
               : null,
-            entry_deadline_at: entry.entry_deadline_at
+            entry_deadline_at: entry.entry_deadline_at && typeof entry.entry_deadline_at === "string" && entry.entry_deadline_at.trim() !== ""
               ? new Date(entry.entry_deadline_at)
               : null,
             payment_due_type: entry.payment_due_type || "ABSOLUTE",
