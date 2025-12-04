@@ -284,14 +284,14 @@ function NewGroupForm() {
               variant="primary"
               size="md"
               rounded="md"
-              fullWidth
+              className="flex-1"
               disabled={saving}
             >
               {saving ? "作成中..." : "作成する"}
             </Button>
             <Link
               href="/app/groups"
-              className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+              className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 whitespace-nowrap"
             >
               キャンセル
             </Link>
