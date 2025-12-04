@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import ConfirmModal from "@/components/confirm-modal";
