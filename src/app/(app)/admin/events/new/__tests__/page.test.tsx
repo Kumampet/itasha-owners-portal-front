@@ -1,4 +1,4 @@
-import { render, screen, waitFor, queryAllByText } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import AdminNewEventPage from '../page'
 
@@ -225,7 +225,7 @@ describe('AdminNewEventPage', () => {
 
     // ボタンが無効になっていることを確認
     const buttons = screen.getAllByRole('button')
-    const disabledButtons = buttons.filter(btn => btn.disabled)
+    const disabledButtons = buttons.filter(btn => (btn as HTMLButtonElement).disabled)
     expect(disabledButtons.length).toBeGreaterThan(0)
   })
 
