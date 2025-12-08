@@ -13,20 +13,46 @@ export async function GET(request: Request) {
 
     const now = new Date();
 
+    // 過去のイベントを除外する条件（終了日がある場合は終了日、ない場合は開始日で判定）
+    const dateFilter = {
+      OR: [
+        {
+          AND: [
+            { event_end_date: { not: null } },
+            { event_end_date: { gte: now } },
+          ],
+        },
+        {
+          AND: [
+            { event_end_date: null },
+            { event_date: { gte: now } },
+          ],
+        },
+      ],
+    };
+
     // 検索条件とソート条件を構築
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {
       approval_status: "APPROVED",
     };
 
+    // 検索条件と日付フィルターを組み合わせ
     if (search) {
-      where.OR = [
-        { name: { contains: search } },
-        { description: { contains: search } },
-        { prefecture: { contains: search } },
-        { city: { contains: search } },
-        { venue_name: { contains: search } },
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: search } },
+            { description: { contains: search } },
+            { prefecture: { contains: search } },
+            { city: { contains: search } },
+            { venue_name: { contains: search } },
+          ],
+        },
+        dateFilter,
       ];
+    } else {
+      Object.assign(where, dateFilter);
     }
 
     // ソート条件: デフォルトは現在日から開催日時の近い順（昇順）

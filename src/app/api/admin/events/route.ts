@@ -22,17 +22,47 @@ export async function GET(request: Request) {
     const sortOrder = searchParams.get("sortOrder") || "desc";
     const search = searchParams.get("search");
 
+    const now = new Date();
+
+    // 過去のイベントを除外する条件（終了日がある場合は終了日、ない場合は開始日で判定）
+    const dateFilter = {
+      OR: [
+        {
+          AND: [
+            { event_end_date: { not: null } },
+            { event_end_date: { gte: now } },
+          ],
+        },
+        {
+          AND: [
+            { event_end_date: null },
+            { event_date: { gte: now } },
+          ],
+        },
+      ],
+    };
+
     // フィルター条件を構築
     const where: Record<string, unknown> = {};
+    
+    // AND条件の配列を構築
+    const andConditions: unknown[] = [dateFilter];
+    
     if (status && status !== "ALL") {
-      where.approval_status = status;
+      andConditions.push({ approval_status: status });
     }
+    
     if (search) {
-      where.OR = [
-        { name: { contains: search } },
-        { description: { contains: search } },
-      ];
+      andConditions.push({
+        OR: [
+          { name: { contains: search } },
+          { description: { contains: search } },
+        ],
+      });
     }
+    
+    // すべての条件をANDで結合
+    where.AND = andConditions;
 
     // ソート条件を構築
     const orderBy: Record<string, string> = {};
