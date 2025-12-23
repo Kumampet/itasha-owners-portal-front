@@ -1,46 +1,84 @@
-# GoogleAdSenseボット（Mediapartners-Google）のみを許可
+# Google系ボットを全面的に許可（Google広告利用のため）
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Googlebot-Image
+Allow: /
+Crawl-delay: 0
+
+User-agent: Googlebot-Mobile
+Allow: /
+Crawl-delay: 0
+
 User-agent: Mediapartners-Google
 Allow: /
 Crawl-delay: 0
 
-# すべてのその他のボットを拒否
-User-agent: *
+User-agent: AdsBot-Google
+Allow: /
+Crawl-delay: 0
+
+User-agent: AdsBot-Google-Mobile
+Allow: /
+Crawl-delay: 0
+
+# 代表的なブラウザのクローラーを許可
+User-agent: Chrome
+Allow: /
+Crawl-delay: 0
+
+User-agent: Firefox
+Allow: /
+Crawl-delay: 0
+
+User-agent: Safari
+Allow: /
+Crawl-delay: 0
+
+User-agent: Edge
+Allow: /
+Crawl-delay: 0
+
+# 中華系Botを明示的に拒否
+User-agent: Baiduspider
 Disallow: /
 Crawl-delay: 86400
 
-# 主要な検索エンジンボットを明示的に拒否
-User-agent: Googlebot
-Disallow: /
-
-User-agent: Googlebot-Image
-Disallow: /
-
-User-agent: Googlebot-Mobile
-Disallow: /
-
-User-agent: Bingbot
-Disallow: /
-
-User-agent: Slurp
-Disallow: /
-
-User-agent: DuckDuckBot
-Disallow: /
-
-User-agent: Baiduspider
-Disallow: /
-
-User-agent: YandexBot
-Disallow: /
-
 User-agent: Sogou
 Disallow: /
+Crawl-delay: 86400
+
+User-agent: YoudaoBot
+Disallow: /
+Crawl-delay: 86400
+
+User-agent: 360Spider
+Disallow: /
+Crawl-delay: 86400
+
+User-agent: YisouSpider
+Disallow: /
+Crawl-delay: 86400
+
+# その他の海外Botを拒否
+User-agent: YandexBot
+Disallow: /
+Crawl-delay: 86400
 
 User-agent: Exabot
 Disallow: /
+Crawl-delay: 86400
 
 User-agent: facebot
 Disallow: /
+Crawl-delay: 86400
 
 User-agent: ia_archiver
 Disallow: /
+Crawl-delay: 86400
+
+# その他のすべてのボットを拒否
+User-agent: *
+Disallow: /
+Crawl-delay: 86400
