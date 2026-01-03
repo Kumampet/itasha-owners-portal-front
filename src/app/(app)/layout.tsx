@@ -258,6 +258,11 @@ function MobileHeader({
       className={`fixed top-0 left-0 right-0 z-30 flex h-14 items-center justify-between border-b border-zinc-200 bg-white/90 px-4 backdrop-blur transition-transform duration-300 ease-in-out sm:hidden ${isVisible ? "translate-y-0" : "-translate-y-full"
         }`}
     >
+      <MenuController
+        variant="open"
+        onClick={onMenuClick}
+        className="h-10 w-10 border border-zinc-200 bg-white shadow-sm"
+      />
       <Link href="/app/mypage" className="flex items-center">
         <Image
           src="/images/main_logo.png"
@@ -268,11 +273,6 @@ function MobileHeader({
           priority
         />
       </Link>
-      <MenuController
-        variant="open"
-        onClick={onMenuClick}
-        className="h-10 w-10 border border-zinc-200 bg-white shadow-sm"
-      />
     </header>
   );
 }
