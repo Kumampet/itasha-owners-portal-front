@@ -8,6 +8,65 @@ import { LinkCard } from "@/components/link-card";
 import { Card, CardTitle, CardContent } from "@/components/card";
 import { LoadingSpinner } from "@/components/loading-spinner";
 
+// 団体管理リンクカード（通知バッジ付き）
+function GroupManagementLinkCard() {
+    const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+
+    useEffect(() => {
+        const fetchUnreadCounts = async () => {
+            try {
+                const res = await fetch("/api/groups/unread-count");
+                if (!res.ok) return;
+                const data = await res.json();
+                // いずれかの団体に未読メッセージがあるかチェック
+                const hasUnread = Object.values(data).some((hasUnread: unknown) => hasUnread === true);
+                setHasUnreadMessages(hasUnread);
+            } catch (error) {
+                console.error("Failed to fetch unread counts:", error);
+            }
+        };
+
+        fetchUnreadCounts();
+        // 定期的に未読数をチェック（30秒ごと）
+        const interval = setInterval(fetchUnreadCounts, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <LinkCard href="/app/groups" className="hover:-translate-y-0.5 hover:shadow-md relative">
+            {hasUnreadMessages && (
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" title="新着メッセージあり"></span>
+            )}
+            <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
+                {/* 団体管理アイコン */}
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-purple-100 sm:mb-3 sm:h-14 sm:w-14">
+                    <svg
+                        className="h-6 w-6 text-purple-600 sm:h-7 sm:w-7"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
+                    </svg>
+                </div>
+                <div className="flex-1 min-w-0 sm:flex-none">
+                    <CardTitle className="mb-1 sm:mb-2">団体管理</CardTitle>
+                    <CardContent>
+                        <p className="text-xs text-zinc-600 sm:text-sm">
+                            併せメンバーの募集状況や一斉連絡ポリシーを確認・運用できます。
+                        </p>
+                    </CardContent>
+                </div>
+            </div>
+        </LinkCard>
+    );
+}
+
 type Reminder = {
     id: string;
     event: {
@@ -236,34 +295,7 @@ export default function MyPage() {
                         </div>
                     </LinkCard>
 
-                    <LinkCard href="/app/groups" className="hover:-translate-y-0.5 hover:shadow-md">
-                        <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
-                            {/* 団体管理アイコン */}
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-purple-100 sm:mb-3 sm:h-14 sm:w-14">
-                                <svg
-                                    className="h-6 w-6 text-purple-600 sm:h-7 sm:w-7"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                                    />
-                                </svg>
-                            </div>
-                            <div className="flex-1 min-w-0 sm:flex-none">
-                                <CardTitle className="mb-1 sm:mb-2">団体管理</CardTitle>
-                                <CardContent>
-                                    <p className="text-xs text-zinc-600 sm:text-sm">
-                                        併せメンバーの募集状況や一斉連絡ポリシーを確認・運用できます。
-                                    </p>
-                                </CardContent>
-                            </div>
-                        </div>
-                    </LinkCard>
+                    <GroupManagementLinkCard />
 
                     <LinkCard href="/app/reminder" className="hover:-translate-y-0.5 hover:shadow-md">
                         <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
@@ -294,7 +326,35 @@ export default function MyPage() {
                         </div>
                     </LinkCard>
 
-                    {/* TODO: 通知設定機能を削除しました。将来的に再実装する場合は、ここに通知設定へのリンクを追加してください。 */}
+                    <LinkCard href="/app/notification-settings" className="hover:-translate-y-0.5 hover:shadow-md">
+                        <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
+                            {/* 通知設定アイコン */}
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-yellow-100 sm:mb-3 sm:h-14 sm:w-14">
+                                <svg
+                                    className="h-6 w-6 text-yellow-600 sm:h-7 sm:w-7"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                                    />
+                                </svg>
+                            </div>
+                            <div className="flex-1 min-w-0 sm:flex-none">
+                                <CardTitle className="mb-1 sm:mb-2">通知設定</CardTitle>
+                                <CardContent>
+                                    <p className="text-xs text-zinc-600 sm:text-sm">
+                                        プッシュ通知の設定を行えます。
+                                    </p>
+                                </CardContent>
+                            </div>
+                        </div>
+                    </LinkCard>
+
                     <LinkCard href="/app/event-submission" className="hover:-translate-y-0.5 hover:shadow-md">
                         <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
                             {/* イベント掲載依頼アイコン */}
