@@ -21,6 +21,9 @@ applications:
             - 'echo "APP_AWS_REGION=$APP_AWS_REGION" >> .env'
             - 'echo "APP_AWS_ACCESS_KEY_ID=$APP_AWS_ACCESS_KEY_ID" >> .env'
             - 'echo "APP_AWS_SECRET_ACCESS_KEY=$APP_AWS_SECRET_ACCESS_KEY" >> .env'
+            - 'echo "NEXT_PUBLIC_VAPID_PUBLIC_KEY=$NEXT_PUBLIC_VAPID_PUBLIC_KEY" >> .env'
+            - 'echo "VAPID_PRIVATE_KEY=$VAPID_PRIVATE_KEY" >> .env'
+            - 'echo "VAPID_SUBJECT=$VAPID_SUBJECT" >> .env'
             - npm run build
       artifacts:
         baseDirectory: .next

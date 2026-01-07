@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { sendPushNotificationToUsers } from "@/lib/push-notification";
 // TODO: 一斉連絡用メール通知機能は未実装です。将来的に実装する場合は、sendEmailをインポートして使用してください。
 // import { sendEmail } from "@/lib/ses";
 
@@ -176,6 +177,34 @@ export async function POST(
         },
       },
     });
+
+    // プッシュ通知を送信（送信者以外の全メンバーに）
+    try {
+      const recipientUserIds = group.members
+        .filter((m) => m.user_id !== session.user.id)
+        .map((m) => m.user_id);
+
+      if (recipientUserIds.length > 0) {
+        const senderName = session.user.name || session.user.email || "メンバー";
+        const title = isAnnouncement
+          ? `【${group.name}】一斉連絡`
+          : `${group.name}からのメッセージ`;
+        const body = `${senderName}: ${content.trim().substring(0, 100)}${content.trim().length > 100 ? "..." : ""}`;
+
+        // 非同期でプッシュ通知を送信（エラーが発生してもメッセージ作成は成功とする）
+        sendPushNotificationToUsers(recipientUserIds, title, body, {
+          type: "group_message",
+          groupId: id,
+          messageId: message.id,
+          url: `/app/groups/${id}`,
+        }).catch((error) => {
+          console.error("[Group Message] Failed to send push notifications:", error);
+        });
+      }
+    } catch (pushError) {
+      console.error("[Group Message] Error sending push notifications:", pushError);
+      // プッシュ通知エラーはログに記録するだけで、メッセージ作成は成功とする
+    }
 
     // TODO: 一斉連絡用メール通知機能は未実装です。将来的に実装する場合は、以下のロジックを追加してください。
     // 一斉連絡の場合、メール通知を送信
