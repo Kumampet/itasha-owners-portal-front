@@ -18,7 +18,7 @@ export async function sendPushNotification(
   userId: string,
   title: string,
   body: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ) {
   try {
     // ユーザーの通知設定を確認
@@ -65,18 +65,20 @@ export async function sendPushNotification(
         );
 
         results.push({ subscriptionId: subscription.id, success: true });
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error(`[Push Notification] Failed to send to subscription ${subscription.id}:`, error);
 
         // 410 (Gone) または 404 (Not Found) の場合はサブスクリプションを削除
-        if (error.statusCode === 410 || error.statusCode === 404) {
+        const statusCode = (error as { statusCode?: number })?.statusCode;
+        if (statusCode === 410 || statusCode === 404) {
           await prisma.pushSubscription.delete({
             where: { id: subscription.id },
           });
           console.log(`[Push Notification] Removed invalid subscription ${subscription.id}`);
         }
 
-        results.push({ subscriptionId: subscription.id, success: false, error: error.message });
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        results.push({ subscriptionId: subscription.id, success: false, error: errorMessage });
       }
     }
 
@@ -101,7 +103,7 @@ export async function sendPushNotificationToUsers(
   userIds: string[],
   title: string,
   body: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ) {
   const results = [];
 

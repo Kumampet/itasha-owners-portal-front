@@ -5,7 +5,7 @@ self.addEventListener("push", function (event) {
   if (event.data) {
     try {
       data = event.data.json();
-    } catch (e) {
+    } catch {
       data = { title: "通知", body: event.data.text() || "新しい通知があります" };
     }
   }
