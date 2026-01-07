@@ -112,37 +112,66 @@ function getPrisma(): PrismaClient {
     return prismaInstance;
   }
 
-  prismaInstance = createPrismaClient();
-  
-  // サーバーレス環境でも接続を共有するため、常にグローバル変数に保存
-  // これにより、各リクエストで新しいPrisma Clientインスタンスが作成されるのを防ぐ
-  globalForPrisma.prisma = prismaInstance;
+  try {
+    prismaInstance = createPrismaClient();
+    
+    // サーバーレス環境でも接続を共有するため、常にグローバル変数に保存
+    // これにより、各リクエストで新しいPrisma Clientインスタンスが作成されるのを防ぐ
+    globalForPrisma.prisma = prismaInstance;
 
-  return prismaInstance;
+    return prismaInstance;
+  } catch (error) {
+    console.error("[Prisma] Failed to initialize Prisma Client:", error);
+    if (error instanceof Error) {
+      console.error("[Prisma] Error message:", error.message);
+      console.error("[Prisma] Error stack:", error.stack);
+    }
+    throw error;
+  }
 }
 
 export const prisma = new Proxy({} as PrismaClient, {
   get(_target, prop) {
-    const instance = getPrisma();
-    
-    // $disconnectが呼ばれた場合、接続を適切にクローズ
-    if (prop === "$disconnect") {
-      return async () => {
-        try {
-          await instance.$disconnect();
-          // グローバル変数からも削除
-          if (globalForPrisma.prisma === instance) {
-            globalForPrisma.prisma = undefined;
+    try {
+      const instance = getPrisma();
+      
+      if (!instance) {
+        throw new Error("Prisma Client instance is null or undefined");
+      }
+      
+      // $disconnectが呼ばれた場合、接続を適切にクローズ
+      if (prop === "$disconnect") {
+        return async () => {
+          try {
+            await instance.$disconnect();
+            // グローバル変数からも削除
+            if (globalForPrisma.prisma === instance) {
+              globalForPrisma.prisma = undefined;
+            }
+            prismaInstance = undefined;
+          } catch (error) {
+            console.error("[Prisma] Error disconnecting:", error);
+            throw error;
           }
-          prismaInstance = undefined;
-        } catch (error) {
-          console.error("[Prisma] Error disconnecting:", error);
-          throw error;
-        }
-      };
+        };
+      }
+      
+      const value = instance[prop as keyof PrismaClient];
+      
+      if (value === undefined && typeof prop === "string" && prop.startsWith("$")) {
+        // $で始まるメソッドはundefinedの可能性があるので、そのまま返す
+        return value;
+      }
+      
+      if (value === undefined) {
+        console.warn(`[Prisma] Property "${String(prop)}" is undefined on Prisma Client instance`);
+      }
+      
+      return value;
+    } catch (error) {
+      console.error(`[Prisma] Error accessing property "${String(prop)}":`, error);
+      throw error;
     }
-    
-    return instance[prop as keyof PrismaClient];
   },
 });
 

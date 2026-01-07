@@ -7,13 +7,11 @@ import { Button } from "./button";
 type GroupActionModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  eventId: string;
 };
 
 export function GroupActionModal({
   isOpen,
   onClose,
-  eventId,
 }: GroupActionModalProps) {
   const router = useRouter();
   const [action, setAction] = useState<"create" | "join" | null>(null);
@@ -22,7 +20,7 @@ export function GroupActionModal({
   if (!isOpen) return null;
 
   const handleCreate = () => {
-    router.push(`/app/groups/new?eventId=${eventId}`);
+    router.push(`/app/groups/new`);
     onClose();
   };
 
@@ -37,7 +35,6 @@ export function GroupActionModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          eventId,
           groupCode,
         }),
       });
@@ -132,7 +129,7 @@ export function GroupActionModal({
               既存の団体に加入する
             </h2>
             <p className="mb-2 text-sm text-zinc-600">
-              団体オーナーから共有された8桁の団体コードを入力してください。
+              団体オーナーから共有された8桁の団体コードを入力してください。団体コードは一意のため、これだけで特定の団体に加入できます。
             </p>
             <input
               type="text"

@@ -27,8 +27,8 @@ function GroupManagementLinkCard() {
         };
 
         fetchUnreadCounts();
-        // 定期的に未読数をチェック（30秒ごと）
-        const interval = setInterval(fetchUnreadCounts, 30000);
+        // 定期的に未読数をチェック（10秒ごと）
+        const interval = setInterval(fetchUnreadCounts, 10000);
         return () => clearInterval(interval);
     }, []);
 

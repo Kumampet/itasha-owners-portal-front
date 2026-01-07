@@ -28,20 +28,12 @@ type Group = {
   createdAt: string;
 };
 
-type Event = {
-  id: string;
-  name: string;
-  event_date: string;
-};
-
 export default function GroupsPage() {
   const router = useRouter();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, boolean>>({});
   const [showJoinModal, setShowJoinModal] = useState(false);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [selectedEventId, setSelectedEventId] = useState<string>("");
   const [groupCode, setGroupCode] = useState("");
   const [joining, setJoining] = useState(false);
 
@@ -52,26 +44,13 @@ export default function GroupsPage() {
   useEffect(() => {
     fetchGroups();
     fetchUnreadCounts();
-    fetchEvents();
+    
+    // 定期的に未読状態をチェック（10秒ごと）
+    const interval = setInterval(fetchUnreadCounts, 10000);
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchEvents = async () => {
-    try {
-      const res = await fetch("/api/events?limit=100&sortOrder=asc");
-      if (!res.ok) throw new Error("Failed to fetch events");
-      const data = await res.json();
-      setEvents(data.events || []);
-    } catch (error) {
-      console.error("Failed to fetch events:", error);
-    }
-  };
-
   const handleJoinGroup = async () => {
-    if (!selectedEventId) {
-      alert("イベントを選択してください");
-      return;
-    }
-
     if (!groupCode || groupCode.length !== 8) {
       alert("8桁の団体コードを入力してください");
       return;
@@ -83,7 +62,6 @@ export default function GroupsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          eventId: selectedEventId,
           groupCode: groupCode,
         }),
       });
@@ -99,7 +77,6 @@ export default function GroupsPage() {
       // 加入した団体の詳細ページに遷移
       router.push(`/app/groups/${data.groupId}`);
       setShowJoinModal(false);
-      setSelectedEventId("");
       setGroupCode("");
     } catch (error) {
       alert(
@@ -293,23 +270,6 @@ export default function GroupsPage() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-medium text-zinc-900 mb-1">
-                      イベントを選択
-                    </label>
-                    <select
-                      value={selectedEventId}
-                      onChange={(e) => setSelectedEventId(e.target.value)}
-                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                    >
-                      <option value="">イベントを選択してください</option>
-                      {events.map((event) => (
-                        <option key={event.id} value={event.id}>
-                          {event.name} ({new Date(event.event_date).toLocaleDateString("ja-JP")})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-900 mb-1">
                       団体コード（8桁）
                     </label>
                     <input
@@ -321,7 +281,7 @@ export default function GroupsPage() {
                       maxLength={8}
                     />
                     <p className="mt-1 text-xs text-zinc-500">
-                      団体オーナーから共有された8桁の数字を入力してください
+                      団体オーナーから共有された8桁の数字を入力してください。団体コードは一意のため、これだけで特定の団体に加入できます。
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -329,7 +289,7 @@ export default function GroupsPage() {
                       onClick={handleJoinGroup}
                       variant="primary"
                       size="sm"
-                      disabled={joining || !selectedEventId || groupCode.length !== 8}
+                      disabled={joining || groupCode.length !== 8}
                       className="flex-1"
                     >
                       {joining ? "加入中..." : "加入する"}
@@ -337,7 +297,6 @@ export default function GroupsPage() {
                     <Button
                       onClick={() => {
                         setShowJoinModal(false);
-                        setSelectedEventId("");
                         setGroupCode("");
                       }}
                       variant="secondary"

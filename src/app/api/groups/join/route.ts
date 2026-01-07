@@ -16,16 +16,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { eventId, groupCode } = body;
+    const { groupCode } = body;
 
-    if (!eventId || !groupCode) {
+    if (!groupCode) {
       return NextResponse.json(
-        { error: "eventId and groupCode are required" },
+        { error: "groupCode is required" },
         { status: 400 }
       );
     }
 
-    // 団体コードで団体を検索
+    // 団体コードで団体を検索（団体コードは一意なので、これだけで特定できる）
     const group = await prisma.group.findUnique({
       where: { group_code: groupCode },
       include: {
@@ -40,13 +40,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // イベントIDが一致するか確認
-    if (group.event_id !== eventId) {
-      return NextResponse.json(
-        { error: "Group does not belong to this event" },
-        { status: 400 }
-      );
-    }
+    // 見つかった団体のイベントIDを使用
+    const eventId = group.event_id;
 
     // 既に参加しているか確認
     const existingUserEvent = await prisma.userEvent.findUnique({

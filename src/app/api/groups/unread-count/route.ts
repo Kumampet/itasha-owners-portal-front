@@ -15,6 +15,23 @@ export async function GET() {
       );
     }
 
+    // prismaインスタンスの確認
+    if (!prisma) {
+      console.error("[unread-count] Prisma client is undefined");
+      return NextResponse.json(
+        { error: "Database connection failed" },
+        { status: 500 }
+      );
+    }
+
+    if (!prisma.userEvent) {
+      console.error("[unread-count] prisma.userEvent is undefined");
+      return NextResponse.json(
+        { error: "Database model not available" },
+        { status: 500 }
+      );
+    }
+
     // ユーザーが参加している団体を取得
     const userEvents = await prisma.userEvent.findMany({
       where: {
@@ -56,6 +73,11 @@ export async function GET() {
       }
 
       // ユーザーが最新メッセージを既読か確認
+      if (!prisma.groupMessageRead) {
+        console.error("[unread-count] prisma.groupMessageRead is undefined");
+        continue;
+      }
+
       const readRecord = await prisma.groupMessageRead.findUnique({
         where: {
           message_id_user_id: {
@@ -72,8 +94,30 @@ export async function GET() {
     return NextResponse.json(unreadCounts);
   } catch (error) {
     console.error("Error fetching unread counts:", error);
+    
+    // エラーの詳細をログに出力
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    
+    // Prisma関連のエラーの場合、より詳細な情報を返す
+    if (error && typeof error === "object" && "code" in error) {
+      return NextResponse.json(
+        { 
+          error: "Database error",
+          code: (error as { code?: string }).code,
+          message: error instanceof Error ? error.message : "Unknown error"
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: "Failed to fetch unread counts" },
+      { 
+        error: "Failed to fetch unread counts",
+        message: error instanceof Error ? error.message : "Unknown error"
+      },
       { status: 500 }
     );
   }
