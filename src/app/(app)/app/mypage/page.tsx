@@ -170,96 +170,233 @@ export default function MyPage() {
                 {/* PWAインストール案内（スマホのみ） */}
                 <PWAInstallCard />
 
-                {/* 基本情報、リマインダー管理、団体管理、オーガナイザー機能（2x2グリッド） */}
+                {/* 基本情報、リマインダー管理、団体管理、オーガナイザー機能（2列グリッド） */}
                 <div className="grid gap-4 sm:grid-cols-2">
-                    <LinkCard href="/app/profile/edit">
-                        <CardTitle>基本情報</CardTitle>
-                        <CardContent className="mt-1">
-                            <p className="text-xs text-zinc-700 sm:text-sm">
-                                プロフィールなどの情報を編集できるようにします。
-                            </p>
-                        </CardContent>
-                        <p className="mt-3 text-xs font-semibold text-emerald-600">
-                            詳細を見る →
-                        </p>
+                    <LinkCard href="/app/profile/edit" className="hover:-translate-y-0.5 hover:shadow-md">
+                        <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
+                            {/* 基本情報アイコン */}
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 sm:mb-3 sm:h-14 sm:w-14">
+                                <svg
+                                    className="h-6 w-6 text-emerald-600 sm:h-7 sm:w-7"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                    />
+                                </svg>
+                            </div>
+                            <div className="flex-1 min-w-0 sm:flex-none">
+                                <CardTitle className="mb-1 sm:mb-2">基本情報</CardTitle>
+                                <CardContent>
+                                    <p className="text-xs text-zinc-600 sm:text-sm">
+                                        プロフィールなどの情報を編集できます。
+                                    </p>
+                                </CardContent>
+                            </div>
+                        </div>
                     </LinkCard>
 
-                    <LinkCard href="/app/watchlist">
-                        <CardTitle>ウォッチリスト</CardTitle>
-                        <CardContent className="mt-1">
-                            <p className="text-xs text-zinc-700 sm:text-sm">
-                                ウォッチリストに追加したイベント管理できます。
-                            </p>
-                        </CardContent>
-                        <p className="mt-3 text-xs font-semibold text-emerald-600">
-                            詳細を見る →
-                        </p>
+                    <LinkCard href="/app/watchlist" className="hover:-translate-y-0.5 hover:shadow-md">
+                        <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
+                            {/* ウォッチリストアイコン */}
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mb-3 sm:h-14 sm:w-14">
+                                <svg
+                                    className="h-6 w-6 text-blue-600 sm:h-7 sm:w-7"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                    />
+                                </svg>
+                            </div>
+                            <div className="flex-1 min-w-0 sm:flex-none">
+                                <CardTitle className="mb-1 sm:mb-2">ウォッチリスト</CardTitle>
+                                <CardContent>
+                                    <p className="text-xs text-zinc-600 sm:text-sm">
+                                        ウォッチリストに追加したイベントを管理できます。
+                                    </p>
+                                </CardContent>
+                            </div>
+                        </div>
                     </LinkCard>
 
-                    <LinkCard href="/app/groups">
-                        <CardTitle>団体管理</CardTitle>
-                        <CardContent className="mt-1">
-                            <p className="text-xs text-zinc-700 sm:text-sm">
-                                併せメンバーの募集状況や一斉連絡ポリシーを確認し、
-                                マイページからまとめて運用できます。
-                            </p>
-                        </CardContent>
-                        <p className="mt-3 text-xs font-semibold text-emerald-600">
-                            詳細を見る →
-                        </p>
+                    <LinkCard href="/app/groups" className="hover:-translate-y-0.5 hover:shadow-md">
+                        <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
+                            {/* 団体管理アイコン */}
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-purple-100 sm:mb-3 sm:h-14 sm:w-14">
+                                <svg
+                                    className="h-6 w-6 text-purple-600 sm:h-7 sm:w-7"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                                    />
+                                </svg>
+                            </div>
+                            <div className="flex-1 min-w-0 sm:flex-none">
+                                <CardTitle className="mb-1 sm:mb-2">団体管理</CardTitle>
+                                <CardContent>
+                                    <p className="text-xs text-zinc-600 sm:text-sm">
+                                        併せメンバーの募集状況や一斉連絡ポリシーを確認・運用できます。
+                                    </p>
+                                </CardContent>
+                            </div>
+                        </div>
                     </LinkCard>
 
-                    <LinkCard href="/app/reminder">
-                        <CardTitle>リマインダー管理</CardTitle>
-                        <CardContent className="mt-1">
-                            <p className="text-xs text-zinc-700 sm:text-sm">
-                                エントリー済みイベントの
-                                締切・集合時間・支払期日をまとめて確認。
-                            </p>
-                        </CardContent>
-                        <p className="mt-3 text-xs font-semibold text-emerald-600">
-                            詳細を見る →
-                        </p>
+                    <LinkCard href="/app/reminder" className="hover:-translate-y-0.5 hover:shadow-md">
+                        <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
+                            {/* リマインダー管理アイコン */}
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-100 sm:mb-3 sm:h-14 sm:w-14">
+                                <svg
+                                    className="h-6 w-6 text-orange-600 sm:h-7 sm:w-7"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                </svg>
+                            </div>
+                            <div className="flex-1 min-w-0 sm:flex-none">
+                                <CardTitle className="mb-1 sm:mb-2">リマインダー管理</CardTitle>
+                                <CardContent>
+                                    <p className="text-xs text-zinc-600 sm:text-sm">
+                                        エントリー済みイベントの締切・集合時間・支払期日をまとめて確認。
+                                    </p>
+                                </CardContent>
+                            </div>
+                        </div>
                     </LinkCard>
 
                     {/* TODO: 通知設定機能を削除しました。将来的に再実装する場合は、ここに通知設定へのリンクを追加してください。 */}
-                    <LinkCard href="/app/event-submission">
-                        <CardTitle>イベント掲載依頼</CardTitle>
-                        <CardContent className="mt-1">
-                            <p className="text-xs text-zinc-700 sm:text-sm">
-                                イベント情報をご提供いただくことで、より多くの参加者にイベントを知っていただくことができます。
-                            </p>
-                        </CardContent>
-                        <p className="mt-3 text-xs font-semibold text-emerald-600">
-                            フォームを開く →
-                        </p>
+                    <LinkCard href="/app/event-submission" className="hover:-translate-y-0.5 hover:shadow-md">
+                        <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
+                            {/* イベント掲載依頼アイコン */}
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-pink-100 sm:mb-3 sm:h-14 sm:w-14">
+                                <svg
+                                    className="h-6 w-6 text-pink-600 sm:h-7 sm:w-7"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 4v16m8-8H4"
+                                    />
+                                </svg>
+                            </div>
+                            <div className="flex-1 min-w-0 sm:flex-none">
+                                <CardTitle className="mb-1 sm:mb-2">イベント掲載依頼</CardTitle>
+                                <CardContent>
+                                    <p className="text-xs text-zinc-600 sm:text-sm">
+                                        イベント情報をご提供いただくことで、より多くの参加者に知っていただけます。
+                                    </p>
+                                </CardContent>
+                            </div>
+                        </div>
                     </LinkCard>
 
                     {/* オーガナイザー機能（admin/organizerのみ） */}
                     {(session?.user?.role === "ADMIN" || session?.user?.role === "ORGANIZER") ? (
-                        <LinkCard href="/admin/dashboard">
-                            <CardTitle>オーガナイザー機能</CardTitle>
-                            <CardContent className="mt-1">
-                                <p className="text-xs text-zinc-700 sm:text-sm">
-                                    イベント管理やユーザー管理、情報提供フォームの処理など、
-                                    オーガナイザー向けの機能を利用できます。
-                                </p>
-                            </CardContent>
-                            <p className="mt-3 text-xs font-semibold text-emerald-600">
-                                詳細を見る →
-                            </p>
+                        <LinkCard href="/admin/dashboard" className="hover:-translate-y-0.5 hover:shadow-md">
+                            <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
+                                {/* オーガナイザー機能アイコン */}
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-indigo-100 sm:mb-3 sm:h-14 sm:w-14">
+                                    <svg
+                                        className="h-6 w-6 text-indigo-600 sm:h-7 sm:w-7"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                        />
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                        />
+                                    </svg>
+                                </div>
+                                <div className="flex-1 min-w-0 sm:flex-none">
+                                    <CardTitle className="mb-1 sm:mb-2">オーガナイザー機能</CardTitle>
+                                    <CardContent>
+                                        <p className="text-xs text-zinc-600 sm:text-sm">
+                                            イベント管理やユーザー管理、情報提供フォームの処理などができます。
+                                        </p>
+                                    </CardContent>
+                                </div>
+                            </div>
                         </LinkCard>
                     ) : (
                         <Card variant="muted">
-                            <CardTitle>オーガナイザー機能</CardTitle>
-                            <CardContent className="mt-1">
-                                <p className="text-xs text-zinc-700 sm:text-sm">
-                                    イベントの作成・管理や参加者の管理など、イベント主催者向けの機能です。
-                                </p>
-                            </CardContent>
-                            <p className="mt-2 text-xs text-zinc-600 sm:text-sm">
-                                ご希望のイベント主催者はお問い合わせフォームからお問い合わせください。
-                            </p>
+                            <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
+                                {/* オーガナイザー機能アイコン（無効状態） */}
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-zinc-100 sm:mb-3 sm:h-14 sm:w-14">
+                                    <svg
+                                        className="h-6 w-6 text-zinc-400 sm:h-7 sm:w-7"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                        />
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                        />
+                                    </svg>
+                                </div>
+                                <div className="flex-1 min-w-0 sm:flex-none">
+                                    <CardTitle className="mb-1 sm:mb-2">オーガナイザー機能</CardTitle>
+                                    <CardContent>
+                                        <p className="text-xs text-zinc-600 sm:text-sm">
+                                            イベントの作成・管理や参加者の管理など、イベント主催者向けの機能です。
+                                        </p>
+                                        <p className="mt-2 text-xs text-zinc-500 sm:text-sm">
+                                            ご希望のイベント主催者はお問い合わせフォームからお問い合わせください。
+                                        </p>
+                                    </CardContent>
+                                </div>
+                            </div>
                         </Card>
                     )}
                 </div>
