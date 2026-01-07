@@ -119,6 +119,21 @@ export default function GroupDetailPage({
     }
   }, [activeTab, group, fetchMessages]);
 
+  // メッセージを表示したときに既読状態を更新
+  useEffect(() => {
+    if (activeTab === "messages" && messages.length > 0) {
+      // 最新メッセージを既読にする
+      const latestMessage = messages[messages.length - 1];
+      if (latestMessage) {
+        fetch(`/api/groups/${id}/messages/${latestMessage.id}/read`, {
+          method: "POST",
+        }).catch((error) => {
+          console.error("Failed to mark message as read:", error);
+        });
+      }
+    }
+  }, [activeTab, messages, id]);
+
   const handleSendMessage = async () => {
     if (!messageContent.trim()) {
       alert("メッセージを入力してください");
