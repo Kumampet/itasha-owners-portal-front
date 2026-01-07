@@ -86,7 +86,7 @@ function NotificationSettingsPageContent() {
       // プッシュサブスクリプションを作成
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
       });
 
       // サーバーにサブスクリプションを登録
@@ -181,7 +181,7 @@ function NotificationSettingsPageContent() {
     for (let i = 0; i < rawData.length; ++i) {
       outputArray[i] = rawData.charCodeAt(i);
     }
-    return outputArray;
+    return outputArray as Uint8Array;
   };
 
   // ArrayBufferをBase64に変換するヘルパー関数
@@ -259,7 +259,7 @@ function NotificationSettingsPageContent() {
                     {subscriptionStatus === "subscribed" ? (
                       <Button
                         onClick={unsubscribeFromPush}
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                       >
                         解除
@@ -267,7 +267,7 @@ function NotificationSettingsPageContent() {
                     ) : (
                       <Button
                         onClick={subscribeToPush}
-                        variant="default"
+                        variant="primary"
                         size="sm"
                         disabled={!vapidPublicKey}
                       >

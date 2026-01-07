@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Card } from "@/components/card";
+import { Button } from "@/components/button";
 
 type Group = {
   id: string;
