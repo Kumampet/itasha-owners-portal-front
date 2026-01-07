@@ -99,7 +99,6 @@ export function EventDetailActions({ eventId, officialUrls }: EventDetailActions
       <GroupActionModal
         isOpen={isGroupModalOpen}
         onClose={() => setIsGroupModalOpen(false)}
-        eventId={eventId}
       />
     </>
   );

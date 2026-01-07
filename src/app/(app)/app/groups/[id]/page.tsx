@@ -74,6 +74,7 @@ export default function GroupDetailPage({
   const [showRemoveMemberModal, setShowRemoveMemberModal] = useState(false);
   const [targetMemberId, setTargetMemberId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
 
   const fetchGroup = useCallback(async () => {
     try {
@@ -92,20 +93,76 @@ export default function GroupDetailPage({
     }
   }, [id]);
 
-  const fetchMessages = useCallback(async () => {
-    setMessagesLoading(true);
+  const fetchMessages = useCallback(async (isInitialLoad = false) => {
+    if (isInitialLoad) {
+      setMessagesLoading(true);
+    }
     try {
       const res = await fetch(`/api/groups/${id}/messages`);
       if (!res.ok) {
         throw new Error("Failed to fetch messages");
       }
       const data = await res.json();
-      setMessages(data);
+      
+      // 初回読み込み時はそのまま更新（スクロールはuseEffectで処理）
+      if (isInitialLoad) {
+        setMessages(data);
+        setMessagesLoading(false);
+        return;
+      }
+
+      // ポーリング時は新規メッセージがある場合のみ更新
+      setMessages((currentMessages) => {
+        if (currentMessages.length === 0) {
+          return data;
+        }
+
+        const currentMessageIds = new Set(currentMessages.map(m => m.id));
+        const newMessages = data.filter((msg: GroupMessage) => !currentMessageIds.has(msg.id));
+        
+        if (newMessages.length === 0) {
+          // 新規メッセージがない場合は更新しない
+          return currentMessages;
+        }
+
+        // スクロール位置を保存
+        const messagesContainer = document.querySelector('[data-messages-container]');
+        if (!messagesContainer) {
+          return data;
+        }
+
+        const wasAtBottom = Math.abs(
+          messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight
+        ) < 50;
+        const previousScrollTop = messagesContainer.scrollTop;
+        const previousScrollHeight = messagesContainer.scrollHeight;
+
+        // 新規メッセージを追加
+        const updatedMessages = data;
+
+        // スクロール位置を復元（最下部にいた場合は最下部に移動）
+        requestAnimationFrame(() => {
+          const container = document.querySelector('[data-messages-container]');
+          if (!container) return;
+
+          if (wasAtBottom) {
+            // 最下部にいた場合は新しいメッセージの最下部にスクロール
+            container.scrollTop = container.scrollHeight;
+          } else {
+            // それ以外の場合は元の位置を維持（新しいメッセージ分の高さを考慮）
+            const heightDiff = container.scrollHeight - previousScrollHeight;
+            container.scrollTop = previousScrollTop + heightDiff;
+          }
+        });
+
+        return updatedMessages;
+      });
     } catch (error) {
       console.error("Failed to fetch messages:", error);
-      alert("メッセージの取得に失敗しました");
-    } finally {
-      setMessagesLoading(false);
+      if (isInitialLoad) {
+        alert("メッセージの取得に失敗しました");
+        setMessagesLoading(false);
+      }
     }
   }, [id]);
 
@@ -113,11 +170,63 @@ export default function GroupDetailPage({
     fetchGroup();
   }, [fetchGroup]);
 
+  // 未読メッセージの状態を取得（メッセージタブが開いていない場合のみ）
+  useEffect(() => {
+    // メッセージタブが開いている場合は、メッセージ取得時に既読処理されるので監視不要
+    if (activeTab === "messages") {
+      return;
+    }
+
+    const fetchUnreadStatus = async () => {
+      try {
+        const res = await fetch("/api/groups/unread-count");
+        if (!res.ok) return;
+        const data = await res.json();
+        // 現在の団体に未読メッセージがあるかチェック
+        setHasUnreadMessages(data[id] === true);
+      } catch (error) {
+        console.error("Failed to fetch unread status:", error);
+      }
+    };
+
+    if (id) {
+      fetchUnreadStatus();
+      // 定期的に未読状態をチェック（10秒ごと）
+      const interval = setInterval(fetchUnreadStatus, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [id, activeTab]);
+
+  // メッセージタブが開いているときはリアルタイムでメッセージを監視
   useEffect(() => {
     if (activeTab === "messages" && group) {
-      fetchMessages();
+      // 初回取得（ローディング表示あり）
+      fetchMessages(true);
+
+      // 2秒ごとにメッセージをチェック（新規メッセージがある場合のみ更新）
+      const messageInterval = setInterval(() => {
+        fetchMessages(false);
+      }, 2000);
+
+      return () => clearInterval(messageInterval);
     }
   }, [activeTab, group, fetchMessages]);
+
+  // メッセージタブが開かれたとき、またはメッセージが読み込まれたときに最新メッセージにスクロール
+  useEffect(() => {
+    if (activeTab === "messages" && messages.length > 0 && !messagesLoading) {
+      // メッセージが読み込まれた後に最新メッセージ（最下部）にスクロール
+      const scrollToBottom = () => {
+        const messagesContainer = document.querySelector('[data-messages-container]');
+        if (messagesContainer) {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+      };
+
+      // DOM更新を待ってからスクロール
+      setTimeout(scrollToBottom, 100);
+    }
+  }, [activeTab, messages.length, messagesLoading]);
 
   // メッセージを表示したときに既読状態を更新
   useEffect(() => {
@@ -127,9 +236,14 @@ export default function GroupDetailPage({
       if (latestMessage) {
         fetch(`/api/groups/${id}/messages/${latestMessage.id}/read`, {
           method: "POST",
-        }).catch((error) => {
-          console.error("Failed to mark message as read:", error);
-        });
+        })
+          .then(() => {
+            // 既読にしたら未読バッジを消す
+            setHasUnreadMessages(false);
+          })
+          .catch((error) => {
+            console.error("Failed to mark message as read:", error);
+          });
       }
     }
   }, [activeTab, messages, id]);
@@ -170,6 +284,9 @@ export default function GroupDetailPage({
       setMessages([...messages, newMessage]);
       setMessageContent("");
       setIsAnnouncement(false);
+
+      // 自分が送信したメッセージなので未読バッジは消す
+      setHasUnreadMessages(false);
 
       // スクロールを最下部に移動
       setTimeout(() => {
@@ -408,6 +525,7 @@ export default function GroupDetailPage({
               <Tab
                 isActive={activeTab === "messages"}
                 onClick={() => setActiveTab("messages")}
+                badge={hasUnreadMessages}
               >
                 団体メッセージ
               </Tab>
