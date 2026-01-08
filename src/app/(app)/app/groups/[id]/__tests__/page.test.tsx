@@ -201,7 +201,7 @@ describe('GroupDetailPage', () => {
     })
 
     // メッセージタブをクリック
-    const messagesTab = screen.getByText('団体メッセージ')
+    const messagesTab = screen.getByText('団体チャット')
     await user.click(messagesTab)
 
     await waitFor(() => {
@@ -326,7 +326,7 @@ describe('GroupDetailPage', () => {
         expect(screen.getByText('テスト団体')).toBeInTheDocument()
       })
 
-      const messagesTab = screen.getByText('団体メッセージ')
+      const messagesTab = screen.getByText('団体チャット')
       await user.click(messagesTab)
 
       await waitFor(() => {
@@ -353,7 +353,7 @@ describe('GroupDetailPage', () => {
         expect(screen.getByText('テスト団体')).toBeInTheDocument()
       })
 
-      const messagesTab = screen.getByText('団体メッセージ')
+      const messagesTab = screen.getByText('団体チャット')
       await user.click(messagesTab)
 
       await waitFor(() => {
@@ -396,7 +396,7 @@ describe('GroupDetailPage', () => {
         expect(screen.getByText('テスト団体')).toBeInTheDocument()
       })
 
-      const messagesTab = screen.getByText('団体メッセージ')
+      const messagesTab = screen.getByText('団体チャット')
       await user.click(messagesTab)
 
       await waitFor(() => {
@@ -432,7 +432,7 @@ describe('GroupDetailPage', () => {
         expect(screen.getByText('テスト団体')).toBeInTheDocument()
       })
 
-      const messagesTab = screen.getByText('団体メッセージ')
+      const messagesTab = screen.getByText('団体チャット')
       await user.click(messagesTab)
 
       await waitFor(() => {
@@ -464,7 +464,7 @@ describe('GroupDetailPage', () => {
         expect(screen.getByText('テスト団体')).toBeInTheDocument()
       })
 
-      const messagesTab = screen.getByText('団体メッセージ')
+      const messagesTab = screen.getByText('団体チャット')
       await user.click(messagesTab)
 
       await waitFor(() => {
@@ -517,7 +517,7 @@ describe('GroupDetailPage', () => {
         expect(screen.getByText('テスト団体')).toBeInTheDocument()
       })
 
-      const messagesTab = screen.getByText('団体メッセージ')
+      const messagesTab = screen.getByText('団体チャット')
       await user.click(messagesTab)
 
       await waitFor(() => {
@@ -548,7 +548,7 @@ describe('GroupDetailPage', () => {
         expect(screen.getByText('テスト団体')).toBeInTheDocument()
       })
 
-      const messagesTab = screen.getByText('団体メッセージ')
+      const messagesTab = screen.getByText('団体チャット')
       await user.click(messagesTab)
 
       await waitFor(() => {
@@ -574,7 +574,7 @@ describe('GroupDetailPage', () => {
         expect(screen.getByText('テスト団体')).toBeInTheDocument()
       })
 
-      const messagesTab = screen.getByText('団体メッセージ')
+      const messagesTab = screen.getByText('団体チャット')
       await user.click(messagesTab)
 
       await waitFor(() => {

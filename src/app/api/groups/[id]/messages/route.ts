@@ -6,7 +6,7 @@ import { sendPushNotificationToUsers } from "@/lib/push-notification";
 // import { sendEmail } from "@/lib/ses";
 
 // GET /api/groups/[id]/messages
-// 団体メッセージ一覧を取得
+// 団体チャット一覧を取得
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -86,7 +86,7 @@ export async function GET(
 }
 
 // POST /api/groups/[id]/messages
-// 団体メッセージを送信
+// 団体チャットを送信
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

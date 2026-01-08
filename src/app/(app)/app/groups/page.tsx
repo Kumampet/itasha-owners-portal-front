@@ -316,7 +316,7 @@ export default function GroupsPage() {
               一斉連絡ポリシー
             </h2>
             <ul className="mt-2 space-y-1 text-xs text-zinc-700 sm:text-sm">
-              <li>・団体メッセージで「一斉連絡」として投稿すると、重要なメッセージとしてマークされます。</li>
+              <li>・団体チャットで「一斉連絡」として投稿すると、重要なメッセージとしてマークされます。</li>
               {/* TODO: 一斉連絡用メール通知機能は未実装です。将来的に実装する場合は、メール通知機能を追加してください。 */}
             </ul>
           </section>

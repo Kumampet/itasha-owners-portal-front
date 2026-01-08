@@ -527,7 +527,7 @@ export default function GroupDetailPage({
                 onClick={() => setActiveTab("messages")}
                 badge={hasUnreadMessages}
               >
-                団体メッセージ
+                団体チャット
               </Tab>
             </Tabs>
 
