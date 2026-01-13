@@ -91,7 +91,7 @@ export const handler: APIGatewayProxyWebsocketHandlerV2 = async (event) => {
 
     // メッセージを全接続にブロードキャスト
     const apiGatewayClient = getApiGatewayClient(event);
-    const broadcastPromises = groupRoomsResult.Items.map(async (room: Record<string, any>) => {
+    const broadcastPromises = groupRoomsResult.Items.map(async (room: Record<string, unknown>) => {
       try {
         await apiGatewayClient.send(
           new PostToConnectionCommand({
