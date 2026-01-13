@@ -45,9 +45,11 @@ export default function NewReminderPage() {
         const res = await fetch("/api/events");
         if (!res.ok) throw new Error("Failed to fetch events");
         const data = await res.json();
-        setEvents(data);
+        // APIレスポンスは { events: [...], pagination: {...} } の形式
+        setEvents(data.events || []);
       } catch (error) {
         console.error("Failed to fetch events:", error);
+        setEvents([]); // エラー時は空配列を設定
       } finally {
         setLoading(false);
       }
