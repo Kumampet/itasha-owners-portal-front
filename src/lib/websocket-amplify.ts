@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 interface WebSocketMessage {
   type: string;
   groupId?: string;
-  message?: any;
+  message?: unknown;
   userId?: string;
   messageId?: string;
 }
@@ -67,12 +67,12 @@ export function useWebSocketAmplify(groupId: string | null) {
         }
       };
 
-      ws.onerror = (error) => {
+      ws.onerror = (error: Event) => {
         console.error("[WebSocket] Error:", error);
       };
 
       setSocket(ws);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("[WebSocket] Connection error:", error);
     }
   }, [session?.user?.id, groupId]);
@@ -91,7 +91,7 @@ export function useWebSocketAmplify(groupId: string | null) {
               action: "leave-group",
               groupId,
             }));
-          } catch (error) {
+          } catch (error: unknown) {
             console.error("[WebSocket] Error leaving group:", error);
           }
         }
@@ -103,7 +103,7 @@ export function useWebSocketAmplify(groupId: string | null) {
     };
   }, [groupId, session?.user?.id, connect]);
 
-  const sendMessage = useCallback((groupId: string, message: any) => {
+  const sendMessage = useCallback((groupId: string, message: unknown) => {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
       console.error("[WebSocket] Socket not connected");
       return false;
@@ -116,7 +116,7 @@ export function useWebSocketAmplify(groupId: string | null) {
         message,
       }));
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("[WebSocket] Error sending message:", error);
       return false;
     }
@@ -131,7 +131,7 @@ export function useWebSocketAmplify(groupId: string | null) {
 
 export function useWebSocketMessageHandler(
   socket: WebSocket | null,
-  onNewMessage: (data: { groupId: string; message: any }) => void,
+  onNewMessage: (data: { groupId: string; message: unknown }) => void,
   onReadUpdated: (data: { groupId: string; userId: string; messageId: string }) => void
 ) {
   useEffect(() => {
@@ -141,7 +141,7 @@ export function useWebSocketMessageHandler(
 
     const handleMessage = (event: MessageEvent) => {
       try {
-        const data: WebSocketMessage = JSON.parse(event.data);
+        const data: WebSocketMessage = JSON.parse(event.data as string);
 
         if (data.type === "new-message" && data.groupId && data.message) {
           onNewMessage({
@@ -155,7 +155,7 @@ export function useWebSocketMessageHandler(
             messageId: data.messageId,
           });
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("[WebSocket] Error parsing message:", error);
       }
     };
