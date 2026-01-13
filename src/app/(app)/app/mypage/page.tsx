@@ -451,7 +451,14 @@ export default function MyPage() {
                                             イベントの作成・管理や参加者の管理など、イベント主催者向けの機能です。
                                         </p>
                                         <p className="mt-2 text-xs text-zinc-500 sm:text-sm">
-                                            ご希望のイベント主催者はお問い合わせフォームからお問い合わせください。
+                                            ご希望のイベント主催者は
+                                            <Link
+                                                href="/app/organizer-application"
+                                                className="font-semibold text-emerald-600 hover:text-emerald-700 underline"
+                                            >
+                                                オーガナイザー登録申請
+                                            </Link>
+                                            から申請ください。
                                         </p>
                                     </CardContent>
                                 </div>
