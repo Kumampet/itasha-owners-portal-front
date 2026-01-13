@@ -62,6 +62,7 @@ export async function GET(
       },
     });
 
+    // リアルタイム性が重要なのでキャッシュを無効にする
     return NextResponse.json(
       messages.map((msg) => ({
         id: msg.id,
@@ -74,7 +75,12 @@ export async function GET(
           email: msg.sender.email,
         },
         createdAt: msg.created_at,
-      }))
+      })),
+      {
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      }
     );
   } catch (error) {
     console.error("Error fetching messages:", error);

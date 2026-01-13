@@ -141,12 +141,9 @@ const getAdapter = () => {
 // adapterを取得
 const adapterInstance = getAdapter();
 // セッション戦略を決定
-// 注意: 開発環境では一時的にJWT戦略を使用（古いセッションクッキーの問題を回避）
-// 本番環境では、DATABASE_URLが設定されている場合はdatabase戦略を使用
-const useDatabaseStrategy =
-  process.env.NODE_ENV === "production" &&
-  hasDatabaseUrl &&
-  adapterInstance !== undefined;
+// DB負荷を減らすため、常にJWT戦略を使用する
+// JWT戦略により、DBへのセッション照会が不要になり、パフォーマンスが向上する
+const useDatabaseStrategy = false;
 
 // プロバイダー設定（Google、X、管理画面用Credentials）
 // DATABASE_URLが設定されている場合のみadapterを設定
@@ -464,7 +461,7 @@ const configBase: NextAuthConfig = {
     },
   },
   session: {
-    strategy: useDatabaseStrategy ? ("database" as const) : ("jwt" as const),
+    strategy: "jwt" as const, // 常にJWT戦略を使用（DB負荷軽減のため）
   },
 };
 
@@ -497,22 +494,6 @@ const config: NextAuthConfig = {
   // セッションのエラーハンドリングを改善
   // 本番環境でも一時的にデバッグを有効にしてリダイレクトURIを確認
   debug: true,
-  // セッションクッキーの設定を改善（データベースセッション使用時）
-  // データベースセッションを使用する場合、JWTセッションクッキーと区別するため、クッキー名を変更
-  cookies: useDatabaseStrategy
-    ? {
-      sessionToken: {
-        name: "__Secure-authjs.session-token",
-        options: {
-          httpOnly: true,
-          sameSite: "lax",
-          path: "/",
-          secure: true,
-        },
-      },
-      // 古いJWTセッションクッキーを無視するため、JWTセッションクッキー名を明示的に設定しない
-    }
-    : undefined,
   events: {
     async signIn({ user }) {
       // サインイン成功時の処理

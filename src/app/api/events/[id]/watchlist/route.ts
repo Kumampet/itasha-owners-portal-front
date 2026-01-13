@@ -140,9 +140,17 @@ export async function GET(
       },
     });
 
-    return NextResponse.json({
-      isWatching: !!follow,
-    });
+    // リアルタイム性が重要なのでキャッシュを無効にする
+    return NextResponse.json(
+      {
+        isWatching: !!follow,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error checking watchlist status:", error);
     return NextResponse.json(

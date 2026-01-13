@@ -63,6 +63,7 @@ export async function GET(request: Request) {
       },
     });
 
+    // 管理画面用のため、privateディレクティブを使用して10秒間キャッシュ
     return NextResponse.json(
       groups.map((group) => ({
         id: group.id,
@@ -80,7 +81,12 @@ export async function GET(request: Request) {
           email: group.leader.email,
         },
         createdAt: group.created_at,
-      }))
+      })),
+      {
+        headers: {
+          "Cache-Control": "private, s-maxage=10, stale-while-revalidate=30",
+        },
+      }
     );
   } catch (error) {
     console.error("Error fetching groups:", error);

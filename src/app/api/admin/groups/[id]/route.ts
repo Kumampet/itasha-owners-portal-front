@@ -83,42 +83,50 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({
-      id: group.id,
-      name: group.name,
-      theme: group.theme,
-      groupCode: group.group_code,
-      maxMembers: group.max_members,
-      memberCount: group._count.members,
-      messageCount: group._count.messages,
-      event: group.event,
-      leader: {
-        id: group.leader.id,
-        name: group.leader.name,
-        displayName: group.leader.display_name,
-        email: group.leader.email,
-      },
-      members: group.members.map((m) => ({
-        id: m.user.id,
-        name: m.user.name,
-        displayName: m.user.display_name,
-        email: m.user.email,
-        status: m.status,
-      })),
-      messages: group.messages.map((msg) => ({
-        id: msg.id,
-        content: msg.content,
-        isAnnouncement: msg.is_announcement,
-        sender: {
-          id: msg.sender.id,
-          name: msg.sender.name,
-          displayName: msg.sender.display_name,
-          email: msg.sender.email,
+    // 管理画面用のため、privateディレクティブを使用して10秒間キャッシュ
+    return NextResponse.json(
+      {
+        id: group.id,
+        name: group.name,
+        theme: group.theme,
+        groupCode: group.group_code,
+        maxMembers: group.max_members,
+        memberCount: group._count.members,
+        messageCount: group._count.messages,
+        event: group.event,
+        leader: {
+          id: group.leader.id,
+          name: group.leader.name,
+          displayName: group.leader.display_name,
+          email: group.leader.email,
         },
-        createdAt: msg.created_at,
-      })),
-      createdAt: group.created_at,
-    });
+        members: group.members.map((m) => ({
+          id: m.user.id,
+          name: m.user.name,
+          displayName: m.user.display_name,
+          email: m.user.email,
+          status: m.status,
+        })),
+        messages: group.messages.map((msg) => ({
+          id: msg.id,
+          content: msg.content,
+          isAnnouncement: msg.is_announcement,
+          sender: {
+            id: msg.sender.id,
+            name: msg.sender.name,
+            displayName: msg.sender.display_name,
+            email: msg.sender.email,
+          },
+          createdAt: msg.created_at,
+        })),
+        createdAt: group.created_at,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, s-maxage=10, stale-while-revalidate=30",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching group:", error);
     return NextResponse.json(

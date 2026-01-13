@@ -62,22 +62,30 @@ export async function GET(
     const officialUrls = reminder.event?.official_urls as string[] | null;
     const firstUrl = officialUrls && officialUrls.length > 0 ? officialUrls[0] : null;
 
-    return NextResponse.json({
-      id: reminder.id,
-      event: reminder.event ? {
-        id: reminder.event.id,
-        name: reminder.event.name,
-        event_date: reminder.event.event_date,
-        original_url: firstUrl,
-      } : null,
-      type: reminderData.type,
-      datetime: reminderData.datetime,
-      label: reminderData.label,
-      note: reminder.note,
-      notified: reminder.notified,
-      notified_at: reminder.notified_at,
-      created_at: reminder.created_at,
-    });
+    // ユーザー固有データのため、privateディレクティブを使用して5秒間キャッシュ
+    return NextResponse.json(
+      {
+        id: reminder.id,
+        event: reminder.event ? {
+          id: reminder.event.id,
+          name: reminder.event.name,
+          event_date: reminder.event.event_date,
+          original_url: firstUrl,
+        } : null,
+        type: reminderData.type,
+        datetime: reminderData.datetime,
+        label: reminderData.label,
+        note: reminder.note,
+        notified: reminder.notified,
+        notified_at: reminder.notified_at,
+        created_at: reminder.created_at,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, s-maxage=5, stale-while-revalidate=10",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching reminder:", error);
     return NextResponse.json(
@@ -214,22 +222,30 @@ export async function PATCH(
     const updatedOfficialUrls = updatedReminder.event?.official_urls as string[] | null;
     const updatedFirstUrl = updatedOfficialUrls && updatedOfficialUrls.length > 0 ? updatedOfficialUrls[0] : null;
 
-    return NextResponse.json({
-      id: updatedReminder.id,
-      event: updatedReminder.event ? {
-        id: updatedReminder.event.id,
-        name: updatedReminder.event.name,
-        event_date: updatedReminder.event.event_date,
-        original_url: updatedFirstUrl,
-      } : null,
-      type: updatedReminderData.type,
-      datetime: updatedReminderData.datetime,
-      label: updatedReminderData.label,
-      note: updatedReminder.note,
-      notified: updatedReminder.notified,
-      notified_at: updatedReminder.notified_at,
-      created_at: updatedReminder.created_at,
-    });
+    // 書き込み操作で即座に反映が必要なのでキャッシュを無効にする
+    return NextResponse.json(
+      {
+        id: updatedReminder.id,
+        event: updatedReminder.event ? {
+          id: updatedReminder.event.id,
+          name: updatedReminder.event.name,
+          event_date: updatedReminder.event.event_date,
+          original_url: updatedFirstUrl,
+        } : null,
+        type: updatedReminderData.type,
+        datetime: updatedReminderData.datetime,
+        label: updatedReminderData.label,
+        note: updatedReminder.note,
+        notified: updatedReminder.notified,
+        notified_at: updatedReminder.notified_at,
+        created_at: updatedReminder.created_at,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error updating reminder:", error);
     return NextResponse.json(
@@ -288,7 +304,15 @@ export async function DELETE(
       where: { id },
     });
 
-    return NextResponse.json({ message: "Reminder deleted" });
+    // 書き込み操作で即座に反映が必要なのでキャッシュを無効にする
+    return NextResponse.json(
+      { message: "Reminder deleted" },
+      {
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error deleting reminder:", error);
     return NextResponse.json(

@@ -100,7 +100,15 @@ export async function GET(
       },
     });
 
-    return NextResponse.json(event);
+    // 管理画面用のため、privateディレクティブを使用して10秒間キャッシュ
+    return NextResponse.json(
+      event,
+      {
+        headers: {
+          "Cache-Control": "private, s-maxage=10, stale-while-revalidate=30",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching event:", error);
     const errorMessage =
