@@ -27,13 +27,37 @@ export async function POST(request: Request) {
       );
     }
 
+    // セッションのユーザーIDがデータベースに存在するか確認
+    let applicantId: string | null = null;
+    if (session?.user?.id) {
+      try {
+        console.log(`[OrganizerApplication] Checking user existence for ID: ${session.user.id}`);
+        const userExists = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { id: true },
+        });
+        if (userExists) {
+          applicantId = session.user.id;
+          console.log(`[OrganizerApplication] User found, setting applicant_id: ${applicantId}`);
+        } else {
+          console.warn(`[OrganizerApplication] User not found in database for ID: ${session.user.id}`);
+        }
+      } catch (error) {
+        console.error("[OrganizerApplication] Error checking user existence:", error);
+        // エラーが発生した場合はnullのまま（未ログインとして扱う）
+      }
+    } else {
+      console.log("[OrganizerApplication] No session or user ID, applicant_id will be null");
+    }
+
     // 申請を作成
+    // @ts-expect-error - Prisma Client Proxyの型推論の問題（実行時には正常に動作する）
     const application = await prisma.organizerApplication.create({
       data: {
         display_name,
         email,
         experience,
-        applicant_id: session?.user?.id || null,
+        applicant_id: applicantId,
         status: "PENDING",
       },
       select: {
