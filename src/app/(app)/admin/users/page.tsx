@@ -231,14 +231,6 @@ export default function AdminUsersPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("ja-JP", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
   const getUserDisplayName = (user: User): string => {
     return user.name || user.email.split("@")[0] || "ユーザー";
   };
@@ -399,6 +391,7 @@ export default function AdminUsersPage() {
 
       {roleModalUser && (
         <UserRoleModal
+          key={roleModalUser.id}
           isOpen={!!roleModalUser}
           onClose={() => setRoleModalUser(null)}
           onConfirm={(role) => handleRoleChange(roleModalUser, role)}
@@ -409,6 +402,7 @@ export default function AdminUsersPage() {
 
       {displayNameModalUser && (
         <UserDisplayNameModal
+          key={displayNameModalUser.id}
           isOpen={!!displayNameModalUser}
           onClose={() => setDisplayNameModalUser(null)}
           onConfirm={(displayName) => handleDisplayNameChange(displayNameModalUser, displayName)}
@@ -422,7 +416,6 @@ export default function AdminUsersPage() {
           isOpen={!!deleteModalUser}
           onClose={() => setDeleteModalUser(null)}
           onConfirm={() => handleDelete(deleteModalUser)}
-          userName={getUserDisplayName(deleteModalUser)}
           email={deleteModalUser.email}
           name={deleteModalUser.name}
           displayName={deleteModalUser.display_name}
@@ -443,7 +436,6 @@ export default function AdminUsersPage() {
           isOpen={!!permanentDeleteModalUser}
           onClose={() => setPermanentDeleteModalUser(null)}
           onConfirm={() => handlePermanentDelete(permanentDeleteModalUser)}
-          userName={getUserDisplayName(permanentDeleteModalUser)}
           email={permanentDeleteModalUser.email}
           name={permanentDeleteModalUser.name}
           displayName={permanentDeleteModalUser.display_name}

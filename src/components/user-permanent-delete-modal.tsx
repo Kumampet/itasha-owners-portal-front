@@ -7,7 +7,6 @@ type UserPermanentDeleteModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  userName: string;
   email: string;
   name: string | null;
   displayName: string | null;
@@ -17,7 +16,6 @@ export function UserPermanentDeleteModal({
   isOpen,
   onClose,
   onConfirm,
-  userName,
   email,
   name,
   displayName,

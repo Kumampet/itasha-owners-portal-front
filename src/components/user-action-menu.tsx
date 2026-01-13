@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/button";
 
 type UserActionMenuProps = {
-  userId: string;
   onBanClick: () => void;
   onRoleChangeClick: () => void;
   onDisplayNameChangeClick: () => void;
@@ -16,7 +15,6 @@ type UserActionMenuProps = {
 };
 
 export function UserActionMenu({
-  userId,
   onBanClick,
   onRoleChangeClick,
   onDisplayNameChangeClick,

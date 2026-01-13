@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ModalBase } from "@/components/modal-base";
 import { Button } from "@/components/button";
 
@@ -19,13 +19,7 @@ export function UserRoleModal({
   currentRole,
   userName,
 }: UserRoleModalProps) {
-  const [selectedRole, setSelectedRole] = useState(currentRole);
-
-  useEffect(() => {
-    if (isOpen) {
-      setSelectedRole(currentRole);
-    }
-  }, [isOpen, currentRole]);
+  const [selectedRole, setSelectedRole] = useState(() => currentRole);
 
   const handleConfirm = () => {
     onConfirm(selectedRole);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ModalBase } from "@/components/modal-base";
 import { Button } from "@/components/button";
 
@@ -19,13 +19,7 @@ export function UserDisplayNameModal({
   currentDisplayName,
   userName,
 }: UserDisplayNameModalProps) {
-  const [displayName, setDisplayName] = useState(currentDisplayName || "");
-
-  useEffect(() => {
-    if (isOpen) {
-      setDisplayName(currentDisplayName || "");
-    }
-  }, [isOpen, currentDisplayName]);
+  const [displayName, setDisplayName] = useState(() => currentDisplayName || "");
 
   const handleConfirm = () => {
     onConfirm(displayName.trim() || null);
