@@ -328,10 +328,27 @@ const configBase: NextAuthConfig = {
         }
       }
       // jwt strategyの場合
+      // JWT戦略では、トークンに保存された情報を使用（DBアクセスを削減）
       if (token && !user) {
         session.user.id = token.id as string;
+        // トークンから情報を取得（JWT戦略の利点を活かす）
+        session.user.role = (token.role as string) || "USER";
+        session.user.isBanned = (token.isBanned as boolean) || false;
+      }
+      return session;
+    },
+    async jwt({ token, user }) {
+      // 初回ログイン時のみDBからユーザー情報を取得
+      // それ以降はトークンに保存された情報を使用（DBアクセスを削減）
+      if (user) {
+        token.id = user.id;
+        token.mustChangePassword = user.mustChangePassword || false;
+        // メールアドレスもトークンに保存（既存ユーザー検索用）
+        if (user.email) {
+          token.email = user.email;
+        }
         
-        // データベースからユーザー情報を取得（常に最新の情報を取得）
+        // 初回ログイン時のみDBから最新情報を取得
         if (hasDatabaseUrl) {
           try {
             const { prisma } = await import("@/lib/prisma");
@@ -345,118 +362,56 @@ const configBase: NextAuthConfig = {
                   id: true,
                   role: true,
                   is_banned: true,
+                  must_change_password: true,
                   email: true,
                 },
               });
             }
             
             // token.idで見つからない場合、メールアドレスで検索（既存ユーザーを探す）
-            if (!dbUser && token.email) {
+            if (!dbUser && (token.email || user?.email)) {
+              const email = (token.email || user?.email) as string;
               dbUser = await prisma.user.findUnique({
-                where: { email: token.email },
+                where: { email },
                 select: {
                   id: true,
                   role: true,
                   is_banned: true,
+                  must_change_password: true,
                   email: true,
                 },
               });
               
-              // 既存のユーザーが見つかった場合、セッションのIDを更新
+              // 既存のユーザーが見つかった場合、トークンのIDを更新
               if (dbUser) {
-                session.user.id = dbUser.id;
-              }
-            }
-            
-            if (dbUser) {
-              session.user.role = dbUser.role;
-              session.user.isBanned = dbUser.is_banned;
-            } else {
-              // データベースから取得できなかった場合はトークンから取得、それもなければデフォルト値
-              session.user.role = (token.role as string) || "USER";
-              session.user.isBanned = (token.isBanned as boolean) || false;
-            }
-          } catch (error) {
-            // エラーが発生した場合はトークンから取得、それもなければデフォルト値
-            session.user.role = (token.role as string) || "USER";
-            session.user.isBanned = (token.isBanned as boolean) || false;
-            console.error("[Session] Error fetching user from DB:", error);
-          }
-        } else {
-          // トークンからロールを取得した場合
-          session.user.role = (token.role as string) || "USER"; // デフォルト値を設定
-          session.user.isBanned = (token.isBanned as boolean) || false;
-        }
-      }
-      return session;
-    },
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.mustChangePassword = user.mustChangePassword || false;
-        // メールアドレスもトークンに保存（既存ユーザー検索用）
-        if (user.email) {
-          token.email = user.email;
-        }
-      }
-      
-      // DATABASE_URLが設定されている場合はデータベースから取得
-      // userが存在する場合（初回ログイン）も、存在しない場合（セッション更新）も取得
-      if (hasDatabaseUrl) {
-        try {
-          const { prisma } = await import("@/lib/prisma");
-          let dbUser = null;
-          
-          // まず、token.idで検索
-          if (token.id) {
-            dbUser = await prisma.user.findUnique({
-              where: { id: token.id as string },
-              select: {
-                id: true,
-                role: true,
-                is_banned: true,
-                must_change_password: true,
-                email: true,
-              },
-            });
-          }
-          
-          // token.idで見つからない場合、メールアドレスで検索（既存ユーザーを探す）
-          if (!dbUser && (token.email || user?.email)) {
-            const email = (token.email || user?.email) as string;
-            dbUser = await prisma.user.findUnique({
-              where: { email },
-              select: {
-                id: true,
-                role: true,
-                is_banned: true,
-                must_change_password: true,
-                email: true,
-              },
-            });
-            
-            // 既存のユーザーが見つかった場合、トークンのIDを更新
-            if (dbUser) {
-              token.id = dbUser.id;
-              if (user) {
-                // 初回ログイン時は、userオブジェクトのIDも更新
+                token.id = dbUser.id;
                 user.id = dbUser.id;
               }
             }
-          }
-          
-          if (dbUser) {
-            token.role = dbUser.role;
-            token.isBanned = dbUser.is_banned;
-            if (user) {
+            
+            if (dbUser) {
+              token.role = dbUser.role;
+              token.isBanned = dbUser.is_banned;
               token.mustChangePassword = dbUser.must_change_password;
+            } else {
+              // DBから取得できなかった場合は、userオブジェクトから取得
+              token.role = (user.role as string) || "USER";
+              token.isBanned = (user.isBanned as boolean) || false;
             }
+          } catch (error) {
+            // エラーが発生した場合は、userオブジェクトから取得
+            token.role = (user.role as string) || "USER";
+            token.isBanned = (user.isBanned as boolean) || false;
+            console.error("[JWT] Error fetching user from DB:", error);
           }
-        } catch (error) {
-          // エラーは無視して続行
-          console.error("[JWT] Error fetching user from DB:", error);
+        } else {
+          // DATABASE_URLが設定されていない場合は、userオブジェクトから取得
+          token.role = (user.role as string) || "USER";
+          token.isBanned = (user.isBanned as boolean) || false;
         }
       }
+      // セッション更新時（userが存在しない場合）は、トークンに既に保存された情報を使用
+      // DBアクセスは行わない（JWT戦略の利点を活かす）
       return token;
     },
   },
