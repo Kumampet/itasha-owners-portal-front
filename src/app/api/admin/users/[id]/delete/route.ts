@@ -34,7 +34,7 @@ export async function DELETE(
       where: { id },
       data: {
         deleted_at: new Date(),
-      },
+      } as { deleted_at: Date },
     });
 
     return NextResponse.json({ success: true });
