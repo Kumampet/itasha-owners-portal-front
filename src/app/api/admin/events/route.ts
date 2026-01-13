@@ -125,8 +125,8 @@ export async function POST(request: Request) {
   try {
     const session = await auth();
 
-    // 管理者権限チェック
-    if (!session || session.user?.role !== "ADMIN") {
+    // 管理者またはオーガナイザー権限チェック
+    if (!session || (session.user?.role !== "ADMIN" && session.user?.role !== "ORGANIZER")) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
