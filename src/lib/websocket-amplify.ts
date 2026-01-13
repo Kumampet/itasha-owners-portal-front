@@ -16,6 +16,7 @@ export function useWebSocketAmplify(groupId: string | null) {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
+  const connectRef = useRef<(() => void) | null>(null);
 
   const connect = useCallback(() => {
     if (!session?.user?.id || !groupId) {
@@ -60,7 +61,9 @@ export function useWebSocketAmplify(groupId: string | null) {
           console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
+            if (connectRef.current) {
+              connectRef.current();
+            }
           }, delay);
         } else {
           console.error("[WebSocket] Max reconnect attempts reached");
@@ -76,6 +79,11 @@ export function useWebSocketAmplify(groupId: string | null) {
       console.error("[WebSocket] Connection error:", error);
     }
   }, [session?.user?.id, groupId]);
+
+  // connect関数をrefに保存（useEffect内で更新）
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   useEffect(() => {
     if (groupId && session?.user?.id) {
