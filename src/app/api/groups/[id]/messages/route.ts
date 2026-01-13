@@ -178,6 +178,47 @@ export async function POST(
       },
     });
 
+    // WebSocketでメッセージをブロードキャスト（Lambda関数を非同期で呼び出し）
+    try {
+      const messageData = {
+        id: message.id,
+        content: message.content,
+        isAnnouncement: message.is_announcement,
+        sender: {
+          id: message.sender.id,
+          name: message.sender.name,
+          displayName: message.sender.display_name,
+          email: message.sender.email,
+        },
+        createdAt: message.created_at,
+      };
+
+      // Lambda関数を非同期で呼び出し（エラーが発生してもメッセージ作成は成功とする）
+      const broadcastLambdaArn = process.env.BROADCAST_MESSAGE_LAMBDA_ARN;
+      if (broadcastLambdaArn) {
+        const { LambdaClient, InvokeCommand } = await import("@aws-sdk/client-lambda");
+        const lambdaClient = new LambdaClient({});
+        
+        lambdaClient.send(
+          new InvokeCommand({
+            FunctionName: broadcastLambdaArn,
+            InvocationType: "Event", // 非同期実行
+            Payload: JSON.stringify({
+              groupId: id,
+              message: messageData,
+            }),
+          })
+        ).catch((error) => {
+          console.error("[Group Message] Error invoking broadcast Lambda:", error);
+        });
+      } else {
+        console.warn("[Group Message] BROADCAST_MESSAGE_LAMBDA_ARN not configured");
+      }
+    } catch (wsError) {
+      console.error("[Group Message] Error broadcasting via WebSocket:", wsError);
+      // WebSocketエラーはログに記録するだけで、メッセージ作成は成功とする
+    }
+
     // プッシュ通知を送信（送信者以外の全メンバーに）
     try {
       const recipientUserIds = group.members

@@ -68,6 +68,33 @@ export async function POST(
       },
     });
 
+    // WebSocketで既読状態の更新をブロードキャスト（Lambda関数を非同期で呼び出し）
+    try {
+      const broadcastLambdaArn = process.env.BROADCAST_MESSAGE_LAMBDA_ARN;
+      if (broadcastLambdaArn) {
+        const { LambdaClient, InvokeCommand } = await import("@aws-sdk/client-lambda");
+        const lambdaClient = new LambdaClient({});
+        
+        lambdaClient.send(
+          new InvokeCommand({
+            FunctionName: broadcastLambdaArn,
+            InvocationType: "Event", // 非同期実行
+            Payload: JSON.stringify({
+              groupId: id,
+              type: "read-updated",
+              userId: session.user.id,
+              messageId,
+            }),
+          })
+        ).catch((error) => {
+          console.error("[Read Status] Error invoking broadcast Lambda:", error);
+        });
+      }
+    } catch (wsError) {
+      console.error("[Read Status] Error broadcasting via WebSocket:", wsError);
+      // WebSocketエラーはログに記録するだけで、既読更新は成功とする
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error marking message as read:", error);

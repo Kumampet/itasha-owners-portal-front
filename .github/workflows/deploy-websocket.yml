@@ -1,0 +1,95 @@
+name: Deploy WebSocket API
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'lambda/**'
+      - 'infrastructure/**'
+      - '.github/workflows/deploy-websocket.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION || 'ap-northeast-1' }}
+
+      - name: Install SAM CLI
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Build Lambda functions
+        run: npm run lambda:build
+        env:
+          NODE_ENV: production
+
+      - name: Build SAM application
+        run: sam build --template-file infrastructure/websocket-api.yaml
+
+      - name: Deploy SAM application
+        run: |
+          sam deploy \
+            --stack-name websocket-api-${{ github.event.inputs.environment || 'dev' }} \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides \
+              Environment=${{ github.event.inputs.environment || 'dev' }} \
+              DatabaseUrl="${{ secrets.DATABASE_URL }}" \
+            --region ${{ secrets.AWS_REGION || 'ap-northeast-1' }} \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset
+
+      - name: Get stack outputs
+        id: stack-outputs
+        run: |
+          OUTPUTS=$(aws cloudformation describe-stacks \
+            --stack-name websocket-api-${{ github.event.inputs.environment || 'dev' }} \
+            --region ${{ secrets.AWS_REGION || 'ap-northeast-1' }} \
+            --query 'Stacks[0].Outputs' \
+            --output json)
+          
+          WEBSOCKET_ENDPOINT=$(echo "$OUTPUTS" | jq -r '.[] | select(.OutputKey=="WebSocketApiEndpoint") | .OutputValue')
+          BROADCAST_LAMBDA_ARN=$(echo "$OUTPUTS" | jq -r '.[] | select(.OutputKey=="BroadcastMessageLambdaArn") | .OutputValue')
+          
+          echo "websocket_endpoint=$WEBSOCKET_ENDPOINT" >> $GITHUB_OUTPUT
+          echo "broadcast_lambda_arn=$BROADCAST_LAMBDA_ARN" >> $GITHUB_OUTPUT
+
+      - name: Output deployment information
+        run: |
+          echo "Deployment completed successfully!"
+          echo "WebSocket API Endpoint: ${{ steps.stack-outputs.outputs.websocket_endpoint }}"
+          echo "Broadcast Lambda ARN: ${{ steps.stack-outputs.outputs.broadcast_lambda_arn }}"
+          echo ""
+          echo "Please set the following environment variables in AWS Amplify:"
+          echo "  NEXT_PUBLIC_WEBSOCKET_ENDPOINT=${{ steps.stack-outputs.outputs.websocket_endpoint }}"
+          echo "  BROADCAST_MESSAGE_LAMBDA_ARN=${{ steps.stack-outputs.outputs.broadcast_lambda_arn }}"
+

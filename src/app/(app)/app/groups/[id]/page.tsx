@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use, useCallback } from "react";
+import { useState, useEffect, use, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -9,6 +9,7 @@ import { TransferOwnershipModal } from "@/components/transfer-ownership-modal";
 import { Button } from "@/components/button";
 import { Tabs, Tab } from "@/components/tabs";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { useWebSocketAmplify, useWebSocketMessageHandler } from "@/lib/websocket-amplify";
 
 type GroupDetail = {
   id: string;
@@ -75,6 +76,8 @@ export default function GroupDetailPage({
   const [targetMemberId, setTargetMemberId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  const { socket, isConnected } = useWebSocketAmplify(activeTab === "messages" ? id : null);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
   const fetchGroup = useCallback(async () => {
     try {
@@ -170,9 +173,62 @@ export default function GroupDetailPage({
     fetchGroup();
   }, [fetchGroup]);
 
+  // WebSocket接続時のメッセージ受信処理
+  const handleNewMessage = useCallback((data: { groupId: string; message: GroupMessage }) => {
+    if (data.groupId !== id) {
+      return;
+    }
+
+    setMessages((currentMessages) => {
+      // 既に存在するメッセージは追加しない
+      const exists = currentMessages.some((msg) => msg.id === data.message.id);
+      if (exists) {
+        return currentMessages;
+      }
+
+      // 新しいメッセージを追加
+      const updatedMessages = [...currentMessages, data.message];
+
+      // スクロール位置を保存
+      const container = messagesContainerRef.current;
+      if (!container) {
+        return updatedMessages;
+      }
+
+      const wasAtBottom = Math.abs(
+        container.scrollHeight - container.scrollTop - container.clientHeight
+      ) < 50;
+
+      // スクロール位置を復元（最下部にいた場合は最下部に移動）
+      requestAnimationFrame(() => {
+        const container = messagesContainerRef.current;
+        if (!container) return;
+
+        if (wasAtBottom) {
+          container.scrollTop = container.scrollHeight;
+        }
+      });
+
+      return updatedMessages;
+    });
+  }, [id]);
+
+  const handleReadUpdated = useCallback((data: { groupId: string; userId: string; messageId: string }) => {
+    if (data.groupId !== id) {
+      return;
+    }
+
+    // 自分が既読にした場合は未読バッジを消す
+    if (data.userId === session?.user?.id) {
+      setHasUnreadMessages(false);
+    }
+  }, [id, session?.user?.id]);
+
+  useWebSocketMessageHandler(socket, handleNewMessage, handleReadUpdated);
+
   // 未読メッセージの状態を取得（メッセージタブが開いていない場合のみ）
   useEffect(() => {
-    // メッセージタブが開いている場合は、メッセージ取得時に既読処理されるので監視不要
+    // メッセージタブが開いている場合は、WebSocketで処理されるので監視不要
     if (activeTab === "messages") {
       return;
     }
@@ -191,26 +247,19 @@ export default function GroupDetailPage({
 
     if (id) {
       fetchUnreadStatus();
-      // 定期的に未読状態をチェック（10秒ごと）
-      const interval = setInterval(fetchUnreadStatus, 10000);
+      // WebSocketが利用できない場合のフォールバックとして、定期的に未読状態をチェック（30秒ごと）
+      const interval = setInterval(fetchUnreadStatus, 30000);
       return () => clearInterval(interval);
     }
   }, [id, activeTab]);
 
-  // メッセージタブが開いているときはリアルタイムでメッセージを監視
+  // メッセージタブが開いているときは初回のみメッセージを取得
   useEffect(() => {
-    if (activeTab === "messages" && group) {
+    if (activeTab === "messages" && group && messages.length === 0) {
       // 初回取得（ローディング表示あり）
       fetchMessages(true);
-
-      // 2秒ごとにメッセージをチェック（新規メッセージがある場合のみ更新）
-      const messageInterval = setInterval(() => {
-        fetchMessages(false);
-      }, 2000);
-
-      return () => clearInterval(messageInterval);
     }
-  }, [activeTab, group, fetchMessages]);
+  }, [activeTab, group, fetchMessages, messages.length]);
 
   // メッセージタブが開かれたとき、またはメッセージが読み込まれたときに最新メッセージにスクロール
   useEffect(() => {
@@ -238,7 +287,7 @@ export default function GroupDetailPage({
           method: "POST",
         })
           .then(() => {
-            // 既読にしたら未読バッジを消す
+            // 既読にしたら未読バッジを消す（WebSocketでも処理されるが、念のため）
             setHasUnreadMessages(false);
           })
           .catch((error) => {
@@ -280,8 +329,11 @@ export default function GroupDetailPage({
       }
 
       const newMessage = await res.json();
-      // 新しいメッセージを追加（配列の最後に追加）
-      setMessages([...messages, newMessage]);
+      // WebSocketでブロードキャストされるので、ここでは追加しない
+      // ただし、WebSocketが接続されていない場合のフォールバックとして追加
+      if (!isConnected) {
+        setMessages([...messages, newMessage]);
+      }
       setMessageContent("");
       setIsAnnouncement(false);
 
@@ -290,9 +342,9 @@ export default function GroupDetailPage({
 
       // スクロールを最下部に移動
       setTimeout(() => {
-        const messagesContainer = document.querySelector('[data-messages-container]');
-        if (messagesContainer) {
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        const container = messagesContainerRef.current;
+        if (container) {
+          container.scrollTop = container.scrollHeight;
         }
       }, 100);
     } catch (error) {
@@ -605,7 +657,11 @@ export default function GroupDetailPage({
             ) : (
               <div className="flex flex-col h-[calc(100vh-280px)] min-h-[400px] sm:h-[calc(100vh-300px)] sm:min-h-[500px] overflow-hidden">
                 {/* メッセージ一覧（スクロール可能） */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3 pb-24 sm:pb-4" data-messages-container>
+                <div 
+                  ref={messagesContainerRef}
+                  className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3 pb-24 sm:pb-4" 
+                  data-messages-container
+                >
                   {messagesLoading ? (
                     <div className="flex items-center justify-center py-8">
                       <LoadingSpinner size="md" />

@@ -51,6 +51,12 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 このリポジトリはAmplify Hostingに接続済みで、`main`ブランチへのpushをトリガーにCI/CDが走る構成です。
 
+### WebSocket APIのデプロイ
+
+WebSocket APIは、mainブランチへのマージ時に自動デプロイされます。
+
+詳細は `README-DEPLOYMENT.md` を参照してください。
+
 1. `main`に変更をpush  
 2. Amplifyが自動で `npm ci` → `npm run build` を実行  
 3. ビルド成功後、AmplifyのホスティングURLへ即時反映
