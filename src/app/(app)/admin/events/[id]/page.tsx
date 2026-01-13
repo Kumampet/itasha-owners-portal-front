@@ -269,6 +269,7 @@ export default function AdminEventDetailPage({
 
   const handleConfirmCancel = () => {
     setIsEditing(false);
+    setShowCancelModal(false);
     fetchEvent();
   };
 
