@@ -24,7 +24,7 @@ const adminOnlyMenuItems = [
   { href: "/admin/submissions", label: "イベント掲載依頼フォーム", icon: "📝" },
   { href: "/admin/contacts", label: "お問い合わせ管理", icon: "💬" },
   { href: "/admin/groups", label: "団体モデレーション", icon: "👥" },
-  { href: "/admin/organizers/new", label: "オーガナイザー作成", icon: "👤" },
+  { href: "/admin/organizer-applications", label: "オーガナイザー申請一覧", icon: "📋" },
 ];
 
 type SidebarContentProps = {
