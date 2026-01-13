@@ -222,7 +222,7 @@ const configBase: NextAuthConfig = {
         session.user.id = token.id as string;
         session.user.role = (token.role as string) || "USER";
         session.user.isBanned = (token.isBanned as boolean) || false;
-        
+
         // メールアドレスが一時的なもの（@placeholder.local）の場合、DBから最新情報を取得
         if (token.email && token.email.endsWith("@placeholder.local") && hasDatabaseUrl) {
           try {
@@ -233,7 +233,7 @@ const configBase: NextAuthConfig = {
                 email: true,
               },
             });
-            
+
             // DBから取得したメールアドレスが一時的なものでない場合、更新
             if (dbUser && dbUser.email && !dbUser.email.endsWith("@placeholder.local")) {
               session.user.email = dbUser.email;
@@ -281,32 +281,110 @@ const configBase: NextAuthConfig = {
               });
             }
 
-            // token.idで見つからない場合、メールアドレスで検索（既存ユーザーを探す）
+            // token.idで見つからない場合、既存ユーザーを探す
             if (!dbUser) {
-              // まず、user.emailまたはtoken.emailで検索
-              let searchEmail = token.email || user?.email;
-              
-              // Twitter認証の場合、メールアドレスがない場合はproviderAccountIdから生成
-              if (!searchEmail && account?.provider === "twitter" && account?.providerAccountId) {
-                searchEmail = `twitter-${account.providerAccountId}@placeholder.local`;
-              }
-
-              if (searchEmail) {
-                dbUser = await prisma.user.findUnique({
-                  where: { email: searchEmail },
+              // Twitter認証の場合、providerAccountIdを使用してAccountテーブルから既存ユーザーを検索
+              if (account?.provider === "twitter" && account?.providerAccountId) {
+                const existingAccount = await prisma.account.findUnique({
+                  where: {
+                    provider_providerAccountId: {
+                      provider: "twitter",
+                      providerAccountId: account.providerAccountId,
+                    },
+                  },
                   select: {
-                    id: true,
-                    role: true,
-                    is_banned: true,
-                    email: true,
+                    userId: true,
+                    user: {
+                      select: {
+                        id: true,
+                        role: true,
+                        is_banned: true,
+                        email: true,
+                      },
+                    },
                   },
                 });
 
-                // 既存のユーザーが見つかった場合、トークンのIDを更新
-                if (dbUser) {
+                if (existingAccount?.user) {
+                  dbUser = existingAccount.user;
                   token.id = dbUser.id;
                   token.email = dbUser.email; // トークンにもメールアドレスを保存
                   user.id = dbUser.id;
+                  console.log(`[JWT] Found existing Twitter user via Account: ${dbUser.id} (${dbUser.email})`);
+                } else {
+                  // Accountレコードが見つからない場合、メールアドレスで検索
+                  // 既存のユーザーが存在するが、Accountレコードが作成されていない可能性がある
+                  const tempEmail = `twitter-${account.providerAccountId}@placeholder.local`;
+                  const existingUserByEmail = await prisma.user.findUnique({
+                    where: { email: tempEmail },
+                    select: {
+                      id: true,
+                      role: true,
+                      is_banned: true,
+                      email: true,
+                    },
+                  });
+
+                  if (existingUserByEmail) {
+                    dbUser = existingUserByEmail;
+                    token.id = dbUser.id;
+                    token.email = dbUser.email;
+                    user.id = dbUser.id;
+                    console.log(`[JWT] Found existing Twitter user via email: ${dbUser.id} (${dbUser.email})`);
+
+                    // Accountレコードが存在しない場合は作成
+                    try {
+                      await prisma.account.create({
+                        data: {
+                          userId: dbUser.id,
+                          type: account.type || "oauth",
+                          provider: account.provider,
+                          providerAccountId: account.providerAccountId,
+                          refresh_token: account.refresh_token || null,
+                          access_token: account.access_token || null,
+                          expires_at: account.expires_at || null,
+                          token_type: account.token_type || null,
+                          scope: account.scope || null,
+                          id_token: (typeof account.id_token === "string" ? account.id_token : null),
+                          session_state: (typeof account.session_state === "string" ? account.session_state : null),
+                        },
+                      });
+                      console.log(`[JWT] Created missing Account record for existing user: ${dbUser.id}`);
+                    } catch (error) {
+                      // Accountレコードの作成に失敗しても続行（既に存在する可能性がある）
+                      console.error(`[JWT] Error creating Account record for existing user:`, error);
+                    }
+                  }
+                }
+              }
+
+              // Accountテーブルで見つからない場合、メールアドレスで検索（既存ユーザーを探す）
+              if (!dbUser) {
+                // まず、user.emailまたはtoken.emailで検索
+                let searchEmail = token.email || user?.email;
+
+                // Twitter認証の場合、メールアドレスがない場合はproviderAccountIdから生成
+                if (!searchEmail && account?.provider === "twitter" && account?.providerAccountId) {
+                  searchEmail = `twitter-${account.providerAccountId}@placeholder.local`;
+                }
+
+                if (searchEmail) {
+                  dbUser = await prisma.user.findUnique({
+                    where: { email: searchEmail },
+                    select: {
+                      id: true,
+                      role: true,
+                      is_banned: true,
+                      email: true,
+                    },
+                  });
+
+                  // 既存のユーザーが見つかった場合、トークンのIDを更新
+                  if (dbUser) {
+                    token.id = dbUser.id;
+                    token.email = dbUser.email; // トークンにもメールアドレスを保存
+                    user.id = dbUser.id;
+                  }
                 }
               }
             }
@@ -346,6 +424,31 @@ const configBase: NextAuthConfig = {
                   token.email = newUser.email; // 生成されたメールアドレスもトークンに保存
                   user.id = newUser.id;
                   console.log(`[JWT] Created user in DB: ${newUser.id} (${newUser.email})`);
+
+                  // Accountレコードも作成（JWT戦略では自動的に作成されないため）
+                  if (account?.provider && account?.providerAccountId) {
+                    try {
+                      await prisma.account.create({
+                        data: {
+                          userId: newUser.id,
+                          type: account.type || "oauth",
+                          provider: account.provider,
+                          providerAccountId: account.providerAccountId,
+                          refresh_token: account.refresh_token || null,
+                          access_token: account.access_token || null,
+                          expires_at: account.expires_at || null,
+                          token_type: account.token_type || null,
+                          scope: account.scope || null,
+                          id_token: (typeof account.id_token === "string" ? account.id_token : null),
+                          session_state: (typeof account.session_state === "string" ? account.session_state : null),
+                        },
+                      });
+                      console.log(`[JWT] Created Account record for ${account.provider} user: ${newUser.id}`);
+                    } catch (error) {
+                      // Accountレコードの作成に失敗しても、ユーザー作成は成功しているので続行
+                      console.error(`[JWT] Error creating Account record:`, error);
+                    }
+                  }
                 } else {
                   // メールアドレスが決定できない場合、トークンのIDをnullに設定
                   console.warn("[JWT] User email not available and cannot generate, cannot create user in DB");
