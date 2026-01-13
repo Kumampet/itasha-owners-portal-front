@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Card } from "@/components/card";
 import { Button } from "@/components/button";
+import { useWebSocketAmplify, useWebSocketMessageHandler } from "@/lib/websocket-amplify";
 
 type Group = {
   id: string;
@@ -30,23 +32,49 @@ type Group = {
 
 export default function GroupsPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, boolean>>({});
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [groupCode, setGroupCode] = useState("");
   const [joining, setJoining] = useState(false);
+  const { socket } = useWebSocketAmplify(null); // 全団体の未読状態を監視
 
   useEffect(() => {
     document.title = "団体管理 | 痛車オーナーズナビ | いたなび！";
   }, []);
 
+  // WebSocket接続時のメッセージ受信処理
+  const handleNewMessage = useCallback((data: { groupId: string; message: unknown }) => {
+    // 送信者以外の場合のみ未読としてマーク
+    const message = data.message as { sender?: { id?: string } } | null;
+    if (message && message.sender?.id !== session?.user?.id) {
+      setUnreadCounts((prev) => ({
+        ...prev,
+        [data.groupId]: true,
+      }));
+    }
+  }, [session?.user?.id]);
+
+  const handleReadUpdated = useCallback((data: { groupId: string; userId: string; messageId: string }) => {
+    // 自分が既読にした場合は未読バッジを消す
+    if (data.userId === session?.user?.id) {
+      setUnreadCounts((prev) => ({
+        ...prev,
+        [data.groupId]: false,
+      }));
+    }
+  }, [session?.user?.id]);
+
+  useWebSocketMessageHandler(socket, handleNewMessage, handleReadUpdated);
+
   useEffect(() => {
     fetchGroups();
     fetchUnreadCounts();
     
-    // 定期的に未読状態をチェック（10秒ごと）
-    const interval = setInterval(fetchUnreadCounts, 10000);
+    // WebSocketが利用できない場合のフォールバックとして、定期的に未読状態をチェック（30秒ごと）
+    const interval = setInterval(fetchUnreadCounts, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -316,7 +344,7 @@ export default function GroupsPage() {
               一斉連絡ポリシー
             </h2>
             <ul className="mt-2 space-y-1 text-xs text-zinc-700 sm:text-sm">
-              <li>・団体メッセージで「一斉連絡」として投稿すると、重要なメッセージとしてマークされます。</li>
+              <li>・団体チャットで「一斉連絡」として投稿すると、重要なメッセージとしてマークされます。</li>
               {/* TODO: 一斉連絡用メール通知機能は未実装です。将来的に実装する場合は、メール通知機能を追加してください。 */}
             </ul>
           </section>

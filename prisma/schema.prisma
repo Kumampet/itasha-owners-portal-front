@@ -41,8 +41,8 @@ model User {
   // リレーション
   events_participating UserEvent[] // 参加/フォローしているイベント
   groups_leading       Group[]            @relation("GroupLeader") // リーダーを務める団体
-  group_messages       GroupMessage[]     @relation("GroupMessageSender") // 団体メッセージの履歴
-  group_message_reads  GroupMessageRead[] @relation("GroupMessageReadUser") // 団体メッセージの既読情報
+  group_messages       GroupMessage[]     @relation("GroupMessageSender") // 団体チャットの履歴
+  group_message_reads  GroupMessageRead[] @relation("GroupMessageReadUser") // 団体チャットの既読情報
   event_follows        EventFollow[] // フォローしているイベント
 
   // 【修正】主催しているイベントのリスト
@@ -266,7 +266,7 @@ model Group {
   @@map("groups")
 }
 
-// 団体メッセージ (一斉連絡/掲示板)
+// 団体チャット (一斉連絡/掲示板)
 model GroupMessage {
   id        String @id @default(uuid()) @db.VarChar(36)
   group     Group  @relation(fields: [group_id], references: [id])
@@ -287,7 +287,7 @@ model GroupMessage {
   @@map("group_messages")
 }
 
-// 団体メッセージの既読管理
+// 団体チャットの既読管理
 model GroupMessageRead {
   id         String       @id @default(uuid()) @db.VarChar(36)
   message    GroupMessage @relation(fields: [message_id], references: [id], onDelete: Cascade)

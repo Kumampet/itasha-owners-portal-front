@@ -57,3 +57,17 @@ scripts/test-reminder-check.ts
 /public/fallback-*.js
 /public/workbox-*.js.map
 /public/fallback-*.js.map
+
+# Lambda build outputs
+lambda/**/dist/
+lambda/**/node_modules/
+lambda/**/.aws-sam/
+
+# SAM build artifacts
+.aws-sam/
+samconfig.toml.local
+
+.next/
+.swc/
+
+node_modules/
