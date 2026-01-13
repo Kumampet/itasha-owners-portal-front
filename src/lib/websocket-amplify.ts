@@ -87,6 +87,8 @@ export function useWebSocketAmplify(groupId: string | null) {
 
   useEffect(() => {
     if (groupId && session?.user?.id) {
+      // WebSocket接続を開始（useEffect内でのsetStateは許容される）
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       connect();
     }
 
