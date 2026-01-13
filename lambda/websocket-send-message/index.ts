@@ -93,9 +93,13 @@ export const handler: APIGatewayProxyWebsocketHandlerV2 = async (event) => {
     const apiGatewayClient = getApiGatewayClient(event);
     const broadcastPromises = groupRoomsResult.Items.map(async (room: Record<string, unknown>) => {
       try {
+        const connectionId = room.connectionId as string;
+        if (!connectionId) {
+          return;
+        }
         await apiGatewayClient.send(
           new PostToConnectionCommand({
-            ConnectionId: room.connectionId,
+            ConnectionId: connectionId,
             Data: JSON.stringify({
               type: "new-message",
               groupId,
@@ -105,11 +109,12 @@ export const handler: APIGatewayProxyWebsocketHandlerV2 = async (event) => {
         );
       } catch (error: any) {
         // 接続が切断されている場合は無視
-        if (error.statusCode === 410) {
-          console.log(`[WebSocket] Connection ${room.connectionId} is gone, removing from room`);
+        const errorObj = error as { statusCode?: number };
+        if (errorObj.statusCode === 410) {
+          console.log(`[WebSocket] Connection ${connectionId} is gone, removing from room`);
           // 切断された接続をルームから削除（オプション）
         } else {
-          console.error(`[WebSocket] Error sending to ${room.connectionId}:`, error);
+          console.error(`[WebSocket] Error sending to ${connectionId}:`, error);
         }
       }
     });

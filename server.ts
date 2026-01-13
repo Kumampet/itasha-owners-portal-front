@@ -65,6 +65,7 @@ app.prepare().then(() => {
       }
 
       // 認証情報をsocketに保存
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (socket as any).userId = userId;
       next();
     } catch (error) {
@@ -74,6 +75,7 @@ app.prepare().then(() => {
   });
 
   io.on("connection", async (socket) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (socket as any).userId;
     console.log(`[Socket] User connected: ${userId}`);
 
@@ -136,7 +138,7 @@ app.prepare().then(() => {
     });
 
     // メッセージ送信
-    socket.on("send-message", async (data: { groupId: string; message: any }) => {
+    socket.on("send-message", async (data: { groupId: string; message: unknown }) => {
       try {
         const { groupId, message } = data;
         
