@@ -23,6 +23,7 @@ const tabs = [
   { href: "/app/reminder", label: "リマインダー管理", key: "reminder", requiresAuth: true },
   { href: "/app/groups", label: "団体管理", key: "groups", requiresAuth: true },
   { href: "/app/event-submission", label: "イベント掲載依頼", key: "event-submission" },
+  { href: "/app/organizer-application", label: "オーガナイザー登録申請", key: "organizer-application" },
   { href: "/app/contact", label: "お問い合わせ", key: "contact" },
 ];
 
@@ -62,8 +63,8 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
   const activeKey = resolveActiveKey(pathname);
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    // イベントページ、お問い合わせフォーム、イベント掲載依頼フォームは常にアクセス可能
-    if (href === "/events" || href === "/app/contact" || href === "/app/event-submission") {
+    // イベントページ、お問い合わせフォーム、イベント掲載依頼フォーム、オーガナイザー登録申請は常にアクセス可能
+    if (href === "/events" || href === "/app/contact" || href === "/app/event-submission" || href === "/app/organizer-application") {
       onClose();
       return;
     }

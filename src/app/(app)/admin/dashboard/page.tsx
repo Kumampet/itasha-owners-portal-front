@@ -53,10 +53,10 @@ export default function AdminDashboard() {
       icon: "👥",
     },
     {
-      title: "オーガナイザーアカウント作成",
-      description: "イベントオーガナイザー用のアカウントを作成",
-      href: "/admin/organizers/new",
-      icon: "👤",
+      title: "オーガナイザー申請一覧",
+      description: "ユーザーからのオーガナイザー登録申請を確認・処理",
+      href: "/admin/organizer-applications",
+      icon: "📋",
     },
   ];
 

@@ -57,6 +57,9 @@ model User {
   // お問い合わせフォーム
   contact_submissions ContactSubmission[]
 
+  // オーガナイザー登録申請
+  organizer_applications OrganizerApplication[]
+
   // リマインダー
   reminders Reminder[]
 
@@ -466,4 +469,29 @@ model ContactSubmission {
   updated_at DateTime @updatedAt
 
   @@map("contact_submissions")
+}
+
+// オーガナイザー登録申請
+model OrganizerApplication {
+  id String @id @default(uuid()) @db.VarChar(36)
+
+  // 申請者情報（未ログインの場合はnull）
+  applicant    User?   @relation(fields: [applicant_id], references: [id])
+  applicant_id String? @db.VarChar(36)
+
+  // 申請情報
+  display_name String @db.VarChar(100) // 表示名
+  email        String @db.VarChar(255) // メールアドレス
+  experience   String @db.Text // 歴代の運営実績（無い場合は今後申請予定イベントの簡潔な説明）
+
+  // 処理ステータス (PENDING: 未処理, APPROVED: 承認済み, REJECTED: 却下)
+  status String @default("PENDING")
+
+  // 処理メモ（管理者が記入）
+  admin_note String? @db.Text
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("organizer_applications")
 }
