@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
-import { PWAInstallCard } from "@/components/pwa-install-card";
 import { LinkCard } from "@/components/link-card";
 import { Card, CardTitle, CardContent } from "@/components/card";
 import { LoadingSpinner } from "@/components/loading-spinner";
@@ -225,9 +224,6 @@ export default function MyPage() {
                         )}
                     </CardContent>
                 </Card>
-
-                {/* PWAインストール案内（スマホのみ） */}
-                <PWAInstallCard />
 
                 {/* 基本情報、リマインダー管理、団体管理、オーガナイザー機能（2列グリッド） */}
                 <div className="grid gap-4 sm:grid-cols-2">
