@@ -96,7 +96,7 @@ export async function POST(
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+      } catch (error: any) {
     console.error("Error marking message as read:", error);
     return NextResponse.json(
       { error: "Failed to mark message as read" },
