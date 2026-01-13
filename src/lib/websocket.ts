@@ -87,9 +87,17 @@ export function useWebSocket(groupId: string | null) {
     };
   }, [session?.user?.id, groupId]);
 
+  // socketRefは内部状態管理用で、外部に公開しない
+  // 代わりに、isConnectedとsendMessage関数を提供
   return {
-    socket: socketRef.current,
     isConnected,
+    sendMessage: (message: unknown) => {
+      if (socketRef.current && socketRef.current.readyState === 1) {
+        socketRef.current.send(JSON.stringify(message));
+        return true;
+      }
+      return false;
+    },
   };
 }
 
