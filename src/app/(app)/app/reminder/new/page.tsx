@@ -45,9 +45,11 @@ export default function NewReminderPage() {
         const res = await fetch("/api/events");
         if (!res.ok) throw new Error("Failed to fetch events");
         const data = await res.json();
-        setEvents(data);
+        // APIレスポンスは { events: [...], pagination: {...} } の形式
+        setEvents(data.events || []);
       } catch (error) {
         console.error("Failed to fetch events:", error);
+        setEvents([]); // エラー時は空配列を設定
       } finally {
         setLoading(false);
       }
@@ -188,7 +190,23 @@ export default function NewReminderPage() {
         >
           <div>
             <label className="block text-sm font-medium text-zinc-700">
-              イベント
+              タイトル *
+            </label>
+            <input
+              type="text"
+              value={formData.label}
+              onChange={(e) =>
+                setFormData({ ...formData, label: e.target.value })
+              }
+              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              placeholder="例: エントリー開始、支払期限、集合時間"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-700">
+              関連イベント
             </label>
             <select
               value={formData.event_id}
@@ -209,23 +227,7 @@ export default function NewReminderPage() {
 
           <div>
             <label className="block text-sm font-medium text-zinc-700">
-              ラベル *
-            </label>
-            <input
-              type="text"
-              value={formData.label}
-              onChange={(e) =>
-                setFormData({ ...formData, label: e.target.value })
-              }
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-              placeholder="例: エントリー開始、支払期限、集合時間"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-700">
-              日時 *
+              リマインド日時 *
             </label>
             <input
               type="datetime-local"
