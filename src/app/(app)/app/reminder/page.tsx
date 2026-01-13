@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import ConfirmModal from "@/components/confirm-modal";
-import { ShareMenu } from "@/components/share-menu";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { ReminderCard } from "@/components/reminder-card";
 
 type Reminder = {
   id: string;
@@ -18,6 +18,7 @@ type Reminder = {
   type: string;
   datetime: string;
   label: string;
+  note: string | null;
   notified: boolean;
   notified_at: string | null;
   created_at: string;
@@ -198,53 +199,13 @@ export default function ReminderPage() {
                     </h2>
                     <div className="space-y-3">
                       {upcomingReminders.map((reminder) => (
-                        <div
+                        <ReminderCard
                           key={reminder.id}
-                          className="rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 hover:shadow-md sm:p-5"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                                  {reminder.label}
-                                </span>
-                                {reminder.event && (
-                                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                                    {reminder.event.name}
-                                  </span>
-                                )}
-                                {reminder.notified && (
-                                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
-                                    通知済み
-                                  </span>
-                                )}
-                              </div>
-                              <p className="mt-2 text-sm font-semibold text-zinc-900 sm:text-base">
-                                {reminder.label}
-                              </p>
-                              {reminder.event?.theme && (
-                                <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
-                                  {reminder.event.theme}
-                                </p>
-                              )}
-                              <p className="mt-2 text-xs text-zinc-600 sm:text-sm">
-                                <span className="font-medium">
-                                  {formatDateTime(reminder.datetime)}
-                                </span>
-                              </p>
-                            </div>
-                            <div className="flex-shrink-0">
-                              <ShareMenu
-                                reminderId={reminder.id}
-                                reminderLabel={reminder.label}
-                                eventName={reminder.event?.name || "（イベント未設定）"}
-                                eventId={reminder.event?.id || ""}
-                                hasEvent={!!reminder.event}
-                                onDeleteClick={() => handleDeleteClick(reminder.id)}
-                              />
-                            </div>
-                          </div>
-                        </div>
+                          reminder={reminder}
+                          variant="upcoming"
+                          onDeleteClick={handleDeleteClick}
+                          formatDateTime={formatDateTime}
+                        />
                       ))}
                     </div>
                   </div>
@@ -257,53 +218,13 @@ export default function ReminderPage() {
                     </h2>
                     <div className="space-y-3">
                       {pastReminders.map((reminder) => (
-                        <div
+                        <ReminderCard
                           key={reminder.id}
-                          className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 sm:p-5"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium text-zinc-600">
-                                  {reminder.label}
-                                </span>
-                                {reminder.event && (
-                                  <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium text-zinc-600">
-                                    {reminder.event.name}
-                                  </span>
-                                )}
-                                {reminder.notified && (
-                                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
-                                    通知済み
-                                  </span>
-                                )}
-                              </div>
-                              <p className="mt-2 text-sm font-semibold text-zinc-900 sm:text-base">
-                                {reminder.label}
-                              </p>
-                              {reminder.event?.theme && (
-                                <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
-                                  {reminder.event.theme}
-                                </p>
-                              )}
-                              <p className="mt-2 text-xs text-zinc-500 sm:text-sm">
-                                <span className="font-medium">
-                                  {formatDateTime(reminder.datetime)}
-                                </span>
-                              </p>
-                            </div>
-                            <div className="flex-shrink-0">
-                              <ShareMenu
-                                reminderId={reminder.id}
-                                reminderLabel={reminder.label}
-                                eventName={reminder.event?.name || "（イベント未設定）"}
-                                eventId={reminder.event?.id || ""}
-                                hasEvent={!!reminder.event}
-                                onDeleteClick={() => handleDeleteClick(reminder.id)}
-                              />
-                            </div>
-                          </div>
-                        </div>
+                          reminder={reminder}
+                          variant="past"
+                          onDeleteClick={handleDeleteClick}
+                          formatDateTime={formatDateTime}
+                        />
                       ))}
                     </div>
                   </div>

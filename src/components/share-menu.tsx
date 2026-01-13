@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "./button";
+import { generateGoogleCalendarUrl } from "@/lib/calendar";
 
 type ShareMenuProps = {
   reminderId: string;
@@ -10,6 +11,8 @@ type ShareMenuProps = {
   eventName: string;
   eventId: string;
   hasEvent: boolean;
+  datetime: string;
+  note: string | null;
   onDeleteClick: () => void;
 };
 
@@ -19,6 +22,8 @@ export function ShareMenu({
   eventName,
   eventId,
   hasEvent,
+  datetime,
+  note,
   onDeleteClick,
 }: ShareMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,45 +45,32 @@ export function ShareMenu({
     };
   }, [isOpen]);
 
-  const handleDownloadIcal = async () => {
-    try {
-      const res = await fetch(`/api/reminders/${reminderId}/ical`);
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
-        console.error("API Error:", res.status, errorData);
-        throw new Error(`Failed to download ical: ${res.status} ${errorData.error || "Unknown error"}`);
-      }
-
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${eventName}_${reminderLabel}.ics`;
-      try {
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        // 親要素の存在を確認してから削除
-        const parentNode = a.parentNode;
-        if (parentNode) {
-          try {
-            parentNode.removeChild(a);
-          } catch (error) {
-            // エラーが発生した場合は無視（既に削除されている可能性がある）
-            console.debug("Link removal error (safe to ignore):", error);
-          }
-        }
-      } catch (error) {
-        // エラーが発生した場合は無視
-        console.debug("Link append/click error (safe to ignore):", error);
-        window.URL.revokeObjectURL(url);
-      }
-      setIsOpen(false);
-    } catch (error) {
-      console.error("Failed to download ical:", error);
-      const errorMessage = error instanceof Error ? error.message : "iCalファイルのダウンロードに失敗しました";
-      alert(errorMessage);
+  const handleGoogleCalendar = () => {
+    const startDate = new Date(datetime);
+    
+    // datetimeの妥当性チェック
+    if (Number.isNaN(startDate.getTime())) {
+      alert("日時が不正です");
+      return;
     }
+
+    const title = eventName && eventName !== "（イベント未設定）"
+      ? `${eventName} - ${reminderLabel}`
+      : reminderLabel;
+    const description = note || "";
+
+    // 終了時刻を明示的に設定（開始時刻から1時間後）
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+
+    const url = generateGoogleCalendarUrl({
+      title,
+      startDate,
+      endDate,
+      description,
+    });
+
+    window.open(url, "_blank");
+    setIsOpen(false);
   };
 
   return (
@@ -153,7 +145,7 @@ export function ShareMenu({
             </Link>
             <Button
               as="action"
-              onClick={handleDownloadIcal}
+              onClick={handleGoogleCalendar}
               className="text-zinc-700 hover:bg-zinc-50"
             >
               <svg
