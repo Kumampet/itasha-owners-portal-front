@@ -25,6 +25,8 @@ function formatDateForGoogleCalendar(date: Date): string {
  * @param description 詳細説明
  * @param location 場所（任意）
  * @returns GoogleカレンダーのURL
+ * @note URLSearchParamsを使用しているため、title/description/locationは自動的にエンコードされます。
+ *       改行は%0A、特殊文字は適切にエンコードされます。
  */
 export function generateGoogleCalendarUrl({
   title,
@@ -44,6 +46,7 @@ export function generateGoogleCalendarUrl({
     endDate || new Date(startDate.getTime() + 60 * 60 * 1000)
   );
 
+  // URLSearchParamsは自動的にパラメータをエンコードします（特殊文字、改行など）
   const params = new URLSearchParams({
     action: "TEMPLATE",
     text: title,
