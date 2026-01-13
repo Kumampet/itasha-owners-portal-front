@@ -1,5 +1,4 @@
 import { Server as SocketIOServer } from "socket.io";
-import { Server as HTTPServer } from "http";
 
 let ioInstance: SocketIOServer | null = null;
 

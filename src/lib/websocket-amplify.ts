@@ -77,8 +77,6 @@ export function useWebSocketAmplify(groupId: string | null) {
     }
   }, [session?.user?.id, groupId]);
 
-  connectRef.current = connect;
-
   useEffect(() => {
     if (groupId && session?.user?.id) {
       connect();
