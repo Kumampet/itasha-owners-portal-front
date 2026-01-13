@@ -82,6 +82,7 @@ export function useWebSocketAmplify(groupId: string | null) {
   }, [session?.user?.id, groupId]);
 
   // connect関数をrefに保存（useEffect内で更新）
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   useEffect(() => {
     connectRef.current = connect;
   }, [connect]);
