@@ -58,16 +58,24 @@ export async function GET(_request: Request) {
       process.env.EVENTBRIDGE_TARGET_ARN &&
       process.env.EVENTBRIDGE_ROLE_ARN;
 
-    return NextResponse.json({
-      status: allRequiredSet ? "設定済み" : "設定不備あり",
-      config,
-      issues: issues.length > 0 ? issues : null,
-      recommendations: !allRequiredSet ? [
-        "必要な環境変数がすべて設定されているか確認してください",
-        "Amplifyコンソールまたは.env.localで環境変数を設定してください",
-        "環境変数を設定した後、アプリケーションを再デプロイしてください"
-      ] : null,
-    });
+    // デバッグ用エンドポイントでリアルタイム性が重要なのでキャッシュを無効にする
+    return NextResponse.json(
+      {
+        status: allRequiredSet ? "設定済み" : "設定不備あり",
+        config,
+        issues: issues.length > 0 ? issues : null,
+        recommendations: !allRequiredSet ? [
+          "必要な環境変数がすべて設定されているか確認してください",
+          "Amplifyコンソールまたは.env.localで環境変数を設定してください",
+          "環境変数を設定した後、アプリケーションを再デプロイしてください"
+        ] : null,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error checking configuration:", error);
     return NextResponse.json(

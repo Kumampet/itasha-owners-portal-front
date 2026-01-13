@@ -57,14 +57,22 @@ export async function GET(
     // スケジュールの存在を確認
     const exists = await scheduleExists(reminder.id);
 
-    return NextResponse.json({
-      reminderId: reminder.id,
-      scheduleExists: exists,
-      reminderDate: reminderData.datetime,
-      isPast: reminderDate < now,
-      isNotified: reminder.notified,
-      shouldHaveSchedule: reminderDate > now && !reminder.notified,
-    });
+    // ユーザー固有データのため、privateディレクティブを使用して5秒間キャッシュ
+    return NextResponse.json(
+      {
+        reminderId: reminder.id,
+        scheduleExists: exists,
+        reminderDate: reminderData.datetime,
+        isPast: reminderDate < now,
+        isNotified: reminder.notified,
+        shouldHaveSchedule: reminderDate > now && !reminder.notified,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, s-maxage=5, stale-while-revalidate=10",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error checking schedule:", error);
     return NextResponse.json(

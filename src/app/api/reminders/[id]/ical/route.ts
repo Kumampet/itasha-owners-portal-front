@@ -110,10 +110,12 @@ export async function GET(
       .replace(/[^\w\s-]/g, "_")
       .replace(/\s+/g, "_");
 
+    // ユーザー固有データのため、privateディレクティブを使用して30秒間キャッシュ
     return new NextResponse(icalContent, {
       headers: {
         "Content-Type": "text/calendar; charset=utf-8",
         "Content-Disposition": `attachment; filename="${fileName}"; filename*=UTF-8''${encodeURIComponent(fileName)}`,
+        "Cache-Control": "private, s-maxage=30, stale-while-revalidate=60",
       },
     });
   } catch (error) {

@@ -63,7 +63,15 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(watchlist);
+    // ユーザー固有データのため、privateディレクティブを使用して5秒間キャッシュ
+    return NextResponse.json(
+      watchlist,
+      {
+        headers: {
+          "Cache-Control": "private, s-maxage=5, stale-while-revalidate=10",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching watchlist:", error);
     return NextResponse.json(

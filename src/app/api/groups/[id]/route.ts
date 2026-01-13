@@ -83,30 +83,38 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({
-      id: group.id,
-      name: group.name,
-      theme: group.theme,
-      groupCode: group.group_code,
-      maxMembers: group.max_members,
-      memberCount: group._count.members,
-      isLeader: group.leader_user_id === session.user.id,
-      event: group.event,
-      leader: {
-        id: group.leader.id,
-        name: group.leader.name,
-        displayName: group.leader.display_name,
-        email: group.leader.email,
+    // ユーザー固有データのため、privateディレクティブを使用して5秒間キャッシュ
+    return NextResponse.json(
+      {
+        id: group.id,
+        name: group.name,
+        theme: group.theme,
+        groupCode: group.group_code,
+        maxMembers: group.max_members,
+        memberCount: group._count.members,
+        isLeader: group.leader_user_id === session.user.id,
+        event: group.event,
+        leader: {
+          id: group.leader.id,
+          name: group.leader.name,
+          displayName: group.leader.display_name,
+          email: group.leader.email,
+        },
+        members: group.members.map((m) => ({
+          id: m.user.id,
+          name: m.user.name,
+          displayName: m.user.display_name,
+          email: m.user.email,
+          status: m.status,
+        })),
+        createdAt: group.created_at,
       },
-      members: group.members.map((m) => ({
-        id: m.user.id,
-        name: m.user.name,
-        displayName: m.user.display_name,
-        email: m.user.email,
-        status: m.status,
-      })),
-      createdAt: group.created_at,
-    });
+      {
+        headers: {
+          "Cache-Control": "private, s-maxage=5, stale-while-revalidate=10",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching group:", error);
     return NextResponse.json(
@@ -173,7 +181,15 @@ export async function DELETE(
       });
     });
 
-    return NextResponse.json({ success: true });
+    // 書き込み操作で即座に反映が必要なのでキャッシュを無効にする
+    return NextResponse.json(
+      { success: true },
+      {
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error disbanding group:", error);
     return NextResponse.json(

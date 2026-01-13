@@ -91,7 +91,15 @@ export async function GET() {
       unreadCounts[groupId] = !readRecord;
     }
 
-    return NextResponse.json(unreadCounts);
+    // リアルタイム性が重要なのでキャッシュを無効にする
+    return NextResponse.json(
+      unreadCounts,
+      {
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching unread counts:", error);
     

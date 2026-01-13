@@ -118,7 +118,15 @@ export async function GET(request: Request) {
       return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
     });
 
-    return NextResponse.json(formattedReminders);
+    // ユーザー固有データのため、privateディレクティブを使用して5秒間キャッシュ
+    return NextResponse.json(
+      formattedReminders,
+      {
+        headers: {
+          "Cache-Control": "private, s-maxage=5, stale-while-revalidate=10",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching reminders:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -226,27 +234,35 @@ export async function POST(request: Request) {
     const reminderOfficialUrls = reminder.event?.official_urls as string[] | null;
     const reminderFirstUrl = reminderOfficialUrls && reminderOfficialUrls.length > 0 ? reminderOfficialUrls[0] : null;
 
-    return NextResponse.json({
-      id: reminder.id,
-      event: reminder.event ? {
-        id: reminder.event.id,
-        name: reminder.event.name,
-        event_date: reminder.event.event_date,
-        original_url: reminderFirstUrl,
-      } : null,
-      type: reminderData.type,
-      datetime: reminderData.datetime,
-      label: reminderData.label,
-      note: reminder.note,
-      notified: reminder.notified,
-      notified_at: reminder.notified_at,
-      created_at: reminder.created_at,
-      schedule: scheduleResult ? {
-        created: scheduleResult.success,
-        scheduleArn: scheduleResult.scheduleArn || null,
-        error: scheduleResult.error || null,
-      } : null,
-    });
+    // 書き込み操作で即座に反映が必要なのでキャッシュを無効にする
+    return NextResponse.json(
+      {
+        id: reminder.id,
+        event: reminder.event ? {
+          id: reminder.event.id,
+          name: reminder.event.name,
+          event_date: reminder.event.event_date,
+          original_url: reminderFirstUrl,
+        } : null,
+        type: reminderData.type,
+        datetime: reminderData.datetime,
+        label: reminderData.label,
+        note: reminder.note,
+        notified: reminder.notified,
+        notified_at: reminder.notified_at,
+        created_at: reminder.created_at,
+        schedule: scheduleResult ? {
+          created: scheduleResult.success,
+          scheduleArn: scheduleResult.scheduleArn || null,
+          error: scheduleResult.error || null,
+        } : null,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error creating reminder:", error);
     return NextResponse.json(

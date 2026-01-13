@@ -122,7 +122,15 @@ export async function GET(request: Request) {
 
     console.log(`[Reminder Check] Checked ${reminders.length} reminders, ${dueReminders.length} due, ${response.sent} processed, ${response.failed} failed`);
 
-    return NextResponse.json(response);
+    // 処理系のエンドポイントでリアルタイム性が重要なのでキャッシュを無効にする
+    return NextResponse.json(
+      response,
+      {
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error checking reminders:", error);
     return NextResponse.json(

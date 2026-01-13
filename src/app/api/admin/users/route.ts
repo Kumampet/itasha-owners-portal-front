@@ -51,7 +51,15 @@ export async function GET(request: Request) {
       },
     });
 
-    return NextResponse.json(users);
+    // 管理画面用のため、privateディレクティブを使用して10秒間キャッシュ
+    return NextResponse.json(
+      users,
+      {
+        headers: {
+          "Cache-Control": "private, s-maxage=10, stale-while-revalidate=30",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching users:", error);
     return NextResponse.json(

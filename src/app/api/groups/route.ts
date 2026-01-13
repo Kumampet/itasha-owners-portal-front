@@ -65,7 +65,15 @@ export async function GET() {
         createdAt: ue.group!.created_at,
       }));
 
-    return NextResponse.json(groups);
+    // ユーザー固有データのため、privateディレクティブを使用して5秒間キャッシュ
+    return NextResponse.json(
+      groups,
+      {
+        headers: {
+          "Cache-Control": "private, s-maxage=5, stale-while-revalidate=10",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching groups:", error);
     return NextResponse.json(
