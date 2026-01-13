@@ -10,8 +10,7 @@ interface ModalBaseProps {
 
 export function ModalBase({
     isOpen,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    onClose: _onClose,
+    onClose,
     title,
     children,
     footer,
@@ -19,8 +18,14 @@ export function ModalBase({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="rounded-lg bg-white p-6 shadow-lg max-w-md w-full mx-4">
+        <div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            onClick={onClose}
+        >
+            <div 
+                className="rounded-lg bg-white p-6 shadow-lg max-w-md w-full mx-4"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <h2 className="mb-4 text-lg font-semibold text-zinc-900">{title}</h2>
                 <div className="mb-6">{children}</div>
                 <div className="flex justify-end gap-2">{footer}</div>

@@ -5,13 +5,22 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { UserActionMenu } from "@/components/user-action-menu";
+import { UserBanModal } from "@/components/user-ban-modal";
+import { UserRoleModal } from "@/components/user-role-modal";
+import { UserDisplayNameModal } from "@/components/user-display-name-modal";
+import { UserDeleteModal } from "@/components/user-delete-modal";
+import { UserPermanentDeleteModal } from "@/components/user-permanent-delete-modal";
+import { UserRestoreModal } from "@/components/user-restore-modal";
 
 type User = {
   id: string;
   email: string;
   name: string | null;
+  display_name: string | null;
   role: string; // "USER" | "ADMIN" | "ORGANIZER"
   is_banned: boolean;
+  deleted_at: string | null;
   created_at: string;
 };
 
@@ -27,6 +36,14 @@ export default function AdminUsersPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState<string>("ALL");
+
+  // モーダル状態
+  const [banModalUser, setBanModalUser] = useState<User | null>(null);
+  const [roleModalUser, setRoleModalUser] = useState<User | null>(null);
+  const [displayNameModalUser, setDisplayNameModalUser] = useState<User | null>(null);
+  const [deleteModalUser, setDeleteModalUser] = useState<User | null>(null);
+  const [restoreModalUser, setRestoreModalUser] = useState<User | null>(null);
+  const [permanentDeleteModalUser, setPermanentDeleteModalUser] = useState<User | null>(null);
 
   useEffect(() => {
     document.title = "いたなび管理画面 | ユーザー管理";
@@ -55,11 +72,15 @@ export default function AdminUsersPage() {
       }
 
       const res = await fetch(`/api/admin/users?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch users");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to fetch users: ${res.status}`);
+      }
       const data = await res.json();
       setUsers(data);
     } catch (error) {
       console.error("Failed to fetch users:", error);
+      alert(error instanceof Error ? error.message : "ユーザーの取得に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -73,56 +94,140 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, [fetchUsers, session, status]);
 
-  const handleUpdateRole = async (userId: string, newRole: string) => {
+  const handleBan = async (user: User) => {
     try {
-      const res = await fetch(`/api/admin/users/${userId}/role`, {
+      const res = await fetch(`/api/admin/users/${user.id}/ban`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_banned: !user.is_banned }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update ban status");
+      }
+      await fetchUsers();
+      setBanModalUser(null);
+    } catch (error) {
+      console.error("Failed to update ban status:", error);
+      alert(error instanceof Error ? error.message : "BAN状態の更新に失敗しました");
+    }
+  };
+
+  const handleRoleChange = async (user: User, newRole: string) => {
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/role`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: newRole }),
       });
 
-      if (!res.ok) throw new Error("Failed to update role");
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update role");
+      }
       await fetchUsers();
+      setRoleModalUser(null);
     } catch (error) {
       console.error("Failed to update role:", error);
-      alert("権限の更新に失敗しました");
+      alert(error instanceof Error ? error.message : "権限の更新に失敗しました");
     }
   };
 
-  const handleToggleOrganizer = async (userId: string, currentRole: string) => {
+  const handleDisplayNameChange = async (user: User, displayName: string | null) => {
     try {
-      const newRole = currentRole === "ORGANIZER" ? "USER" : "ORGANIZER";
-      const res = await fetch(`/api/admin/users/${userId}/organizer`, {
+      const res = await fetch(`/api/admin/users/${user.id}/display-name`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_organizer: newRole === "ORGANIZER" }),
+        body: JSON.stringify({ displayName }),
       });
 
-      if (!res.ok) throw new Error("Failed to update organizer status");
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update display name");
+      }
       await fetchUsers();
+      setDisplayNameModalUser(null);
     } catch (error) {
-      console.error("Failed to update organizer status:", error);
-      alert("主催者権限の更新に失敗しました");
+      console.error("Failed to update display name:", error);
+      alert(error instanceof Error ? error.message : "表示名の更新に失敗しました");
     }
   };
 
-  const handleToggleBan = async (userId: string, currentValue: boolean) => {
-    if (!confirm(currentValue ? "BANを解除しますか？" : "このユーザーをBANしますか？")) {
-      return;
-    }
-
+  const handleDelete = async (user: User) => {
     try {
-      const res = await fetch(`/api/admin/users/${userId}/ban`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_banned: !currentValue }),
+      const res = await fetch(`/api/admin/users/${user.id}/delete`, {
+        method: "DELETE",
       });
 
-      if (!res.ok) throw new Error("Failed to update ban status");
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete user");
+      }
       await fetchUsers();
+      setDeleteModalUser(null);
     } catch (error) {
-      console.error("Failed to update ban status:", error);
-      alert("BAN状態の更新に失敗しました");
+      console.error("Failed to delete user:", error);
+      alert(error instanceof Error ? error.message : "ユーザーの削除に失敗しました");
+    }
+  };
+
+  const handleRestore = async (user: User) => {
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/restore`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to restore user");
+      }
+      await fetchUsers();
+      setRestoreModalUser(null);
+    } catch (error) {
+      console.error("Failed to restore user:", error);
+      alert(error instanceof Error ? error.message : "ユーザーの復帰に失敗しました");
+    }
+  };
+
+  const handlePermanentDelete = async (user: User) => {
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/permanent-delete`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to permanently delete user");
+      }
+      await fetchUsers();
+      setPermanentDeleteModalUser(null);
+    } catch (error) {
+      console.error("Failed to permanently delete user:", error);
+      alert(error instanceof Error ? error.message : "ユーザーの完全削除に失敗しました");
+    }
+  };
+
+  const getStatusText = (user: User): string => {
+    if (user.deleted_at) return "削除済";
+    if (user.is_banned) return "BAN";
+    return "有効";
+  };
+
+  const getStatusColor = (user: User): string => {
+    if (user.deleted_at) return "text-zinc-500";
+    if (user.is_banned) return "text-red-600";
+    return "text-green-600";
+  };
+
+  const getRoleText = (role: string): string => {
+    switch (role) {
+      case "ADMIN":
+        return "管理者";
+      case "ORGANIZER":
+        return "主催者";
+      default:
+        return "ユーザー";
     }
   };
 
@@ -132,6 +237,10 @@ export default function AdminUsersPage() {
       month: "short",
       day: "numeric",
     });
+  };
+
+  const getUserDisplayName = (user: User): string => {
+    return user.name || user.email.split("@")[0] || "ユーザー";
   };
 
   return (
@@ -221,19 +330,16 @@ export default function AdminUsersPage() {
                   メールアドレス
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-zinc-700">
-                  名前
+                  ユーザー名
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-700">
+                  表示名
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-700">
+                  ステータス
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-zinc-700">
                   権限
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-700">
-                  主催者
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-700">
-                  BAN
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-700">
-                  登録日
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-zinc-700">
                   操作
@@ -249,58 +355,29 @@ export default function AdminUsersPage() {
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600">
                     {user.name || "-"}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <select
-                      value={user.role}
-                      onChange={(e) =>
-                        handleUpdateRole(user.id, e.target.value)
-                      }
-                      className="rounded-md border border-zinc-300 px-2 py-1 text-xs focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                    >
-                      <option value="USER">ユーザー</option>
-                      <option value="ADMIN">管理者</option>
-                      <option value="ORGANIZER">主催者</option>
-                    </select>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600">
+                    {user.display_name || "-"}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <Button
-                      variant={user.role === "ORGANIZER" ? "success" : "secondary"}
-                      size="sm"
-                      rounded="md"
-                      onClick={() =>
-                        handleToggleOrganizer(user.id, user.role)
-                      }
-                      className={user.role === "ORGANIZER" ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-zinc-100 hover:bg-zinc-200"}
-                    >
-                      {user.role === "ORGANIZER" ? "有効" : "無効"}
-                    </Button>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <Button
-                      variant={user.is_banned ? "danger" : "secondary"}
-                      size="sm"
-                      rounded="md"
-                      onClick={() => handleToggleBan(user.id, user.is_banned)}
-                      className={user.is_banned ? "bg-red-100 text-red-700 hover:bg-red-200" : "bg-zinc-100 hover:bg-zinc-200"}
-                    >
-                      {user.is_banned ? "BAN中" : "正常"}
-                    </Button>
+                    <span className={getStatusColor(user)}>
+                      {getStatusText(user)}
+                    </span>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600">
-                    {formatDate(user.created_at)}
+                    {getRoleText(user.role)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      rounded="md"
-                      onClick={() =>
-                        handleToggleBan(user.id, user.is_banned)
-                      }
-                      className="text-red-600 hover:text-red-800 border-0 bg-transparent p-0"
-                    >
-                      {user.is_banned ? "BAN解除" : "BAN"}
-                    </Button>
+                    <UserActionMenu
+                      userId={user.id}
+                      isBanned={user.is_banned}
+                      isDeleted={!!user.deleted_at}
+                      onBanClick={() => setBanModalUser(user)}
+                      onRoleChangeClick={() => setRoleModalUser(user)}
+                      onDisplayNameChangeClick={() => setDisplayNameModalUser(user)}
+                      onDeleteClick={() => setDeleteModalUser(user)}
+                      onRestoreClick={() => setRestoreModalUser(user)}
+                      onPermanentDeleteClick={() => setPermanentDeleteModalUser(user)}
+                    />
                   </td>
                 </tr>
               ))}
@@ -308,7 +385,70 @@ export default function AdminUsersPage() {
           </table>
         </div>
       )}
+
+      {/* モーダル */}
+      {banModalUser && (
+        <UserBanModal
+          isOpen={!!banModalUser}
+          onClose={() => setBanModalUser(null)}
+          onConfirm={() => handleBan(banModalUser)}
+          isBanned={banModalUser.is_banned}
+          userName={getUserDisplayName(banModalUser)}
+        />
+      )}
+
+      {roleModalUser && (
+        <UserRoleModal
+          isOpen={!!roleModalUser}
+          onClose={() => setRoleModalUser(null)}
+          onConfirm={(role) => handleRoleChange(roleModalUser, role)}
+          currentRole={roleModalUser.role}
+          userName={getUserDisplayName(roleModalUser)}
+        />
+      )}
+
+      {displayNameModalUser && (
+        <UserDisplayNameModal
+          isOpen={!!displayNameModalUser}
+          onClose={() => setDisplayNameModalUser(null)}
+          onConfirm={(displayName) => handleDisplayNameChange(displayNameModalUser, displayName)}
+          currentDisplayName={displayNameModalUser.display_name}
+          userName={getUserDisplayName(displayNameModalUser)}
+        />
+      )}
+
+      {deleteModalUser && (
+        <UserDeleteModal
+          isOpen={!!deleteModalUser}
+          onClose={() => setDeleteModalUser(null)}
+          onConfirm={() => handleDelete(deleteModalUser)}
+          userName={getUserDisplayName(deleteModalUser)}
+          email={deleteModalUser.email}
+          name={deleteModalUser.name}
+          displayName={deleteModalUser.display_name}
+        />
+      )}
+
+      {restoreModalUser && (
+        <UserRestoreModal
+          isOpen={!!restoreModalUser}
+          onClose={() => setRestoreModalUser(null)}
+          onConfirm={() => handleRestore(restoreModalUser)}
+          userName={getUserDisplayName(restoreModalUser)}
+        />
+      )}
+
+      {permanentDeleteModalUser && (
+        <UserPermanentDeleteModal
+          isOpen={!!permanentDeleteModalUser}
+          onClose={() => setPermanentDeleteModalUser(null)}
+          onConfirm={() => handlePermanentDelete(permanentDeleteModalUser)}
+          userName={getUserDisplayName(permanentDeleteModalUser)}
+          email={permanentDeleteModalUser.email}
+          name={permanentDeleteModalUser.name}
+          displayName={permanentDeleteModalUser.display_name}
+        />
+      )}
     </div>
   );
 }
-
