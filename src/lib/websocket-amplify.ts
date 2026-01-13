@@ -78,7 +78,6 @@ export function useWebSocketAmplify(groupId: string | null) {
     } catch (error: unknown) {
       console.error("[WebSocket] Connection error:", error);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id, groupId]);
 
   // connect関数をrefに保存（useEffect内で更新）
