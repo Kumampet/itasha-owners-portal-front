@@ -51,32 +51,4 @@ export async function sendEmail({
   }
 }
 
-// オーガナイザーアカウント作成通知メール
-export async function sendOrganizerAccountEmail({
-  to,
-  email,
-  password,
-}: {
-  to: string;
-  email: string;
-  password: string;
-}) {
-  const subject = "【痛車オーナーズポータル】オーガナイザーアカウントが作成されました";
-  const body = `痛車オーナーズポータルをご利用いただきありがとうございます。
-
-オーガナイザーアカウントが作成されました。以下の情報でログインしてください。
-
-メールアドレス: ${email}
-パスワード: ${password}
-
-【重要】初回ログイン時には、必ずパスワードを変更してください。
-
-ログインURL: ${process.env.NEXTAUTH_URL || "https://example.com"}/app/auth
-
-ご不明な点がございましたら、お気軽にお問い合わせください。
-
-痛車オーナーズポータル運営チーム`;
-
-  return sendEmail({ to, subject, body });
-}
 

@@ -2,8 +2,6 @@ import NextAuth from "next-auth";
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import Twitter from "next-auth/providers/twitter";
-import Credentials from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
 
 // DATABASE_URLが設定されているかチェック
 const hasDatabaseUrl = !!(
@@ -57,7 +55,7 @@ const getAdapter = () => {
     // DATABASE_URLが未設定の場合は、この時点でエラーが発生する
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const baseAdapter = PrismaAdapter(prisma) as any;
-    
+
     // Prisma Adapterをカスタマイズして、既存のユーザーのロールを保持する
     // createUser、updateUser、linkAccountメソッドをラップ
     adapter = {
@@ -70,13 +68,13 @@ const getAdapter = () => {
             where: { email: data.email },
             select: { id: true, role: true, email: true },
           });
-          
+
           if (existingUser) {
             // 既存のユーザーが見つかった場合、既存のユーザーを返す（新規作成しない）
             return existingUser;
           }
         }
-        
+
         // 新規ユーザーを作成
         return baseAdapter.createUser(data);
       },
@@ -88,13 +86,13 @@ const getAdapter = () => {
             where: { id: data.id },
             select: { role: true, email: true },
           });
-          
+
           if (existingUser && existingUser.role !== "USER") {
             // 既存のロールを保持
             data.role = existingUser.role;
           }
         }
-        
+
         return baseAdapter.updateUser(data);
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,14 +113,14 @@ const getAdapter = () => {
               emailVerified: true,
             },
           });
-          
+
           if (existingUser) {
             return existingUser;
           }
         } catch (error) {
           console.error(`[PrismaAdapter.getUserByEmail] Error finding user:`, error);
         }
-        
+
         // Prisma Adapterのメソッドも呼び出す（念のため）
         return baseAdapter.getUserByEmail(email);
       },
@@ -130,7 +128,7 @@ const getAdapter = () => {
         return baseAdapter.getUserByAccount(account);
       },
     };
-    
+
     return adapter;
   } catch {
     adapter = undefined;
@@ -145,7 +143,7 @@ const adapterInstance = getAdapter();
 // JWT戦略により、DBへのセッション照会が不要になり、パフォーマンスが向上する
 const useDatabaseStrategy = false;
 
-// プロバイダー設定（Google、X、メール/パスワード認証）
+// プロバイダー設定（Google、X）
 // DATABASE_URLが設定されている場合のみadapterを設定
 const configBase: NextAuthConfig = {
   providers: [
@@ -159,78 +157,6 @@ const configBase: NextAuthConfig = {
       clientId: process.env.TWITTER_CLIENT_ID,
       clientSecret: process.env.TWITTER_CLIENT_SECRET,
       allowDangerousEmailAccountLinking: true, // 同じメールアドレスで複数プロバイダーをリンク
-    }),
-    // メール/パスワード認証（一般アプリと管理画面の両方で使用可能）
-    Credentials({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
-
-        if (!hasDatabaseUrl) {
-          return null;
-        }
-
-        try {
-          const { prisma } = await import("@/lib/prisma");
-          
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email as string },
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              password: true,
-              role: true,
-              is_banned: true,
-              custom_profile_url: true,
-            },
-          });
-
-          if (!user) {
-            return null;
-          }
-
-          if (!user.password) {
-            return null;
-          }
-
-          // パスワードの検証
-          const isValid = await bcrypt.compare(
-            credentials.password as string,
-            user.password
-          );
-
-          if (!isValid) {
-            return null;
-          }
-
-          // must_change_passwordフィールドも取得
-          const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            select: {
-              must_change_password: true,
-            },
-          });
-
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            isBanned: user.is_banned,
-            customProfileUrl: user.custom_profile_url,
-            mustChangePassword: dbUser?.must_change_password || false,
-          };
-        } catch {
-          return null;
-        }
-      },
     }),
   ],
   pages: {
@@ -342,13 +268,13 @@ const configBase: NextAuthConfig = {
         if (user.email) {
           token.email = user.email;
         }
-        
+
         // 初回ログイン時のみDBから最新情報を取得
         if (hasDatabaseUrl) {
           try {
             const { prisma } = await import("@/lib/prisma");
             let dbUser = null;
-            
+
             // まず、token.idで検索
             if (token.id) {
               dbUser = await prisma.user.findUnique({
@@ -362,7 +288,7 @@ const configBase: NextAuthConfig = {
                 },
               });
             }
-            
+
             // token.idで見つからない場合、メールアドレスで検索（既存ユーザーを探す）
             if (!dbUser && (token.email || user?.email)) {
               const email = (token.email || user?.email) as string;
@@ -376,14 +302,14 @@ const configBase: NextAuthConfig = {
                   email: true,
                 },
               });
-              
+
               // 既存のユーザーが見つかった場合、トークンのIDを更新
               if (dbUser) {
                 token.id = dbUser.id;
                 user.id = dbUser.id;
               }
             }
-            
+
             if (dbUser) {
               token.role = dbUser.role;
               token.isBanned = dbUser.is_banned;
