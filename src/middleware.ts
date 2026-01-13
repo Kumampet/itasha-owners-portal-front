@@ -67,8 +67,8 @@ export async function middleware(request: NextRequest) {
     }
 
     if (!adminSession) {
-      // 未ログインの場合は管理画面ログインページにリダイレクト
-      return NextResponse.redirect(new URL("/admin/auth?callbackUrl=/admin/dashboard", request.url));
+      // 未ログインの場合は一般アプリのログインページにリダイレクト
+      return NextResponse.redirect(new URL("/app/auth?callbackUrl=/admin/dashboard", request.url));
     }
 
     // 管理者またはオーガナイザーのみアクセス可能
@@ -80,8 +80,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/dashboard", request.url));
   }
 
-  // 管理画面のアクセス制御（/admin/auth と /admin/change-password を除く）
-  if (isAdminPath && pathname !== "/admin/auth" && pathname !== "/admin/change-password") {
+  // 管理画面のアクセス制御
+  if (isAdminPath) {
     // セッションが取得できた場合のみ権限チェック
     if (session) {
       // 管理者またはオーガナイザーのみアクセス可能
@@ -95,7 +95,7 @@ export async function middleware(request: NextRequest) {
 
       if (!sessionCookie && !jwtCookie) {
         // セッションクッキーが存在しない場合は、未ログインと判断してリダイレクト
-        const signInUrl = new URL("/admin/auth", request.url);
+        const signInUrl = new URL("/app/auth", request.url);
         signInUrl.searchParams.set("callbackUrl", pathname);
         return NextResponse.redirect(signInUrl);
       }
@@ -160,11 +160,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/app/mypage", request.url));
   }
 
-  // ログイン済みで管理画面ログインページにアクセスしている場合
-  if (pathname === "/admin/auth" && session && (session.user?.role === "ADMIN" || session.user?.role === "ORGANIZER")) {
-    const callbackUrl = request.nextUrl.searchParams.get("callbackUrl") || "/admin";
-    return NextResponse.redirect(new URL(callbackUrl, request.url));
-  }
 
   return NextResponse.next();
 }

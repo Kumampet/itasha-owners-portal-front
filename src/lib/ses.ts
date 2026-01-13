@@ -71,7 +71,7 @@ export async function sendOrganizerAccountEmail({
 
 【重要】初回ログイン時には、必ずパスワードを変更してください。
 
-ログインURL: ${process.env.NEXTAUTH_URL || "https://example.com"}/admin/auth
+ログインURL: ${process.env.NEXTAUTH_URL || "https://example.com"}/app/auth
 
 ご不明な点がございましたら、お気軽にお問い合わせください。
 

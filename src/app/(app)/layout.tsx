@@ -154,10 +154,8 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
                 as="action"
                 onClick={async () => {
                   onClose();
-                  // 現在のパスを確認して適切なログイン画面にリダイレクト
-                  const currentPath = pathname || "/app/mypage";
-                  const isAdminPath = currentPath.startsWith("/admin");
-                  const redirectUrl = isAdminPath ? "/admin/auth" : "/app/auth";
+                  // ログアウト後は一般アプリのログインページにリダイレクト
+                  const redirectUrl = "/app/auth";
 
                   // ログアウト処理
                   await signOut({ redirect: false });

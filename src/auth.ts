@@ -210,11 +210,6 @@ const configBase: NextAuthConfig = {
             return null;
           }
 
-          // 管理者またはオーガナイザーのみログイン可能
-          if (user.role !== "ADMIN" && user.role !== "ORGANIZER") {
-            return null;
-          }
-
           // must_change_passwordフィールドも取得
           const dbUser = await prisma.user.findUnique({
             where: { id: user.id },
