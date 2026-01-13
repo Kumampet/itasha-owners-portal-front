@@ -16,9 +16,6 @@ type Event = {
   payment_due_at: string | null;
   approval_status: string;
   created_at: string;
-  organizer_user: {
-    email: string;
-  } | null;
 };
 
 type FilterStatus = "ALL" | "DRAFT" | "PENDING" | "APPROVED" | "REJECTED";
@@ -225,9 +222,6 @@ export default function AdminEventsPage() {
                 <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
                   支払期限
                 </th>
-                <th className="min-w-[180px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
-                  主催者
-                </th>
                 <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
                   作成日
                 </th>
@@ -272,9 +266,6 @@ export default function AdminEventsPage() {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
                     {event.payment_due_at ? formatDate(event.payment_due_at) : "-"}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-zinc-600">
-                    {event.organizer_user ? event.organizer_user.email : "-"}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600">
                     {formatDate(event.created_at)}
