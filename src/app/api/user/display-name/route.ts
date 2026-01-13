@@ -18,27 +18,25 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const { displayName } = body;
 
-    if (!displayName || typeof displayName !== "string") {
-      return NextResponse.json(
-        { error: "displayName is required" },
-        { status: 400 }
-      );
-    }
-
-    // 全角50文字以内に制限
-    const charCount = Array.from(displayName.trim()).length;
-    if (charCount > 50) {
-      return NextResponse.json(
-        { error: "Display name must be 50 characters or less" },
-        { status: 400 }
-      );
+    // displayNameがnullまたは空文字列の場合はnullに設定（任意項目のため）
+    let displayNameValue: string | null = null;
+    if (displayName && typeof displayName === "string" && displayName.trim()) {
+      // 全角50文字以内に制限
+      const charCount = Array.from(displayName.trim()).length;
+      if (charCount > 50) {
+        return NextResponse.json(
+          { error: "Display name must be 50 characters or less" },
+          { status: 400 }
+        );
+      }
+      displayNameValue = displayName.trim();
     }
 
     // 表示名を更新
     await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        display_name: displayName.trim() || null,
+        display_name: displayNameValue,
       },
     });
 

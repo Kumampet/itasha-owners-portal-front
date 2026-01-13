@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
@@ -11,13 +10,16 @@ const REDIRECT_TIMEOUT_MS = 2000;
 const REDIRECT_TIMEOUT_SECONDS = REDIRECT_TIMEOUT_MS / 1000;
 
 export default function ProfileEditPage() {
-    const router = useRouter();
     const { data: session, status, update } = useSession();
     const isLoading = status === "loading";
     const [displayName, setDisplayName] = useState("");
+    const [email, setEmail] = useState("");
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
+    
+    // メールアドレスが未設定（@placeholder.localで終わる）かどうかを判定
+    const isEmailRequired = session?.user?.email?.endsWith("@placeholder.local") ?? false;
 
     useEffect(() => {
         document.title = "プロフィール編集 | 痛車オーナーズナビ | いたなび！";
@@ -28,33 +30,80 @@ export default function ProfileEditPage() {
         if (session?.user?.displayName) {
             setDisplayName(session.user.displayName);
         }
-    }, [session?.user?.displayName]);
+        if (session?.user?.email) {
+            // @placeholder.localで終わる場合は空文字列、それ以外はメールアドレスを設定
+            const userEmail = session.user.email;
+            if (userEmail.endsWith("@placeholder.local")) {
+                setEmail("");
+            } else {
+                setEmail(userEmail);
+            }
+        }
+    }, [session?.user?.displayName, session?.user?.email]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
         setSuccess(false);
 
-        if (!displayName.trim()) {
-            setError("表示名を入力してください");
+        // メールアドレスが必須の場合、バリデーション
+        if (isEmailRequired && !email.trim()) {
+            setError("メールアドレスを入力してください");
             return;
         }
 
-        // 全角50文字以内に制限
-        const charCount = Array.from(displayName.trim()).length;
-        if (charCount > 50) {
-            setError("表示名は全角50文字以内で入力してください");
-            return;
+        if (email.trim()) {
+            // メールアドレスの形式チェック
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email.trim())) {
+                setError("有効なメールアドレスを入力してください");
+                return;
+            }
+
+            // 一時的なメールアドレスでないことを確認
+            if (email.trim().endsWith("@placeholder.local")) {
+                setError("有効なメールアドレスを入力してください");
+                return;
+            }
+        }
+
+        // 表示名が入力されている場合のみ、文字数チェック
+        if (displayName.trim()) {
+            // 全角50文字以内に制限
+            const charCount = Array.from(displayName.trim()).length;
+            if (charCount > 50) {
+                setError("表示名は全角50文字以内で入力してください");
+                return;
+            }
         }
 
         setSaving(true);
         try {
+            // メールアドレスを更新（変更がある場合のみ、キャッシュを無視）
+            if (email.trim() && email.trim() !== session?.user?.email) {
+                const emailResponse = await fetch("/api/user/email", {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ email: email.trim() }),
+                    cache: "no-store", // キャッシュを無視
+                });
+
+                if (!emailResponse.ok) {
+                    const data = await emailResponse.json();
+                    throw new Error(data.error || "メールアドレスの保存に失敗しました");
+                }
+            }
+
+            // 表示名を更新（常に更新する。空の場合はnullを送信、キャッシュを無視）
             const response = await fetch("/api/user/display-name", {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ displayName: displayName.trim() }),
+                body: JSON.stringify({ displayName: displayName.trim() || null }),
+                cache: "no-store", // キャッシュを無視
             });
 
             if (!response.ok) {
@@ -62,18 +111,22 @@ export default function ProfileEditPage() {
                 throw new Error(data.error || "表示名の保存に失敗しました");
             }
 
-            // セッションを更新
+            // セッションを更新（キャッシュを無視して再取得）
+            // NextAuthのupdate()は内部的にキャッシュを無視するが、確実にするためURLパラメータを追加
             await update();
+            
             setSuccess(true);
-
-            // タイムアウト後にマイページに戻る
+            
+            // タイムアウト後にマイページに戻る（キャッシュ回避用のタイムスタンプを追加）
             setTimeout(() => {
-                router.push("/app/mypage");
+                // キャッシュを無視するため、タイムスタンプをURLパラメータに追加
+                const timestamp = Date.now();
+                window.location.href = `/app/mypage?_refresh=${timestamp}`;
             }, REDIRECT_TIMEOUT_MS);
         } catch (error) {
-            console.error("Failed to save display name:", error);
+            console.error("Failed to save profile:", error);
             setError(
-                error instanceof Error ? error.message : "表示名の保存に失敗しました"
+                error instanceof Error ? error.message : "保存に失敗しました"
             );
         } finally {
             setSaving(false);
@@ -109,9 +162,39 @@ export default function ProfileEditPage() {
 
                                 {success && (
                                     <div className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">
-                                        表示名を保存しました。{REDIRECT_TIMEOUT_SECONDS}秒後にマイページに戻ります...
+                                        保存しました。{REDIRECT_TIMEOUT_SECONDS}秒後にマイページに戻ります...
                                     </div>
                                 )}
+
+                                {/* メールアドレス設定（Xログインの場合は必須） */}
+                                <div>
+                                    <label
+                                        htmlFor="email"
+                                        className="block text-sm font-medium text-zinc-700 mb-2"
+                                    >
+                                        メールアドレス
+                                        {isEmailRequired && <span className="text-red-500"> *</span>}
+                                    </label>
+                                    <input
+                                        id="email"
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="example@email.com"
+                                        required={isEmailRequired}
+                                        className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                                    />
+                                    {isEmailRequired && (
+                                        <p className="mt-1 text-xs text-red-600">
+                                            X（Twitter）でログインした場合、メールアドレスの登録が必要です。
+                                        </p>
+                                    )}
+                                    {!isEmailRequired && session?.user?.email && (
+                                        <p className="mt-1 text-xs text-zinc-500">
+                                            現在のメールアドレス: {session.user.email}
+                                        </p>
+                                    )}
+                                </div>
 
                                 <div>
                                     <label
@@ -163,7 +246,7 @@ export default function ProfileEditPage() {
                                         variant="primary"
                                         size="md"
                                         rounded="md"
-                                        disabled={saving || !displayName.trim()}
+                                        disabled={saving || (isEmailRequired && !email.trim())}
                                     >
                                         {saving ? "保存中..." : "保存"}
                                     </Button>
