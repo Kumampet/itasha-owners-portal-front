@@ -101,7 +101,7 @@ async function broadcastMessage(groupId: string, message: BroadcastMessageEvent[
             }),
           })
         );
-      } catch (error: any) {
+      } catch (error: unknown) {
         // 接続が切断されている場合は無視
         if (error.statusCode === 410) {
           console.log(`[Broadcast] Connection ${room.connectionId} is gone`);
@@ -172,7 +172,7 @@ async function broadcastReadUpdate(groupId: string, userId: string, messageId: s
             }),
           })
         );
-      } catch (error: any) {
+      } catch (error: unknown) {
         // 接続が切断されている場合は無視
         if (error.statusCode === 410) {
           console.log(`[Broadcast] Connection ${room.connectionId} is gone`);
