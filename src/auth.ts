@@ -136,12 +136,9 @@ const getAdapter = () => {
   }
 };
 
-// adapterを取得
+// adapterを取得（将来の拡張性のために保持）
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const adapterInstance = getAdapter();
-// セッション戦略を決定
-// DB負荷を減らすため、常にJWT戦略を使用する
-// JWT戦略により、DBへのセッション照会が不要になり、パフォーマンスが向上する
-const useDatabaseStrategy = false;
 
 // プロバイダー設定（Google、X）
 // DATABASE_URLが設定されている場合のみadapterを設定
@@ -219,40 +216,10 @@ const configBase: NextAuthConfig = {
       const defaultRedirect = `${baseUrl}/app/mypage`;
       return defaultRedirect;
     },
-    async session({ session, user, token }) {
-      // database strategyの場合
-      if (user && useDatabaseStrategy) {
-        try {
-          const { prisma } = await import("@/lib/prisma");
-          const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            select: {
-              id: true,
-              email: true,
-              role: true,
-              is_banned: true,
-              custom_profile_url: true,
-              display_name: true,
-            },
-          });
-
-          if (dbUser) {
-            session.user.id = dbUser.id;
-            session.user.role = dbUser.role;
-            session.user.isBanned = dbUser.is_banned;
-            session.user.customProfileUrl = dbUser.custom_profile_url;
-            session.user.displayName = dbUser.display_name;
-          }
-        } catch (error) {
-          // エラーは無視して続行
-          console.error("[Session] Error fetching user:", error);
-        }
-      }
-      // jwt strategyの場合
+    async session({ session, token }) {
       // JWT戦略では、トークンに保存された情報を使用（DBアクセスを削減）
-      if (token && !user) {
+      if (token) {
         session.user.id = token.id as string;
-        // トークンから情報を取得（JWT戦略の利点を活かす）
         session.user.role = (token.role as string) || "USER";
         session.user.isBanned = (token.isBanned as boolean) || false;
       }
@@ -263,7 +230,6 @@ const configBase: NextAuthConfig = {
       // それ以降はトークンに保存された情報を使用（DBアクセスを削減）
       if (user) {
         token.id = user.id;
-        token.mustChangePassword = user.mustChangePassword || false;
         // メールアドレスもトークンに保存（既存ユーザー検索用）
         if (user.email) {
           token.email = user.email;
@@ -283,7 +249,6 @@ const configBase: NextAuthConfig = {
                   id: true,
                   role: true,
                   is_banned: true,
-                  must_change_password: true,
                   email: true,
                 },
               });
@@ -298,7 +263,6 @@ const configBase: NextAuthConfig = {
                   id: true,
                   role: true,
                   is_banned: true,
-                  must_change_password: true,
                   email: true,
                 },
               });
@@ -313,7 +277,6 @@ const configBase: NextAuthConfig = {
             if (dbUser) {
               token.role = dbUser.role;
               token.isBanned = dbUser.is_banned;
-              token.mustChangePassword = dbUser.must_change_password;
             } else {
               // DBから取得できなかった場合は、userオブジェクトから取得
               token.role = (user.role as string) || "USER";
@@ -362,8 +325,7 @@ if (!authSecret) {
 // 開発環境では、古いセッションクッキーの問題を回避するため、adapterを使用しない
 const config: NextAuthConfig = {
   ...configBase,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ...(useDatabaseStrategy && adapterInstance ? { adapter: adapterInstance as any } : {}),
+  // adapterは将来の拡張性のために保持（現在はJWT戦略のみ使用）
   secret: authSecret,
   // 無効なセッションクッキーを無視する（NEXTAUTH_SECRETが変更された場合など）
   trustHost: true,
@@ -371,25 +333,6 @@ const config: NextAuthConfig = {
   // 本番環境でも一時的にデバッグを有効にしてリダイレクトURIを確認
   debug: true,
   events: {
-    async signIn({ user }) {
-      // サインイン成功時の処理
-      // Prisma Adapterのカスタマイズにより、既存のユーザーのロールは自動的に保持される
-      if (hasDatabaseUrl && user?.email) {
-        try {
-          const { prisma } = await import("@/lib/prisma");
-          await prisma.user.findUnique({
-            where: { email: user.email },
-            select: {
-              id: true,
-              email: true,
-              role: true,
-            },
-          });
-        } catch (error) {
-          console.error("[SignIn] Error fetching user:", error);
-        }
-      }
-    },
     async signOut() {
       // サインアウト時の処理
     },

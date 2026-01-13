@@ -73,6 +73,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/dashboard", request.url));
   }
 
+  // セッションクッキーの存在確認（共通処理）
+  const hasSessionCookie = () => {
+    const sessionCookie = request.cookies.get("__Secure-authjs.session-token");
+    const jwtCookie = request.cookies.get("__Secure-authjs.pkce.code_verifier");
+    return !!(sessionCookie || jwtCookie);
+  };
+
+  // 未ログイン時のリダイレクト処理（共通処理）
+  const redirectToSignIn = (callbackUrl?: string) => {
+    const signInUrl = new URL("/app/auth", request.url);
+    if (callbackUrl) {
+      signInUrl.searchParams.set("callbackUrl", callbackUrl);
+    }
+    return NextResponse.redirect(signInUrl);
+  };
+
   // 管理画面のアクセス制御
   if (isAdminPath) {
     // セッションが取得できた場合のみ権限チェック
@@ -83,14 +99,9 @@ export async function middleware(request: NextRequest) {
       }
     } else {
       // セッションが取得できない場合は、クッキーを確認
-      const sessionCookie = request.cookies.get("__Secure-authjs.session-token");
-      const jwtCookie = request.cookies.get("__Secure-authjs.pkce.code_verifier");
-
-      if (!sessionCookie && !jwtCookie) {
+      if (!hasSessionCookie()) {
         // セッションクッキーが存在しない場合は、未ログインと判断してリダイレクト
-        const signInUrl = new URL("/app/auth", request.url);
-        signInUrl.searchParams.set("callbackUrl", pathname);
-        return NextResponse.redirect(signInUrl);
+        return redirectToSignIn(pathname);
       }
       // セッションクッキーが存在するが、middlewareで取得できない場合はクライアントサイドでチェック
     }
@@ -110,24 +121,14 @@ export async function middleware(request: NextRequest) {
   ) || isDashboard;
 
   // セッションが取得できなかった場合でも、クライアントサイドのuseSessionに任せる
-  // データベースセッションを使用する場合、middleware.ts（Edge Runtime）ではセッションが取得できない可能性がある
+  // JWT戦略を使用している場合、middleware.ts（Edge Runtime）ではセッションが取得できない可能性がある
   // その場合、クライアントサイドでセッションを確認し、必要に応じてリダイレクトする
   if (isProtectedPath && !session) {
-    // クライアントサイドのuseSessionに任せるため、リダイレクトしない
-    // ただし、明らかに未ログインの場合はリダイレクトする
-    // セッションクッキーが存在しない場合は、未ログインと判断
-    const sessionCookie = request.cookies.get("__Secure-authjs.session-token");
-    const jwtCookie = request.cookies.get("__Secure-authjs.pkce.code_verifier");
-
-    if (!sessionCookie && !jwtCookie) {
-      // セッションクッキーが存在しない場合は、未ログインと判断してリダイレクト
-      const signInUrl = new URL("/app/auth", request.url);
-      signInUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(signInUrl);
+    // セッションクッキーが存在しない場合は、未ログインと判断してリダイレクト
+    if (!hasSessionCookie()) {
+      return redirectToSignIn(pathname);
     }
-
     // セッションクッキーが存在する場合は、クライアントサイドでセッションを確認させる
-    // データベースセッションを使用する場合、middleware.tsではセッションが取得できない可能性がある
   }
 
   // ログイン済みでログインページにアクセスしている場合
