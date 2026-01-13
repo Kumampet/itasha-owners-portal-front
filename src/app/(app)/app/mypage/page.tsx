@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { LinkCard } from "@/components/link-card";
 import { Card, CardTitle, CardContent } from "@/components/card";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { Button } from "@/components/button";
 
 // 団体管理リンクカード（通知バッジ付き）
 function GroupManagementLinkCard() {
@@ -84,10 +86,29 @@ type Reminder = {
 };
 
 export default function MyPage() {
-    const { data: session, status } = useSession();
+    const { data: session, status, update } = useSession();
+    const router = useRouter();
     const isLoading = status === "loading";
     const [upcomingReminders, setUpcomingReminders] = useState<Reminder[]>([]);
     const [isLoadingReminders, setIsLoadingReminders] = useState(true);
+    
+    // メールアドレスが未設定（@placeholder.localで終わる）かどうかを判定
+    const isEmailRequired = session?.user?.email?.endsWith("@placeholder.local") ?? false;
+
+    // URLパラメータに_refreshがある場合、セッションを強制的に再取得（キャッシュを無視）
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const refreshParam = params.get("_refresh");
+        
+        if (refreshParam) {
+            // セッションを強制的に再取得（キャッシュを無視）
+            update().then(() => {
+                // URLパラメータを削除（履歴に残さない）
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, "", newUrl);
+            });
+        }
+    }, [update]);
 
     // TODO: 通知設定機能を削除しました。将来的に再実装する場合は、初回ログイン時に通知設定をチェックするロジックを追加してください。
 
@@ -147,6 +168,32 @@ export default function MyPage() {
 
     return (
         <main className="flex-1">
+            {/* メールアドレス未設定の場合のモーダル */}
+            {isEmailRequired && !isLoading && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg">
+                        <h2 className="text-lg font-semibold text-zinc-900 mb-2">
+                            メールアドレスの登録が必要です
+                        </h2>
+                        <p className="text-sm text-zinc-600 mb-4">
+                            X（Twitter）でログインした場合、メールアドレスの登録が必要です。
+                            プロフィール編集画面でメールアドレスを設定してください。
+                        </p>
+                        <div className="flex gap-3">
+                            <Button
+                                onClick={() => router.push("/app/profile/edit")}
+                                variant="primary"
+                                size="md"
+                                rounded="md"
+                                fullWidth
+                            >
+                                プロフィール編集へ
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
             <section className="mx-auto flex max-w-4xl flex-col gap-6 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
                 <header>
                     <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
@@ -164,9 +211,12 @@ export default function MyPage() {
                                 {session.user?.name && (
                                     <span className="font-medium">{session.user.name}</span>
                                 )}
-                                {session.user?.name && session.user?.email && " / "}
-                                {session.user?.email && (
+                                {session.user?.name && session.user?.email && !session.user.email.endsWith("@placeholder.local") && " / "}
+                                {session.user?.email && !session.user.email.endsWith("@placeholder.local") && (
                                     <span className="text-zinc-500">{session.user.email}</span>
+                                )}
+                                {isEmailRequired && (
+                                    <span className="text-red-600">（メールアドレス未設定）</span>
                                 )}
                             </p>
                         ) : null}

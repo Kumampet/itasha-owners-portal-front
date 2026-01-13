@@ -35,8 +35,8 @@ export async function GET(request: Request) {
     }
 
     // ソート条件を構築
-    const orderBy: Record<string, string> = {};
-    orderBy[sortBy] = sortOrder;
+    const orderBy: Record<string, "asc" | "desc"> = {};
+    orderBy[sortBy] = sortOrder as "asc" | "desc";
 
     const users = await prisma.user.findMany({
       where,
@@ -45,8 +45,10 @@ export async function GET(request: Request) {
         id: true,
         email: true,
         name: true,
+        display_name: true,
         role: true,
         is_banned: true,
+        deleted_at: true,
         created_at: true,
       },
     });
@@ -62,8 +64,9 @@ export async function GET(request: Request) {
     );
   } catch (error) {
     console.error("Error fetching users:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to fetch users" },
+      { error: "Failed to fetch users", details: errorMessage },
       { status: 500 }
     );
   }

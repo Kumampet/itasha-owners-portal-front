@@ -26,7 +26,7 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT {
-    id: string;
+    id: string | null;
     role: string; // "USER" | "ADMIN" | "ORGANIZER"
     isBanned: boolean;
     email?: string; // 既存ユーザー検索用
