@@ -58,21 +58,14 @@ export async function middleware(request: NextRequest) {
 
   // /admin へのアクセス時のリダイレクト処理
   if (pathname === "/admin") {
-    // セッションを取得（管理画面用）
-    let adminSession = null;
-    try {
-      adminSession = await auth();
-    } catch {
-      // エラーは無視
-    }
-
-    if (!adminSession) {
-      // 未ログインの場合は管理画面ログインページにリダイレクト
-      return NextResponse.redirect(new URL("/admin/auth?callbackUrl=/admin/dashboard", request.url));
+    // 既に取得したセッションを使用（37-39行目で取得済み）
+    if (!session) {
+      // 未ログインの場合は一般アプリのログインページにリダイレクト
+      return NextResponse.redirect(new URL("/app/auth?callbackUrl=/admin/dashboard", request.url));
     }
 
     // 管理者またはオーガナイザーのみアクセス可能
-    if (adminSession.user?.role !== "ADMIN" && adminSession.user?.role !== "ORGANIZER") {
+    if (session.user?.role !== "ADMIN" && session.user?.role !== "ORGANIZER") {
       return NextResponse.redirect(new URL("/app/mypage", request.url));
     }
 
@@ -80,8 +73,24 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/dashboard", request.url));
   }
 
-  // 管理画面のアクセス制御（/admin/auth と /admin/change-password を除く）
-  if (isAdminPath && pathname !== "/admin/auth" && pathname !== "/admin/change-password") {
+  // セッションクッキーの存在確認（共通処理）
+  const hasSessionCookie = () => {
+    const sessionCookie = request.cookies.get("__Secure-authjs.session-token");
+    const jwtCookie = request.cookies.get("__Secure-authjs.pkce.code_verifier");
+    return !!(sessionCookie || jwtCookie);
+  };
+
+  // 未ログイン時のリダイレクト処理（共通処理）
+  const redirectToSignIn = (callbackUrl?: string) => {
+    const signInUrl = new URL("/app/auth", request.url);
+    if (callbackUrl) {
+      signInUrl.searchParams.set("callbackUrl", callbackUrl);
+    }
+    return NextResponse.redirect(signInUrl);
+  };
+
+  // 管理画面のアクセス制御
+  if (isAdminPath) {
     // セッションが取得できた場合のみ権限チェック
     if (session) {
       // 管理者またはオーガナイザーのみアクセス可能
@@ -90,14 +99,9 @@ export async function middleware(request: NextRequest) {
       }
     } else {
       // セッションが取得できない場合は、クッキーを確認
-      const sessionCookie = request.cookies.get("__Secure-authjs.session-token");
-      const jwtCookie = request.cookies.get("__Secure-authjs.pkce.code_verifier");
-
-      if (!sessionCookie && !jwtCookie) {
+      if (!hasSessionCookie()) {
         // セッションクッキーが存在しない場合は、未ログインと判断してリダイレクト
-        const signInUrl = new URL("/admin/auth", request.url);
-        signInUrl.searchParams.set("callbackUrl", pathname);
-        return NextResponse.redirect(signInUrl);
+        return redirectToSignIn(pathname);
       }
       // セッションクッキーが存在するが、middlewareで取得できない場合はクライアントサイドでチェック
     }
@@ -117,24 +121,14 @@ export async function middleware(request: NextRequest) {
   ) || isDashboard;
 
   // セッションが取得できなかった場合でも、クライアントサイドのuseSessionに任せる
-  // データベースセッションを使用する場合、middleware.ts（Edge Runtime）ではセッションが取得できない可能性がある
+  // JWT戦略を使用している場合、middleware.ts（Edge Runtime）ではセッションが取得できない可能性がある
   // その場合、クライアントサイドでセッションを確認し、必要に応じてリダイレクトする
   if (isProtectedPath && !session) {
-    // クライアントサイドのuseSessionに任せるため、リダイレクトしない
-    // ただし、明らかに未ログインの場合はリダイレクトする
-    // セッションクッキーが存在しない場合は、未ログインと判断
-    const sessionCookie = request.cookies.get("__Secure-authjs.session-token");
-    const jwtCookie = request.cookies.get("__Secure-authjs.pkce.code_verifier");
-
-    if (!sessionCookie && !jwtCookie) {
-      // セッションクッキーが存在しない場合は、未ログインと判断してリダイレクト
-      const signInUrl = new URL("/app/auth", request.url);
-      signInUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(signInUrl);
+    // セッションクッキーが存在しない場合は、未ログインと判断してリダイレクト
+    if (!hasSessionCookie()) {
+      return redirectToSignIn(pathname);
     }
-
     // セッションクッキーが存在する場合は、クライアントサイドでセッションを確認させる
-    // データベースセッションを使用する場合、middleware.tsではセッションが取得できない可能性がある
   }
 
   // ログイン済みでログインページにアクセスしている場合
@@ -160,11 +154,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/app/mypage", request.url));
   }
 
-  // ログイン済みで管理画面ログインページにアクセスしている場合
-  if (pathname === "/admin/auth" && session && (session.user?.role === "ADMIN" || session.user?.role === "ORGANIZER")) {
-    const callbackUrl = request.nextUrl.searchParams.get("callbackUrl") || "/admin";
-    return NextResponse.redirect(new URL(callbackUrl, request.url));
-  }
 
   return NextResponse.next();
 }

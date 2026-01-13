@@ -12,7 +12,6 @@ declare module "next-auth" {
       role: string; // "USER" | "ADMIN" | "ORGANIZER"
       isBanned: boolean;
       customProfileUrl?: string | null;
-      mustChangePassword?: boolean;
     };
   }
 
@@ -22,7 +21,6 @@ declare module "next-auth" {
     role: string; // "USER" | "ADMIN" | "ORGANIZER"
     isBanned: boolean;
     customProfileUrl?: string | null;
-    mustChangePassword?: boolean;
   }
 }
 
@@ -32,7 +30,6 @@ declare module "next-auth/jwt" {
     role: string; // "USER" | "ADMIN" | "ORGANIZER"
     isBanned: boolean;
     email?: string; // 既存ユーザー検索用
-    mustChangePassword?: boolean;
   }
 }
 
