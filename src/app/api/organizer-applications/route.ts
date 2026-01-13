@@ -51,7 +51,6 @@ export async function POST(request: Request) {
     }
 
     // 申請を作成
-    // @ts-expect-error - Prisma Client Proxyの型推論の問題（実行時には正常に動作する）
     const application = await prisma.organizerApplication.create({
       data: {
         display_name,
