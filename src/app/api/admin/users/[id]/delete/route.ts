@@ -35,16 +35,6 @@ export async function DELETE(
       data: {
         deleted_at: new Date(),
       },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        display_name: true,
-        role: true,
-        is_banned: true,
-        deleted_at: true,
-        created_at: true,
-      },
     });
 
     return NextResponse.json({ success: true });
