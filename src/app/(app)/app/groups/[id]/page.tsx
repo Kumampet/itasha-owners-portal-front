@@ -224,7 +224,7 @@ export default function GroupDetailPage({
     }
   }, [id, session?.user?.id]);
 
-  useWebSocketMessageHandler(socket, handleNewMessage, handleReadUpdated);
+  useWebSocketMessageHandler<GroupMessage>(socket, handleNewMessage, handleReadUpdated);
 
   // 未読メッセージの状態を取得（メッセージタブが開いていない場合のみ）
   useEffect(() => {
