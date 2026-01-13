@@ -48,7 +48,8 @@ export default function GroupsPage() {
   // WebSocket接続時のメッセージ受信処理
   const handleNewMessage = useCallback((data: { groupId: string; message: unknown }) => {
     // 送信者以外の場合のみ未読としてマーク
-    if (data.message.sender.id !== session?.user?.id) {
+    const message = data.message as { sender?: { id?: string } } | null;
+    if (message && message.sender?.id !== session?.user?.id) {
       setUnreadCounts((prev) => ({
         ...prev,
         [data.groupId]: true,
