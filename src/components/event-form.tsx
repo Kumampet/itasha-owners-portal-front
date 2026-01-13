@@ -29,8 +29,6 @@ export type EventFormData = {
   city: string;
   street_address: string;
   venue_name: string;
-  organizer_email: string;
-  organizer_user_id?: string | null;
   image_url: string;
   official_urls: string[];
   entries: EventEntryData[];
@@ -51,8 +49,6 @@ interface EventFormProps {
   keywords: string[];
   onKeywordsChange: (keywords: string[]) => void;
   children?: React.ReactNode; // ボタン部分を親から受け取る
-  isAdmin?: boolean; // 管理者権限かどうか
-  organizerUsers?: Array<{ id: string; email: string; name: string | null }>; // ORGANIZER権限のユーザー一覧
 }
 
 export default function EventForm({
@@ -61,8 +57,6 @@ export default function EventForm({
   keywords,
   onKeywordsChange,
   children,
-  isAdmin = false,
-  organizerUsers = [],
 }: EventFormProps) {
   const [keywordInput, setKeywordInput] = useState("");
   const [searchingPostalCode, setSearchingPostalCode] = useState(false);
@@ -1119,41 +1113,6 @@ export default function EventForm({
           />
         </div>
       </div>
-
-      {/* 作成者選択（管理者権限の場合のみ） */}
-      {isAdmin && organizerUsers.length > 0 && (
-        <div>
-          <label className="block text-sm font-medium text-zinc-700">
-            作成者（イベント編集権） *
-          </label>
-          <div className="mt-1">
-            <select
-              value={formData.organizer_user_id || ""}
-              onChange={(e) => {
-                const selectedUserId = e.target.value || null;
-                const selectedUser = organizerUsers.find((u) => u.id === selectedUserId);
-                onFormDataChange({
-                  ...formData,
-                  organizer_user_id: selectedUserId,
-                  organizer_email: selectedUser?.email || formData.organizer_email,
-                });
-              }}
-              className="block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-              required
-            >
-              <option value="">選択してください</option>
-              {organizerUsers.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name || user.email} ({user.email})
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-zinc-500">
-              イベントの編集権限を持つユーザーを選択します
-            </p>
-          </div>
-        </div>
-      )}
 
       {children && (
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
