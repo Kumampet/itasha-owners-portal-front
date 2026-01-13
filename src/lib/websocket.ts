@@ -92,8 +92,8 @@ export function useWebSocket(groupId: string | null) {
   return {
     isConnected,
     sendMessage: (message: unknown) => {
-      if (socketRef.current && socketRef.current.readyState === 1) {
-        socketRef.current.send(JSON.stringify(message));
+      if (socketRef.current && socketRef.current.connected) {
+        socketRef.current.emit("message", message);
         return true;
       }
       return false;
