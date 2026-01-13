@@ -146,11 +146,8 @@ export default function OrganizerApplicationPage() {
               <div>
                 <h3 className="mb-2 font-medium text-zinc-900">主な機能</h3>
                 <ul className="ml-4 list-disc space-y-1">
-                  <li>イベント情報の作成・編集・削除</li>
-                  <li>エントリー情報の管理</li>
-                  <li>参加者の管理</li>
-                  <li>団体（併せ）の管理</li>
-                  <li>イベントに関する一斉連絡の送信</li>
+                  <li>ご自身が主催するイベントを、いたなび！に登録できます</li>
+                  <li>登録したイベントの情報を、いつでも自由に更新・編集できます</li>
                 </ul>
               </div>
               <div>
@@ -162,15 +159,15 @@ export default function OrganizerApplicationPage() {
             </div>
           </div>
 
-          {/* 同意文章 */}
+          {/* 申請にあたっての注意事項 */}
           <div className="space-y-4 rounded-lg border border-zinc-200 bg-white p-6">
-            <h2 className="text-lg font-semibold text-zinc-900">利用規約への同意</h2>
+            <h2 className="text-lg font-semibold text-zinc-900">申請にあたっての注意事項</h2>
             <div className="space-y-3 text-sm text-zinc-700">
               <p>
                 オーガナイザーとして登録するにあたり、以下の事項に同意していただく必要があります。
               </p>
               <div className="space-y-2 rounded-md border border-zinc-200 bg-zinc-50 p-4">
-                <p className="font-medium text-zinc-900">同意事項</p>
+                <p className="font-medium text-zinc-900">注意事項</p>
                 <ul className="ml-4 list-disc space-y-1">
                   <li>
                     いたなび！の利用規約およびプライバシーポリシーに同意します。
