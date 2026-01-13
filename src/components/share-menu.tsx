@@ -47,14 +47,25 @@ export function ShareMenu({
 
   const handleGoogleCalendar = () => {
     const startDate = new Date(datetime);
+    
+    // datetimeの妥当性チェック
+    if (Number.isNaN(startDate.getTime())) {
+      alert("日時が不正です");
+      return;
+    }
+
     const title = eventName && eventName !== "（イベント未設定）"
       ? `${eventName} - ${reminderLabel}`
       : reminderLabel;
     const description = note || "";
 
+    // 終了時刻を明示的に設定（開始時刻から1時間後）
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+
     const url = generateGoogleCalendarUrl({
       title,
       startDate,
+      endDate,
       description,
     });
 

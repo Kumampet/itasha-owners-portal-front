@@ -119,14 +119,25 @@ export default function NewReminderPage() {
     if (!createdReminder) return;
 
     const startDate = new Date(createdReminder.datetime);
+    
+    // datetimeの妥当性チェック
+    if (Number.isNaN(startDate.getTime())) {
+      alert("日時が不正です");
+      return;
+    }
+
     const title = createdReminder.eventName
       ? `${createdReminder.eventName} - ${createdReminder.label}`
       : createdReminder.label;
     const description = createdReminder.note || "";
 
+    // 終了時刻を明示的に設定（開始時刻から1時間後）
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+
     const url = generateGoogleCalendarUrl({
       title,
       startDate,
+      endDate,
       description,
     });
 
