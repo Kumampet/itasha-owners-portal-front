@@ -16,7 +16,6 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:clear-sessions": "tsx scripts/clear-sessions.ts",
     "db:view-users": "tsx scripts/view-users.ts",
-    "db:fix-user-account": "tsx scripts/fix-user-account.ts",
     "test:reminder-check": "tsx scripts/test-reminder-check.ts",
     "prisma:generate": "prisma generate"
   },

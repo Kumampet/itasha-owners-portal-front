@@ -13,10 +13,10 @@ export default function AdminPage() {
   useEffect(() => {
     if (status === "loading" || hasRedirected.current) return;
 
-    // 未ログインの場合は管理画面ログインページにリダイレクト
+    // 未ログインの場合は一般アプリのログインページにリダイレクト
     if (!session) {
       hasRedirected.current = true;
-      router.replace("/admin/auth?callbackUrl=/admin/dashboard");
+      router.replace("/app/auth?callbackUrl=/admin/dashboard");
       return;
     }
 

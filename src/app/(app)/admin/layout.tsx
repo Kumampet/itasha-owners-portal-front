@@ -128,10 +128,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const hasRedirected = useRef(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // ログインページとパスワード変更ページでは認証チェックをスキップ
-  const isAuthPage = pathname === "/admin/auth";
-  const isChangePasswordPage = pathname === "/admin/change-password";
-
   // /admin配下のページを検索エンジンから除外
   useEffect(() => {
     if (typeof window === "undefined" || !document.head) {
@@ -171,17 +167,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }, [isMenuOpen]);
 
   useEffect(() => {
-    // ログインページでは認証チェックをスキップ
-    if (isAuthPage) {
-      return;
-    }
-
     if (status === "loading" || hasRedirected.current) return;
 
-    // 未ログインの場合はログインページにリダイレクト
+    // 未ログインの場合は一般アプリのログインページにリダイレクト
     if (!session) {
       hasRedirected.current = true;
-      router.replace("/admin/auth?callbackUrl=/admin/dashboard");
+      router.replace("/app/auth?callbackUrl=/admin/dashboard");
       return;
     }
 
@@ -192,20 +183,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       return;
     }
 
-    // 初回ログイン時（パスワード変更が必要）はパスワード変更ページにリダイレクト
-    if (session.user.mustChangePassword && !isChangePasswordPage) {
-      hasRedirected.current = true;
-      router.replace("/admin/change-password");
-      return;
-    }
-
     hasRedirected.current = false;
-  }, [session, status, router, pathname, isAuthPage, isChangePasswordPage]);
-
-  // ログインページとパスワード変更ページでは認証チェックをスキップ（ページ側で処理）
-  if (isAuthPage || isChangePasswordPage) {
-    return <>{children}</>;
-  }
+  }, [session, status, router, pathname]);
 
   // ローディング中または権限チェック中は何も表示しない
   if (
