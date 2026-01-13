@@ -145,7 +145,7 @@ const adapterInstance = getAdapter();
 // JWT戦略により、DBへのセッション照会が不要になり、パフォーマンスが向上する
 const useDatabaseStrategy = false;
 
-// プロバイダー設定（Google、X、管理画面用Credentials）
+// プロバイダー設定（Google、X、メール/パスワード認証）
 // DATABASE_URLが設定されている場合のみadapterを設定
 const configBase: NextAuthConfig = {
   providers: [
@@ -160,7 +160,7 @@ const configBase: NextAuthConfig = {
       clientSecret: process.env.TWITTER_CLIENT_SECRET,
       allowDangerousEmailAccountLinking: true, // 同じメールアドレスで複数プロバイダーをリンク
     }),
-    // 管理画面用のメール/パスワード認証
+    // メール/パスワード認証（一般アプリと管理画面の両方で使用可能）
     Credentials({
       name: "Credentials",
       credentials: {

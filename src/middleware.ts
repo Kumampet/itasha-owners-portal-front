@@ -58,21 +58,14 @@ export async function middleware(request: NextRequest) {
 
   // /admin へのアクセス時のリダイレクト処理
   if (pathname === "/admin") {
-    // セッションを取得（管理画面用）
-    let adminSession = null;
-    try {
-      adminSession = await auth();
-    } catch {
-      // エラーは無視
-    }
-
-    if (!adminSession) {
+    // 既に取得したセッションを使用（37-39行目で取得済み）
+    if (!session) {
       // 未ログインの場合は一般アプリのログインページにリダイレクト
       return NextResponse.redirect(new URL("/app/auth?callbackUrl=/admin/dashboard", request.url));
     }
 
     // 管理者またはオーガナイザーのみアクセス可能
-    if (adminSession.user?.role !== "ADMIN" && adminSession.user?.role !== "ORGANIZER") {
+    if (session.user?.role !== "ADMIN" && session.user?.role !== "ORGANIZER") {
       return NextResponse.redirect(new URL("/app/mypage", request.url));
     }
 
