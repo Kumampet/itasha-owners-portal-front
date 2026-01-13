@@ -360,7 +360,6 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
                     <UserActionMenu
-                      userId={user.id}
                       isBanned={user.is_banned}
                       isDeleted={!!user.deleted_at}
                       onBanClick={() => setBanModalUser(user)}
