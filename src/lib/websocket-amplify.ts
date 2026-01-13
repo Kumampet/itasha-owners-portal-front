@@ -129,9 +129,9 @@ export function useWebSocketAmplify(groupId: string | null) {
   };
 }
 
-export function useWebSocketMessageHandler(
+export function useWebSocketMessageHandler<T = unknown>(
   socket: WebSocket | null,
-  onNewMessage: (data: { groupId: string; message: unknown }) => void,
+  onNewMessage: (data: { groupId: string; message: T }) => void,
   onReadUpdated: (data: { groupId: string; userId: string; messageId: string }) => void
 ) {
   useEffect(() => {
@@ -146,7 +146,7 @@ export function useWebSocketMessageHandler(
         if (data.type === "new-message" && data.groupId && data.message) {
           onNewMessage({
             groupId: data.groupId,
-            message: data.message,
+            message: data.message as T,
           });
         } else if (data.type === "read-updated" && data.groupId && data.userId && data.messageId) {
           onReadUpdated({
