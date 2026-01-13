@@ -8,8 +8,8 @@ export async function GET(request: Request) {
   try {
     const session = await auth();
 
-    // 管理者権限チェック
-    if (!session || session.user?.role !== "ADMIN") {
+    // 管理者またはオーガナイザー権限チェック
+    if (!session || (session.user?.role !== "ADMIN" && session.user?.role !== "ORGANIZER")) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -48,6 +48,11 @@ export async function GET(request: Request) {
     // AND条件の配列を構築
     const andConditions: unknown[] = [dateFilter];
     
+    // オーガナイザーの場合、自分が登録したイベントのみを表示
+    if (session.user?.role === "ORGANIZER" && session.user?.id) {
+      andConditions.push({ created_by_user_id: session.user.id });
+    }
+    
     if (status && status !== "ALL") {
       andConditions.push({ approval_status: status });
     }
@@ -81,11 +86,6 @@ export async function GET(request: Request) {
         is_multi_day: true,
         approval_status: true,
         created_at: true,
-        organizer_user: {
-          select: {
-            email: true,
-          },
-        },
         entries: {
           select: {
             entry_number: true,
@@ -198,40 +198,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // イベント作成者（最初にイベントを作成したアカウント）を自動設定
-    // organizer_emailが指定されていない場合は、ログインユーザーのメールアドレスを使用
-    const organizerEmail = body.organizer_email || session.user?.email || "";
-    if (!organizerEmail) {
-      return NextResponse.json(
-        { error: "主催者メールアドレスが必要です" },
-        { status: 400 }
-      );
-    }
-
-    // 主催者メールアドレスからユーザーを検索
-    // organizer_user_idが指定されていない場合は、ログインユーザーのIDを使用
-    let organizerUserId: string | null = null;
-    if (body.organizer_user_id && typeof body.organizer_user_id === "string" && body.organizer_user_id.trim() !== "") {
-      // 指定されたユーザーIDを使用
-      const organizerUser = await prisma.user.findUnique({
-        where: { id: body.organizer_user_id },
-        select: { id: true },
-      });
-      organizerUserId = organizerUser?.id || null;
-    } else if (organizerEmail) {
-      // メールアドレスからユーザーを検索
-      const organizerUser = await prisma.user.findUnique({
-        where: { email: organizerEmail },
-        select: { id: true },
-      });
-      organizerUserId = organizerUser?.id || null;
-    }
-
-    // メールアドレスからユーザーが見つからない場合、ログインユーザーのIDを使用
-    if (!organizerUserId && session.user?.id) {
-      organizerUserId = session.user.id;
-    }
-
     // トランザクションでイベント、エントリー情報、キーワードを同時に作成
     const event = await prisma.$transaction(async (tx) => {
       // イベントを作成
@@ -251,18 +217,12 @@ export async function POST(request: Request) {
         official_urls: (body.official_urls || []).filter((url: string) => url && url.trim() !== ""), // 空文字列を除外したURL配列
         image_url: body.image_url || null,
         approval_status: body.approval_status || "DRAFT",
-        organizer_email: organizerEmail,
         payment_methods: body.payment_methods || null,
         entry_selection_method: body.entry_selection_method || "FIRST_COME",
         max_participants: body.max_participants || null,
       };
 
-      // organizer_user_idがnullでない場合のみ設定
-      if (organizerUserId) {
-        eventData.organizer_user_id = organizerUserId;
-      }
-
-      // イベント作成者（最初にイベントを作成したアカウント）を設定
+      // イベント登録者（イベントを登録したアカウント）を設定
       if (session.user?.id) {
         eventData.created_by_user_id = session.user.id;
       }

@@ -26,11 +26,7 @@ type Event = {
   official_urls: string[];
   image_url: string | null;
   approval_status: string;
-  organizer_email: string | null;
-  organizer_user: {
-    id: string;
-    email: string;
-  } | null;
+  created_by_user_id: string | null;
   entries: Array<{
     id: string;
     entry_number: number;
@@ -66,7 +62,6 @@ export default function AdminEventDetailPage({
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
-  const [organizerUsers, setOrganizerUsers] = useState<Array<{ id: string; email: string; name: string | null }>>([]);
   const [formData, setFormData] = useState<EventFormData>({
     name: "",
     description: "",
@@ -78,8 +73,6 @@ export default function AdminEventDetailPage({
     city: "",
     street_address: "",
     venue_name: "",
-    organizer_email: "",
-    organizer_user_id: null,
     image_url: "",
     official_urls: [""],
     entry_selection_method: "FIRST_COME",
@@ -87,21 +80,21 @@ export default function AdminEventDetailPage({
     entries: [],
   });
 
-  // 現在のユーザーがadminまたはイベントのorganizerかどうかを確認
+  // 現在のユーザーがadminまたはイベントの登録者かどうかを確認
   const canReapply =
     event &&
     event.approval_status === "REJECTED" &&
     (session?.user?.role === "ADMIN" ||
-      (session?.user?.role === "ORGANIZER" && event.organizer_user?.id === session.user.id));
+      (session?.user?.role === "ORGANIZER" && event.created_by_user_id === session.user.id));
 
-  // 一度公開されたイベントを編集する場合（作成者またはadminのみ）
+  // 一度公開されたイベントを編集する場合（登録者またはadminのみ）
   // 管理者の場合は常に直接更新可能
   const canUpdateDirectly =
     event &&
     (session?.user?.role === "ADMIN" ||
       (event.approval_status === "APPROVED" &&
         session?.user?.role === "ORGANIZER" &&
-        event.organizer_user?.id === session.user.id));
+        event.created_by_user_id === session.user.id));
 
   const fetchEvent = useCallback(async () => {
     try {
@@ -111,7 +104,7 @@ export default function AdminEventDetailPage({
         throw new Error(errorData.message || `Failed to fetch event: ${res.status}`);
       }
       const data = await res.json();
-      setEvent(data);
+      setEvent({ ...data, created_by_user_id: data.created_by_user_id || null });
 
       // エントリー情報をフォーマット
       const formattedEntries = (data.entries || []).map((entry: Event["entries"][number]) => ({
@@ -150,8 +143,6 @@ export default function AdminEventDetailPage({
         city: data.city || "",
         street_address: data.street_address || "",
         venue_name: data.venue_name || "",
-        organizer_email: data.organizer_email || data.organizer_user?.email || "",
-        organizer_user_id: data.organizer_user?.id || null,
         image_url: data.image_url || "",
         official_urls: (data.official_urls && Array.isArray(data.official_urls) && data.official_urls.length > 0)
           ? data.official_urls
@@ -179,24 +170,9 @@ export default function AdminEventDetailPage({
     }
   }, [id]);
 
-  // ORGANIZER権限のユーザー一覧を取得
-  const fetchOrganizerUsers = useCallback(async () => {
-    if (session?.user?.role !== "ADMIN") return;
-
-    try {
-      const res = await fetch("/api/admin/users?role=ORGANIZER");
-      if (!res.ok) throw new Error("Failed to fetch organizer users");
-      const data = await res.json();
-      setOrganizerUsers(data);
-    } catch (error) {
-      console.error("Failed to fetch organizer users:", error);
-    }
-  }, [session?.user?.role]);
-
   useEffect(() => {
     fetchEvent();
-    fetchOrganizerUsers();
-  }, [fetchEvent, fetchOrganizerUsers]);
+  }, [fetchEvent]);
 
   useEffect(() => {
     if (event) {
@@ -241,15 +217,11 @@ export default function AdminEventDetailPage({
 
     setSaving(true);
     try {
-      // 編集時は、既存のorganizer_emailとorganizer_user_idを保持
-      // 変更が必要な場合のみ送信（フォームで変更されていない場合は既存の値が維持される）
       const res = await fetch(`/api/admin/events/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          organizer_email: formData.organizer_email || null,
-          organizer_user_id: session?.user?.role === "ADMIN" ? formData.organizer_user_id : undefined,
           keywords: keywords,
           approval_status: approvalStatus,
         }),
@@ -270,19 +242,11 @@ export default function AdminEventDetailPage({
   const handleReapply = async () => {
     setSaving(true);
     try {
-      // 再申請時は、主催者メールアドレスが未設定の場合、ログインユーザーのメールアドレスを自動設定
-      const organizerEmail =
-        !formData.organizer_email && session?.user?.email
-          ? session.user.email
-          : formData.organizer_email || null;
-
       const res = await fetch(`/api/admin/events/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          organizer_email: organizerEmail,
-          organizer_user_id: session?.user?.role === "ADMIN" ? formData.organizer_user_id : undefined,
           tags: event?.tags.map(t => t.tag.id) || [],
           approval_status: "PENDING",
         }),
@@ -501,8 +465,6 @@ export default function AdminEventDetailPage({
           onFormDataChange={setFormData}
           keywords={keywords}
           onKeywordsChange={setKeywords}
-          isAdmin={session?.user?.role === "ADMIN"}
-          organizerUsers={organizerUsers}
         >
           <Button
             variant="secondary"
@@ -710,14 +672,6 @@ export default function AdminEventDetailPage({
               </div>
             )}
 
-            {(event.organizer_email || event.organizer_user) && (
-              <div>
-                <h3 className="text-sm font-medium text-zinc-700">主催者</h3>
-                <p className="mt-1 text-sm text-zinc-600">
-                  {event.organizer_email || event.organizer_user?.email || ""}
-                </p>
-              </div>
-            )}
 
             {event.prefecture && (
               <div>

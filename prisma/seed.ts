@@ -140,7 +140,6 @@ function generateEvents(count: number) {
       venue_name: Math.random() > 0.3 ? venueName : null,
       official_urls: [],
       approval_status: randomElement(["DRAFT", "PENDING", "APPROVED", "REJECTED"]),
-      organizer_email: `organizer${i}@example.com`,
     });
   }
 
@@ -164,8 +163,8 @@ async function main() {
 
   console.info("⏳ 100個のサンプルイベントを生成中...");
 
-  // 主催者ユーザーを取得または作成
-  const organizerUser = await prisma.user.upsert({
+  // イベント登録者ユーザーを取得または作成
+  const createdByUser = await prisma.user.upsert({
     where: { email: "organizer@itasha-portal.com" },
     update: {},
     create: {
@@ -185,7 +184,7 @@ async function main() {
       await prisma.event.create({
         data: {
           ...eventData,
-          organizer_user_id: organizerUser.id,
+          created_by_user_id: createdByUser.id,
         },
       });
       createdCount++;

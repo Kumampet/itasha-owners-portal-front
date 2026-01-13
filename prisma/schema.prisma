@@ -45,10 +45,7 @@ model User {
   group_message_reads  GroupMessageRead[] @relation("GroupMessageReadUser") // 団体メッセージの既読情報
   event_follows        EventFollow[] // フォローしているイベント
 
-  // 【修正】主催しているイベントのリスト
-  events_organized Event[] @relation("EventOrganizer")
-
-  // 作成したイベントのリスト（最初にイベントを作成したアカウント）
+  // 登録したイベントのリスト（イベントを登録したアカウント）
   events_created Event[] @relation("EventCreator")
 
   // 情報提供フォーム
@@ -158,16 +155,9 @@ model Event {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  // リレーション
-  organizer_user    User?   @relation("EventOrganizer", fields: [organizer_user_id], references: [id])
-  organizer_user_id String? @db.VarChar(36)
-
-  // イベント作成者（最初にイベントを作成したアカウント、変更不可）
+  // イベント登録者（イベントを登録したアカウント、変更不可、フロントには表示しない）
   created_by_user    User?   @relation("EventCreator", fields: [created_by_user_id], references: [id])
   created_by_user_id String? @db.VarChar(36)
-
-  // 主催者メールアドレス（必須、フロントには出ない）
-  organizer_email String @db.VarChar(255)
 
   participants UserEvent[]
   groups       Group[]

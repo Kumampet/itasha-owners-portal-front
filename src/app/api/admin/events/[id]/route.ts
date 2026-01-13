@@ -25,7 +25,7 @@ export async function GET(
     const eventForCheck = await prisma.event.findUnique({
       where: { id },
       select: {
-        organizer_user_id: true,
+        created_by_user_id: true,
       },
     });
 
@@ -36,8 +36,8 @@ export async function GET(
       );
     }
 
-    // オーガナイザーの場合、自分のイベントのみアクセス可能
-    if (session.user?.role === "ORGANIZER" && eventForCheck.organizer_user_id !== session.user.id) {
+    // オーガナイザーの場合、自分が登録したイベントのみアクセス可能
+    if (session.user?.role === "ORGANIZER" && eventForCheck.created_by_user_id !== session.user.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 403 }
@@ -62,15 +62,9 @@ export async function GET(
         official_urls: true,
         image_url: true,
         approval_status: true,
-        organizer_email: true,
         entry_selection_method: true,
         max_participants: true,
-        organizer_user: {
-          select: {
-            id: true,
-            email: true,
-          },
-        },
+        created_by_user_id: true,
         entries: {
           select: {
             id: true,
@@ -143,8 +137,7 @@ export async function PATCH(
     const existingEvent = await prisma.event.findUnique({
       where: { id },
       select: {
-        organizer_user_id: true,
-        organizer_email: true,
+        created_by_user_id: true,
         approval_status: true,
       },
     });
@@ -156,8 +149,8 @@ export async function PATCH(
       );
     }
 
-    // オーガナイザーの場合、自分のイベントのみ更新可能
-    if (session.user?.role === "ORGANIZER" && existingEvent.organizer_user_id !== session.user.id) {
+    // オーガナイザーの場合、自分が登録したイベントのみ更新可能
+    if (session.user?.role === "ORGANIZER" && existingEvent.created_by_user_id !== session.user.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 403 }
@@ -215,50 +208,6 @@ export async function PATCH(
       }
     }
 
-    // 主催者情報の設定
-    // 編集時は、変更が必要な時のみ更新し、それ以外は既存の値を維持
-    let organizerEmail = existingEvent.organizer_email;
-    let organizerUserId: string | null = existingEvent.organizer_user_id;
-
-    // organizer_emailが変更されている場合のみ更新
-    if (body.organizer_email && body.organizer_email !== existingEvent.organizer_email) {
-      organizerEmail = body.organizer_email;
-
-      // メールアドレスからユーザーを検索
-      const organizerUser = await prisma.user.findUnique({
-        where: { email: body.organizer_email },
-        select: { id: true },
-      });
-      organizerUserId = organizerUser?.id || null;
-    }
-
-    // 管理者権限の場合、organizer_user_idが直接指定されている場合はそれを使用
-    if (session.user?.role === "ADMIN" && body.organizer_user_id && typeof body.organizer_user_id === "string" && body.organizer_user_id.trim() !== "") {
-      // 既存の値と異なる場合のみ更新
-      if (body.organizer_user_id !== existingEvent.organizer_user_id) {
-        // 指定されたユーザーがORGANIZER権限かどうかを確認
-        const organizerUser = await prisma.user.findUnique({
-          where: { id: body.organizer_user_id },
-          select: { id: true, role: true, email: true },
-        });
-
-        if (organizerUser && organizerUser.role === "ORGANIZER") {
-          organizerUserId = organizerUser.id;
-          // organizer_user_idが変更された場合、対応するメールアドレスも更新
-          if (organizerUser.email) {
-            organizerEmail = organizerUser.email;
-          }
-        } else if (organizerUser) {
-          // ユーザーは存在するが、ORGANIZER権限ではない
-          return NextResponse.json(
-            { error: "指定されたユーザーはORGANIZER権限ではありません" },
-            { status: 400 }
-          );
-        }
-        // organizerUserがnullの場合は、既存の値を維持
-      }
-    }
-
     // トランザクションでイベントとタグを同時に更新
     const event = await prisma.$transaction(async (tx) => {
       // 既存のタグを削除
@@ -285,8 +234,6 @@ export async function PATCH(
           official_urls: body.official_urls || [],
           image_url: body.image_url || null,
           approval_status: body.approval_status,
-          organizer_email: organizerEmail,
-          organizer_user_id: organizerUserId,
           payment_methods: body.payment_methods || null,
           entry_selection_method: body.entry_selection_method || "FIRST_COME",
           max_participants: body.max_participants || null,
@@ -396,13 +343,7 @@ export async function PATCH(
           official_urls: true,
           image_url: true,
           approval_status: true,
-          organizer_email: true,
-          organizer_user: {
-            select: {
-              id: true,
-              email: true,
-            },
-          },
+          created_by_user_id: true,
           entries: {
             select: {
               id: true,

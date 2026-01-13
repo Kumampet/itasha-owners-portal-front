@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
 import ConfirmModal from "@/components/confirm-modal";
 import EventForm, { EventFormData } from "@/components/event-form";
@@ -12,7 +11,6 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 function AdminNewEventPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
 
   useEffect(() => {
     document.title = "いたなび管理画面 | 新規イベント作成";
@@ -32,7 +30,6 @@ function AdminNewEventPageContent() {
     city: "",
     street_address: "",
     venue_name: "",
-    organizer_email: session?.user?.email || "",
     image_url: "",
     official_urls: [""],
     entry_selection_method: "FIRST_COME",
@@ -123,17 +120,11 @@ function AdminNewEventPageContent() {
     setSaving(true);
 
     try {
-      // イベント作成時は、ログインユーザーの情報を自動設定
-      // organizer_emailが空の場合は、ログインユーザーのメールアドレスを使用
-      const organizerEmail = formData.organizer_email || session?.user?.email || "";
-
       const res = await fetch("/api/admin/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          organizer_email: organizerEmail,
-          organizer_user_id: session?.user?.id || null,
           keywords: keywords,
           approval_status: approvalStatus,
         }),

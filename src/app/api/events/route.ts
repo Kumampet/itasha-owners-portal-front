@@ -82,13 +82,6 @@ export async function GET(request: Request) {
         official_urls: true,
         image_url: true,
         approval_status: true,
-        organizer_user: {
-          select: {
-            id: true,
-            email: true,
-            custom_profile_url: true,
-          },
-        },
         entries: {
           select: {
             entry_number: true,
