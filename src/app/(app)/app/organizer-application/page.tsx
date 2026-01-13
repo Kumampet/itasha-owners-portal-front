@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/button";
-import { Accordion, AccordionItem } from "@/components/accordion";
 import ConfirmModal from "@/components/confirm-modal";
 
 const initialFormData = {
@@ -33,7 +32,7 @@ export default function OrganizerApplicationPage() {
     if (session?.user?.email && !formData.email) {
       setFormData((prev) => ({ ...prev, email: session.user.email || "" }));
     }
-  }, [session]);
+  }, [session, formData.email]);
 
   const handleAgreeToTerms = () => {
     setAgreedToTerms(true);
