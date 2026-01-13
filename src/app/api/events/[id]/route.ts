@@ -112,7 +112,15 @@ export async function GET(
       }),
     };
 
-    return NextResponse.json(filteredEvent);
+    // CloudFront（Amplify Hosting のエッジ）で60秒間キャッシュ
+    return NextResponse.json(
+      filteredEvent,
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching event:", error);
     return NextResponse.json(

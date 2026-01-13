@@ -173,6 +173,10 @@ model Event {
   reminders    Reminder[]
   entries      EventEntry[] // エントリー情報（複数対応）
 
+  // パフォーマンス最適化のためのインデックス
+  @@index([event_date])
+  @@index([approval_status])
+  @@index([event_date, approval_status]) // 複合インデックス（よく使われるクエリパターン）
   @@map("events")
 }
 

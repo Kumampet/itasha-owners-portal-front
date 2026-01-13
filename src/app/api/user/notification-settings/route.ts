@@ -31,7 +31,15 @@ export async function GET() {
       });
     }
 
-    return NextResponse.json(settings);
+    // リアルタイム性が重要なのでキャッシュを無効にする
+    return NextResponse.json(
+      settings,
+      {
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching notification settings:", error);
     return NextResponse.json(

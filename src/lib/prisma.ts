@@ -57,7 +57,9 @@ function createPrismaClient() {
 
     // PrismaMariaDbはPoolConfigまたは接続文字列を受け取る
     // サーバーレス環境での接続リークを防ぐため、接続プールの設定を調整
-    // 環境変数で接続プールサイズを制御可能にする（デフォルト: 10）
+    // JWT戦略に変更したことで複数のリクエストが同時に発生する可能性があるため、
+    // コネクションプールサイズを増やす（デフォルト: 10）
+    // 環境変数で接続プールサイズを制御可能にする
     const connectionLimit = parseInt(process.env.DATABASE_POOL_SIZE || "10", 10);
     
     const poolConfig = {
