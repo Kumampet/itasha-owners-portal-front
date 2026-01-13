@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
@@ -11,7 +10,6 @@ const REDIRECT_TIMEOUT_MS = 2000;
 const REDIRECT_TIMEOUT_SECONDS = REDIRECT_TIMEOUT_MS / 1000;
 
 export default function ProfileEditPage() {
-    const router = useRouter();
     const { data: session, status, update } = useSession();
     const isLoading = status === "loading";
     const [displayName, setDisplayName] = useState("");
