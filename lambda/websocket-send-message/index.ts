@@ -107,7 +107,7 @@ export const handler: APIGatewayProxyWebsocketHandlerV2 = async (event) => {
             }),
           })
         );
-      } catch (error: any) {
+      } catch (error: unknown) {
         // 接続が切断されている場合は無視
         const errorObj = error as { statusCode?: number };
         if (errorObj.statusCode === 410) {

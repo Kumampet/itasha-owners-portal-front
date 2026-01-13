@@ -78,7 +78,6 @@ export function useWebSocketAmplify(groupId: string | null) {
     } catch (error: unknown) {
       console.error("[WebSocket] Connection error:", error);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id, groupId]);
 
   // connect関数をrefに保存（useEffect内で更新）
@@ -110,7 +109,7 @@ export function useWebSocketAmplify(groupId: string | null) {
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [groupId, session?.user?.id, connect]);
+  }, [groupId, session?.user?.id, connect, socket]);
 
   const sendMessage = useCallback((groupId: string, message: unknown) => {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
