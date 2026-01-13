@@ -100,9 +100,9 @@ export default function MyPage() {
         }
 
         // タイトルを設定
-    document.title = "マイページ | 痛車オーナーズナビ | いたなび！";
+        document.title = "マイページ | 痛車オーナーズナビ | いたなび！";
 
-    const fetchUpcomingReminders = async () => {
+        const fetchUpcomingReminders = async () => {
             try {
                 const response = await fetch("/api/reminders");
                 if (!response.ok) {
@@ -326,12 +326,12 @@ export default function MyPage() {
                         </div>
                     </LinkCard>
 
-                    <LinkCard href="/app/notification-settings" className="hover:-translate-y-0.5 hover:shadow-md">
+                    <Card variant="muted">
                         <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
-                            {/* 通知設定アイコン */}
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-yellow-100 sm:mb-3 sm:h-14 sm:w-14">
+                            {/* 通知設定アイコン（無効状態） */}
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-zinc-100 sm:mb-3 sm:h-14 sm:w-14">
                                 <svg
-                                    className="h-6 w-6 text-yellow-600 sm:h-7 sm:w-7"
+                                    className="h-6 w-6 text-zinc-400 sm:h-7 sm:w-7"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -345,15 +345,18 @@ export default function MyPage() {
                                 </svg>
                             </div>
                             <div className="flex-1 min-w-0 sm:flex-none">
-                                <CardTitle className="mb-1 sm:mb-2">通知設定</CardTitle>
+                                <CardTitle className="mb-1 sm:mb-2 text-zinc-400">通知設定</CardTitle>
                                 <CardContent>
-                                    <p className="text-xs text-zinc-600 sm:text-sm">
-                                        プッシュ通知の設定を行えます。
+                                    <p className="text-xs text-zinc-400 sm:text-sm">
+                                        各種通知の設定を行えます。
+                                    </p>
+                                    <p className="mt-2 text-xs text-zinc-400 sm:text-sm">
+                                        現在準備中です。
                                     </p>
                                 </CardContent>
                             </div>
                         </div>
-                    </LinkCard>
+                    </Card>
 
                     <LinkCard href="/app/event-submission" className="hover:-translate-y-0.5 hover:shadow-md">
                         <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
