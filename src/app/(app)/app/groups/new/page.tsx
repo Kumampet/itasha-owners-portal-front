@@ -5,12 +5,20 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { Pagination } from "@/components/pagination";
 
 type Event = {
   id: string;
   name: string;
   theme: string | null;
   event_date: string;
+};
+
+type PaginationData = {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  limit: number;
 };
 
 function NewGroupForm() {
@@ -20,6 +28,8 @@ function NewGroupForm() {
 
   const [events, setEvents] = useState<Event[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string>(eventId || "");
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [eventLoading, setEventLoading] = useState(false);
@@ -36,6 +46,14 @@ function NewGroupForm() {
       fetchEvents();
     } else {
       fetchEvent(eventId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, currentPage]);
+
+  // eventIdが変更されたときにページを1にリセット
+  useEffect(() => {
+    if (!eventId) {
+      setCurrentPage(1);
     }
   }, [eventId]);
 
@@ -59,10 +77,16 @@ function NewGroupForm() {
   const fetchEvents = async () => {
     setEventsLoading(true);
     try {
-      const res = await fetch("/api/events");
+      const params = new URLSearchParams();
+      params.append("page", currentPage.toString());
+      params.append("limit", "10");
+      params.append("sortOrder", "asc");
+
+      const res = await fetch(`/api/events?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to fetch events");
       const data = await res.json();
       setEvents(data.events || []);
+      setPagination(data.pagination || null);
     } catch (error) {
       console.error("Failed to fetch events:", error);
       setError("イベントの取得に失敗しました");
@@ -156,42 +180,53 @@ function NewGroupForm() {
                 イベントが見つかりません
               </p>
             ) : (
-              <div className="space-y-2">
-                {events.map((event) => (
-                  <Button
-                    key={event.id}
-                    variant="secondary"
-                    size="md"
-                    rounded="md"
-                    fullWidth
-                    onClick={() => handleEventSelect(event.id)}
-                    className="p-4 text-left justify-start hover:border-zinc-900"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-zinc-900">
-                          {event.name}
-                        </p>
-                        {event.theme && (
-                          <p className="mt-1 text-xs text-zinc-500">
-                            {event.theme}
+              <>
+                <div className="space-y-2">
+                  {events.map((event) => (
+                    <Button
+                      key={event.id}
+                      variant="secondary"
+                      size="md"
+                      rounded="md"
+                      fullWidth
+                      onClick={() => handleEventSelect(event.id)}
+                      className="p-4 text-left justify-start hover:border-zinc-900"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-zinc-900">
+                            {event.name}
                           </p>
-                        )}
-                        <p className="mt-1 text-xs text-zinc-500">
-                          {new Date(event.event_date).toLocaleDateString("ja-JP", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </p>
+                          {event.theme && (
+                            <p className="mt-1 text-xs text-zinc-500">
+                              {event.theme}
+                            </p>
+                          )}
+                          <p className="mt-1 text-xs text-zinc-500">
+                            {new Date(event.event_date).toLocaleDateString("ja-JP", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </p>
+                        </div>
+                        <span className="text-xs font-semibold text-emerald-600">
+                          選択 →
+                        </span>
                       </div>
-                      <span className="text-xs font-semibold text-emerald-600">
-                        選択 →
-                      </span>
-                    </div>
-                  </Button>
-                ))}
-              </div>
+                    </Button>
+                  ))}
+                </div>
+                {pagination && pagination.totalPages > 1 && (
+                  <div className="mt-6">
+                    <Pagination
+                      currentPage={pagination.currentPage}
+                      totalPages={pagination.totalPages}
+                      onPageChange={setCurrentPage}
+                    />
+                  </div>
+                )}
+              </>
             )}
           </div>
         ) : (
