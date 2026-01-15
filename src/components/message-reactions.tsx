@@ -233,14 +233,14 @@ const EmojiPickerContainer = ({
   emojiPickerRef,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   fullEmojiPickerRef: _fullEmojiPickerRef,
-  isMobile,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  isMobile: _isMobile,
 }: EmojiPickerContainerProps) => {
   const [positionStyle, setPositionStyle] = useState<React.CSSProperties>({});
 
   // emojiPickerRefの要素のポジション情報を取得して位置を調整
   useEffect(() => {
     if (!showEmojiPicker) {
-      // 非同期で状態をリセット
       requestAnimationFrame(() => {
         setPositionStyle({});
       });
@@ -248,33 +248,22 @@ const EmojiPickerContainer = ({
     }
 
     // ピッカーが表示された後に位置を調整するため、複数のrequestAnimationFrameで遅延させる
-    const updatePosition = () => {
-      // 最初のrequestAnimationFrameでDOMのレンダリングを待つ
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        // 2回目のrequestAnimationFrameで確実にレイアウトが完了した後に位置を計算
-        requestAnimationFrame(() => {
-          if (emojiPickerRef.current && messageBubbleRef.current) {
-            const messageBubbleRect = messageBubbleRef.current.getBoundingClientRect();
-            const emojiPickerRect = emojiPickerRef.current.getBoundingClientRect();
-            const isLeftSideOverflow = emojiPickerRect.left < messageBubbleRect.left;
-            if (isLeftSideOverflow) {
-              if (isMobile) {
-                const offset = emojiPickerRect.left - 10;
-                setPositionStyle({ right: `${Math.abs(offset) + 10}px` });
-              } else {
-                const offset = messageBubbleRect.left - emojiPickerRect.left;
-                setPositionStyle({ right: `-${Math.abs(offset) + 10}px` });
-              }
-            } else {
-              setPositionStyle({});
-            }
+        if (emojiPickerRef.current && messageBubbleRef.current) {
+          const messageBubbleRect = messageBubbleRef.current.getBoundingClientRect();
+          const emojiPickerRect = emojiPickerRef.current.getBoundingClientRect();
+          const isLeftSideOverflow = emojiPickerRect.left < messageBubbleRect.left;
+          if (isLeftSideOverflow) {
+            const offset = messageBubbleRect.left - emojiPickerRect.left;
+            setPositionStyle({ right: `-${Math.abs(offset) + 10}px` });
+          } else {
+            setPositionStyle({});
           }
-        });
+        }
       });
-    };
-
-    updatePosition();
-  }, [showEmojiPicker, emojiPickerRef, messageBubbleRef, isMobile]);
+    });
+  }, [showEmojiPicker, emojiPickerRef, messageBubbleRef]);
 
   if (!showEmojiPicker) return null;
 
