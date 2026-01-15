@@ -56,6 +56,17 @@ export async function GET(
             email: true,
           },
         },
+        reactions: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                display_name: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
         created_at: "asc",
@@ -64,18 +75,47 @@ export async function GET(
 
     // リアルタイム性が重要なのでキャッシュを無効にする
     return NextResponse.json(
-      messages.map((msg) => ({
-        id: msg.id,
-        content: msg.content,
-        isAnnouncement: msg.is_announcement,
-        sender: {
-          id: msg.sender.id,
-          name: msg.sender.name,
-          displayName: msg.sender.display_name,
-          email: msg.sender.email,
-        },
-        createdAt: msg.created_at,
-      })),
+      messages.map((msg) => {
+        // リアクションを絵文字ごとに集計
+        const reactionMap = new Map<string, Array<{ userId: string; userName: string | null; displayName: string | null }>>();
+        
+        msg.reactions.forEach((reaction) => {
+          const emoji = reaction.emoji;
+          if (!reactionMap.has(emoji)) {
+            reactionMap.set(emoji, []);
+          }
+          reactionMap.get(emoji)!.push({
+            userId: reaction.user.id,
+            userName: reaction.user.name,
+            displayName: reaction.user.display_name,
+          });
+        });
+
+        // リアクションを配列に変換（絵文字ごとに集計）
+        const reactions = Array.from(reactionMap.entries()).map(([emoji, users]) => ({
+          emoji,
+          count: users.length,
+          users: users.map((u) => ({
+            id: u.userId,
+            name: u.userName,
+            displayName: u.displayName,
+          })),
+        }));
+
+        return {
+          id: msg.id,
+          content: msg.content,
+          isAnnouncement: msg.is_announcement,
+          sender: {
+            id: msg.sender.id,
+            name: msg.sender.name,
+            displayName: msg.sender.display_name,
+            email: msg.sender.email,
+          },
+          createdAt: msg.created_at,
+          reactions,
+        };
+      }),
       {
         headers: {
           "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -252,6 +292,7 @@ export async function POST(
     //   }
     // }
 
+    // リアクション情報を取得（新規メッセージなので空配列）
     return NextResponse.json({
       id: message.id,
       content: message.content,
@@ -259,9 +300,11 @@ export async function POST(
       sender: {
         id: message.sender.id,
         name: message.sender.name,
+        displayName: message.sender.display_name,
         email: message.sender.email,
       },
       createdAt: message.created_at,
+      reactions: [],
     });
   } catch (error) {
     console.error("Error creating message:", error);

@@ -44,6 +44,7 @@ model User {
   groups_leading       Group[]            @relation("GroupLeader") // リーダーを務める団体
   group_messages       GroupMessage[]     @relation("GroupMessageSender") // 団体メッセージの履歴
   group_message_reads  GroupMessageRead[] @relation("GroupMessageReadUser") // 団体メッセージの既読情報
+  group_message_reactions GroupMessageReaction[] @relation("GroupMessageReactionUser") // 団体メッセージのリアクション
   event_follows        EventFollow[] // フォローしているイベント
   user_groups          UserGroup[] // 参加している団体（複数対応）
 
@@ -285,6 +286,9 @@ model GroupMessage {
   // 既読情報
   reads GroupMessageRead[]
 
+  // リアクション情報
+  reactions GroupMessageReaction[]
+
   @@map("group_messages")
 }
 
@@ -302,6 +306,23 @@ model GroupMessageRead {
   @@index([user_id])
   @@index([message_id])
   @@map("group_message_reads")
+}
+
+// 団体メッセージのリアクション
+model GroupMessageReaction {
+  id         String       @id @default(uuid()) @db.VarChar(36)
+  message    GroupMessage @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  message_id String       @db.VarChar(36)
+  user       User         @relation("GroupMessageReactionUser", fields: [user_id], references: [id], onDelete: Cascade)
+  user_id    String       @db.VarChar(36)
+  emoji      String       @db.VarChar(10) // 絵文字（Unicode文字列、最大10文字）
+
+  created_at DateTime @default(now())
+
+  @@unique([message_id, user_id, emoji]) // 同一ユーザーは同じメッセージに同じ絵文字を1つだけ付けられる
+  @@index([message_id])
+  @@index([user_id])
+  @@map("group_message_reactions")
 }
 
 // タグマスター
