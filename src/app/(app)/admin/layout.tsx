@@ -106,17 +106,18 @@ function SidebarContent({ onLinkClick, pathname, session }: SidebarContentProps)
               );
             })}
         </div>
+        <div className="mt-4 border-t border-zinc-200 pt-4">
+          <div className="mb-2 text-xs text-zinc-600">{session.user.email}</div>
+          <Link
+            href="/app/mypage"
+            className="flex items-center gap-2 text-xs text-zinc-600 hover:text-zinc-900"
+            onClick={onLinkClick}
+          >
+            <span>🔙</span>
+            <span>アプリに戻る</span>
+          </Link>
+        </div>
       </nav>
-      <div className="border-t border-zinc-200 p-4">
-        <div className="mb-2 text-xs text-zinc-600">{session.user.email}</div>
-        <Link
-          href="/app/mypage"
-          className="text-xs text-zinc-600 hover:text-zinc-900"
-          onClick={onLinkClick}
-        >
-          アプリに戻る
-        </Link>
-      </div>
     </div>
   );
 }
@@ -217,7 +218,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* サイドバー（モバイル版 - lg未満でハンバーガーメニュー） */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen w-64 border-r border-zinc-200 bg-white transition-transform duration-300 ease-in-out lg:hidden ${isMenuOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 left-0 z-50 h-screen w-64 border-r border-zinc-200 bg-white transition-transform duration-300 ease-in-out lg:hidden overflow-y-auto ${isMenuOpen ? "translate-x-0" : "-translate-x-full"
           }`}
       >
         <div className="flex h-full flex-col">
