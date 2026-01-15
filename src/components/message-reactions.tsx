@@ -130,12 +130,14 @@ const QuickEmojiPicker = ({
   reactions,
   currentUserId,
   onEmojiClick,
-  onShowFullPicker,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onShowFullPicker: _onShowFullPicker,
   className = "",
   gridClassName = "grid grid-cols-7 gap-1.5",
   buttonClassName = "text-xl hover:bg-zinc-100 rounded p-.5 transition-colors flex items-center justify-center",
   activeButtonClassName = "bg-blue-50",
-  ellipsisButtonClassName = "text-lg hover:bg-zinc-100 rounded p-2 transition-colors flex items-center justify-center text-zinc-500",
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  ellipsisButtonClassName: _ellipsisButtonClassName,
 }: QuickEmojiPickerProps) => {
   return (
     <div className={className}>
@@ -233,25 +235,46 @@ const EmojiPickerContainer = ({
   fullEmojiPickerRef: _fullEmojiPickerRef,
   isMobile,
 }: EmojiPickerContainerProps) => {
+  const [positionStyle, setPositionStyle] = useState<React.CSSProperties>({});
 
-  const updatePosition = () => {
-    if (emojiPickerRef.current && messageBubbleRef.current) {
-      const messageBubbleRect = messageBubbleRef.current?.getBoundingClientRect();
-      const emojiPickerRect = emojiPickerRef.current.getBoundingClientRect();
-      const isLeftSideOverflow = emojiPickerRect.left < messageBubbleRect.left;
-      if (isLeftSideOverflow) {
-        if (isMobile) {
-          const offset = emojiPickerRect.left - 10;
-          return { right: `${Math.abs(offset) + 10}px` };
-        } else {
-          const offset = messageBubbleRect.left - emojiPickerRect.left;
-          return { right: `-${Math.abs(offset) + 10}px` };
-        }
-      } else {
-        return {};
-      }
+  // emojiPickerRefの要素のポジション情報を取得して位置を調整
+  useEffect(() => {
+    if (!showEmojiPicker) {
+      // 非同期で状態をリセット
+      requestAnimationFrame(() => {
+        setPositionStyle({});
+      });
+      return;
     }
-  };
+
+    // ピッカーが表示された後に位置を調整するため、複数のrequestAnimationFrameで遅延させる
+    const updatePosition = () => {
+      // 最初のrequestAnimationFrameでDOMのレンダリングを待つ
+      requestAnimationFrame(() => {
+        // 2回目のrequestAnimationFrameで確実にレイアウトが完了した後に位置を計算
+        requestAnimationFrame(() => {
+          if (emojiPickerRef.current && messageBubbleRef.current) {
+            const messageBubbleRect = messageBubbleRef.current.getBoundingClientRect();
+            const emojiPickerRect = emojiPickerRef.current.getBoundingClientRect();
+            const isLeftSideOverflow = emojiPickerRect.left < messageBubbleRect.left;
+            if (isLeftSideOverflow) {
+              if (isMobile) {
+                const offset = emojiPickerRect.left - 10;
+                setPositionStyle({ right: `${Math.abs(offset) + 10}px` });
+              } else {
+                const offset = messageBubbleRect.left - emojiPickerRect.left;
+                setPositionStyle({ right: `-${Math.abs(offset) + 10}px` });
+              }
+            } else {
+              setPositionStyle({});
+            }
+          }
+        });
+      });
+    };
+
+    updatePosition();
+  }, [showEmojiPicker, emojiPickerRef, messageBubbleRef, isMobile]);
 
   if (!showEmojiPicker) return null;
 
@@ -261,7 +284,7 @@ const EmojiPickerContainer = ({
       data-emoji-picker
       className={`absolute top-full right-0 z-[9999] bg-white border border-zinc-200 rounded-lg shadow-lg p-1 mt-1 w-max`}
       aria-label="よく使う絵文字ピッカー"
-      style={updatePosition()}
+      style={positionStyle}
     >
       <QuickEmojiPicker
         reactions={reactions}
