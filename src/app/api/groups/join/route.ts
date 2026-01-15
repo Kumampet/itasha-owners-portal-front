@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { groupCode } = body;
+    const { groupCode, force } = body;
 
     if (!groupCode) {
       return NextResponse.json(
@@ -85,7 +85,17 @@ export async function POST(request: Request) {
     let warningMessage: string | null = null;
     if (otherUserGroupsInSameEvent.length > 0) {
       const groupNames = otherUserGroupsInSameEvent.map((ug: { group: { name: string } }) => ug.group.name).join("、");
-      warningMessage = `既に同じイベントの他の団体（${groupNames}）に参加しています。`;
+      const eventName = group.event.name;
+      warningMessage = `既に同一イベント（${eventName}）の他の団体（${groupNames}）に参加しています。`;
+
+      // 警告がある場合、forceパラメータがない限り、加入処理を中断して警告を返す
+      if (!force) {
+        return NextResponse.json({
+          warning: warningMessage,
+          requiresConfirmation: true,
+          groupId: group.id,
+        });
+      }
     }
 
     // 最大メンバー数チェック（UserGroupテーブルを使用）

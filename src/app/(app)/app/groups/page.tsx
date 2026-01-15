@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Card } from "@/components/card";
 import { Button } from "@/components/button";
+import { GroupJoinWarningModal } from "@/components/group-join-warning-modal";
 
 type Group = {
   id: string;
@@ -36,6 +37,9 @@ export default function GroupsPage() {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [groupCode, setGroupCode] = useState("");
   const [joining, setJoining] = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [warningMessage, setWarningMessage] = useState<string>("");
+  const [pendingGroupCode, setPendingGroupCode] = useState<string>("");
 
   useEffect(() => {
     document.title = "団体管理 | 痛車オーナーズナビ | いたなび！";
@@ -50,8 +54,9 @@ export default function GroupsPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleJoinGroup = async () => {
-    if (!groupCode || groupCode.length !== 8) {
+  const handleJoinGroup = async (force = false) => {
+    const codeToUse = pendingGroupCode || groupCode;
+    if (!codeToUse || codeToUse.length !== 8) {
       alert("8桁の団体コードを入力してください");
       return;
     }
@@ -62,7 +67,8 @@ export default function GroupsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          groupCode: groupCode,
+          groupCode: codeToUse,
+          force: force,
         }),
       });
 
@@ -73,9 +79,13 @@ export default function GroupsPage() {
 
       const data = await res.json();
 
-      // 警告メッセージがある場合は表示
-      if (data.warning) {
-        alert(data.warning);
+      // 警告メッセージがあり、確認が必要な場合
+      if (data.warning && data.requiresConfirmation && !force) {
+        setWarningMessage(data.warning);
+        setPendingGroupCode(codeToUse);
+        setShowWarningModal(true);
+        setJoining(false);
+        return;
       }
 
       // 団体一覧を再取得
@@ -84,6 +94,8 @@ export default function GroupsPage() {
       router.push(`/app/groups/${data.groupId}`);
       setShowJoinModal(false);
       setGroupCode("");
+      setPendingGroupCode("");
+      setShowWarningModal(false);
     } catch (error) {
       alert(
         error instanceof Error ? error.message : "団体への加入に失敗しました"
@@ -91,6 +103,11 @@ export default function GroupsPage() {
     } finally {
       setJoining(false);
     }
+  };
+
+  const handleConfirmJoin = () => {
+    setShowWarningModal(false);
+    handleJoinGroup(true);
   };
 
   const fetchGroups = async () => {
@@ -292,7 +309,7 @@ export default function GroupsPage() {
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      onClick={handleJoinGroup}
+                      onClick={() => handleJoinGroup(false)}
                       variant="primary"
                       size="sm"
                       disabled={joining || groupCode.length !== 8}
@@ -327,6 +344,15 @@ export default function GroupsPage() {
           </section> */}
         </div>
       </section>
+      <GroupJoinWarningModal
+        isOpen={showWarningModal}
+        onClose={() => {
+          setShowWarningModal(false);
+          setPendingGroupCode("");
+        }}
+        onConfirm={handleConfirmJoin}
+        warningMessage={warningMessage}
+      />
     </main>
   );
 }

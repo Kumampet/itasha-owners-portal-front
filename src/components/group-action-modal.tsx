@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "./button";
+import { GroupJoinWarningModal } from "./group-join-warning-modal";
 
 type GroupActionModalProps = {
   isOpen: boolean;
@@ -16,6 +17,10 @@ export function GroupActionModal({
   const router = useRouter();
   const [action, setAction] = useState<"create" | "join" | null>(null);
   const [groupCode, setGroupCode] = useState("");
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [warningMessage, setWarningMessage] = useState<string>("");
+  const [pendingGroupCode, setPendingGroupCode] = useState<string>("");
+  const [joining, setJoining] = useState(false);
 
   if (!isOpen) return null;
 
@@ -24,18 +29,21 @@ export function GroupActionModal({
     onClose();
   };
 
-  const handleJoin = async () => {
-    if (!groupCode || groupCode.length !== 8) {
+  const handleJoin = async (force = false) => {
+    const codeToUse = pendingGroupCode || groupCode;
+    if (!codeToUse || codeToUse.length !== 8) {
       alert("8桁の団体コードを入力してください");
       return;
     }
 
+    setJoining(true);
     try {
       const res = await fetch("/api/groups/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          groupCode,
+          groupCode: codeToUse,
+          force: force,
         }),
       });
 
@@ -45,19 +53,33 @@ export function GroupActionModal({
       }
 
       const data = await res.json();
-      
-      // 警告メッセージがある場合は表示
-      if (data.warning) {
-        alert(data.warning);
+
+      // 警告メッセージがあり、確認が必要な場合
+      if (data.warning && data.requiresConfirmation && !force) {
+        setWarningMessage(data.warning);
+        setPendingGroupCode(codeToUse);
+        setShowWarningModal(true);
+        setJoining(false);
+        return;
       }
-      
+
       router.push(`/app/groups/${data.groupId}`);
       onClose();
+      setGroupCode("");
+      setPendingGroupCode("");
+      setShowWarningModal(false);
     } catch (error) {
       alert(
         error instanceof Error ? error.message : "団体への加入に失敗しました"
       );
+    } finally {
+      setJoining(false);
     }
+  };
+
+  const handleConfirmJoin = () => {
+    setShowWarningModal(false);
+    handleJoin(true);
   };
 
   return (
@@ -151,10 +173,10 @@ export function GroupActionModal({
                 size="md"
                 rounded="md"
                 className="flex-1"
-                onClick={handleJoin}
-                disabled={groupCode.length !== 8}
+                onClick={() => handleJoin(false)}
+                disabled={joining || groupCode.length !== 8}
               >
-                加入する
+                {joining ? "加入中..." : "加入する"}
               </Button>
               <Button
                 variant="secondary"
@@ -171,6 +193,15 @@ export function GroupActionModal({
           </>
         )}
       </div>
+      <GroupJoinWarningModal
+        isOpen={showWarningModal}
+        onClose={() => {
+          setShowWarningModal(false);
+          setPendingGroupCode("");
+        }}
+        onConfirm={handleConfirmJoin}
+        warningMessage={warningMessage}
+      />
     </div>
   );
 }
