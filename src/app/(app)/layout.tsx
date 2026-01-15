@@ -160,8 +160,9 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
                   // ログアウト処理
                   await signOut({ redirect: false });
 
-                  // 明示的にリダイレクト
-                  router.push(redirectUrl);
+                  // 完全なページリロードを行い、サーバーサイドのミドルウェアが確実に実行されるようにする
+                  // これにより、セッションがクリアされた状態でログインページにアクセスできる
+                  window.location.href = redirectUrl;
                 }}
                 className="mt-2 text-[10px] rounded-md border border-zinc-300 bg-white px-2 py-1 text-zinc-700 hover:bg-zinc-100"
               >
