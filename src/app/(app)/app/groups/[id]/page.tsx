@@ -9,7 +9,8 @@ import { TransferOwnershipModal } from "@/components/transfer-ownership-modal";
 import { Button } from "@/components/button";
 import { Tabs, Tab } from "@/components/tabs";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { SafeMessageContent } from "@/components/safe-message-content";
+import { MessageBubble } from "@/components/message-bubble";
+import { MessageReactions } from "@/components/message-reactions";
 
 type GroupDetail = {
   id: string;
@@ -40,6 +41,18 @@ type GroupDetail = {
   createdAt: string;
 };
 
+type ReactionUser = {
+  id: string;
+  name: string | null;
+  displayName: string | null;
+};
+
+type Reaction = {
+  emoji: string;
+  count: number;
+  users: ReactionUser[];
+};
+
 type GroupMessage = {
   id: string;
   content: string;
@@ -51,6 +64,7 @@ type GroupMessage = {
     email: string;
   };
   createdAt: string;
+  reactions?: Reaction[];
 };
 
 export default function GroupDetailPage({
@@ -76,6 +90,24 @@ export default function GroupDetailPage({
   const [targetMemberId, setTargetMemberId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+  const [openEmojiPickerMessageId, setOpenEmojiPickerMessageId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 640;
+    }
+    return false;
+  });
+
+  // モバイル判定
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const fetchGroup = useCallback(async () => {
     try {
@@ -94,7 +126,7 @@ export default function GroupDetailPage({
     }
   }, [id]);
 
-  const fetchMessages = useCallback(async (isInitialLoad = false) => {
+  const fetchMessages = useCallback(async (isInitialLoad = false, forceUpdate = false) => {
     if (isInitialLoad) {
       setMessagesLoading(true);
     }
@@ -104,11 +136,17 @@ export default function GroupDetailPage({
         throw new Error("Failed to fetch messages");
       }
       const data = await res.json();
-      
+
       // 初回読み込み時はそのまま更新（スクロールはuseEffectで処理）
       if (isInitialLoad) {
         setMessages(data);
         setMessagesLoading(false);
+        return;
+      }
+
+      // 強制更新時（リアクション追加など）は即座に更新
+      if (forceUpdate) {
+        setMessages(data);
         return;
       }
 
@@ -120,7 +158,7 @@ export default function GroupDetailPage({
 
         const currentMessageIds = new Set(currentMessages.map(m => m.id));
         const newMessages = data.filter((msg: GroupMessage) => !currentMessageIds.has(msg.id));
-        
+
         if (newMessages.length === 0) {
           // 新規メッセージがない場合は更新しない
           return currentMessages;
@@ -619,37 +657,42 @@ export default function GroupDetailPage({
                     // メッセージを表示（古い順）
                     messages.map((message) => {
                       const isOwnMessage = message.sender.id === session?.user?.id;
+                      const isHovered = hoveredMessageId === message.id;
                       return (
                         <div
                           key={message.id}
-                          className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"}`}
+                          className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"} relative`}
                         >
-                          <div
-                            className={`max-w-[75vw] sm:max-w-[75%] rounded-2xl px-4 py-2 break-words ${isOwnMessage
-                              ? message.isAnnouncement
-                                ? "bg-emerald-500 text-white"
-                                : "bg-zinc-900 text-white"
-                              : message.isAnnouncement
-                                ? "bg-emerald-50 border border-emerald-200 text-zinc-900"
-                                : "bg-zinc-100 text-zinc-900"
-                              }`}
-                          >
-                            {message.isAnnouncement && (
-                              <p className="text-xs font-medium mb-1 opacity-80">
-                                一斉連絡
-                              </p>
-                            )}
-                            <SafeMessageContent
-                              content={message.content}
-                              className={`text-sm whitespace-pre-wrap break-words ${isOwnMessage ? "text-white" : "text-zinc-700"}`}
-                              linkClassName={isOwnMessage ? "text-white" : "text-blue-600"}
-                            />
-                          </div>
-                          <div className={`mt-1 px-1 ${isOwnMessage ? "text-right" : "text-left"}`}>
-                            <p className="text-xs text-zinc-500">
-                              {truncateName(message.sender.displayName || message.sender.name)} {formatDateTime(message.createdAt)}
-                            </p>
-                          </div>
+                          <MessageBubble
+                            messageId={message.id}
+                            groupId={id}
+                            content={message.content}
+                            isAnnouncement={message.isAnnouncement}
+                            isOwnMessage={isOwnMessage}
+                            reactions={message.reactions || []}
+                            sender={{
+                              displayName: message.sender.displayName,
+                              name: message.sender.name,
+                            }}
+                            createdAt={message.createdAt}
+                            isMobile={isMobile}
+                            isHovered={isHovered}
+                            openEmojiPickerMessageId={openEmojiPickerMessageId}
+                            hoveredMessageId={hoveredMessageId}
+                            onReactionChange={() => fetchMessages(false, true)}
+                            onHoverChange={setHoveredMessageId}
+                            onEmojiPickerOpenChange={(messageId, isOpen) => {
+                              if (isOpen) {
+                                setOpenEmojiPickerMessageId(messageId);
+                              } else {
+                                setOpenEmojiPickerMessageId(null);
+                                // ホバー状態も解除
+                                // if (hoveredMessageId === messageId) {
+                                //   setHoveredMessageId(null);
+                                // }
+                              }
+                            }}
+                          />
                         </div>
                       );
                     })
@@ -757,6 +800,7 @@ export default function GroupDetailPage({
               confirmLabel="削除する"
               cancelLabel="キャンセル"
             />
+
           </>
         )}
       </section>
