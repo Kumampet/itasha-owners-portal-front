@@ -17,14 +17,14 @@ type AppLayoutProps = {
 };
 
 const tabs = [
-  { href: "/app/mypage", label: "マイページ", key: "mypage" },
-  { href: "/events", label: "イベント一覧", key: "events" },
-  { href: "/app/watchlist", label: "ウォッチリスト", key: "watchlist", requiresAuth: true },
-  { href: "/app/reminder", label: "リマインダー管理", key: "reminder", requiresAuth: true },
-  { href: "/app/groups", label: "団体管理", key: "groups", requiresAuth: true },
-  { href: "/app/event-submission", label: "イベント掲載依頼", key: "event-submission" },
-  { href: "/app/organizer-application", label: "オーガナイザー登録申請", key: "organizer-application" },
-  { href: "/app/contact", label: "お問い合わせ", key: "contact" },
+  { href: "/app/mypage", label: "マイページ", key: "mypage", icon: "👤" },
+  { href: "/events", label: "イベント一覧", key: "events", icon: "📅" },
+  { href: "/app/watchlist", label: "ウォッチリスト", key: "watchlist", requiresAuth: true, icon: "⭐" },
+  { href: "/app/reminder", label: "リマインダー管理", key: "reminder", requiresAuth: true, icon: "⏰" },
+  { href: "/app/groups", label: "団体管理", key: "groups", requiresAuth: true, icon: "👥" },
+  { href: "/app/event-submission", label: "イベント掲載依頼", key: "event-submission", icon: "📝" },
+  { href: "/app/organizer-application", label: "オーガナイザー登録申請", key: "organizer-application", icon: "📋" },
+  { href: "/app/contact", label: "お問い合わせ", key: "contact", icon: "💬" },
 ];
 
 function resolveActiveKey(pathname: string) {
@@ -99,7 +99,7 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
       )}
       {/* サイドメニュー */}
       <aside
-        className={`fixed top-0 left-0 z-50 flex h-screen w-56 flex-col border-r border-zinc-100 bg-white px-4 py-6 transition-transform duration-300 ease-in-out sm:sticky sm:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 left-0 z-50 flex h-screen w-56 flex-col border-r border-zinc-100 bg-white px-4 py-6 transition-transform duration-300 ease-in-out sm:sticky sm:translate-x-0 overflow-y-auto ${isOpen ? "translate-x-0" : "-translate-x-full"
           }`}
       >
         {/* 閉じるボタン（SP版のみ） */}
@@ -193,30 +193,32 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
                 key={tab.href}
                 href={tab.href}
                 onClick={(e) => handleNavClick(e, tab.href)}
-                className={`block rounded-lg px-3 py-2 ${isActive
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 ${isActive
                   ? "bg-zinc-900 text-white"
                   : "text-zinc-700 hover:bg-zinc-50"
                   }`}
               >
-                {tab.label}
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
               </Link>
             );
           })}
-        </nav>
         {(session?.user?.role === "ADMIN" || session?.user?.role === "ORGANIZER") && (
-          <div className="mt-auto border-t border-zinc-200 pt-4">
+          <div className="mt-4 border-t border-zinc-200 pt-4">
             <Link
               href="/admin/dashboard"
               onClick={(e) => handleNavClick(e, "/admin/dashboard")}
-              className={`block rounded-lg px-3 py-2 text-sm ${pathname?.startsWith("/admin")
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${pathname?.startsWith("/admin")
                 ? "bg-zinc-900 text-white"
                 : "text-zinc-700 hover:bg-zinc-50"
                 }`}
             >
-              オーガナイザー機能
+              <span>📊</span>
+              <span>オーガナイザー機能</span>
             </Link>
           </div>
         )}
+        </nav>
       </aside>
     </>
   );
