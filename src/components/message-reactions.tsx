@@ -221,10 +221,12 @@ const EmojiPickerContainer = ({
   currentUserId,
   onEmojiClick,
   showEmojiPicker,
-  showFullEmojiPicker,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  showFullEmojiPicker: _showFullEmojiPicker,
   onShowFullPicker,
   emojiPickerRef,
-  fullEmojiPickerRef,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  fullEmojiPickerRef: _fullEmojiPickerRef,
 }: EmojiPickerContainerProps) => {
   const [positionStyle, setPositionStyle] = useState<React.CSSProperties>({});
 
@@ -274,7 +276,7 @@ const EmojiPickerContainer = ({
         onShowFullPicker={onShowFullPicker}
       />
       {/* フル絵文字ピッカー */}
-      {showFullEmojiPicker && (
+      {/* {showFullEmojiPicker && (
         <div className="absolute top-full right-0 mt-2 z-50">
           <FullEmojiPicker
             onEmojiClick={onEmojiClick}
@@ -282,7 +284,7 @@ const EmojiPickerContainer = ({
             innerRef={fullEmojiPickerRef}
           />
         </div>
-      )}
+      )} */}
     </div>
   );
 };
