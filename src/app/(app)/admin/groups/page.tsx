@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import ConfirmModal from "@/components/confirm-modal";
+import { SafeMessageContent } from "@/components/safe-message-content";
 
 type Group = {
   id: string;
@@ -415,9 +416,11 @@ export default function AdminGroupsPage() {
                                 </span>
                               )}
                             </div>
-                            <p className="mt-1 text-xs text-zinc-700 whitespace-pre-wrap break-words">
-                              {message.content}
-                            </p>
+                            <SafeMessageContent
+                              content={message.content}
+                              className="mt-1 text-xs text-zinc-700 whitespace-pre-wrap break-words"
+                              linkClassName="text-blue-600"
+                            />
                             <p className="mt-1 text-xs text-zinc-500">
                               {formatDateTime(message.createdAt)}
                             </p>

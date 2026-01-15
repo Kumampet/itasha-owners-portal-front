@@ -9,6 +9,7 @@ import { TransferOwnershipModal } from "@/components/transfer-ownership-modal";
 import { Button } from "@/components/button";
 import { Tabs, Tab } from "@/components/tabs";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { SafeMessageContent } from "@/components/safe-message-content";
 
 type GroupDetail = {
   id: string;
@@ -638,12 +639,11 @@ export default function GroupDetailPage({
                                 一斉連絡
                               </p>
                             )}
-                            <p
-                              className={`text-sm whitespace-pre-wrap break-words ${isOwnMessage ? "text-white" : "text-zinc-700"
-                                }`}
-                            >
-                              {message.content}
-                            </p>
+                            <SafeMessageContent
+                              content={message.content}
+                              className={`text-sm whitespace-pre-wrap break-words ${isOwnMessage ? "text-white" : "text-zinc-700"}`}
+                              linkClassName={isOwnMessage ? "text-white" : "text-blue-600"}
+                            />
                           </div>
                           <div className={`mt-1 px-1 ${isOwnMessage ? "text-right" : "text-left"}`}>
                             <p className="text-xs text-zinc-500">
