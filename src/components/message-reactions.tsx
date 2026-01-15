@@ -214,8 +214,6 @@ type EmojiPickerContainerProps = {
   onShowFullPicker: () => void;
   emojiPickerRef: React.RefObject<HTMLDivElement | null>;
   fullEmojiPickerRef: React.RefObject<HTMLDivElement | null>;
-  containerRef?: React.RefObject<HTMLDivElement | null>;
-  isMobile?: boolean;
 };
 
 const EmojiPickerContainer = ({
@@ -227,15 +225,16 @@ const EmojiPickerContainer = ({
   onShowFullPicker,
   emojiPickerRef,
   fullEmojiPickerRef,
-  containerRef: _containerRef,
-  isMobile: _isMobile = false,
 }: EmojiPickerContainerProps) => {
   const [positionStyle, setPositionStyle] = useState<React.CSSProperties>({});
 
   // emojiPickerRefの要素のポジション情報を取得して位置を調整
   useEffect(() => {
     if (!showEmojiPicker) {
-      setPositionStyle({});
+      // 非同期で状態をリセット
+      requestAnimationFrame(() => {
+        setPositionStyle({});
+      });
       return;
     }
 
@@ -483,8 +482,6 @@ export function MessageReactions({
           }}
           emojiPickerRef={emojiPickerRef}
           fullEmojiPickerRef={fullEmojiPickerRef}
-          containerRef={containerRef}
-          isMobile={isMobile}
         />
       </div>
     );
@@ -507,8 +504,6 @@ export function MessageReactions({
           }}
           emojiPickerRef={emojiPickerRef}
           fullEmojiPickerRef={fullEmojiPickerRef}
-          containerRef={containerRef}
-          isMobile={isMobile}
         />
       </div>
     );
