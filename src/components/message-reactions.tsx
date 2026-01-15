@@ -227,22 +227,36 @@ const EmojiPickerContainer = ({
   onShowFullPicker,
   emojiPickerRef,
   fullEmojiPickerRef,
-  containerRef,
-  isMobile = false,
+  containerRef: _containerRef,
+  isMobile: _isMobile = false,
 }: EmojiPickerContainerProps) => {
-  // emojiPickerRefの要素のポジション情報を取得する例
-  const getPickerPosition = () => {
-    if (emojiPickerRef.current) {
-      const emojiPickerRect = emojiPickerRef.current.getBoundingClientRect();
-      const isLeftSideOverflow = emojiPickerRect.left < 10;
+  const [positionStyle, setPositionStyle] = useState<React.CSSProperties>({});
 
-      if (isLeftSideOverflow) {
-        const a = emojiPickerRect.left - 10;
-        return { right: `${a - 10}px` };
-      }
-      return {};
+  // emojiPickerRefの要素のポジション情報を取得して位置を調整
+  useEffect(() => {
+    if (!showEmojiPicker) {
+      setPositionStyle({});
+      return;
     }
-  };
+
+    const updatePosition = () => {
+      requestAnimationFrame(() => {
+        if (emojiPickerRef.current) {
+          const emojiPickerRect = emojiPickerRef.current.getBoundingClientRect();
+          const isLeftSideOverflow = emojiPickerRect.left < 10;
+
+          if (isLeftSideOverflow) {
+            const offset = emojiPickerRect.left - 10;
+            setPositionStyle({ right: `${Math.abs(offset) + 10}px` });
+          } else {
+            setPositionStyle({});
+          }
+        }
+      });
+    };
+
+    updatePosition();
+  }, [showEmojiPicker, emojiPickerRef]);
 
   if (!showEmojiPicker) return null;
 
@@ -252,7 +266,7 @@ const EmojiPickerContainer = ({
       data-emoji-picker
       className={`absolute top-full right-0 z-[9999] bg-white border border-zinc-200 rounded-lg shadow-lg p-1 mt-1 w-max`}
       aria-label="よく使う絵文字ピッカー"
-      style={getPickerPosition()}
+      style={positionStyle}
     >
       <QuickEmojiPicker
         reactions={reactions}

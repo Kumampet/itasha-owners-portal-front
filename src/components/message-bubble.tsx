@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
 import { SafeMessageContent } from "@/components/safe-message-content";
 import { MessageReactions } from "@/components/message-reactions";
 
