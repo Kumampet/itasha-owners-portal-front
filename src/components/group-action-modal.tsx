@@ -45,6 +45,12 @@ export function GroupActionModal({
       }
 
       const data = await res.json();
+      
+      // 警告メッセージがある場合は表示
+      if (data.warning) {
+        alert(data.warning);
+      }
+      
       router.push(`/app/groups/${data.groupId}`);
       onClose();
     } catch (error) {

@@ -72,6 +72,12 @@ export default function GroupsPage() {
       }
 
       const data = await res.json();
+      
+      // 警告メッセージがある場合は表示
+      if (data.warning) {
+        alert(data.warning);
+      }
+      
       // 団体一覧を再取得
       await fetchGroups();
       // 加入した団体の詳細ページに遷移
