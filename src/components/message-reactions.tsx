@@ -23,6 +23,7 @@ type Reaction = {
 };
 
 type MessageReactionsProps = {
+  messageBubbleRef: React.RefObject<HTMLDivElement | null>;
   messageId: string;
   groupId: string;
   reactions: Reaction[];
@@ -156,13 +157,13 @@ const QuickEmojiPicker = ({
           );
         })}
         {/* 3点リーダー - フル絵文字ピッカーを開く */}
-        <button
+        {/* <button
           onClick={onShowFullPicker}
           className={ellipsisButtonClassName}
           aria-label="その他の絵文字を選択"
         >
           ...
-        </button>
+        </button> */}
       </div>
     </div>
   );
@@ -206,6 +207,7 @@ const FullEmojiPicker = ({
 
 // 絵文字ピッカーコンテナコンポーネント
 type EmojiPickerContainerProps = {
+  messageBubbleRef: React.RefObject<HTMLDivElement | null>;
   reactions: Reaction[];
   currentUserId: string | undefined;
   onEmojiClick: (emoji: string) => void;
@@ -214,9 +216,11 @@ type EmojiPickerContainerProps = {
   onShowFullPicker: () => void;
   emojiPickerRef: React.RefObject<HTMLDivElement | null>;
   fullEmojiPickerRef: React.RefObject<HTMLDivElement | null>;
+  isMobile?: boolean;
 };
 
 const EmojiPickerContainer = ({
+  messageBubbleRef,
   reactions,
   currentUserId,
   onEmojiClick,
@@ -227,37 +231,27 @@ const EmojiPickerContainer = ({
   emojiPickerRef,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   fullEmojiPickerRef: _fullEmojiPickerRef,
+  isMobile,
 }: EmojiPickerContainerProps) => {
-  const [positionStyle, setPositionStyle] = useState<React.CSSProperties>({});
 
-  // emojiPickerRefの要素のポジション情報を取得して位置を調整
-  useEffect(() => {
-    if (!showEmojiPicker) {
-      // 非同期で状態をリセット
-      requestAnimationFrame(() => {
-        setPositionStyle({});
-      });
-      return;
-    }
-
-    const updatePosition = () => {
-      requestAnimationFrame(() => {
-        if (emojiPickerRef.current) {
-          const emojiPickerRect = emojiPickerRef.current.getBoundingClientRect();
-          const isLeftSideOverflow = emojiPickerRect.left < 10;
-
-          if (isLeftSideOverflow) {
-            const offset = emojiPickerRect.left - 10;
-            setPositionStyle({ right: `${Math.abs(offset) + 10}px` });
-          } else {
-            setPositionStyle({});
-          }
+  const updatePosition = () => {
+    if (emojiPickerRef.current && messageBubbleRef.current) {
+      const messageBubbleRect = messageBubbleRef.current?.getBoundingClientRect();
+      const emojiPickerRect = emojiPickerRef.current.getBoundingClientRect();
+      const isLeftSideOverflow = emojiPickerRect.left < messageBubbleRect.left;
+      if (isLeftSideOverflow) {
+        if (isMobile) {
+          const offset = emojiPickerRect.left - 10;
+          return { right: `${Math.abs(offset) + 10}px` };
+        } else {
+          const offset = messageBubbleRect.left - emojiPickerRect.left;
+          return { right: `-${Math.abs(offset) + 10}px` };
         }
-      });
-    };
-
-    updatePosition();
-  }, [showEmojiPicker, emojiPickerRef]);
+      } else {
+        return {};
+      }
+    }
+  };
 
   if (!showEmojiPicker) return null;
 
@@ -267,7 +261,7 @@ const EmojiPickerContainer = ({
       data-emoji-picker
       className={`absolute top-full right-0 z-[9999] bg-white border border-zinc-200 rounded-lg shadow-lg p-1 mt-1 w-max`}
       aria-label="よく使う絵文字ピッカー"
-      style={positionStyle}
+      style={updatePosition()}
     >
       <QuickEmojiPicker
         reactions={reactions}
@@ -290,6 +284,7 @@ const EmojiPickerContainer = ({
 };
 
 export function MessageReactions({
+  messageBubbleRef,
   messageId,
   groupId,
   reactions,
@@ -473,6 +468,7 @@ export function MessageReactions({
 
         {/* よく使う絵文字ピッカー（13種類 + 3点リーダー） */}
         <EmojiPickerContainer
+          messageBubbleRef={messageBubbleRef}
           reactions={reactions}
           currentUserId={session?.user?.id}
           onEmojiClick={handleReactionClick}
@@ -484,6 +480,7 @@ export function MessageReactions({
           }}
           emojiPickerRef={emojiPickerRef}
           fullEmojiPickerRef={fullEmojiPickerRef}
+          isMobile={isMobile}
         />
       </div>
     );
@@ -495,6 +492,7 @@ export function MessageReactions({
       <div className="relative">
         <AddReactionButton />
         <EmojiPickerContainer
+          messageBubbleRef={messageBubbleRef}
           reactions={[]}
           currentUserId={session?.user?.id}
           onEmojiClick={handleReactionClick}
@@ -506,6 +504,7 @@ export function MessageReactions({
           }}
           emojiPickerRef={emojiPickerRef}
           fullEmojiPickerRef={fullEmojiPickerRef}
+          isMobile={isMobile}
         />
       </div>
     );
