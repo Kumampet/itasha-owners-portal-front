@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Card } from "@/components/card";
 import { Button } from "@/components/button";
+import { GroupJoinWarningModal } from "@/components/group-join-warning-modal";
 
 type Group = {
   id: string;
@@ -36,6 +37,9 @@ export default function GroupsPage() {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [groupCode, setGroupCode] = useState("");
   const [joining, setJoining] = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [warningMessage, setWarningMessage] = useState<string>("");
+  const [pendingGroupCode, setPendingGroupCode] = useState<string>("");
 
   useEffect(() => {
     document.title = "団体管理 | 痛車オーナーズナビ | いたなび！";
@@ -44,14 +48,15 @@ export default function GroupsPage() {
   useEffect(() => {
     fetchGroups();
     fetchUnreadCounts();
-    
+
     // 定期的に未読状態をチェック（10秒ごと）
     const interval = setInterval(fetchUnreadCounts, 10000);
     return () => clearInterval(interval);
   }, []);
 
-  const handleJoinGroup = async () => {
-    if (!groupCode || groupCode.length !== 8) {
+  const handleJoinGroup = async (force = false) => {
+    const codeToUse = pendingGroupCode || groupCode;
+    if (!codeToUse || codeToUse.length !== 8) {
       alert("8桁の団体コードを入力してください");
       return;
     }
@@ -62,7 +67,8 @@ export default function GroupsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          groupCode: groupCode,
+          groupCode: codeToUse,
+          force: force,
         }),
       });
 
@@ -72,12 +78,24 @@ export default function GroupsPage() {
       }
 
       const data = await res.json();
+
+      // 警告メッセージがあり、確認が必要な場合
+      if (data.warning && data.requiresConfirmation && !force) {
+        setWarningMessage(data.warning);
+        setPendingGroupCode(codeToUse);
+        setShowWarningModal(true);
+        setJoining(false);
+        return;
+      }
+
       // 団体一覧を再取得
       await fetchGroups();
       // 加入した団体の詳細ページに遷移
       router.push(`/app/groups/${data.groupId}`);
       setShowJoinModal(false);
       setGroupCode("");
+      setPendingGroupCode("");
+      setShowWarningModal(false);
     } catch (error) {
       alert(
         error instanceof Error ? error.message : "団体への加入に失敗しました"
@@ -85,6 +103,11 @@ export default function GroupsPage() {
     } finally {
       setJoining(false);
     }
+  };
+
+  const handleConfirmJoin = () => {
+    setShowWarningModal(false);
+    handleJoinGroup(true);
   };
 
   const fetchGroups = async () => {
@@ -286,7 +309,7 @@ export default function GroupsPage() {
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      onClick={handleJoinGroup}
+                      onClick={() => handleJoinGroup(false)}
                       variant="primary"
                       size="sm"
                       disabled={joining || groupCode.length !== 8}
@@ -311,17 +334,25 @@ export default function GroupsPage() {
             </div>
           )}
 
-          <section className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-4 sm:p-5">
+          {/* <section className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-4 sm:p-5">
             <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
               一斉連絡ポリシー
             </h2>
             <ul className="mt-2 space-y-1 text-xs text-zinc-700 sm:text-sm">
               <li>・団体メッセージで「一斉連絡」として投稿すると、重要なメッセージとしてマークされます。</li>
-              {/* TODO: 一斉連絡用メール通知機能は未実装です。将来的に実装する場合は、メール通知機能を追加してください。 */}
             </ul>
-          </section>
+          </section> */}
         </div>
       </section>
+      <GroupJoinWarningModal
+        isOpen={showWarningModal}
+        onClose={() => {
+          setShowWarningModal(false);
+          setPendingGroupCode("");
+        }}
+        onConfirm={handleConfirmJoin}
+        warningMessage={warningMessage}
+      />
     </main>
   );
 }
