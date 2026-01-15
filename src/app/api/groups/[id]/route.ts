@@ -39,21 +39,9 @@ export async function GET(
             email: true,
           },
         },
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                display_name: true,
-                email: true,
-              },
-            },
-          },
-        },
         _count: {
           select: {
-            members: true,
+            user_groups: true,
           },
         },
       },
@@ -66,21 +54,73 @@ export async function GET(
       );
     }
 
-    // ユーザーがこの団体に参加しているか確認
-    const userEvent = await prisma.userEvent.findUnique({
+    // ユーザーがこの団体に参加しているか確認（複数団体参加対応：UserGroupテーブルを使用）
+    const userGroup = await prisma.userGroup.findUnique({
       where: {
-        user_id_event_id: {
+        user_id_group_id: {
           user_id: session.user.id,
-          event_id: group.event_id,
+          group_id: id,
         },
       },
     });
 
-    if (!userEvent || userEvent.group_id !== id) {
+    if (!userGroup) {
       return NextResponse.json(
         { error: "You are not a member of this group" },
         { status: 403 }
       );
+    }
+
+    // メンバー一覧を取得（UserGroupテーブルから）
+    const groupMembers = await prisma.userGroup.findMany({
+      where: {
+        group_id: id,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            display_name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    // リーダーがUserGroupに存在しない場合、リーダーもメンバー一覧に追加
+    const leaderInMembers = groupMembers.some((gm) => gm.user_id === group.leader_user_id);
+    const membersList = groupMembers.map((gm) => ({
+      id: gm.user.id,
+      name: gm.user.name,
+      displayName: gm.user.display_name,
+      email: gm.user.email,
+      status: gm.status,
+    }));
+
+    if (!leaderInMembers) {
+      // リーダーをメンバー一覧に追加
+      membersList.push({
+        id: group.leader.id,
+        name: group.leader.name,
+        displayName: group.leader.display_name,
+        email: group.leader.email,
+        status: "INTERESTED",
+      });
+
+      // リーダーをUserGroupに追加（データ整合性のため）
+      try {
+        await prisma.userGroup.create({
+          data: {
+            user_id: group.leader_user_id,
+            group_id: id,
+            event_id: group.event_id,
+            status: "INTERESTED",
+          },
+        });
+      } catch {
+        // 既に存在する場合は無視
+      }
     }
 
     // ユーザー固有データのため、privateディレクティブを使用して5秒間キャッシュ
@@ -91,7 +131,7 @@ export async function GET(
         theme: group.theme,
         groupCode: group.group_code,
         maxMembers: group.max_members,
-        memberCount: group._count.members,
+        memberCount: membersList.length,
         isLeader: group.leader_user_id === session.user.id,
         event: group.event,
         leader: {
@@ -100,13 +140,7 @@ export async function GET(
           displayName: group.leader.display_name,
           email: group.leader.email,
         },
-        members: group.members.map((m) => ({
-          id: m.user.id,
-          name: m.user.name,
-          displayName: m.user.display_name,
-          email: m.user.email,
-          status: m.status,
-        })),
+        members: membersList,
         createdAt: group.created_at,
       },
       {
@@ -169,7 +203,12 @@ export async function DELETE(
         where: { group_id: id },
       });
 
-      // UserEventからgroup_idを削除（nullに更新）
+      // UserGroupから削除（複数団体参加対応）
+      await tx.userGroup.deleteMany({
+        where: { group_id: id },
+      });
+
+      // UserEventからgroup_idを削除（nullに更新、後方互換性のため）
       await tx.userEvent.updateMany({
         where: { group_id: id },
         data: { group_id: null },

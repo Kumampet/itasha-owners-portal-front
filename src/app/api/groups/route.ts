@@ -15,13 +15,10 @@ export async function GET() {
       );
     }
 
-    // ユーザーが参加している団体を取得
-    const userEvents = await prisma.userEvent.findMany({
+    // ユーザーが参加している団体を取得（複数団体参加対応：UserGroupテーブルを使用）
+    const userGroups = await prisma.userGroup.findMany({
       where: {
         user_id: session.user.id,
-        group_id: {
-          not: null,
-        },
       },
       include: {
         group: {
@@ -42,27 +39,31 @@ export async function GET() {
             },
             _count: {
               select: {
-                members: true,
+                // UserGroupテーブルからメンバー数をカウント
+                user_groups: true,
               },
             },
           },
         },
       },
+      orderBy: {
+        created_at: "desc",
+      },
     });
 
-    const groups = userEvents
-      .filter((ue) => ue.group)
-      .map((ue) => ({
-        id: ue.group!.id,
-        name: ue.group!.name,
-        theme: ue.group!.theme,
-        groupCode: ue.group!.group_code,
-        maxMembers: ue.group!.max_members,
-        memberCount: ue.group!._count.members,
-        isLeader: ue.group!.leader_user_id === session.user.id,
-        event: ue.group!.event,
-        leader: ue.group!.leader,
-        createdAt: ue.group!.created_at,
+    const groups = userGroups
+      .filter((ug) => ug.group)
+      .map((ug) => ({
+        id: ug.group!.id,
+        name: ug.group!.name,
+        theme: ug.group!.theme,
+        groupCode: ug.group!.group_code,
+        maxMembers: ug.group!.max_members,
+        memberCount: ug.group!._count.user_groups,
+        isLeader: ug.group!.leader_user_id === session.user.id,
+        event: ug.group!.event,
+        leader: ug.group!.leader,
+        createdAt: ug.group!.created_at,
       }));
 
     // ユーザー固有データのため、privateディレクティブを使用して5秒間キャッシュ

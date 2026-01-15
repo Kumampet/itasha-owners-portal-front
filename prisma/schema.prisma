@@ -45,6 +45,7 @@ model User {
   group_messages       GroupMessage[]     @relation("GroupMessageSender") // 団体メッセージの履歴
   group_message_reads  GroupMessageRead[] @relation("GroupMessageReadUser") // 団体メッセージの既読情報
   event_follows        EventFollow[] // フォローしているイベント
+  user_groups          UserGroup[] // 参加している団体（複数対応）
 
   // 登録したイベントのリスト（イベントを登録したアカウント）
   events_created Event[] @relation("EventCreator")
@@ -162,6 +163,7 @@ model Event {
 
   participants UserEvent[]
   groups       Group[]
+  user_groups  UserGroup[] // ユーザーと団体の参加関係
   tags         EventTag[]
   followers    EventFollow[]
   reminders    Reminder[]
@@ -257,7 +259,8 @@ model Group {
   updated_at DateTime @updatedAt
 
   // リレーション
-  members  UserEvent[] // 団体に参加しているメンバー
+  members  UserEvent[] // 団体に参加しているメンバー（後方互換性のため残す）
+  user_groups UserGroup[] // 団体に参加しているメンバー（複数対応）
   messages GroupMessage[]
 
   @@unique([event_id, name]) // 同一イベント内で団体名はユニーク
@@ -485,4 +488,25 @@ model OrganizerApplication {
   updated_at DateTime @updatedAt
 
   @@map("organizer_applications")
+}
+
+// ユーザーと団体の参加関係（複数団体参加対応）
+model UserGroup {
+  user     User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id  String @db.VarChar(36)
+  group    Group  @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  group_id String @db.VarChar(36)
+  event    Event  @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  event_id String @db.VarChar(36)
+
+  // 参加ステータス (INTERESTED, REGISTERED, PAID, ATTENDED)
+  status String @default("INTERESTED")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@id([user_id, group_id])
+  @@index([user_id, event_id])
+  @@index([group_id])
+  @@map("user_groups")
 }

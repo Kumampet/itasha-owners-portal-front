@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // トランザクションで団体とUserEventを作成
+    // トランザクションで団体とUserEvent、UserGroupを作成
     const result = await prisma.$transaction(async (tx) => {
       // 団体を作成
       const group = await tx.group.create({
@@ -68,7 +68,17 @@ export async function POST(request: Request) {
         },
       });
 
-      // UserEventを作成または更新（既に存在する場合はgroup_idを更新）
+      // UserGroupを作成（複数団体参加対応）
+      await tx.userGroup.create({
+        data: {
+          user_id: session.user.id,
+          group_id: group.id,
+          event_id: eventId,
+          status: "INTERESTED",
+        },
+      });
+
+      // UserEventも作成または更新（後方互換性のため）
       await tx.userEvent.upsert({
         where: {
           user_id_event_id: {
