@@ -2,6 +2,7 @@
 
 import { SafeMessageContent } from "@/components/safe-message-content";
 import { MessageReactions } from "@/components/message-reactions";
+import { useRef } from "react";
 
 type MessageBubbleProps = {
   messageId: string;
@@ -64,9 +65,11 @@ export function MessageBubble({
   onHoverChange,
   onEmojiPickerOpenChange,
 }: MessageBubbleProps) {
+  const messageBubbleRef = useRef<HTMLDivElement>(null);
   return (
     <>
       <div
+        ref={messageBubbleRef}
         className={`max-w-[65vw] sm:max-w-[65%] rounded-2xl px-4 py-2 break-words relative ${isOwnMessage
           ? isAnnouncement
             ? "bg-emerald-500 text-white"
@@ -130,6 +133,7 @@ export function MessageBubble({
               data-reaction-button
             >
               <MessageReactions
+                messageBubbleRef={messageBubbleRef}
                 messageId={messageId}
                 groupId={groupId}
                 reactions={[]}
@@ -160,6 +164,7 @@ export function MessageBubble({
             data-reaction-button
           >
             <MessageReactions
+              messageBubbleRef={messageBubbleRef}
               messageId={messageId}
               groupId={groupId}
               reactions={[]}
@@ -177,6 +182,7 @@ export function MessageBubble({
       {reactions.length > 0 && (
         <div className={`mt-1 ${isOwnMessage ? "flex justify-end" : ""}`}>
           <MessageReactions
+            messageBubbleRef={messageBubbleRef}
             messageId={messageId}
             groupId={groupId}
             reactions={reactions}
