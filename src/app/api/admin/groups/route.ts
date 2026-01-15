@@ -53,7 +53,7 @@ export async function GET(request: Request) {
         },
         _count: {
           select: {
-            members: true,
+            user_groups: true,
             messages: true,
           },
         },
@@ -71,7 +71,7 @@ export async function GET(request: Request) {
         theme: group.theme,
         groupCode: group.group_code,
         maxMembers: group.max_members,
-        memberCount: group._count.members,
+        memberCount: group._count.user_groups,
         messageCount: group._count.messages,
         event: group.event,
         leader: {

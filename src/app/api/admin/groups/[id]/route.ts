@@ -40,18 +40,6 @@ export async function GET(
             email: true,
           },
         },
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                display_name: true,
-                email: true,
-              },
-            },
-          },
-        },
         messages: {
           include: {
             sender: {
@@ -69,7 +57,7 @@ export async function GET(
         },
         _count: {
           select: {
-            members: true,
+            user_groups: true,
             messages: true,
           },
         },
@@ -83,6 +71,58 @@ export async function GET(
       );
     }
 
+    // メンバー一覧を取得（UserGroupテーブルから）
+    const groupMembers = await prisma.userGroup.findMany({
+      where: {
+        group_id: id,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            display_name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    // リーダーがUserGroupに存在しない場合、リーダーもメンバー一覧に追加
+    const leaderInMembers = groupMembers.some((gm) => gm.user_id === group.leader_user_id);
+    const membersList = groupMembers.map((gm) => ({
+      id: gm.user.id,
+      name: gm.user.name,
+      displayName: gm.user.display_name,
+      email: gm.user.email,
+      status: gm.status,
+    }));
+
+    if (!leaderInMembers) {
+      // リーダーをメンバー一覧に追加
+      membersList.push({
+        id: group.leader.id,
+        name: group.leader.name,
+        displayName: group.leader.display_name,
+        email: group.leader.email,
+        status: "INTERESTED",
+      });
+
+      // リーダーをUserGroupに追加（データ整合性のため）
+      try {
+        await prisma.userGroup.create({
+          data: {
+            user_id: group.leader_user_id,
+            group_id: id,
+            event_id: group.event_id,
+            status: "INTERESTED",
+          },
+        });
+      } catch {
+        // 既に存在する場合は無視
+      }
+    }
+
     // 管理画面用のため、privateディレクティブを使用して10秒間キャッシュ
     return NextResponse.json(
       {
@@ -91,7 +131,7 @@ export async function GET(
         theme: group.theme,
         groupCode: group.group_code,
         maxMembers: group.max_members,
-        memberCount: group._count.members,
+        memberCount: membersList.length,
         messageCount: group._count.messages,
         event: group.event,
         leader: {
@@ -100,13 +140,7 @@ export async function GET(
           displayName: group.leader.display_name,
           email: group.leader.email,
         },
-        members: group.members.map((m) => ({
-          id: m.user.id,
-          name: m.user.name,
-          displayName: m.user.display_name,
-          email: m.user.email,
-          status: m.status,
-        })),
+        members: membersList,
         messages: group.messages.map((msg) => ({
           id: msg.id,
           content: msg.content,
