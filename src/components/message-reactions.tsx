@@ -189,6 +189,7 @@ const FullEmojiPicker = ({
       className={`bg-white rounded-lg shadow-xl border border-zinc-200 overflow-hidden ${className}`}
       onClick={(e) => e.stopPropagation()}
       style={typeof width === "number" ? { maxWidth: `${width}px` } : {}}
+      aria-label="フル絵文字ピッカー"
     >
       <EmojiPicker
         onEmojiClick={(emojiData) => {
@@ -214,7 +215,6 @@ type EmojiPickerContainerProps = {
   emojiPickerRef: React.RefObject<HTMLDivElement | null>;
   fullEmojiPickerRef: React.RefObject<HTMLDivElement | null>;
   containerRef?: React.RefObject<HTMLDivElement | null>;
-  containerClassName?: string;
   isMobile?: boolean;
 };
 
@@ -228,95 +228,21 @@ const EmojiPickerContainer = ({
   emojiPickerRef,
   fullEmojiPickerRef,
   containerRef,
-  containerClassName = "",
   isMobile = false,
 }: EmojiPickerContainerProps) => {
-  const [positionStyle, setPositionStyle] = useState<React.CSSProperties>({});
+  // emojiPickerRefの要素のポジション情報を取得する例
+  const getPickerPosition = () => {
+    if (emojiPickerRef.current) {
+      const emojiPickerRect = emojiPickerRef.current.getBoundingClientRect();
+      const isLeftSideOverflow = emojiPickerRect.left < 10;
 
-  // モバイル版：親要素（リアクションボタン）の位置を基準に、画面外にはみ出さないように位置を調整
-  useEffect(() => {
-    if (!isMobile || !showEmojiPicker) {
-      // 非同期で状態をリセット
-      requestAnimationFrame(() => {
-        setPositionStyle({});
-      });
-      return;
+      if (isLeftSideOverflow) {
+        const a = emojiPickerRect.left - 10;
+        return { right: `${a - 10}px` };
+      }
+      return {};
     }
-
-    const adjustPosition = () => {
-      const picker = emojiPickerRef.current;
-      if (!picker) return;
-
-      // レンダリング後に位置を調整
-      requestAnimationFrame(() => {
-        const pickerRect = picker.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const padding = 8; // 画面端からの余白
-
-        // リアクションボタンの親要素（data-reaction-button属性を持つ要素）を探す
-        let buttonContainer = picker.closest('[data-reaction-button]') as HTMLElement;
-        if (!buttonContainer && containerRef?.current) {
-          // containerRefから親要素を探す
-          buttonContainer = containerRef.current.closest('[data-reaction-button]') as HTMLElement;
-        }
-        if (!buttonContainer) {
-          // 見つからない場合は、親要素を辿って探す
-          let parent = picker.parentElement;
-          while (parent && !buttonContainer) {
-            if (parent.hasAttribute('data-reaction-button')) {
-              buttonContainer = parent as HTMLElement;
-              break;
-            }
-            parent = parent.parentElement;
-          }
-        }
-
-        if (!buttonContainer) {
-          // 親要素がない場合は右端に配置
-          setPositionStyle({
-            right: 0,
-            maxWidth: `calc(100vw - ${padding * 2}px)`,
-          });
-          return;
-        }
-
-        const buttonRect = buttonContainer.getBoundingClientRect();
-        const pickerWidth = pickerRect.width || 200; // フォールバック値
-
-        // ボタンの右端から配置した場合の位置を計算
-        const rightEdgePosition = viewportWidth - buttonRect.right;
-        const leftEdgePosition = buttonRect.left;
-
-        // 右側に配置できる場合
-        if (pickerWidth + padding <= rightEdgePosition) {
-          setPositionStyle({
-            right: 0,
-            maxWidth: `calc(100vw - ${padding * 2}px)`,
-          });
-        }
-        // 左側に配置する必要がある場合
-        else if (pickerWidth + padding <= leftEdgePosition) {
-          setPositionStyle({
-            left: 0,
-            transform: 'translateX(-100%)',
-            maxWidth: `calc(100vw - ${padding * 2}px)`,
-          });
-        }
-        // どちらにも収まらない場合、右端に配置してはみ出しを許容（スクロール可能）
-        else {
-          setPositionStyle({
-            right: 0,
-            maxWidth: `calc(100vw - ${padding * 2}px)`,
-          });
-        }
-      });
-    };
-
-    // 初回とリサイズ時に調整
-    adjustPosition();
-    window.addEventListener('resize', adjustPosition);
-    return () => window.removeEventListener('resize', adjustPosition);
-  }, [isMobile, showEmojiPicker, emojiPickerRef, containerRef]);
+  };
 
   if (!showEmojiPicker) return null;
 
@@ -324,8 +250,9 @@ const EmojiPickerContainer = ({
     <div
       ref={emojiPickerRef}
       data-emoji-picker
-      className={`absolute top-full ${isMobile ? "right-0" : "left-0"} z-50 bg-white border border-zinc-200 rounded-lg shadow-lg p-1 mt-1 w-max ${containerClassName}`}
-      style={isMobile ? positionStyle : {}}
+      className={`absolute top-full right-0 z-[9999] bg-white border border-zinc-200 rounded-lg shadow-lg p-1 mt-1 w-max`}
+      aria-label="よく使う絵文字ピッカー"
+      style={getPickerPosition()}
     >
       <QuickEmojiPicker
         reactions={reactions}
@@ -543,7 +470,6 @@ export function MessageReactions({
           emojiPickerRef={emojiPickerRef}
           fullEmojiPickerRef={fullEmojiPickerRef}
           containerRef={containerRef}
-          containerClassName="w-max"
           isMobile={isMobile}
         />
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { SafeMessageContent } from "@/components/safe-message-content";
 import { MessageReactions } from "@/components/message-reactions";
 
@@ -145,16 +146,18 @@ export function MessageBubble({
         {isAnnouncement && (
           <p className="text-xs font-medium mb-1 opacity-80">一斉連絡</p>
         )}
-        <SafeMessageContent
-          content={content}
-          className={`text-sm whitespace-pre-wrap break-words ${isOwnMessage ? "text-white" : "text-zinc-700"
-            }`}
-          linkClassName={isOwnMessage ? "text-white" : "text-blue-600"}
-        />
+        <div>
+          <SafeMessageContent
+            content={content}
+            className={`text-sm whitespace-pre-wrap break-words ${isOwnMessage ? "text-white" : "text-zinc-700"
+              }`}
+            linkClassName={isOwnMessage ? "text-white" : "text-blue-600"}
+          />
+        </div>
         {/* SP版：吹き出しの右下にリアクション追加ボタン（常に表示） */}
         {isMobile && !isOwnMessage && (
           <div
-            className="absolute bottom-[0px] left-full ml-2 flex items-center z-10"
+            className="absolute bottom-[0px] left-full ml-2 flex items-center"
             data-reaction-button
           >
             <MessageReactions
