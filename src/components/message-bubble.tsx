@@ -26,7 +26,6 @@ type MessageBubbleProps = {
   isMobile: boolean;
   isHovered: boolean;
   openEmojiPickerMessageId: string | null;
-  hoveredMessageId: string | null;
   onReactionChange: () => void;
   onHoverChange: (messageId: string | null) => void;
   onEmojiPickerOpenChange: (messageId: string | null, isOpen: boolean) => void;
@@ -61,7 +60,6 @@ export function MessageBubble({
   isMobile,
   isHovered,
   openEmojiPickerMessageId,
-  hoveredMessageId,
   onReactionChange,
   onHoverChange,
   onEmojiPickerOpenChange,

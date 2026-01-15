@@ -236,7 +236,10 @@ const EmojiPickerContainer = ({
   // モバイル版：親要素（リアクションボタン）の位置を基準に、画面外にはみ出さないように位置を調整
   useEffect(() => {
     if (!isMobile || !showEmojiPicker) {
-      setPositionStyle({});
+      // 非同期で状態をリセット
+      requestAnimationFrame(() => {
+        setPositionStyle({});
+      });
       return;
     }
 
@@ -313,7 +316,7 @@ const EmojiPickerContainer = ({
     adjustPosition();
     window.addEventListener('resize', adjustPosition);
     return () => window.removeEventListener('resize', adjustPosition);
-  }, [isMobile, showEmojiPicker, emojiPickerRef]);
+  }, [isMobile, showEmojiPicker, emojiPickerRef, containerRef]);
 
   if (!showEmojiPicker) return null;
 

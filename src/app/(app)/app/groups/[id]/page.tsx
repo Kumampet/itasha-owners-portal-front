@@ -10,7 +10,6 @@ import { Button } from "@/components/button";
 import { Tabs, Tab } from "@/components/tabs";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { MessageBubble } from "@/components/message-bubble";
-import { MessageReactions } from "@/components/message-reactions";
 
 type GroupDetail = {
   id: string;
@@ -350,22 +349,6 @@ export default function GroupDetailPage({
     });
   };
 
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${year}/${month}/${day} ${hours}:${minutes}`;
-  };
-
-  const truncateName = (name: string | null, maxLength: number = 12): string => {
-    if (!name) return "名前未設定";
-    const nameArray = Array.from(name);
-    if (nameArray.length <= maxLength) return name;
-    return nameArray.slice(0, maxLength).join("") + "...";
-  };
 
   const handleDisband = async () => {
     setProcessing(true);
@@ -678,7 +661,6 @@ export default function GroupDetailPage({
                             isMobile={isMobile}
                             isHovered={isHovered}
                             openEmojiPickerMessageId={openEmojiPickerMessageId}
-                            hoveredMessageId={hoveredMessageId}
                             onReactionChange={() => fetchMessages(false, true)}
                             onHoverChange={setHoveredMessageId}
                             onEmojiPickerOpenChange={(messageId, isOpen) => {
