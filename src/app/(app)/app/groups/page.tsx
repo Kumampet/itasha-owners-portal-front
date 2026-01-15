@@ -44,7 +44,7 @@ export default function GroupsPage() {
   useEffect(() => {
     fetchGroups();
     fetchUnreadCounts();
-    
+
     // 定期的に未読状態をチェック（10秒ごと）
     const interval = setInterval(fetchUnreadCounts, 10000);
     return () => clearInterval(interval);
@@ -72,12 +72,12 @@ export default function GroupsPage() {
       }
 
       const data = await res.json();
-      
+
       // 警告メッセージがある場合は表示
       if (data.warning) {
         alert(data.warning);
       }
-      
+
       // 団体一覧を再取得
       await fetchGroups();
       // 加入した団体の詳細ページに遷移
@@ -317,15 +317,14 @@ export default function GroupsPage() {
             </div>
           )}
 
-          <section className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-4 sm:p-5">
+          {/* <section className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-4 sm:p-5">
             <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
               一斉連絡ポリシー
             </h2>
             <ul className="mt-2 space-y-1 text-xs text-zinc-700 sm:text-sm">
               <li>・団体メッセージで「一斉連絡」として投稿すると、重要なメッセージとしてマークされます。</li>
-              {/* TODO: 一斉連絡用メール通知機能は未実装です。将来的に実装する場合は、メール通知機能を追加してください。 */}
             </ul>
-          </section>
+          </section> */}
         </div>
       </section>
     </main>
