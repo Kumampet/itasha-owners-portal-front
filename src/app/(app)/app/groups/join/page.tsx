@@ -7,6 +7,34 @@ import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { GroupJoinWarningModal } from "@/components/group-join-warning-modal";
 
+/**
+ * サーバー側のエラーメッセージをユーザーフレンドリーな日本語メッセージに変換する
+ */
+function getErrorMessage(error: string, statusCode?: number): string {
+  // ステータスコードに基づくエラー処理
+  if (statusCode === 401) {
+    return "ログインが必要です。再度ログインしてください。";
+  }
+
+  // エラーメッセージに基づく処理
+  switch (error) {
+    case "Unauthorized":
+      return "ログインが必要です。再度ログインしてください。";
+    case "groupCode is required":
+      return "団体コードを入力してください。";
+    case "Group not found":
+      return "入力された団体コードが不正です。団体コードをお確かめください。";
+    case "Already joined this group":
+      return "この団体には既に加入しています。";
+    case "Group is full":
+      return "この団体は既に満員です。";
+    case "Failed to join group":
+      return "団体への加入処理中にエラーが発生しました。しばらく時間をおいて再度お試しください。";
+    default:
+      return "団体への加入に失敗しました。しばらく時間をおいて再度お試しください。";
+  }
+}
+
 function GroupJoinForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -53,7 +81,11 @@ function GroupJoinForm() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "団体への加入に失敗しました");
+        const errorMessage = getErrorMessage(
+          data.error || "団体への加入に失敗しました",
+          res.status
+        );
+        throw new Error(errorMessage);
       }
 
       const data = await res.json();
@@ -70,8 +102,18 @@ function GroupJoinForm() {
       // 加入成功時は団体詳細ページに遷移
       router.push(`/app/groups/${data.groupId}`);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "団体への加入に失敗しました";
+      let errorMessage = "団体への加入に失敗しました。しばらく時間をおいて再度お試しください。";
+
+      if (error instanceof Error) {
+        // エラーメッセージが既に変換済みの場合はそのまま使用
+        // ネットワークエラーの場合は別のメッセージを表示
+        if (error.message.includes("fetch") || error.message.includes("network")) {
+          errorMessage = "ネットワークエラーが発生しました。インターネット接続を確認して再度お試しください。";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
       setError(errorMessage);
     } finally {
       setJoining(false);
@@ -104,12 +146,6 @@ function GroupJoinForm() {
         </header>
 
         <div className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
-          {error && (
-            <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
           <div>
             <label className="block text-sm font-medium text-zinc-900 mb-1">
               団体コード（8桁）
@@ -131,7 +167,7 @@ function GroupJoinForm() {
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 mb-1">
             <Button
               onClick={() => handleJoin(false)}
               variant="primary"
@@ -149,6 +185,12 @@ function GroupJoinForm() {
               キャンセル
             </Link>
           </div>
+
+          {error && (
+            <p className="text-xs text-red-700">
+              {error}
+            </p>
+          )}
         </div>
       </section>
 
