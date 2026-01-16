@@ -15,7 +15,26 @@ function AuthForm() {
   const handleSignIn = async (provider: "google" | "twitter") => {
     setIsLoading(provider);
     try {
-      await signIn(provider, { callbackUrl });
+      // NextAuth.js v5では、signIn関数はデフォルトでリダイレクトを実行しますが、
+      // ローカル環境で問題が発生する場合があるため、redirect: falseにして手動でリダイレクト
+      const result = await signIn(provider, { 
+        callbackUrl,
+        redirect: false, // リダイレクトを無効化して手動で制御
+      });
+      
+      // リダイレクトが発生しない場合（エラーなど）のフォールバック
+      if (result?.error) {
+        console.error("Sign in error:", result.error);
+        setIsLoading(null);
+      } else if (result?.ok && result?.url) {
+        // 認証URLが返された場合、手動でリダイレクト
+        window.location.href = result.url;
+      } else if (result?.ok) {
+        // リダイレクトURLが返されない場合でも、リダイレクトを試みる
+        // NextAuth.js v5では、signIn関数が成功した場合、自動的にリダイレクトされるはずですが、
+        // ローカル環境で問題が発生する場合があるため、手動でリダイレクト
+        window.location.href = `/api/auth/signin/${provider}?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+      }
     } catch (error) {
       console.error("Sign in error:", error);
       setIsLoading(null);
