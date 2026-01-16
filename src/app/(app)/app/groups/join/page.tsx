@@ -163,7 +163,7 @@ function GroupJoinForm() {
               maxLength={8}
             />
             <p className="mt-1 text-xs text-zinc-500">
-              団体オーナーから共有された8桁の数字を入力してください。団体コードは一意のため、これだけで特定の団体に加入できます。
+              団体オーナーから共有された8桁の数字を入力してください。
             </p>
           </div>
 
