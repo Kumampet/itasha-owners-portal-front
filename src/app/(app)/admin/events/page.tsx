@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { formatDate, formatDateTime } from "@/lib/date-utils";
 
 type Event = {
   id: string;
@@ -93,13 +94,6 @@ export default function AdminEventsPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("ja-JP", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   return (
     <div className="w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
@@ -262,10 +256,10 @@ export default function AdminEventsPage() {
                     {formatDate(event.event_date)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
-                    {event.entry_start_at ? formatDate(event.entry_start_at) : "-"}
+                    {event.entry_start_at ? formatDateTime(event.entry_start_at) : "-"}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
-                    {event.payment_due_at ? formatDate(event.payment_due_at) : "-"}
+                    {event.payment_due_at ? formatDateTime(event.payment_due_at) : "-"}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600">
                     {formatDate(event.created_at)}

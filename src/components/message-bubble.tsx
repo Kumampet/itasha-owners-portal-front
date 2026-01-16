@@ -3,6 +3,7 @@
 import { SafeMessageContent } from "@/components/safe-message-content";
 import { MessageReactions } from "@/components/message-reactions";
 import { useRef } from "react";
+import { formatDateTime } from "@/lib/date-utils";
 
 type MessageBubbleProps = {
   messageId: string;
@@ -37,16 +38,6 @@ const truncateName = (name: string | null, maxLength: number = 12): string => {
   const nameArray = Array.from(name);
   if (nameArray.length <= maxLength) return name;
   return nameArray.slice(0, maxLength).join("") + "...";
-};
-
-const formatDateTime = (dateString: string) => {
-  const date = new Date(dateString);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${year}/${month}/${day} ${hours}:${minutes}`;
 };
 
 export function MessageBubble({

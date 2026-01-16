@@ -5,6 +5,7 @@ import Link from "next/link";
 import ConfirmModal from "@/components/confirm-modal";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { ReminderCard } from "@/components/reminder-card";
+import { formatDateTime } from "@/lib/date-utils";
 
 type Reminder = {
   id: string;
@@ -23,16 +24,6 @@ type Reminder = {
   notified_at: string | null;
   created_at: string;
 };
-
-function formatDateTime(dateString: string) {
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(dateString));
-}
 
 export default function ReminderPage() {
   const [reminders, setReminders] = useState<Reminder[]>([]);

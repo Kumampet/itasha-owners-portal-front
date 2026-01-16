@@ -9,6 +9,7 @@ import ConfirmModal from "@/components/confirm-modal";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { EventShareModal } from "@/components/event-share-modal";
+import { formatDate, formatDateTime } from "@/lib/date-utils";
 
 type Event = {
   id: string;
@@ -589,10 +590,10 @@ export default function AdminEventDetailPage({
             <div>
               <h3 className="text-sm font-medium text-zinc-700">開催日</h3>
               <p className="mt-1 text-sm text-zinc-600">
-                {new Date(event.event_date).toLocaleDateString("ja-JP")}
+                {formatDate(event.event_date)}
                 {event.is_multi_day && event.event_end_date && (
                   <span className="ml-2">
-                    〜 {new Date(event.event_end_date).toLocaleDateString("ja-JP")}
+                    〜 {formatDate(event.event_end_date)}
                   </span>
                 )}
               </p>
@@ -632,12 +633,12 @@ export default function AdminEventDetailPage({
                       <div className="space-y-2 text-xs text-zinc-600">
                         <div>
                           <span className="font-medium">エントリー開始日時:</span>{" "}
-                          {new Date(entry.entry_start_at).toLocaleString("ja-JP")}
+                          {formatDateTime(entry.entry_start_at)}
                         </div>
                         <div>
                           <span className="font-medium">エントリー開始日時公開日時:</span>{" "}
                           {entry.entry_start_public_at ? (
-                            <span>{new Date(entry.entry_start_public_at).toLocaleString("ja-JP")}</span>
+                            <span>{formatDateTime(entry.entry_start_public_at)}</span>
                           ) : (
                             <span className="text-zinc-500">未設定（即時公開）</span>
                           )}
@@ -645,7 +646,7 @@ export default function AdminEventDetailPage({
                         <div>
                           <span className="font-medium">エントリー締切日時:</span>{" "}
                           {entry.entry_deadline_at ? (
-                            <span>{new Date(entry.entry_deadline_at).toLocaleString("ja-JP")}</span>
+                            <span>{formatDateTime(entry.entry_deadline_at)}</span>
                           ) : (
                             <span className="text-zinc-500">未設定</span>
                           )}
@@ -653,7 +654,7 @@ export default function AdminEventDetailPage({
                         <div>
                           <span className="font-medium">支払期限日時:</span>{" "}
                           {entry.payment_due_at
-                            ? new Date(entry.payment_due_at).toLocaleString("ja-JP")
+                            ? formatDateTime(entry.payment_due_at)
                             : entry.payment_due_type === "RELATIVE" && entry.payment_due_days_after_entry
                               ? `エントリー申し込みから${entry.payment_due_days_after_entry}日以内`
                               : "未設定"}
@@ -661,7 +662,7 @@ export default function AdminEventDetailPage({
                         <div>
                           <span className="font-medium">支払期限日時公開日時:</span>{" "}
                           {entry.payment_due_public_at ? (
-                            <span>{new Date(entry.payment_due_public_at).toLocaleString("ja-JP")}</span>
+                            <span>{formatDateTime(entry.payment_due_public_at)}</span>
                           ) : (
                             <span className="text-zinc-500">未設定（即時公開）</span>
                           )}

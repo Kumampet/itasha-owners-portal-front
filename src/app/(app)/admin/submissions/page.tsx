@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { formatDate, formatDateTime } from "@/lib/date-utils";
 
 type Submission = {
   id: string;
@@ -146,14 +147,6 @@ export default function AdminSubmissionsPage() {
     }
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "未定";
-    return new Date(dateString).toLocaleDateString("ja-JP", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   return (
     <div className="w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
@@ -280,11 +273,11 @@ export default function AdminSubmissionsPage() {
                     )}
                     {submission.entry_start_at && (
                       <span>
-                        エントリー開始: {formatDate(submission.entry_start_at)}
+                        エントリー開始: {formatDateTime(submission.entry_start_at)}
                       </span>
                     )}
                     {submission.payment_due_at && (
-                      <span>支払期限: {formatDate(submission.payment_due_at)}</span>
+                      <span>支払期限: {formatDateTime(submission.payment_due_at)}</span>
                     )}
                     <span>提出日: {formatDate(submission.created_at)}</span>
                   </div>
@@ -391,18 +384,18 @@ export default function AdminSubmissionsPage() {
 
                 {selectedSubmission.entry_start_at && (
                   <div>
-                    <h3 className="text-sm font-medium text-zinc-700">エントリー開始日</h3>
+                    <h3 className="text-sm font-medium text-zinc-700">エントリー開始日時</h3>
                     <p className="mt-1 text-sm text-zinc-600">
-                      {formatDate(selectedSubmission.entry_start_at)}
+                      {formatDateTime(selectedSubmission.entry_start_at)}
                     </p>
                   </div>
                 )}
 
                 {selectedSubmission.payment_due_at && (
                   <div>
-                    <h3 className="text-sm font-medium text-zinc-700">支払期限</h3>
+                    <h3 className="text-sm font-medium text-zinc-700">支払期限日時</h3>
                     <p className="mt-1 text-sm text-zinc-600">
-                      {formatDate(selectedSubmission.payment_due_at)}
+                      {formatDateTime(selectedSubmission.payment_due_at)}
                     </p>
                   </div>
                 )}
