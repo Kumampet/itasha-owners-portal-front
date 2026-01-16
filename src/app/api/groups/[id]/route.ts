@@ -133,6 +133,7 @@ export async function GET(
         maxMembers: group.max_members,
         memberCount: membersList.length,
         isLeader: group.leader_user_id === session.user.id,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ownerNote: (group as any).owner_note ?? null,
         event: group.event,
         leader: {

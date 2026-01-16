@@ -51,6 +51,7 @@ export async function GET(
 
     return NextResponse.json(
       {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ownerNote: (group as any).owner_note ?? null,
         isLeader: group.leader_user_id === session.user.id,
       },
@@ -123,12 +124,14 @@ export async function PATCH(
     const updatedGroup = await prisma.group.update({
       where: { id },
       data: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         owner_note: noteValue,
       } as any,
     });
 
     return NextResponse.json(
       {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ownerNote: (updatedGroup as any).owner_note ?? null,
       },
       {
