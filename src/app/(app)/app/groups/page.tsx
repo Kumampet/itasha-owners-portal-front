@@ -2,11 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Card } from "@/components/card";
-import { Button } from "@/components/button";
-import { GroupJoinWarningModal } from "@/components/group-join-warning-modal";
 
 type Group = {
   id: string;
@@ -30,16 +27,9 @@ type Group = {
 };
 
 export default function GroupsPage() {
-  const router = useRouter();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, boolean>>({});
-  const [showJoinModal, setShowJoinModal] = useState(false);
-  const [groupCode, setGroupCode] = useState("");
-  const [joining, setJoining] = useState(false);
-  const [showWarningModal, setShowWarningModal] = useState(false);
-  const [warningMessage, setWarningMessage] = useState<string>("");
-  const [pendingGroupCode, setPendingGroupCode] = useState<string>("");
 
   useEffect(() => {
     document.title = "団体管理 | 痛車オーナーズナビ | いたなび！";
@@ -54,61 +44,6 @@ export default function GroupsPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleJoinGroup = async (force = false) => {
-    const codeToUse = pendingGroupCode || groupCode;
-    if (!codeToUse || codeToUse.length !== 8) {
-      alert("8桁の団体コードを入力してください");
-      return;
-    }
-
-    setJoining(true);
-    try {
-      const res = await fetch("/api/groups/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          groupCode: codeToUse,
-          force: force,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "団体への加入に失敗しました");
-      }
-
-      const data = await res.json();
-
-      // 警告メッセージがあり、確認が必要な場合
-      if (data.warning && data.requiresConfirmation && !force) {
-        setWarningMessage(data.warning);
-        setPendingGroupCode(codeToUse);
-        setShowWarningModal(true);
-        setJoining(false);
-        return;
-      }
-
-      // 団体一覧を再取得
-      await fetchGroups();
-      // 加入した団体の詳細ページに遷移
-      router.push(`/app/groups/${data.groupId}`);
-      setShowJoinModal(false);
-      setGroupCode("");
-      setPendingGroupCode("");
-      setShowWarningModal(false);
-    } catch (error) {
-      alert(
-        error instanceof Error ? error.message : "団体への加入に失敗しました"
-      );
-    } finally {
-      setJoining(false);
-    }
-  };
-
-  const handleConfirmJoin = () => {
-    setShowWarningModal(false);
-    handleJoinGroup(true);
-  };
 
   const fetchGroups = async () => {
     try {
@@ -195,9 +130,9 @@ export default function GroupsPage() {
               </Card>
             </Link>
 
-            <button
-              onClick={() => setShowJoinModal(true)}
-              className="block transition hover:-translate-y-0.5 hover:shadow-md text-left w-full"
+            <Link
+              href="/app/groups/join"
+              className="block transition hover:-translate-y-0.5 hover:shadow-md"
             >
               <Card className="transition hover:border-zinc-900">
                 <div className="flex items-center gap-3">
@@ -224,7 +159,7 @@ export default function GroupsPage() {
                   </div>
                 </div>
               </Card>
-            </button>
+            </Link>
           </div>
         </header>
 
@@ -283,57 +218,6 @@ export default function GroupsPage() {
             )}
           </section>
 
-          {/* 既存の団体に加入するモーダル */}
-          {showJoinModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-              <div className="rounded-lg bg-white p-6 shadow-lg max-w-sm w-full mx-4">
-                <h2 className="mb-4 text-lg font-semibold text-zinc-900">
-                  既存の団体に加入する
-                </h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-900 mb-1">
-                      団体コード（8桁）
-                    </label>
-                    <input
-                      type="text"
-                      value={groupCode}
-                      onChange={(e) => setGroupCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
-                      placeholder="12345678"
-                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                      maxLength={8}
-                    />
-                    <p className="mt-1 text-xs text-zinc-500">
-                      団体オーナーから共有された8桁の数字を入力してください。団体コードは一意のため、これだけで特定の団体に加入できます。
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleJoinGroup(false)}
-                      variant="primary"
-                      size="sm"
-                      disabled={joining || groupCode.length !== 8}
-                      className="flex-1"
-                    >
-                      {joining ? "加入中..." : "加入する"}
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setShowJoinModal(false);
-                        setGroupCode("");
-                      }}
-                      variant="secondary"
-                      size="sm"
-                      disabled={joining}
-                    >
-                      キャンセル
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* <section className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-4 sm:p-5">
             <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
               一斉連絡ポリシー
@@ -344,15 +228,6 @@ export default function GroupsPage() {
           </section> */}
         </div>
       </section>
-      <GroupJoinWarningModal
-        isOpen={showWarningModal}
-        onClose={() => {
-          setShowWarningModal(false);
-          setPendingGroupCode("");
-        }}
-        onConfirm={handleConfirmJoin}
-        warningMessage={warningMessage}
-      />
     </main>
   );
 }

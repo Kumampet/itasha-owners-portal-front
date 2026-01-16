@@ -108,7 +108,10 @@ export function GroupActionModal({
                 size="md"
                 rounded="md"
                 fullWidth
-                onClick={() => setAction("join")}
+                onClick={() => {
+                  router.push("/app/groups/join");
+                  onClose();
+                }}
               >
                 既存の団体に加入する
               </Button>

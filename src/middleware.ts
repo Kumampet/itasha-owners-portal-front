@@ -89,6 +89,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(signInUrl);
   };
 
+  // クエリパラメータを含む完全なパスを取得するヘルパー関数
+  const getFullPath = () => {
+    return request.nextUrl.pathname + request.nextUrl.search;
+  };
+
   // 管理画面のアクセス制御
   if (isAdminPath) {
     // セッションが取得できた場合のみ権限チェック
@@ -101,7 +106,8 @@ export async function middleware(request: NextRequest) {
       // セッションが取得できない場合は、クッキーを確認
       if (!hasSessionCookie()) {
         // セッションクッキーが存在しない場合は、未ログインと判断してリダイレクト
-        return redirectToSignIn(pathname);
+        // クエリパラメータを含む完全なパスをcallbackUrlとして渡す
+        return redirectToSignIn(getFullPath());
       }
       // セッションクッキーが存在するが、middlewareで取得できない場合はクライアントサイドでチェック
     }
@@ -126,7 +132,8 @@ export async function middleware(request: NextRequest) {
   if (isProtectedPath && !session) {
     // セッションクッキーが存在しない場合は、未ログインと判断してリダイレクト
     if (!hasSessionCookie()) {
-      return redirectToSignIn(pathname);
+      // クエリパラメータを含む完全なパスをcallbackUrlとして渡す
+      return redirectToSignIn(getFullPath());
     }
     // セッションクッキーが存在する場合は、クライアントサイドでセッションを確認させる
   }

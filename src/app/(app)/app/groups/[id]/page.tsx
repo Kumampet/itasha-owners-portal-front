@@ -10,6 +10,7 @@ import { Button } from "@/components/button";
 import { Tabs, Tab } from "@/components/tabs";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { MessageBubble } from "@/components/message-bubble";
+import { GroupInviteLinkCopyButton } from "@/components/group-invite-link-copy-button";
 
 type GroupDetail = {
   id: string;
@@ -566,6 +567,7 @@ export default function GroupDetailPage({
                   <p className="mt-1 text-xs text-zinc-500">
                     このコードを共有することで、他のメンバーがこの団体に加入できます。
                   </p>
+                  <GroupInviteLinkCopyButton groupCode={group.groupCode} />
                 </section>
 
                 <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
