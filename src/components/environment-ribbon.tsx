@@ -1,17 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 
 /**
  * 環境を判定する関数
  * 本番環境以外（staging, local）の場合に環境名を返す
+ * クライアント側でのみ実行される
  */
 function getEnvironment(): string | null {
-    // クライアント側でのみ実行
-    if (typeof window === "undefined") {
-        return null;
-    }
-
     // NEXT_PUBLIC_ENVIRONMENT環境変数が設定されている場合
     const envVar = process.env.NEXT_PUBLIC_ENVIRONMENT;
     if (envVar && envVar !== "production" && envVar !== "prod") {
@@ -40,7 +36,19 @@ function getEnvironment(): string | null {
  * 本番環境以外の場合に画面左下端に斜めのリボンを表示
  */
 export function EnvironmentRibbon() {
-    const environment = useMemo(() => getEnvironment(), []);
+    const [environment, setEnvironment] = useState<string | null>(null);
+    const [mounted, setMounted] = useState(false);
+
+    // クライアント側でのみ環境を判定
+    useEffect(() => {
+        setMounted(true);
+        setEnvironment(getEnvironment());
+    }, []);
+
+    // サーバー側レンダリング時は何も表示しない（ハイドレーションエラーを防ぐ）
+    if (!mounted) {
+        return null;
+    }
 
     // 本番環境の場合は何も表示しない
     if (!environment) {
