@@ -37,16 +37,17 @@ function getEnvironment(): string | null {
  */
 export function EnvironmentRibbon() {
     const [environment, setEnvironment] = useState<string | null>(null);
-    const [mounted, setMounted] = useState(false);
 
     // クライアント側でのみ環境を判定
     useEffect(() => {
-        setMounted(true);
+        // クライアント側でのみ実行されるため、useEffect内でsetStateを呼び出す
+        // これはハイドレーションエラーを防ぐために必要な処理
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setEnvironment(getEnvironment());
     }, []);
 
     // サーバー側レンダリング時は何も表示しない（ハイドレーションエラーを防ぐ）
-    if (!mounted) {
+    if (environment === null) {
         return null;
     }
 
