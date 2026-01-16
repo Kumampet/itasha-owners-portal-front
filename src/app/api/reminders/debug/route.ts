@@ -22,14 +22,14 @@ export async function GET(_request: Request) {
       EVENTBRIDGE_SCHEDULER_GROUP_NAME: process.env.EVENTBRIDGE_SCHEDULER_GROUP_NAME || "未設定（デフォルト: default）",
       EVENTBRIDGE_TARGET_ARN: process.env.EVENTBRIDGE_TARGET_ARN ? "設定済み" : "未設定",
       EVENTBRIDGE_ROLE_ARN: process.env.EVENTBRIDGE_ROLE_ARN ? "設定済み" : "未設定",
-      REMINDER_NOTIFY_API_KEY: process.env.REMINDER_NOTIFY_API_KEY 
-        ? `設定済み（長さ: ${process.env.REMINDER_NOTIFY_API_KEY.length}文字）` 
+      REMINDER_NOTIFY_API_KEY: process.env.REMINDER_NOTIFY_API_KEY
+        ? `設定済み（長さ: ${process.env.REMINDER_NOTIFY_API_KEY.length}文字）`
         : "未設定",
     };
 
     // ARNの形式チェック（設定されている場合のみ）
     const issues: string[] = [];
-    
+
     if (process.env.EVENTBRIDGE_TARGET_ARN) {
       if (!process.env.EVENTBRIDGE_TARGET_ARN.startsWith("arn:aws:lambda:")) {
         issues.push("EVENTBRIDGE_TARGET_ARNの形式が正しくありません（Lambda関数のARNである必要があります）");
@@ -45,12 +45,12 @@ export async function GET(_request: Request) {
       }
     }
 
-    if (process.env.EVENTBRIDGE_SCHEDULER_GROUP_NAME && 
-        process.env.EVENTBRIDGE_SCHEDULER_GROUP_NAME !== "itasha-portal-push-schedule-group") {
+    if (process.env.EVENTBRIDGE_SCHEDULER_GROUP_NAME &&
+      process.env.EVENTBRIDGE_SCHEDULER_GROUP_NAME !== "itasha-portal-push-schedule-group") {
       issues.push(`EVENTBRIDGE_SCHEDULER_GROUP_NAMEが期待値と異なります（現在: ${process.env.EVENTBRIDGE_SCHEDULER_GROUP_NAME}、期待値: itasha-portal-push-schedule-group）`);
     }
 
-    const allRequiredSet = 
+    const allRequiredSet =
       process.env.APP_AWS_REGION &&
       process.env.APP_AWS_ACCESS_KEY_ID &&
       process.env.APP_AWS_SECRET_ACCESS_KEY &&
