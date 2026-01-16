@@ -11,17 +11,20 @@ function AuthForm() {
   const callbackUrl = searchParams.get("callbackUrl") || "/app/mypage";
   const [isLoading, setIsLoading] = useState<string | null>(null);
 
+  // 招待リンクからのアクセスかどうかを判定
+  const isFromInviteLink = callbackUrl.includes("/app/groups/join");
+
 
   const handleSignIn = async (provider: "google" | "twitter") => {
     setIsLoading(provider);
     try {
       // NextAuth.js v5では、signIn関数はデフォルトでリダイレクトを実行しますが、
       // ローカル環境で問題が発生する場合があるため、redirect: falseにして手動でリダイレクト
-      const result = await signIn(provider, { 
+      const result = await signIn(provider, {
         callbackUrl,
         redirect: false, // リダイレクトを無効化して手動で制御
       });
-      
+
       // リダイレクトが発生しない場合（エラーなど）のフォールバック
       if (result?.error) {
         console.error("Sign in error:", result.error);
@@ -48,9 +51,14 @@ function AuthForm() {
           <h1 className="text-2xl font-semibold text-zinc-900">
             ログイン / 新規登録
           </h1>
-          <p className="mt-2 text-sm text-zinc-600">
-            痛車オーナーズポータルにログインして、イベント管理を始めましょう
-          </p>
+          {isFromInviteLink && (
+            <div className="mt-4 rounded-lg bg-emerald-50 border border-emerald-200 p-4">
+              <p className="text-sm text-emerald-800">
+                団体への招待リンクからアクセスされました。<br />
+                ログインを行っていただくと、団体への加入が可能になります。
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="space-y-3">
@@ -62,7 +70,7 @@ function AuthForm() {
             onClick={() => handleSignIn("google")}
             disabled={isLoading !== null}
           >
-            {isLoading === "google" ? "ログイン中..." : "Googleでログイン"}
+            {isLoading === "google" ? "接続中..." : "Googleで利用する"}
           </Button>
           <Button
             variant="secondary"
@@ -72,7 +80,7 @@ function AuthForm() {
             onClick={() => handleSignIn("twitter")}
             disabled={isLoading !== null}
           >
-            {isLoading === "twitter" ? "ログイン中..." : "X（Twitter）でログイン"}
+            {isLoading === "twitter" ? "接続中..." : "Xアカウントで利用する"}
           </Button>
         </div>
 
