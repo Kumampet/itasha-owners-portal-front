@@ -133,6 +133,7 @@ export async function GET(
         maxMembers: group.max_members,
         memberCount: membersList.length,
         isLeader: group.leader_user_id === session.user.id,
+        ownerNote: (group as any).owner_note ?? null,
         event: group.event,
         leader: {
           id: group.leader.id,
