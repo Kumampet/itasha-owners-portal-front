@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Tooltip } from "@/components/tooltip";
-import { GroupActionModal } from "@/components/group-action-modal";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { Button } from "@/components/button";
 
@@ -14,7 +13,7 @@ type EventDetailActionsProps = {
 
 export function EventDetailActions({ eventId, officialUrls }: EventDetailActionsProps) {
   const { data: session } = useSession();
-  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const router = useRouter();
 
   // 公式サイトURLの最初のものを取得
   const firstOfficialUrl = officialUrls && Array.isArray(officialUrls) && officialUrls.length > 0
@@ -71,7 +70,7 @@ export function EventDetailActions({ eventId, officialUrls }: EventDetailActions
             size="md"
             rounded="full"
             fullWidth
-            onClick={() => setIsGroupModalOpen(true)}
+            onClick={() => router.push("/app/groups")}
           >
             団体を組む
           </Button>
@@ -96,10 +95,6 @@ export function EventDetailActions({ eventId, officialUrls }: EventDetailActions
           </Tooltip>
         )}
       </div>
-      <GroupActionModal
-        isOpen={isGroupModalOpen}
-        onClose={() => setIsGroupModalOpen(false)}
-      />
     </>
   );
 }
