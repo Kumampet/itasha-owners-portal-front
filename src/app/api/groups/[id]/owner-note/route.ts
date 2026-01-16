@@ -124,8 +124,8 @@ export async function PATCH(
     const updatedGroup = await prisma.group.update({
       where: { id },
       data: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         owner_note: noteValue,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
     });
 
