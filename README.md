@@ -65,6 +65,7 @@ Amplifyコンソールの「Build details」から各デプロイ状況を確認
 
 #### ステージング環境（stagingブランチ）
 - `staging`ブランチをAmplifyのstaging環境として接続するには、AWS Amplifyコンソールでの設定が必要です
+- **重要**: staging環境は本番環境とは完全に分離された独立した環境です。本番データベースや本番のAWSリソースとは連動しません。
 
 **設定手順：**
 1. [AWS Amplifyコンソール](https://console.aws.amazon.com/amplify/)にアクセス
@@ -75,27 +76,45 @@ Amplifyコンソールの「Build details」から各デプロイ状況を確認
 6. 「**Save**」をクリック
 7. 作成された`staging`ブランチの行で「**Actions**」→「**Manage app**」をクリック
 8. 左メニューから「**App settings**」→「**Environment variables**」を選択
-9. `main`ブランチと同じ環境変数を設定（必要に応じてstaging用の値を設定）
+9. staging環境用の環境変数を設定（本番環境とは異なる値を設定）
 
 **注意：**
 - `staging`ブランチへのpushで自動的にstaging環境にデプロイされます
-- 環境変数はブランチごとに個別に設定できます（staging用のデータベースURLなど）
+- 環境変数はブランチごとに個別に設定できます
+- staging環境用のデータベース、OAuth設定、AWSリソースを別途作成する必要があります
+
+**詳細な設定手順：**
+staging環境の構築については、[Staging環境構築ガイド](docs/staging-environment-setup.md)を参照してください。
 
 ### Amplifyでの環境変数設定
 
 Amplifyコンソールで以下の環境変数を設定してください：
 
-- `DATABASE_URL`
-- `NEXTAUTH_SECRET`
-- `NEXTAUTH_URL`（ブランチごとに異なるURLを設定可能）
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_CLIENT_SECRET`
-- `TWITTER_CLIENT_ID`
-- `TWITTER_CLIENT_SECRET`
-- `APP_AWS_REGION`
-- `APP_AWS_ACCESS_KEY_ID`
-- `APP_AWS_SECRET_ACCESS_KEY`
+#### データベース関連
+- `DATABASE_URL` - RDSデータベースへの接続文字列
+- `DATABASE_POOL_SIZE` - データベース接続プールサイズ（オプション、デフォルト: 10）
+- `DATABASE_DEBUG` - データベースデバッグモード（オプション、デフォルト: false）
 
-設定場所: Amplify Console → App settings → Environment variables
+#### 認証関連
+- `NEXTAUTH_SECRET` - NextAuth.js用シークレットキー
+- `NEXTAUTH_URL` - ブランチごとに異なるURLを設定（例: `https://your-app.amplifyapp.com`）
+- `GOOGLE_CLIENT_ID` - Google OAuth クライアントID
+- `GOOGLE_CLIENT_SECRET` - Google OAuth クライアントシークレット
+- `TWITTER_CLIENT_ID` - X (Twitter) OAuth クライアントID
+- `TWITTER_CLIENT_SECRET` - X (Twitter) OAuth クライアントシークレット
+
+#### AWSリソース関連
+- `APP_AWS_REGION` - AWSリージョン（例: `ap-northeast-1`）
+- `APP_AWS_ACCESS_KEY_ID` - AWSアクセスキーID（将来のAWSサービス利用に備えて設定）
+- `APP_AWS_SECRET_ACCESS_KEY` - AWSシークレットアクセスキー（将来のAWSサービス利用に備えて設定）
+
+#### その他
+- `NEXT_PUBLIC_ENVIRONMENT` - 環境識別子（オプション、例: `production`, `staging`）
+
+**設定場所**: Amplify Console → App settings → Environment variables
+
+**重要**: 
+- 本番環境とstaging環境で異なる値を設定する必要があります
+- 環境変数の詳細については、[環境変数リファレンス](docs/environment-variables-reference.md)を参照してください
 
 詳細は[認証設定ガイド](docs/authentication-setup.md#aws-amplifyでの環境変数設定)を参照してください。
