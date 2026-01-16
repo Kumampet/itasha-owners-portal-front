@@ -11,6 +11,8 @@ import { Tabs, Tab } from "@/components/tabs";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { MessageBubble } from "@/components/message-bubble";
 import { GroupInviteLinkCopyButton } from "@/components/group-invite-link-copy-button";
+import { GroupOwnerNoteCard } from "@/components/group-owner-note-card";
+import { MemberActionMenu } from "@/components/member-action-menu";
 
 type GroupDetail = {
   id: string;
@@ -20,6 +22,7 @@ type GroupDetail = {
   maxMembers: number | null;
   memberCount: number;
   isLeader: boolean;
+  ownerNote: string | null;
   event: {
     id: string;
     name: string;
@@ -77,7 +80,7 @@ export default function GroupDetailPage({
   const { id } = use(params);
   const [group, setGroup] = useState<GroupDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"info" | "messages">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "members" | "messages">("info");
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [messageContent, setMessageContent] = useState("");
@@ -546,6 +549,12 @@ export default function GroupDetailPage({
                 団体情報
               </Tab>
               <Tab
+                isActive={activeTab === "members"}
+                onClick={() => setActiveTab("members")}
+              >
+                メンバー一覧
+              </Tab>
+              <Tab
                 isActive={activeTab === "messages"}
                 onClick={() => setActiveTab("messages")}
                 badge={hasUnreadMessages}
@@ -570,6 +579,15 @@ export default function GroupDetailPage({
                   <GroupInviteLinkCopyButton groupCode={group.groupCode} />
                 </section>
 
+                <GroupOwnerNoteCard
+                  groupId={group.id}
+                  ownerNote={group.ownerNote}
+                  isLeader={group.isLeader}
+                  onUpdate={fetchGroup}
+                />
+              </div>
+            ) : activeTab === "members" ? (
+              <div className="space-y-4">
                 <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
                   <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
                     メンバー一覧
@@ -578,7 +596,7 @@ export default function GroupDetailPage({
                     メンバー: {group.memberCount}
                     {group.maxMembers && ` / ${group.maxMembers}人`}
                   </p>
-                  <div className="mt-4 space-y-2">
+                  <div className="mt-4 space-y-2 overflow-visible">
                     {group.members.map((member) => {
                       const isCurrentUser = member.id === session?.user?.id;
                       const isLeader = group.isLeader;
@@ -586,7 +604,7 @@ export default function GroupDetailPage({
                       return (
                         <div
                           key={member.id}
-                          className="relative flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 p-3 overflow-hidden"
+                          className={`relative flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 p-3 overflow-x-visible ${isCurrentUser && "overflow-hidden"}`}
                         >
                           {isCurrentUser && (
                             <div className="absolute -left-4 top-1.5 w-16 bg-emerald-500 text-white text-[10px] font-semibold py-0.5 text-center transform -rotate-45 shadow-md">
@@ -605,19 +623,12 @@ export default function GroupDetailPage({
                               </span>
                             )}
                             {canRemove && (
-                              <Button
-                                variant="danger"
-                                size="sm"
-                                rounded="md"
-                                onClick={() => {
+                              <MemberActionMenu
+                                onRemoveClick={() => {
                                   setTargetMemberId(member.id);
                                   setShowRemoveMemberModal(true);
                                 }}
-                                disabled={processing}
-                                className="text-xs"
-                              >
-                                削除
-                              </Button>
+                              />
                             )}
                           </div>
                         </div>
