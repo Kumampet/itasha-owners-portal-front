@@ -508,6 +508,16 @@ if (!authSecret) {
   }
 }
 
+// NextAuth v5では、AUTH_URLを優先的に使用（NEXTAUTH_URLは後方互換性のためにサポート）
+const authUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL;
+if (authUrl) {
+  console.log(`[NextAuth] AUTH_URL/NEXTAUTH_URL is set to: ${authUrl}`);
+} else {
+  console.warn(
+    "[NextAuth] AUTH_URL/NEXTAUTH_URL is not set. NextAuth will try to detect the URL from the request."
+  );
+}
+
 // adapterが存在する場合のみ設定
 // 開発環境では、古いセッションクッキーの問題を回避するため、adapterを使用しない
 const config: NextAuthConfig = {
