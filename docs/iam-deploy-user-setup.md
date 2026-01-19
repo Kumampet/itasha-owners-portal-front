@@ -147,6 +147,12 @@ rm -rf aws awscliv2.zip
 
 インストールが完了したら、以下のコマンドで確認：
 
+**PowerShellまたはコマンドプロンプト**:
+```powershell
+aws --version
+```
+
+**Git Bash**:
 ```bash
 aws --version
 ```
@@ -163,13 +169,57 @@ aws-cli/2.x.x Python/3.x.x Windows/10 exe/AMD64
 aws-cli/2.x.x Python/3.x.x Linux/x.x.x
 ```
 
+### Git BashでAWS CLIが見つからない場合
+
+MSIインストーラーでインストールした場合、Git BashのPATHにAWS CLIのパスが自動的に追加されない場合があります。
+
+#### 解決方法1: 自動設定スクリプトを使用（推奨）
+
+プロジェクトルートで以下のコマンドを実行：
+
+```bash
+bash scripts/setup-aws-cli-path.sh
+```
+
+その後、Git Bashを再起動するか、以下のコマンドを実行：
+
+```bash
+source ~/.bash_profile
+```
+
+#### 解決方法2: 手動でPATHを追加
+
+`~/.bash_profile`または`~/.bashrc`ファイルに以下を追加：
+
+```bash
+export PATH="$PATH:/c/Program Files/Amazon/AWSCLIV2"
+```
+
+設定を反映：
+
+```bash
+source ~/.bash_profile
+# または
+source ~/.bashrc
+```
+
+#### 解決方法3: PowerShellまたはコマンドプロンプトを使用
+
+Git Bashで問題が解決しない場合は、PowerShellまたはコマンドプロンプトからAWS CLIコマンドを実行することもできます。
+
 ### トラブルシューティング
 
 #### AWS CLIが見つからないエラー
 
-**Windows**:
+**Windows (PowerShell/コマンドプロンプト)**:
 - コマンドプロンプトまたはPowerShellを再起動
 - 環境変数PATHに`C:\Program Files\Amazon\AWSCLIV2`が含まれているか確認
+- システムの環境変数設定で確認（コントロールパネル → システム → システムの詳細設定 → 環境変数）
+
+**Windows (Git Bash)**:
+- 上記の「Git BashでAWS CLIが見つからない場合」を参照
+- `~/.bash_profile`または`~/.bashrc`にPATHが追加されているか確認
+- Git Bashを再起動
 
 **Linux/Mac**:
 - シェルを再起動（`source ~/.bashrc` または `source ~/.zshrc`）
@@ -178,6 +228,20 @@ aws-cli/2.x.x Python/3.x.x Linux/x.x.x
 #### バージョンが古い場合
 
 AWS CLI v2を使用することを推奨します。古いバージョンがインストールされている場合は、上記の手順でアップグレードしてください。
+
+#### フルパスで実行する場合
+
+一時的にAWS CLIを使用する場合は、フルパスで実行できます：
+
+**Windows (Git Bash)**:
+```bash
+"/c/Program Files/Amazon/AWSCLIV2/aws.exe" --version
+```
+
+**Windows (PowerShell)**:
+```powershell
+& "C:\Program Files\Amazon\AWSCLIV2\aws.exe" --version
+```
 
 ## 手順
 
