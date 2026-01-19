@@ -87,6 +87,14 @@
             ]
         },
         {
+            "Sid": "S3ListBucketsPermission",
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListAllMyBuckets"
+            ],
+            "Resource": "*"
+        },
+        {
             "Sid": "S3Permissions",
             "Effect": "Allow",
             "Action": [
