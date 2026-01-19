@@ -65,25 +65,23 @@ export async function GET(request: Request) {
 
     // 管理画面用のため、privateディレクティブを使用して10秒間キャッシュ
     return NextResponse.json(
-      groups
-        .filter((group) => group.leader && group.event)
-        .map((group) => ({
-          id: group.id,
-          name: group.name,
-          theme: group.theme,
-          groupCode: group.group_code,
-          maxMembers: group.max_members,
-          memberCount: group._count.user_groups,
-          messageCount: group._count.messages,
-          event: group.event,
-          leader: {
-            id: group.leader!.id,
-            name: group.leader!.name,
-            displayName: group.leader!.display_name,
-            email: group.leader!.email,
-          },
-          createdAt: group.created_at,
-        })),
+      groups.map((group) => ({
+        id: group.id,
+        name: group.name,
+        theme: group.theme,
+        groupCode: group.group_code,
+        maxMembers: group.max_members,
+        memberCount: group._count.user_groups,
+        messageCount: group._count.messages,
+        event: group.event,
+        leader: {
+          id: group.leader.id,
+          name: group.leader.name,
+          displayName: group.leader.display_name,
+          email: group.leader.email,
+        },
+        createdAt: group.created_at,
+      })),
       {
         headers: {
           "Cache-Control": "private, s-maxage=10, stale-while-revalidate=30",
@@ -92,11 +90,6 @@ export async function GET(request: Request) {
     );
   } catch (error) {
     console.error("Error fetching groups:", error);
-    // エラーの詳細をログに記録（本番環境でのデバッグ用）
-    if (error instanceof Error) {
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
-    }
     return NextResponse.json(
       { error: "Failed to fetch groups" },
       { status: 500 }
