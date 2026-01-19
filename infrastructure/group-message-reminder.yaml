@@ -30,7 +30,6 @@ Globals:
       Variables:
         DATABASE_URL: !Ref DatabaseUrl
         DATABASE_POOL_SIZE: '5'
-        AWS_REGION: !Ref AWS::Region
         SES_FROM_EMAIL: !Ref SesFromEmail
         NODE_ENV: production
 
@@ -65,6 +64,8 @@ Resources:
       Description: Send reminder emails at 9:00 AM JST (0:00 UTC)
       ScheduleExpression: 'cron(0 0 * * ? *)'
       ScheduleExpressionTimezone: UTC
+      FlexibleTimeWindow:
+        Mode: OFF
       State: ENABLED
       Target:
         Arn: !GetAtt GroupMessageReminderFunction.Arn
@@ -79,6 +80,8 @@ Resources:
       Description: Send reminder emails at 12:00 PM JST (3:00 UTC)
       ScheduleExpression: 'cron(0 3 * * ? *)'
       ScheduleExpressionTimezone: UTC
+      FlexibleTimeWindow:
+        Mode: OFF
       State: ENABLED
       Target:
         Arn: !GetAtt GroupMessageReminderFunction.Arn
@@ -93,6 +96,8 @@ Resources:
       Description: Send reminder emails at 6:00 PM JST (9:00 UTC)
       ScheduleExpression: 'cron(0 9 * * ? *)'
       ScheduleExpressionTimezone: UTC
+      FlexibleTimeWindow:
+        Mode: OFF
       State: ENABLED
       Target:
         Arn: !GetAtt GroupMessageReminderFunction.Arn
@@ -107,6 +112,8 @@ Resources:
       Description: Send reminder emails at 9:00 PM JST (12:00 UTC)
       ScheduleExpression: 'cron(0 12 * * ? *)'
       ScheduleExpressionTimezone: UTC
+      FlexibleTimeWindow:
+        Mode: OFF
       State: ENABLED
       Target:
         Arn: !GetAtt GroupMessageReminderFunction.Arn
