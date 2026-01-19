@@ -158,7 +158,7 @@ if [ -n "$SAM_S3_BUCKET" ]; then
   echo "Using custom S3 bucket: $SAM_S3_BUCKET"
   SAM_DEPLOY_ARGS=(
     --stack-name group-message-reminder-staging
-    --capabilities CAPABILITY_IAM
+    --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
     --parameter-overrides
       Environment=staging
       DatabaseUrl="$DATABASE_URL"
@@ -173,7 +173,7 @@ else
   echo "Using SAM managed S3 bucket (--resolve-s3)"
   SAM_DEPLOY_ARGS=(
     --stack-name group-message-reminder-staging
-    --capabilities CAPABILITY_IAM
+    --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
     --parameter-overrides
       Environment=staging
       DatabaseUrl="$DATABASE_URL"

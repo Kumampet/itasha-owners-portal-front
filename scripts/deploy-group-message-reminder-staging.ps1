@@ -110,7 +110,7 @@ if ($env:SAM_S3_BUCKET) {
     Write-Host "Using custom S3 bucket: $env:SAM_S3_BUCKET" -ForegroundColor Cyan
     sam deploy `
       --stack-name group-message-reminder-staging `
-      --capabilities CAPABILITY_IAM `
+      --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM `
       --parameter-overrides `
         Environment=staging `
         DatabaseUrl="$env:DATABASE_URL" `
@@ -124,7 +124,7 @@ if ($env:SAM_S3_BUCKET) {
     Write-Host "Using SAM managed S3 bucket (--resolve-s3)" -ForegroundColor Cyan
     sam deploy `
       --stack-name group-message-reminder-staging `
-      --capabilities CAPABILITY_IAM `
+      --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM `
       --parameter-overrides `
         Environment=staging `
         DatabaseUrl="$env:DATABASE_URL" `

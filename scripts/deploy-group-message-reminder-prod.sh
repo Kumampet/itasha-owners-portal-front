@@ -82,7 +82,7 @@ echo "Building SAM template..."
 echo "Deploying to AWS..."
 "$SAM_CMD" deploy \
   --stack-name group-message-reminder-prod \
-  --capabilities CAPABILITY_IAM \
+  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
   --parameter-overrides \
     Environment=prod \
     DatabaseUrl="$DATABASE_URL" \

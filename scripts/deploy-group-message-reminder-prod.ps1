@@ -65,7 +65,7 @@ sam build --template-file infrastructure/group-message-reminder.yaml
 Write-Host "Deploying to AWS..." -ForegroundColor Yellow
 sam deploy `
   --stack-name group-message-reminder-prod `
-  --capabilities CAPABILITY_IAM `
+  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM `
   --parameter-overrides `
     Environment=prod `
     DatabaseUrl="$env:DATABASE_URL" `
