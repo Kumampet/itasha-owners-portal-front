@@ -31,4 +31,11 @@ echo "Copying Prisma Client to dist..."
 cp -r node_modules/.prisma dist/ 2>/dev/null || true
 cp -r node_modules/@prisma dist/ 2>/dev/null || true
 
+# distディレクトリの内容をルートにコピー（SAM CLIのビルドプロセス用）
+echo "Copying dist contents to root for SAM build..."
+cp dist/handler.js . 2>/dev/null || true
+cp dist/handler.d.ts . 2>/dev/null || true
+cp -r dist/@prisma . 2>/dev/null || true
+cp -r dist/.prisma . 2>/dev/null || true
+
 echo "Build completed!"
