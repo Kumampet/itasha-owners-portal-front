@@ -86,26 +86,28 @@
                 "arn:aws:iam::*:role/prod-group-message-reminder-*"
             ]
         },
-    {
-      "Sid": "S3Permissions",
-      "Effect": "Allow",
-      "Action": [
-        "s3:CreateBucket",
-        "s3:GetBucketLocation",
-        "s3:GetBucketVersioning",
-        "s3:PutBucketVersioning",
-        "s3:PutEncryptionConfiguration",
-        "s3:GetEncryptionConfiguration",
-        "s3:PutObject",
-        "s3:GetObject",
-        "s3:DeleteObject",
-        "s3:ListBucket"
-      ],
-      "Resource": [
-        "arn:aws:s3:::aws-sam-cli-managed-default-*",
-        "arn:aws:s3:::aws-sam-cli-managed-default-*/*"
-      ]
-    },
+        {
+            "Sid": "S3Permissions",
+            "Effect": "Allow",
+            "Action": [
+                "s3:CreateBucket",
+                "s3:GetBucketLocation",
+                "s3:GetBucketVersioning",
+                "s3:PutBucketVersioning",
+                "s3:PutEncryptionConfiguration",
+                "s3:GetEncryptionConfiguration",
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:DeleteObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::aws-sam-cli-managed-default-*",
+                "arn:aws:s3:::aws-sam-cli-managed-default-*/*",
+                "arn:aws:s3:::sam-deployments-*",
+                "arn:aws:s3:::sam-deployments-*/*"
+            ]
+        },
         {
             "Sid": "CloudWatchLogsPermissions",
             "Effect": "Allow",
