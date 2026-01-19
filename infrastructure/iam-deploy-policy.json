@@ -85,7 +85,9 @@
                 "arn:aws:iam::*:role/staging-group-message-reminder-*",
                 "arn:aws:iam::*:role/prod-group-message-reminder-*",
                 "arn:aws:iam::*:role/group-message-reminder-staging-*",
-                "arn:aws:iam::*:role/group-message-reminder-prod-*"
+                "arn:aws:iam::*:role/group-message-reminder-prod-*",
+                "arn:aws:iam::*:role/group-message-reminder-st-*",
+                "arn:aws:iam::*:role/group-message-reminder-pr-*"
             ]
         },
         {
