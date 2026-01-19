@@ -132,19 +132,38 @@ if [ -d "node_modules/.prisma/client" ]; then
   find node_modules/.prisma/client -type f -name "*darwin*" -delete 2>/dev/null || true
   find node_modules/.prisma/client -type f -name "*windows*" -delete 2>/dev/null || true
   find node_modules/.prisma/client -type f -name "*arm64*" -delete 2>/dev/null || true
-  find node_modules/.prisma/client -type f -name "*musl*" -delete 2>/dev/null || true
+  # musl以外のLinuxバイナリも削除（Lambdaはmuslを使用）
+  find node_modules/.prisma/client -type f -name "*linux-glibc*" -delete 2>/dev/null || true
 fi
 
 # @prisma/enginesパッケージの不要なバイナリを削除
 if [ -d "node_modules/@prisma/engines" ]; then
-  find node_modules/@prisma/engines -type f -name "*darwin*" -delete 2>/dev/null || true
-  find node_modules/@prisma/engines -type f -name "*windows*" -delete 2>/dev/null || true
-  find node_modules/@prisma/engines -type f -name "*arm64*" -delete 2>/dev/null || true
-  find node_modules/@prisma/engines -type f -name "*musl*" -delete 2>/dev/null || true
+  echo "Removing unnecessary Prisma engines..."
+  # すべてのプラットフォームディレクトリを削除（Linux x86_64 muslのみ残す）
   find node_modules/@prisma/engines -type d -name "*darwin*" -exec rm -rf {} + 2>/dev/null || true
   find node_modules/@prisma/engines -type d -name "*windows*" -exec rm -rf {} + 2>/dev/null || true
   find node_modules/@prisma/engines -type d -name "*arm64*" -exec rm -rf {} + 2>/dev/null || true
-  find node_modules/@prisma/engines -type d -name "*musl*" -exec rm -rf {} + 2>/dev/null || true
+  find node_modules/@prisma/engines -type d -name "*linux-glibc*" -exec rm -rf {} + 2>/dev/null || true
+  # ファイルも削除
+  find node_modules/@prisma/engines -type f -name "*darwin*" -delete 2>/dev/null || true
+  find node_modules/@prisma/engines -type f -name "*windows*" -delete 2>/dev/null || true
+  find node_modules/@prisma/engines -type f -name "*arm64*" -delete 2>/dev/null || true
+  find node_modules/@prisma/engines -type f -name "*linux-glibc*" -delete 2>/dev/null || true
+  # キャッシュディレクトリも削除
+  find node_modules/@prisma/engines -type d -name ".cache" -exec rm -rf {} + 2>/dev/null || true
+  find node_modules/@prisma/engines -type d -name "cache" -exec rm -rf {} + 2>/dev/null || true
+fi
+
+# @prisma/studio-coreを削除（Lambdaでは不要）
+if [ -d "node_modules/@prisma/studio-core" ]; then
+  echo "Removing Prisma Studio (not needed in Lambda)..."
+  rm -rf node_modules/@prisma/studio-core 2>/dev/null || true
+fi
+
+# @prisma/query-plan-executorを削除（Lambdaでは不要）
+if [ -d "node_modules/@prisma/query-plan-executor" ]; then
+  echo "Removing Prisma Query Plan Executor (not needed in Lambda)..."
+  rm -rf node_modules/@prisma/query-plan-executor 2>/dev/null || true
 fi
 
 # その他の不要なファイルを削除
