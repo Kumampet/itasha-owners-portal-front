@@ -36,22 +36,39 @@ cp -r node_modules/@prisma dist/
 
 ## デプロイ方法
 
-SAMテンプレートを使用してデプロイ：
+### STG環境へのデプロイ
+
+#### Linux/Mac
 
 ```bash
-# SAMビルド
-sam build --template-file infrastructure/group-message-reminder.yaml
-
-# SAMデプロイ
-sam deploy \
-  --stack-name group-message-reminder-dev \
-  --capabilities CAPABILITY_IAM \
-  --parameter-overrides \
-    Environment=dev \
-    DatabaseUrl=$DATABASE_URL \
-    SesFromEmail=noreply@itasha-owners-navi.link \
-  --region ap-northeast-1
+npm run lambda:deploy:staging
 ```
+
+#### Windows PowerShell
+
+```powershell
+npm run lambda:deploy:staging:win
+```
+
+### 本番環境へのデプロイ
+
+#### Linux/Mac
+
+```bash
+npm run lambda:deploy:prod
+```
+
+#### Windows PowerShell
+
+```powershell
+npm run lambda:deploy:prod:win
+```
+
+**注意**: 本番環境へのデプロイ時は確認プロンプトが表示されます。
+
+### 手動デプロイ
+
+詳細は [デプロイメントガイド](../../docs/group-message-reminder-deployment.md) を参照してください。
 
 ## 環境変数
 

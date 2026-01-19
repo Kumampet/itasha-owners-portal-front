@@ -5,10 +5,9 @@ Description: Group Message Reminder Lambda Function and EventBridge Scheduler
 Parameters:
   Environment:
     Type: String
-    Default: dev
-    Description: Environment name (dev, staging, prod)
+    Default: staging
+    Description: Environment name (staging or prod)
     AllowedValues:
-      - dev
       - staging
       - prod
   
