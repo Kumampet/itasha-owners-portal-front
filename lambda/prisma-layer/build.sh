@@ -38,17 +38,28 @@ else
   echo "Warning: schema.prisma not found"
 fi
 
+# PrismaスキーマにbinaryTargetsを追加（LambdaはLinux x86_64のみ必要）
+echo "Updating Prisma schema for Lambda..."
+# generatorセクションにbinaryTargetsを追加
+sed -i.bak 's/generator client {/generator client {\n  binaryTargets = ["native"]/' schema.prisma 2>/dev/null || \
+sed -i '' 's/generator client {/generator client {\n  binaryTargets = ["native"]/' schema.prisma 2>/dev/null || \
+echo "Warning: Could not update schema.prisma, using as-is"
+
 # Prismaクライアントを生成
 echo "Generating Prisma Client..."
 # prisma.config.tsを一時的にリネームして無視
 if [ -f "../../../prisma.config.ts" ]; then
   mv ../../../prisma.config.ts ../../../prisma.config.ts.bak 2>/dev/null || true
 fi
-npx prisma generate --schema=./schema.prisma
+# Linux x86_64のみを指定して生成
+PRISMA_CLI_BINARY_TARGETS=linux-musl-openssl-3.0.x npx prisma generate --schema=./schema.prisma
 # prisma.config.tsを復元
 if [ -f "../../../prisma.config.ts.bak" ]; then
   mv ../../../prisma.config.ts.bak ../../../prisma.config.ts 2>/dev/null || true
 fi
+
+# スキーマファイルのバックアップを削除
+rm -f schema.prisma.bak 2>/dev/null || true
 
 # 不要なファイルを削除
 echo "Cleaning up unnecessary files..."
