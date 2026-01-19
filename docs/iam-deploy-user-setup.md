@@ -81,45 +81,163 @@ aws iam create-access-key \
 
 ### 3. アクセスキーの設定
 
-#### AWS CLIで設定
+#### 方法1: AWS CLIで設定（推奨）
+
+##### デフォルトプロファイルとして設定
+
+```bash
+aws configure
+```
+
+以下の情報を順番に入力します：
+
+1. **AWS Access Key ID**: 上記で取得したAccess Key IDを入力
+2. **AWS Secret Access Key**: 上記で取得したSecret Access Keyを入力
+3. **Default region name**: `ap-northeast-1` を入力
+4. **Default output format**: `json` を入力（Enterキーでデフォルトのjsonを選択）
+
+##### 名前付きプロファイルとして設定
+
+複数のAWSアカウントや環境を使い分ける場合は、名前付きプロファイルを使用します：
 
 ```bash
 aws configure --profile group-message-reminder-deploy
 ```
 
-以下の情報を入力：
-- AWS Access Key ID: 上記で取得したAccess Key ID
-- AWS Secret Access Key: 上記で取得したSecret Access Key
-- Default region name: `ap-northeast-1`
-- Default output format: `json`
+同じ情報を入力します。使用する場合は、`--profile`オプションを追加：
 
-#### 環境変数で設定
+```bash
+aws sts get-caller-identity --profile group-message-reminder-deploy
+```
+
+##### 設定ファイルの確認
+
+設定は以下のファイルに保存されます：
+
+- **Linux/Mac**: `~/.aws/credentials` と `~/.aws/config`
+- **Windows**: `C:\Users\ユーザー名\.aws\credentials` と `C:\Users\ユーザー名\.aws\config`
+
+**credentialsファイルの例**:
+```ini
+[default]
+aws_access_key_id = AKIAIOSFODNN7EXAMPLE
+aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+
+[group-message-reminder-deploy]
+aws_access_key_id = AKIAIOSFODNN7EXAMPLE
+aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+```
+
+**configファイルの例**:
+```ini
+[default]
+region = ap-northeast-1
+output = json
+
+[profile group-message-reminder-deploy]
+region = ap-northeast-1
+output = json
+```
+
+#### 方法2: 環境変数で設定
+
+##### Linux/Mac (bash)
 
 ```bash
 export AWS_ACCESS_KEY_ID=your-access-key-id
 export AWS_SECRET_ACCESS_KEY=your-secret-access-key
 export AWS_REGION=ap-northeast-1
+export AWS_DEFAULT_REGION=ap-northeast-1
 ```
 
-Windows PowerShellの場合：
+##### Windows PowerShell
 
 ```powershell
 $env:AWS_ACCESS_KEY_ID = "your-access-key-id"
 $env:AWS_SECRET_ACCESS_KEY = "your-secret-access-key"
 $env:AWS_REGION = "ap-northeast-1"
+$env:AWS_DEFAULT_REGION = "ap-northeast-1"
+```
+
+##### Windows Command Prompt (cmd)
+
+```cmd
+set AWS_ACCESS_KEY_ID=your-access-key-id
+set AWS_SECRET_ACCESS_KEY=your-secret-access-key
+set AWS_REGION=ap-northeast-1
+set AWS_DEFAULT_REGION=ap-northeast-1
+```
+
+**注意**: 環境変数は現在のセッションでのみ有効です。永続的に設定する場合は、システムの環境変数設定を使用するか、`.bashrc`や`.zshrc`に追加してください。
+
+#### 方法3: 設定ファイルを直接編集
+
+設定ファイルを直接編集することもできます：
+
+**Linux/Mac**:
+```bash
+# credentialsファイルを編集
+nano ~/.aws/credentials
+
+# configファイルを編集
+nano ~/.aws/config
+```
+
+**Windows**:
+```powershell
+# credentialsファイルを編集
+notepad $env:USERPROFILE\.aws\credentials
+
+# configファイルを編集
+notepad $env:USERPROFILE\.aws\config
 ```
 
 ### 4. 認証情報の確認
 
-```bash
-# プロファイルを使用する場合
-aws sts get-caller-identity --profile group-message-reminder-deploy
+#### デフォルトプロファイルを使用する場合
 
-# 環境変数を使用する場合
+```bash
 aws sts get-caller-identity
 ```
 
-正しく設定されていれば、ユーザー名とアカウントIDが表示されます。
+#### 名前付きプロファイルを使用する場合
+
+```bash
+aws sts get-caller-identity --profile group-message-reminder-deploy
+```
+
+#### 環境変数を使用する場合
+
+環境変数を設定した後、同じコマンドを実行：
+
+```bash
+aws sts get-caller-identity
+```
+
+#### 期待される出力
+
+正しく設定されていれば、以下のような出力が表示されます：
+
+```json
+{
+    "UserId": "AIDAIOSFODNN7EXAMPLE",
+    "Account": "123456789012",
+    "Arn": "arn:aws:iam::123456789012:user/group-message-reminder-deploy-user"
+}
+```
+
+#### エラーが発生する場合
+
+以下のエラーが表示される場合は、認証情報が正しく設定されていません：
+
+```
+Unable to locate credentials
+```
+
+**対処法**:
+1. `aws configure`を実行して認証情報を再設定
+2. 環境変数が正しく設定されているか確認
+3. 設定ファイルのパスと内容を確認
 
 ## 環境ごとのIAMユーザー作成
 
