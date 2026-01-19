@@ -52,7 +52,7 @@ export async function GET() {
     });
 
     const groups = userGroups
-      .filter((ug) => ug.group)
+      .filter((ug) => ug.group && ug.group.leader && ug.group.event)
       .map((ug) => ({
         id: ug.group!.id,
         name: ug.group!.name,
@@ -77,6 +77,11 @@ export async function GET() {
     );
   } catch (error) {
     console.error("Error fetching groups:", error);
+    // エラーの詳細をログに記録（本番環境でのデバッグ用）
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
     return NextResponse.json(
       { error: "Failed to fetch groups" },
       { status: 500 }
