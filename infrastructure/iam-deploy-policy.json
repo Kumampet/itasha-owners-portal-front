@@ -61,7 +61,9 @@
             ],
             "Resource": [
                 "arn:aws:scheduler:*:*:schedule/staging-group-message-reminder-*",
-                "arn:aws:scheduler:*:*:schedule/prod-group-message-reminder-*"
+                "arn:aws:scheduler:*:*:schedule/prod-group-message-reminder-*",
+                "arn:aws:scheduler:*:*:schedule/default/staging-group-message-reminder-*",
+                "arn:aws:scheduler:*:*:schedule/default/prod-group-message-reminder-*"
             ]
         },
         {
