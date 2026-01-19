@@ -50,6 +50,12 @@ fi
 
 # Lambda関数をビルド
 echo "Building Lambda function..."
+# Prisma Layerをビルド
+echo "Building Prisma Layer..."
+bash lambda/prisma-layer/build.sh
+
+# Lambda関数をビルド
+echo "Building Lambda function..."
 npm run lambda:build
 
 # SAMコマンドのパスを取得（Windows環境対応）
