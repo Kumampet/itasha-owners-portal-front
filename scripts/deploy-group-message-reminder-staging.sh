@@ -62,16 +62,39 @@ if "$AWS_CMD" cloudformation describe-stacks --stack-name aws-sam-cli-managed-de
   
   if [ "$STACK_STATUS" = "ROLLBACK_FAILED" ] || [ "$STACK_STATUS" = "CREATE_FAILED" ]; then
     echo "Found failed SAM managed stack (status: $STACK_STATUS). Attempting cleanup..."
-    "$AWS_CMD" cloudformation delete-stack \
-      --stack-name aws-sam-cli-managed-default \
-      --profile "$AWS_PROFILE" \
-      --region "$AWS_REGION" || true
     
-    echo "Waiting for cleanup to complete (this may take a few minutes)..."
-    "$AWS_CMD" cloudformation wait stack-delete-complete \
+    # スタックを削除
+    if "$AWS_CMD" cloudformation delete-stack \
       --stack-name aws-sam-cli-managed-default \
       --profile "$AWS_PROFILE" \
-      --region "$AWS_REGION" || echo "Stack deletion in progress..."
+      --region "$AWS_REGION" 2>&1; then
+      
+      echo "Waiting for cleanup to complete (this may take a few minutes)..."
+      # 最大10分待機（30秒間隔で20回）
+      MAX_WAIT=20
+      COUNT=0
+      while [ $COUNT -lt $MAX_WAIT ]; do
+        if ! "$AWS_CMD" cloudformation describe-stacks \
+          --stack-name aws-sam-cli-managed-default \
+          --profile "$AWS_PROFILE" \
+          --region "$AWS_REGION" &> /dev/null; then
+          echo "Stack deleted successfully."
+          break
+        fi
+        echo "Still waiting... ($((COUNT + 1))/$MAX_WAIT)"
+        sleep 30
+        COUNT=$((COUNT + 1))
+      done
+      
+      if [ $COUNT -eq $MAX_WAIT ]; then
+        echo "Warning: Stack deletion is taking longer than expected."
+        echo "You may need to delete it manually from the AWS Console."
+        echo "Or use a custom S3 bucket: export SAM_S3_BUCKET=your-bucket-name"
+      fi
+    else
+      echo "Failed to delete stack. Please delete manually or use a custom S3 bucket."
+      echo "To use a custom bucket: export SAM_S3_BUCKET=your-bucket-name"
+    fi
   elif [ "$STACK_STATUS" = "DELETE_FAILED" ]; then
     echo "ERROR: SAM managed stack is in DELETE_FAILED state."
     echo "This stack cannot be automatically deleted."
