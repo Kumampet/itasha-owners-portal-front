@@ -5,7 +5,8 @@
   "main": "handler.js",
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf node_modules dist *.js *.d.ts"
+    "clean": "rm -rf node_modules dist *.js *.d.ts",
+    "postbuild": "npm prune --production"
   },
   "dependencies": {
     "@prisma/client": "^7.0.0",
