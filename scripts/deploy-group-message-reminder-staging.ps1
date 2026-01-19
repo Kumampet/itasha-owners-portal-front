@@ -21,7 +21,7 @@ $env:AWS_REGION = if ($env:AWS_REGION) { $env:AWS_REGION } else { "ap-northeast-
 $env:ENVIRONMENT = "staging"
 
 # ローカル環境からデプロイする場合は、AWSプロファイルを設定
-$env:AWS_PROFILE = "Itanavi-Lambda-Deploy-local"
+$env:AWS_PROFILE = "admin"
 
 Write-Host "Environment: $env:ENVIRONMENT" -ForegroundColor Cyan
 Write-Host "AWS Region: $env:AWS_REGION" -ForegroundColor Cyan
@@ -40,7 +40,7 @@ try {
 } catch {
     Write-Host "Error: AWS credentials not configured for profile '$env:AWS_PROFILE'." -ForegroundColor Red
     Write-Host "Please configure AWS credentials using one of the following methods:" -ForegroundColor Yellow
-    Write-Host "  1. Run 'aws configure --profile Itanavi-Lambda-Deploy-local'" -ForegroundColor Yellow
+    Write-Host "  1. Run 'aws configure --profile admin'" -ForegroundColor Yellow
     Write-Host "  2. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables" -ForegroundColor Yellow
     Write-Host "  3. Use AWS SSO or IAM roles" -ForegroundColor Yellow
     exit 1

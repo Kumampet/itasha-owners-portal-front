@@ -20,7 +20,7 @@ export AWS_REGION=${AWS_REGION:-ap-northeast-1}
 export ENVIRONMENT=staging
 
 # ローカル環境からデプロイする場合は、AWSプロファイルを設定
-export AWS_PROFILE=Itanavi-Lambda-Deploy-local
+export AWS_PROFILE=admin
 
 echo "Environment: $ENVIRONMENT"
 echo "AWS Region: $AWS_REGION"
@@ -32,7 +32,7 @@ echo "Checking AWS credentials..."
 if ! aws sts get-caller-identity --profile "$AWS_PROFILE" &> /dev/null; then
   echo "Error: AWS credentials not configured for profile '$AWS_PROFILE'."
   echo "Please configure AWS credentials using one of the following methods:"
-  echo "  1. Run 'aws configure --profile Itanavi-Lambda-Deploy-local'"
+  echo "  1. Run 'aws configure --profile admin'"
   echo "  2. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables"
   echo "  3. Use AWS SSO or IAM roles"
   exit 1
