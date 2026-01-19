@@ -24,6 +24,24 @@ Write-Host "Environment: $env:ENVIRONMENT" -ForegroundColor Cyan
 Write-Host "AWS Region: $env:AWS_REGION" -ForegroundColor Cyan
 Write-Host "SES From Email: $env:SES_FROM_EMAIL" -ForegroundColor Cyan
 
+# AWS認証情報の確認
+Write-Host "Checking AWS credentials..." -ForegroundColor Yellow
+try {
+    $callerIdentity = aws sts get-caller-identity 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "AWS credentials not configured"
+    }
+    $accountId = aws sts get-caller-identity --query Account --output text 2>&1
+    Write-Host "AWS Account ID: $accountId" -ForegroundColor Cyan
+} catch {
+    Write-Host "Error: AWS credentials not configured." -ForegroundColor Red
+    Write-Host "Please configure AWS credentials using one of the following methods:" -ForegroundColor Yellow
+    Write-Host "  1. Run 'aws configure'" -ForegroundColor Yellow
+    Write-Host "  2. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables" -ForegroundColor Yellow
+    Write-Host "  3. Use AWS SSO or IAM roles" -ForegroundColor Yellow
+    exit 1
+}
+
 # 確認プロンプト
 $confirm = Read-Host "Are you sure you want to deploy to PRODUCTION? (yes/no)"
 if ($confirm -ne "yes") {

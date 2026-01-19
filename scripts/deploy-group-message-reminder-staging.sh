@@ -23,6 +23,20 @@ echo "Environment: $ENVIRONMENT"
 echo "AWS Region: $AWS_REGION"
 echo "SES From Email: $SES_FROM_EMAIL"
 
+# AWS認証情報の確認
+echo "Checking AWS credentials..."
+if ! aws sts get-caller-identity &> /dev/null; then
+  echo "Error: AWS credentials not configured."
+  echo "Please configure AWS credentials using one of the following methods:"
+  echo "  1. Run 'aws configure'"
+  echo "  2. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables"
+  echo "  3. Use AWS SSO or IAM roles"
+  exit 1
+fi
+
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null)
+echo "AWS Account ID: $AWS_ACCOUNT_ID"
+
 # Lambda関数をビルド
 echo "Building Lambda function..."
 npm run lambda:build
