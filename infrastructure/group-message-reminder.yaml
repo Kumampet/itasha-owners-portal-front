@@ -65,7 +65,7 @@ Resources:
       ScheduleExpression: 'cron(0 0 * * ? *)'
       ScheduleExpressionTimezone: UTC
       FlexibleTimeWindow:
-        Mode: OFF
+        Mode: 'OFF'
       State: ENABLED
       Target:
         Arn: !GetAtt GroupMessageReminderFunction.Arn
@@ -81,7 +81,7 @@ Resources:
       ScheduleExpression: 'cron(0 3 * * ? *)'
       ScheduleExpressionTimezone: UTC
       FlexibleTimeWindow:
-        Mode: OFF
+        Mode: 'OFF'
       State: ENABLED
       Target:
         Arn: !GetAtt GroupMessageReminderFunction.Arn
@@ -97,7 +97,7 @@ Resources:
       ScheduleExpression: 'cron(0 9 * * ? *)'
       ScheduleExpressionTimezone: UTC
       FlexibleTimeWindow:
-        Mode: OFF
+        Mode: 'OFF'
       State: ENABLED
       Target:
         Arn: !GetAtt GroupMessageReminderFunction.Arn
@@ -113,7 +113,7 @@ Resources:
       ScheduleExpression: 'cron(0 12 * * ? *)'
       ScheduleExpressionTimezone: UTC
       FlexibleTimeWindow:
-        Mode: OFF
+        Mode: 'OFF'
       State: ENABLED
       Target:
         Arn: !GetAtt GroupMessageReminderFunction.Arn
