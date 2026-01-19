@@ -30,12 +30,16 @@ EOF
 echo "Installing dependencies..."
 npm install
 
-# Prismaスキーマをコピー（Lambda関数ディレクトリから）
-if [ -f "../../group-message-reminder/schema.prisma" ]; then
+# Prismaスキーマをコピー（ルートのprismaディレクトリから）
+if [ -f "../../../prisma/schema.prisma" ]; then
+  cp ../../../prisma/schema.prisma ./schema.prisma
+  echo "Prisma schema copied from prisma/schema.prisma"
+elif [ -f "../../group-message-reminder/schema.prisma" ]; then
   cp ../../group-message-reminder/schema.prisma ./schema.prisma
-  echo "Prisma schema copied"
+  echo "Prisma schema copied from lambda/group-message-reminder/schema.prisma"
 else
-  echo "Warning: schema.prisma not found"
+  echo "Error: schema.prisma not found in expected locations"
+  exit 1
 fi
 
 # PrismaスキーマにbinaryTargetsを追加（LambdaはLinux x86_64のみ必要）
