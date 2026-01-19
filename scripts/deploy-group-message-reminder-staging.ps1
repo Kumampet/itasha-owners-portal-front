@@ -42,6 +42,7 @@ sam deploy `
     DatabaseUrl="$env:DATABASE_URL" `
     SesFromEmail="$env:SES_FROM_EMAIL" `
   --region "$env:AWS_REGION" `
+  --resolve-s3 `
   --no-confirm-changeset `
   --no-fail-on-empty-changeset
 

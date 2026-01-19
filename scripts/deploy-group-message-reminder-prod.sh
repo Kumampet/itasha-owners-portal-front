@@ -69,7 +69,8 @@ echo "Deploying to AWS..."
     Environment=prod \
     DatabaseUrl="$DATABASE_URL" \
     SesFromEmail="$SES_FROM_EMAIL" \
-  --region "$AWS_REGION"
+  --region "$AWS_REGION" \
+  --resolve-s3
 
 echo "Deployment completed successfully!"
 echo "Lambda function ARN: Check CloudFormation outputs"

@@ -63,6 +63,7 @@ echo "Deploying to AWS..."
     DatabaseUrl="$DATABASE_URL" \
     SesFromEmail="$SES_FROM_EMAIL" \
   --region "$AWS_REGION" \
+  --resolve-s3 \
   --no-confirm-changeset \
   --no-fail-on-empty-changeset
 

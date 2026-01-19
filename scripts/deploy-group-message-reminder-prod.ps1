@@ -48,7 +48,8 @@ sam deploy `
     Environment=prod `
     DatabaseUrl="$env:DATABASE_URL" `
     SesFromEmail="$env:SES_FROM_EMAIL" `
-  --region "$env:AWS_REGION"
+  --region "$env:AWS_REGION" `
+  --resolve-s3
 
 Write-Host "Deployment completed successfully!" -ForegroundColor Green
 Write-Host "Lambda function ARN: Check CloudFormation outputs" -ForegroundColor Cyan
