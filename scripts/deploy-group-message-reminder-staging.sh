@@ -27,13 +27,35 @@ echo "SES From Email: $SES_FROM_EMAIL"
 echo "Building Lambda function..."
 npm run lambda:build
 
+# SAMコマンドのパスを取得（Windows環境対応）
+if command -v sam &> /dev/null; then
+  SAM_CMD="sam"
+elif command -v sam.cmd &> /dev/null; then
+  SAM_CMD="sam.cmd"
+elif [ -f "/c/Program Files/Amazon/AWSSAMCLI/bin/sam.cmd" ]; then
+  SAM_CMD="/c/Program Files/Amazon/AWSSAMCLI/bin/sam.cmd"
+elif [ -f "C:/Program Files/Amazon/AWSSAMCLI/bin/sam.cmd" ]; then
+  SAM_CMD="C:/Program Files/Amazon/AWSSAMCLI/bin/sam.cmd"
+else
+  # Windows環境でwhere.exeを使用してsam.cmdを探す
+  SAM_PATH=$(where.exe sam.cmd 2>/dev/null | head -n 1 | tr -d '\r')
+  if [ -n "$SAM_PATH" ]; then
+    SAM_CMD="$SAM_PATH"
+  else
+    echo "Error: SAM CLI not found. Please install AWS SAM CLI."
+    exit 1
+  fi
+fi
+
+echo "Using SAM CLI: $SAM_CMD"
+
 # SAMビルド
 echo "Building SAM template..."
-sam build --template-file infrastructure/group-message-reminder.yaml
+"$SAM_CMD" build --template-file infrastructure/group-message-reminder.yaml
 
 # SAMデプロイ
 echo "Deploying to AWS..."
-sam deploy \
+"$SAM_CMD" deploy \
   --stack-name group-message-reminder-staging \
   --capabilities CAPABILITY_IAM \
   --parameter-overrides \
