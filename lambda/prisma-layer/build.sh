@@ -94,9 +94,36 @@ if [ -d "node_modules/@prisma/adapter-mariadb" ]; then
   find node_modules/@prisma/adapter-mariadb -name "*.map" -type f -delete 2>/dev/null || true
 fi
 
+# Prismaエンジンの不要なプラットフォームバイナリを削除（LambdaはLinux x86_64のみ必要）
+echo "Removing unnecessary Prisma engine binaries..."
+# .prisma/client内のエンジンファイルを確認
+if [ -d "node_modules/.prisma/client" ]; then
+  # Linux x86_64以外のプラットフォームのエンジンを削除
+  find node_modules/.prisma/client -type f -name "*darwin*" -delete 2>/dev/null || true
+  find node_modules/.prisma/client -type f -name "*windows*" -delete 2>/dev/null || true
+  find node_modules/.prisma/client -type f -name "*arm64*" -delete 2>/dev/null || true
+  find node_modules/.prisma/client -type f -name "*musl*" -delete 2>/dev/null || true
+fi
+
+# @prisma/enginesパッケージの不要なバイナリを削除
+if [ -d "node_modules/@prisma/engines" ]; then
+  find node_modules/@prisma/engines -type f -name "*darwin*" -delete 2>/dev/null || true
+  find node_modules/@prisma/engines -type f -name "*windows*" -delete 2>/dev/null || true
+  find node_modules/@prisma/engines -type f -name "*arm64*" -delete 2>/dev/null || true
+  find node_modules/@prisma/engines -type f -name "*musl*" -delete 2>/dev/null || true
+  find node_modules/@prisma/engines -type d -name "*darwin*" -exec rm -rf {} + 2>/dev/null || true
+  find node_modules/@prisma/engines -type d -name "*windows*" -exec rm -rf {} + 2>/dev/null || true
+  find node_modules/@prisma/engines -type d -name "*arm64*" -exec rm -rf {} + 2>/dev/null || true
+  find node_modules/@prisma/engines -type d -name "*musl*" -exec rm -rf {} + 2>/dev/null || true
+fi
+
 # その他の不要なファイルを削除
 find node_modules -name ".npmignore" -type f -delete 2>/dev/null || true
 find node_modules -name ".gitignore" -type f -delete 2>/dev/null || true
 find node_modules -name "README*" -type f -delete 2>/dev/null || true
+
+# サイズを確認
+echo "Layer size after cleanup:"
+du -sh node_modules 2>/dev/null || echo "Size check failed"
 
 echo "Prisma Layer build completed!"
