@@ -30,6 +30,7 @@ STG環境にデプロイする前に、以下の環境変数を設定してく�
 export AWS_REGION=ap-northeast-1
 export DATABASE_URL="mysql://admin:dass0707@itasha-staging-mysql-db.cbi8k2qwwj02.ap-northeast-1.rds.amazonaws.com:3306/itashadb"
 export SES_FROM_EMAIL="noreply-staging@itasha-owners-navi.link"
+export SAM_S3_BUCKET="sam-deployments-1768817344"
 ```
 
 Windows PowerShellの場合：
