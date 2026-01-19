@@ -166,6 +166,29 @@ if [ -d "node_modules/@prisma/query-plan-executor" ]; then
   rm -rf node_modules/@prisma/query-plan-executor 2>/dev/null || true
 fi
 
+# @prisma/clientの不要なランタイムファイルを削除
+if [ -d "node_modules/@prisma/client/runtime" ]; then
+  echo "Removing unnecessary Prisma Client runtime files..."
+  # SQL Server、PostgreSQL、SQLite用のWASMファイルを削除（MySQLのみ使用）
+  find node_modules/@prisma/client/runtime -name "*sqlserver*" -type f -delete 2>/dev/null || true
+  find node_modules/@prisma/client/runtime -name "*postgresql*" -type f -delete 2>/dev/null || true
+  find node_modules/@prisma/client/runtime -name "*sqlite*" -type f -delete 2>/dev/null || true
+  # Edge runtime関連のファイルを削除（Lambdaでは不要）
+  find node_modules/@prisma/client -name "*edge*" -type f -delete 2>/dev/null || true
+  find node_modules/@prisma/client -name "*browser*" -type f -delete 2>/dev/null || true
+fi
+
+# mariadbパッケージの不要なファイルをさらに削除
+if [ -d "node_modules/mariadb" ]; then
+  echo "Removing more unnecessary mariadb files..."
+  # ドキュメントとサンプルを削除
+  find node_modules/mariadb -name "*.md" -type f -delete 2>/dev/null || true
+  find node_modules/mariadb -name "*.txt" -type f -delete 2>/dev/null || true
+  find node_modules/mariadb -name "examples" -type d -exec rm -rf {} + 2>/dev/null || true
+  find node_modules/mariadb -name "doc" -type d -exec rm -rf {} + 2>/dev/null || true
+  find node_modules/mariadb -name "docs" -type d -exec rm -rf {} + 2>/dev/null || true
+fi
+
 # その他の不要なファイルを削除
 find node_modules -name ".npmignore" -type f -delete 2>/dev/null || true
 find node_modules -name ".gitignore" -type f -delete 2>/dev/null || true
