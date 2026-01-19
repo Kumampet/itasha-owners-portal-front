@@ -14,7 +14,6 @@ function createPrismaClient(): PrismaClient {
   const normalizedUrl = databaseUrl.replace(/^mysql:\/\//, "http://");
   const dbUrl = new URL(normalizedUrl);
   const password = decodeURIComponent(dbUrl.password || "");
-
   const connectionLimit = parseInt(process.env.DATABASE_POOL_SIZE || "5", 10);
 
   const poolConfig = {
@@ -33,7 +32,6 @@ function createPrismaClient(): PrismaClient {
   };
 
   const adapter = new PrismaMariaDb(poolConfig);
-
   return new PrismaClient({
     adapter,
     log: ["error"],
@@ -41,8 +39,8 @@ function createPrismaClient(): PrismaClient {
 }
 
 // Prisma Clientをグローバルに保持（Lambdaのコールドスタート対策）
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+const globalForPrisma = globalThis as typeof globalThis & {
+  prisma?: PrismaClient;
 };
 
 let prismaInstance: PrismaClient | undefined;
@@ -76,39 +74,39 @@ async function sendEmail({
   to: string;
   subject: string;
   body: string;
-}): Promise<{ success: boolean; messageId?: string }> {
-  const from = process.env.SES_FROM_EMAIL || "noreply@example.com";
+}): Promise<void> {
+  const fromEmail = process.env.SES_FROM_EMAIL || "noreply@itasha-owners-navi.link";
 
-  try {
-    const command = new SendEmailCommand({
-      Source: from,
-      Destination: {
-        ToAddresses: [to],
+  const command = new SendEmailCommand({
+    Source: fromEmail,
+    Destination: {
+      ToAddresses: [to],
+    },
+    Message: {
+      Subject: {
+        Data: subject,
+        Charset: "UTF-8",
       },
-      Message: {
-        Subject: {
-          Data: subject,
+      Body: {
+        Html: {
+          Data: body,
           Charset: "UTF-8",
         },
-        Body: {
-          Text: {
-            Data: body,
-            Charset: "UTF-8",
-          },
-        },
       },
-    });
+    },
+  });
 
-    const response = await sesClient.send(command);
-    return { success: true, messageId: response.MessageId };
+  try {
+    await sesClient.send(command);
+    console.log(`[Group Message Reminder] Email sent successfully to ${to}`);
   } catch (error) {
-    console.error("Failed to send email:", error);
+    console.error(`[Group Message Reminder] Failed to send email to ${to}:`, error);
     throw error;
   }
 }
 
 // Lambda関数のハンドラー
-export const handler = async (event: unknown) => {
+const handler = async (event: unknown) => {
   console.log("[Group Message Reminder] Starting reminder check...");
   console.log("[Group Message Reminder] Event:", JSON.stringify(event, null, 2));
 
@@ -116,7 +114,6 @@ export const handler = async (event: unknown) => {
 
   try {
     // 全ユーザーを取得（削除されていないユーザーのみ）
-    // emailフィールドはスキーマ上必須なので、nullチェックは不要
     const users = await prisma.user.findMany({
       where: {
         deleted_at: null,
@@ -131,7 +128,13 @@ export const handler = async (event: unknown) => {
 
     console.log(`[Group Message Reminder] Found ${users.length} users to check`);
 
-    const results = [];
+    const results: Array<{
+      userId: string;
+      email: string;
+      success: boolean;
+      unreadGroups: number;
+      error?: string;
+    }> = [];
     let totalEmailsSent = 0;
     let totalEmailsFailed = 0;
 
@@ -156,116 +159,106 @@ export const handler = async (event: unknown) => {
           continue;
         }
 
-        const unreadGroups: Array<{ groupId: string; groupName: string }> = [];
+        const unreadGroups: Array<{ id: string; name: string; unreadCount: number }> = [];
 
         // 各団体の未読メッセージをチェック
         for (const userGroup of userGroups) {
           const groupId = userGroup.group.id;
 
-          // 団体の最新メッセージを取得
-          const latestMessage = await prisma.groupMessage.findFirst({
-            where: { group_id: groupId },
-            orderBy: { created_at: "desc" },
-            select: { id: true, created_at: true },
-          });
-
-          if (!latestMessage) {
-            continue;
-          }
-
-          // ユーザーが最新メッセージを既読か確認
-          const readRecord = await prisma.groupMessageRead.findUnique({
+          // 団体の全メッセージを取得
+          const allMessages = await prisma.groupMessage.findMany({
             where: {
-              message_id_user_id: {
-                message_id: latestMessage.id,
-                user_id: user.id,
-              },
+              group_id: groupId,
+            },
+            select: {
+              id: true,
+            },
+            orderBy: {
+              created_at: "desc",
             },
           });
 
-          // 未読の場合はリストに追加
-          if (!readRecord) {
+          // ユーザーが既読しているメッセージを取得
+          const readMessages = await prisma.groupMessageRead.findMany({
+            where: {
+              user_id: user.id,
+              message_id: {
+                in: allMessages.map((m) => m.id),
+              },
+            },
+            select: {
+              message_id: true,
+            },
+          });
+
+          const readMessageIds = new Set(readMessages.map((r) => r.message_id));
+          const unreadCount = allMessages.filter((m) => !readMessageIds.has(m.id)).length;
+
+          if (unreadCount > 0) {
             unreadGroups.push({
-              groupId: groupId,
-              groupName: userGroup.group.name,
+              id: groupId,
+              name: userGroup.group.name,
+              unreadCount,
             });
           }
         }
 
-        // 未読メッセージがある団体があればメールを送信
+        // 未読メッセージがある場合のみメール送信
         if (unreadGroups.length > 0) {
-          // 最初の未読団体の情報を使用（複数ある場合は最初の1つ）
-          const firstUnreadGroup = unreadGroups[0];
-
           const displayName = user.display_name || user.name || "ユーザー";
-          const groupName = firstUnreadGroup.groupName;
+          const groupList = unreadGroups
+            .map((g) => `・${g.name}（${g.unreadCount}件）`)
+            .join("\n");
 
-          const subject = `【いたなび！】${groupName} | 未読メッセージのお知らせ`;
-          const body = `${displayName}さん
+          const subject = `【${unreadGroups.length}件の団体】未読メッセージのお知らせ`;
+          const body = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+  <p>${displayName} 様</p>
+  <p>未読メッセージがあります。以下の団体で新しいメッセージが届いています。</p>
+  <pre>${groupList}</pre>
+  <p>詳細はアプリをご確認ください。</p>
+</body>
+</html>
+          `.trim();
 
-いつもいたなび！をご利用いただきありがとうございます。
+          await sendEmail({
+            to: user.email,
+            subject,
+            body,
+          });
 
---------------------------
-
-${groupName}に未読メッセージがあります！
-チェックしてみませんか？
-
-マイページはこちら
-https://itasha-owners-navi.link/app/mypage
-
---------------------------
-
-引き続きいたなび！をよろしくお願いします。
-
-※このメールは送信専用です。返信されても回答できません。
-※その他お問い合わせは以下の専用フォームからお願いします。
-https://itasha-owners-navi.link/app/contact
-`;
-
-          try {
-            await sendEmail({
-              to: user.email!,
-              subject: subject,
-              body: body,
-            });
-
-            totalEmailsSent++;
-            results.push({
-              userId: user.id,
-              email: user.email,
-              groupName: groupName,
-              success: true,
-            });
-
-            console.log(`[Group Message Reminder] ✅ Sent email to ${user.email} for group ${groupName}`);
-          } catch (emailError) {
-            totalEmailsFailed++;
-            results.push({
-              userId: user.id,
-              email: user.email,
-              groupName: groupName,
-              success: false,
-              error: emailError instanceof Error ? emailError.message : "Unknown error",
-            });
-
-            console.error(`[Group Message Reminder] ❌ Failed to send email to ${user.email}:`, emailError);
-          }
+          totalEmailsSent++;
+          results.push({
+            userId: user.id,
+            email: user.email,
+            success: true,
+            unreadGroups: unreadGroups.length,
+          });
         }
       } catch (error) {
         console.error(`[Group Message Reminder] Error processing user ${user.id}:`, error);
+        totalEmailsFailed++;
         results.push({
           userId: user.id,
           email: user.email,
           success: false,
+          unreadGroups: 0,
           error: error instanceof Error ? error.message : "Unknown error",
         });
       }
     }
 
     const response = {
-      checked: users.length,
+      success: true,
+      usersChecked: users.length,
       emailsSent: totalEmailsSent,
       emailsFailed: totalEmailsFailed,
+      results,
       timestamp: new Date().toISOString(),
     };
 
@@ -295,3 +288,5 @@ https://itasha-owners-navi.link/app/contact
     }
   }
 };
+
+export { handler };
