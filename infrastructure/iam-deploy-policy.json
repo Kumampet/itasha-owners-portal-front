@@ -77,6 +77,8 @@
                 "iam:DeleteRolePolicy",
                 "iam:GetRolePolicy",
                 "iam:ListRolePolicies",
+                "iam:AttachRolePolicy",
+                "iam:DetachRolePolicy",
                 "iam:ListAttachedRolePolicies",
                 "iam:TagRole",
                 "iam:UntagRole",
