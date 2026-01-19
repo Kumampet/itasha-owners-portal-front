@@ -7,8 +7,153 @@
 ## 前提条件
 
 - AWSアカウントへの管理者アクセス権限があること
-- AWS CLIがインストールされていること
+- AWS CLIがインストールされていること（[インストール手順](#aws-cliのインストール)を参照）
 - IAMコンソールへのアクセス権限があること
+
+## AWS CLIのインストール
+
+### Windows環境
+
+#### 方法1: MSIインストーラーを使用（推奨）
+
+1. [AWS CLIのダウンロードページ](https://aws.amazon.com/cli/)にアクセス
+2. 「**Download the AWS CLI MSI installer for Windows (64-bit)**」をクリック
+3. ダウンロードした`.msi`ファイルを実行
+4. インストールウィザードに従ってインストール
+5. コマンドプロンプトまたはPowerShellを再起動
+6. インストール確認：
+
+```powershell
+aws --version
+```
+
+#### 方法2: Chocolateyを使用
+
+```powershell
+# Chocolateyがインストールされている場合
+choco install awscli
+
+# インストール確認
+aws --version
+```
+
+#### 方法3: PowerShellスクリプトを使用
+
+```powershell
+# PowerShellを管理者として実行
+Invoke-WebRequest -Uri "https://awscli.amazonaws.com/AWSCLIV2.msi" -OutFile "$env:TEMP\AWSCLIV2.msi"
+Start-Process msiexec.exe -ArgumentList "/i $env:TEMP\AWSCLIV2.msi /quiet" -Wait
+```
+
+### Mac環境
+
+#### 方法1: Homebrewを使用（推奨）
+
+```bash
+brew install awscli
+
+# インストール確認
+aws --version
+```
+
+#### 方法2: インストーラーを使用
+
+1. [AWS CLIのダウンロードページ](https://aws.amazon.com/cli/)にアクセス
+2. 「**Download the AWS CLI PKG installer for macOS**」をクリック
+3. ダウンロードした`.pkg`ファイルを実行
+4. インストールウィザードに従ってインストール
+5. インストール確認：
+
+```bash
+aws --version
+```
+
+### Linux環境
+
+#### 方法1: パッケージマネージャーを使用
+
+**Ubuntu/Debian**:
+```bash
+sudo apt-get update
+sudo apt-get install awscli
+
+# インストール確認
+aws --version
+```
+
+**Amazon Linux/RHEL/CentOS**:
+```bash
+sudo yum install aws-cli
+
+# または（新しいバージョン）
+sudo dnf install awscli
+
+# インストール確認
+aws --version
+```
+
+**Fedora**:
+```bash
+sudo dnf install awscli
+
+# インストール確認
+aws --version
+```
+
+#### 方法2: バンドルインストーラーを使用
+
+```bash
+# インストーラーをダウンロード
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+
+# 解凍
+unzip awscliv2.zip
+
+# インストール
+sudo ./aws/install
+
+# インストール確認
+aws --version
+
+# クリーンアップ
+rm -rf aws awscliv2.zip
+```
+
+### インストール確認
+
+インストールが完了したら、以下のコマンドで確認：
+
+```bash
+aws --version
+```
+
+期待される出力例：
+
+```
+aws-cli/2.x.x Python/3.x.x Windows/10 exe/AMD64
+```
+
+または
+
+```
+aws-cli/2.x.x Python/3.x.x Linux/x.x.x
+```
+
+### トラブルシューティング
+
+#### AWS CLIが見つからないエラー
+
+**Windows**:
+- コマンドプロンプトまたはPowerShellを再起動
+- 環境変数PATHに`C:\Program Files\Amazon\AWSCLIV2`が含まれているか確認
+
+**Linux/Mac**:
+- シェルを再起動（`source ~/.bashrc` または `source ~/.zshrc`）
+- パスが正しく設定されているか確認：`which aws`
+
+#### バージョンが古い場合
+
+AWS CLI v2を使用することを推奨します。古いバージョンがインストールされている場合は、上記の手順でアップグレードしてください。
 
 ## 手順
 

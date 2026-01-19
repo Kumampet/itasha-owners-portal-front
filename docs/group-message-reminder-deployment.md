@@ -14,9 +14,9 @@
 
 ## 前提条件
 
-- AWS CLIがインストールされていること
+- AWS CLIがインストールされていること（[IAMユーザー作成ガイド](./iam-deploy-user-setup.md#aws-cliのインストール)を参照）
 - AWS SAM CLIがインストールされていること（[インストールガイド](./sam-cli-installation.md)を参照）
-- AWS認証情報が設定されていること（`aws configure`）
+- AWS認証情報が設定されていること（`aws configure`、[IAMユーザー作成ガイド](./iam-deploy-user-setup.md#3-アクセスキーの設定)を参照）
 - Node.jsとnpmがインストールされていること
 - Prisma CLIがインストールされていること（`npm install -g prisma`）
 
