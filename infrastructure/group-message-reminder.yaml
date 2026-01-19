@@ -41,6 +41,11 @@ Resources:
       CodeUri: ../lambda/group-message-reminder/
       Handler: handler.handler
       Description: Send reminder emails for unread group messages
+    Metadata:
+      BuildMethod: nodejs20.x
+      BuildProperties:
+        NodejsNpmBuilder:
+          BuildCommand: npm run build && npm prune --production
       Policies:
         - Version: '2012-10-17'
           Statement:
