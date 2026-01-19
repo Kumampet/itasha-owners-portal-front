@@ -53,6 +53,10 @@ if ($confirm -ne "yes") {
     exit 1
 }
 
+# Prisma Layerをビルド
+Write-Host "Building Prisma Layer..." -ForegroundColor Yellow
+bash lambda/prisma-layer/build.sh
+
 # Lambda関数をビルド
 Write-Host "Building Lambda function..." -ForegroundColor Yellow
 npm run lambda:build

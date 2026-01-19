@@ -142,6 +142,10 @@ try {
     Write-Host "Main stack not found or cleanup not needed." -ForegroundColor Gray
 }
 
+# Prisma Layerをビルド
+Write-Host "Building Prisma Layer..." -ForegroundColor Yellow
+bash lambda/prisma-layer/build.sh
+
 # Lambda関数をビルド
 Write-Host "Building Lambda function..." -ForegroundColor Yellow
 npm run lambda:build
