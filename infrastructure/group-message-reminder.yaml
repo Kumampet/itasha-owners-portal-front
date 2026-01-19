@@ -39,7 +39,7 @@ Resources:
     Properties:
       FunctionName: !Sub '${Environment}-group-message-reminder'
       CodeUri: ../lambda/group-message-reminder/
-      Handler: handler.handler
+      Handler: dist/handler.handler
       Description: Send reminder emails for unread group messages
       Policies:
         - Version: '2012-10-17'
