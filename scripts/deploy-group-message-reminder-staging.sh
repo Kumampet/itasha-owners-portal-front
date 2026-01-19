@@ -161,6 +161,10 @@ if "$AWS_CMD" cloudformation describe-stacks --stack-name "$STACK_NAME" --profil
   fi
 fi
 
+# Prisma Layerをビルド
+echo "Building Prisma Layer..."
+bash lambda/prisma-layer/build.sh
+
 # Lambda関数をビルド
 echo "Building Lambda function..."
 npm run lambda:build

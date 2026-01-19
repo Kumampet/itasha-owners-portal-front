@@ -19,6 +19,7 @@
     "test:reminder-check": "tsx scripts/test-reminder-check.ts",
     "prisma:generate": "prisma generate",
     "lambda:build": "bash lambda/group-message-reminder/build.sh",
+    "lambda:build:layer": "bash lambda/prisma-layer/build.sh",
     "lambda:deploy:staging": "bash scripts/deploy-group-message-reminder-staging.sh",
     "lambda:deploy:prod": "bash scripts/deploy-group-message-reminder-prod.sh",
     "lambda:deploy:staging:win": "powershell -ExecutionPolicy Bypass -File scripts/deploy-group-message-reminder-staging.ps1",

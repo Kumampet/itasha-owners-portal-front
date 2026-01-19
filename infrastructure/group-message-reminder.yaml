@@ -34,6 +34,16 @@ Globals:
         NODE_ENV: production
 
 Resources:
+  PrismaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub '${Environment}-prisma-layer'
+      Description: Prisma Client Layer for Lambda functions
+      ContentUri: ../lambda/prisma-layer/
+      CompatibleRuntimes:
+        - nodejs20.x
+      RetentionPolicy: Retain
+
   GroupMessageReminderFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -41,6 +51,8 @@ Resources:
       CodeUri: ../lambda/group-message-reminder/
       Handler: handler.handler
       Description: Send reminder emails for unread group messages
+      Layers:
+        - !Ref PrismaLayer
       Policies:
         - Version: '2012-10-17'
           Statement:
