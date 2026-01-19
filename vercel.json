@@ -1,0 +1,20 @@
+{
+  "crons": [
+    {
+      "path": "/api/groups/unread-messages/remind",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/groups/unread-messages/remind",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/groups/unread-messages/remind",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/groups/unread-messages/remind",
+      "schedule": "0 12 * * *"
+    }
+  ]
+}
