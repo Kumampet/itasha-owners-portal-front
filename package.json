@@ -17,7 +17,9 @@
     "db:clear-sessions": "tsx scripts/clear-sessions.ts",
     "db:view-users": "tsx scripts/view-users.ts",
     "test:reminder-check": "tsx scripts/test-reminder-check.ts",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "lambda:build": "bash lambda/group-message-reminder/build.sh",
+    "lambda:deploy": "sam build --template-file infrastructure/group-message-reminder.yaml && sam deploy --guided"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

@@ -1,32 +1,127 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { sendEmail } from "@/lib/ses";
+import { PrismaClient } from "@prisma/client";
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
-// GET /api/groups/unread-messages/remind
-// 未読メッセージがあるユーザーにリマインドメールを送信
-// このエンドポイントは定期的に呼び出される（cronジョブなど）
-export async function GET(request: Request) {
+// Prisma Clientの初期化
+function createPrismaClient(): PrismaClient {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL environment variable is not set");
+  }
+
+  // mysql:// 接続文字列をパース
+  const normalizedUrl = databaseUrl.replace(/^mysql:\/\//, "http://");
+  const dbUrl = new URL(normalizedUrl);
+  const password = decodeURIComponent(dbUrl.password || "");
+
+  const connectionLimit = parseInt(process.env.DATABASE_POOL_SIZE || "5", 10);
+
+  const poolConfig = {
+    host: dbUrl.hostname,
+    port: parseInt(dbUrl.port || "3306"),
+    user: dbUrl.username,
+    password: password,
+    database: dbUrl.pathname.slice(1),
+    connectionLimit,
+    connectTimeout: 10000,
+    acquireTimeout: 10000,
+    idleTimeout: 30000,
+    queueLimit: 0,
+    reuseConnection: true,
+    maxLifetime: 3600000,
+  };
+
+  const adapter = new PrismaMariaDb(poolConfig);
+
+  return new PrismaClient({
+    adapter,
+    log: ["error"],
+  });
+}
+
+// Prisma Clientをグローバルに保持（Lambdaのコールドスタート対策）
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+let prismaInstance: PrismaClient | undefined;
+
+function getPrisma(): PrismaClient {
+  if (prismaInstance) {
+    return prismaInstance;
+  }
+
+  if (globalForPrisma.prisma) {
+    prismaInstance = globalForPrisma.prisma;
+    return prismaInstance;
+  }
+
+  prismaInstance = createPrismaClient();
+  globalForPrisma.prisma = prismaInstance;
+  return prismaInstance;
+}
+
+// SESクライアントの初期化
+const sesClient = new SESClient({
+  region: process.env.AWS_REGION || process.env.APP_AWS_REGION || "ap-northeast-1",
+});
+
+// メール送信関数
+async function sendEmail({
+  to,
+  subject,
+  body,
+}: {
+  to: string;
+  subject: string;
+  body: string;
+}): Promise<{ success: boolean; messageId?: string }> {
+  const from = process.env.SES_FROM_EMAIL || "noreply@example.com";
+
   try {
-    // 認証チェック（オプション: 環境変数でAPIキーを設定）
-    const authHeader = request.headers.get("authorization");
-    const apiKey = process.env.GROUP_MESSAGE_REMINDER_API_KEY;
-    
-    if (apiKey && authHeader !== `Bearer ${apiKey}`) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+    const command = new SendEmailCommand({
+      Source: from,
+      Destination: {
+        ToAddresses: [to],
+      },
+      Message: {
+        Subject: {
+          Data: subject,
+          Charset: "UTF-8",
+        },
+        Body: {
+          Text: {
+            Data: body,
+            Charset: "UTF-8",
+          },
+        },
+      },
+    });
 
-    console.log("[Group Message Reminder] Starting reminder check...");
+    const response = await sesClient.send(command);
+    return { success: true, messageId: response.MessageId };
+  } catch (error) {
+    console.error("Failed to send email:", error);
+    throw error;
+  }
+}
 
+// Lambda関数のハンドラー
+export const handler = async (event: unknown) => {
+  console.log("[Group Message Reminder] Starting reminder check...");
+  console.log("[Group Message Reminder] Event:", JSON.stringify(event, null, 2));
+
+  const prisma = getPrisma();
+
+  try {
     // 全ユーザーを取得（メールアドレスがあるユーザーのみ）
     const users = await prisma.user.findMany({
       where: {
         email: {
           not: null,
         },
-        deleted_at: null, // 削除されていないユーザーのみ
+        deleted_at: null,
       },
       select: {
         id: true,
@@ -63,7 +158,6 @@ export async function GET(request: Request) {
           continue;
         }
 
-        const groupIds = userGroups.map((ug) => ug.group.id);
         const unreadGroups: Array<{ groupId: string; groupName: string }> = [];
 
         // 各団体の未読メッセージをチェック
@@ -104,7 +198,7 @@ export async function GET(request: Request) {
         if (unreadGroups.length > 0) {
           // 最初の未読団体の情報を使用（複数ある場合は最初の1つ）
           const firstUnreadGroup = unreadGroups[0];
-          
+
           const displayName = user.display_name || user.name || "ユーザー";
           const groupName = firstUnreadGroup.groupName;
 
@@ -174,29 +268,32 @@ https://itasha-owners-navi.link/app/contact
       checked: users.length,
       emailsSent: totalEmailsSent,
       emailsFailed: totalEmailsFailed,
-      results: results.slice(0, 100), // 最初の100件のみ返す（ログが長くなりすぎないように）
       timestamp: new Date().toISOString(),
     };
 
-    console.log(`[Group Message Reminder] Completed: checked ${users.length} users, sent ${totalEmailsSent} emails, failed ${totalEmailsFailed}`);
-
-    // 処理系のエンドポイントでリアルタイム性が重要なのでキャッシュを無効にする
-    return NextResponse.json(
-      response,
-      {
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-        },
-      }
+    console.log(
+      `[Group Message Reminder] Completed: checked ${users.length} users, sent ${totalEmailsSent} emails, failed ${totalEmailsFailed}`
     );
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(response),
+    };
   } catch (error) {
     console.error("[Group Message Reminder] Error checking unread messages:", error);
-    return NextResponse.json(
-      { 
-        error: "Failed to check unread messages", 
-        details: error instanceof Error ? error.message : "Unknown error" 
-      },
-      { status: 500 }
-    );
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        error: "Failed to check unread messages",
+        details: error instanceof Error ? error.message : "Unknown error",
+      }),
+    };
+  } finally {
+    // Prisma接続をクローズ
+    try {
+      await prisma.$disconnect();
+    } catch (disconnectError) {
+      console.error("[Group Message Reminder] Error disconnecting Prisma:", disconnectError);
+    }
   }
-}
+};

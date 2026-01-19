@@ -1,0 +1,159 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Group Message Reminder Lambda Function and EventBridge Scheduler
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name (dev, staging, prod)
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+  
+  DatabaseUrl:
+    Type: String
+    Description: Database connection string (mysql://user:password@host:port/database)
+    NoEcho: true
+  
+  SesFromEmail:
+    Type: String
+    Description: SES sender email address
+    Default: noreply@itasha-owners-navi.link
+
+Globals:
+  Function:
+    Timeout: 300
+    MemorySize: 512
+    Runtime: nodejs20.x
+    Environment:
+      Variables:
+        DATABASE_URL: !Ref DatabaseUrl
+        DATABASE_POOL_SIZE: '5'
+        AWS_REGION: !Ref AWS::Region
+        SES_FROM_EMAIL: !Ref SesFromEmail
+        NODE_ENV: production
+
+Resources:
+  GroupMessageReminderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Environment}-group-message-reminder'
+      CodeUri: ../lambda/group-message-reminder/
+      Handler: handler.handler
+      Description: Send reminder emails for unread group messages
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+                - ses:SendRawEmail
+              Resource: '*'
+      VpcConfig:
+        # VPC設定が必要な場合はここに追加
+        # ただし、RDSがパブリックアクセス可能な場合は不要
+        SecurityGroupIds: []
+        SubnetIds: []
+
+  # EventBridge Scheduler - 朝9時（JST = UTC 0時）
+  MorningReminderSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub '${Environment}-group-message-reminder-morning'
+      Description: Send reminder emails at 9:00 AM JST (0:00 UTC)
+      ScheduleExpression: 'cron(0 0 * * ? *)'
+      ScheduleExpressionTimezone: UTC
+      State: ENABLED
+      Target:
+        Arn: !GetAtt GroupMessageReminderFunction.Arn
+        RoleArn: !GetAtt EventBridgeSchedulerRole.Arn
+        Input: '{}'
+
+  # EventBridge Scheduler - 昼12時（JST = UTC 3時）
+  NoonReminderSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub '${Environment}-group-message-reminder-noon'
+      Description: Send reminder emails at 12:00 PM JST (3:00 UTC)
+      ScheduleExpression: 'cron(0 3 * * ? *)'
+      ScheduleExpressionTimezone: UTC
+      State: ENABLED
+      Target:
+        Arn: !GetAtt GroupMessageReminderFunction.Arn
+        RoleArn: !GetAtt EventBridgeSchedulerRole.Arn
+        Input: '{}'
+
+  # EventBridge Scheduler - 夕方18時（JST = UTC 9時）
+  EveningReminderSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub '${Environment}-group-message-reminder-evening'
+      Description: Send reminder emails at 6:00 PM JST (9:00 UTC)
+      ScheduleExpression: 'cron(0 9 * * ? *)'
+      ScheduleExpressionTimezone: UTC
+      State: ENABLED
+      Target:
+        Arn: !GetAtt GroupMessageReminderFunction.Arn
+        RoleArn: !GetAtt EventBridgeSchedulerRole.Arn
+        Input: '{}'
+
+  # EventBridge Scheduler - 夜21時（JST = UTC 12時）
+  NightReminderSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub '${Environment}-group-message-reminder-night'
+      Description: Send reminder emails at 9:00 PM JST (12:00 UTC)
+      ScheduleExpression: 'cron(0 12 * * ? *)'
+      ScheduleExpressionTimezone: UTC
+      State: ENABLED
+      Target:
+        Arn: !GetAtt GroupMessageReminderFunction.Arn
+        RoleArn: !GetAtt EventBridgeSchedulerRole.Arn
+        Input: '{}'
+
+  # EventBridge Scheduler用のIAMロール
+  EventBridgeSchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${Environment}-group-message-reminder-scheduler-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt GroupMessageReminderFunction.Arn
+
+Outputs:
+  GroupMessageReminderFunctionArn:
+    Description: ARN of the Group Message Reminder Lambda function
+    Value: !GetAtt GroupMessageReminderFunction.Arn
+    Export:
+      Name: !Sub '${Environment}-GroupMessageReminderFunctionArn'
+  
+  MorningReminderScheduleArn:
+    Description: ARN of the morning reminder schedule
+    Value: !Ref MorningReminderSchedule
+  
+  NoonReminderScheduleArn:
+    Description: ARN of the noon reminder schedule
+    Value: !Ref NoonReminderSchedule
+  
+  EveningReminderScheduleArn:
+    Description: ARN of the evening reminder schedule
+    Value: !Ref EveningReminderSchedule
+  
+  NightReminderScheduleArn:
+    Description: ARN of the night reminder schedule
+    Value: !Ref NightReminderSchedule
