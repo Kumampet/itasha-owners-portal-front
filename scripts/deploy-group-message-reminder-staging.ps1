@@ -46,6 +46,38 @@ try {
     exit 1
 }
 
+# 失敗したSAM管理スタックをクリーンアップ
+Write-Host "Checking for failed SAM managed stacks..." -ForegroundColor Yellow
+try {
+    $stackExists = aws cloudformation describe-stacks --stack-name aws-sam-cli-managed-default --profile $env:AWS_PROFILE --region $env:AWS_REGION 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        $stackStatus = aws cloudformation describe-stacks `
+            --stack-name aws-sam-cli-managed-default `
+            --profile $env:AWS_PROFILE `
+            --region $env:AWS_REGION `
+            --query "Stacks[0].StackStatus" `
+            --output text 2>&1
+        
+        if ($stackStatus -eq "ROLLBACK_FAILED" -or $stackStatus -eq "CREATE_FAILED" -or $stackStatus -eq "DELETE_FAILED") {
+            Write-Host "Found failed SAM managed stack. Cleaning up..." -ForegroundColor Yellow
+            aws cloudformation delete-stack `
+                --stack-name aws-sam-cli-managed-default `
+                --profile $env:AWS_PROFILE `
+                --region $env:AWS_REGION 2>&1 | Out-Null
+            
+            Write-Host "Waiting for cleanup to complete (this may take a few minutes)..." -ForegroundColor Yellow
+            aws cloudformation wait stack-delete-complete `
+                --stack-name aws-sam-cli-managed-default `
+                --profile $env:AWS_PROFILE `
+                --region $env:AWS_REGION 2>&1 | Out-Null
+            Write-Host "Cleanup completed." -ForegroundColor Green
+        }
+    }
+} catch {
+    # スタックが存在しない場合は無視
+    Write-Host "No failed stacks found or cleanup not needed." -ForegroundColor Gray
+}
+
 # Lambda関数をビルド
 Write-Host "Building Lambda function..." -ForegroundColor Yellow
 npm run lambda:build

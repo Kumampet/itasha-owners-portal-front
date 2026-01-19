@@ -41,6 +41,40 @@ fi
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --profile "$AWS_PROFILE" --query Account --output text 2>/dev/null)
 echo "AWS Account ID: $AWS_ACCOUNT_ID"
 
+# AWS CLIのパスを取得（cleanupスクリプト用）
+if command -v aws &> /dev/null; then
+  AWS_CMD="aws"
+elif [ -f "/c/Program Files/Amazon/AWSCLIV2/aws.exe" ]; then
+  AWS_CMD="/c/Program Files/Amazon/AWSCLIV2/aws.exe"
+else
+  AWS_CMD="aws"  # デフォルト（エラー時は後で検出される）
+fi
+
+# 失敗したSAM管理スタックをクリーンアップ
+echo "Checking for failed SAM managed stacks..."
+if "$AWS_CMD" cloudformation describe-stacks --stack-name aws-sam-cli-managed-default --profile "$AWS_PROFILE" --region "$AWS_REGION" &> /dev/null; then
+  STACK_STATUS=$("$AWS_CMD" cloudformation describe-stacks \
+    --stack-name aws-sam-cli-managed-default \
+    --profile "$AWS_PROFILE" \
+    --region "$AWS_REGION" \
+    --query "Stacks[0].StackStatus" \
+    --output text 2>/dev/null || echo "UNKNOWN")
+  
+  if [ "$STACK_STATUS" = "ROLLBACK_FAILED" ] || [ "$STACK_STATUS" = "CREATE_FAILED" ] || [ "$STACK_STATUS" = "DELETE_FAILED" ]; then
+    echo "Found failed SAM managed stack. Cleaning up..."
+    "$AWS_CMD" cloudformation delete-stack \
+      --stack-name aws-sam-cli-managed-default \
+      --profile "$AWS_PROFILE" \
+      --region "$AWS_REGION" || true
+    
+    echo "Waiting for cleanup to complete (this may take a few minutes)..."
+    "$AWS_CMD" cloudformation wait stack-delete-complete \
+      --stack-name aws-sam-cli-managed-default \
+      --profile "$AWS_PROFILE" \
+      --region "$AWS_REGION" || echo "Stack deletion in progress..."
+  fi
+fi
+
 # Lambda関数をビルド
 echo "Building Lambda function..."
 npm run lambda:build
