@@ -108,65 +108,6 @@ export const handler = async (event: any) => {
   console.log("[Group Message Reminder] Starting reminder check...");
   console.log("[Group Message Reminder] Event:", JSON.stringify(event, null, 2));
 
-  // テストモードのチェック
-  if (event.testMode === true && event.testEmail) {
-    console.log("[Group Message Reminder] Test mode enabled");
-    const displayName = event.displayName || "ユーザー";
-    const groupName = event.groupName || "テスト団体";
-
-    const subject = `【いたなび！】${groupName} | 未読メッセージのお知らせ`;
-    const body = `${displayName}さん
-
-いつもいたなび！をご利用いただきありがとうございます。
-
---------------------------
-
-${groupName}に未読メッセージがあります！
-チェックしてみませんか？
-
-マイページはこちら
-https://itasha-owners-navi.link/app/mypage
-
---------------------------
-
-引き続きいたなび！をよろしくお願いします。
-
-※このメールは送信専用です。返信されても回答できません。
-※その他お問い合わせは以下の専用フォームからお願いします。
-https://itasha-owners-navi.link/app/contact
-`;
-
-    try {
-      await sendEmail({
-        to: event.testEmail,
-        subject,
-        body,
-      });
-
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          success: true,
-          message: "Test email sent successfully",
-          testEmail: event.testEmail,
-          displayName,
-          groupName,
-          timestamp: new Date().toISOString(),
-        }),
-      };
-    } catch (error) {
-      console.error("[Group Message Reminder] Failed to send test email:", error);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          success: false,
-          error: "Failed to send test email",
-          details: error instanceof Error ? error.message : "Unknown error",
-        }),
-      };
-    }
-  }
-
   const prisma = getPrisma();
 
   try {
