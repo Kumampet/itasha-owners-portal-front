@@ -19,11 +19,14 @@ cat > package.json << 'EOF'
     "@prisma/client": "^7.0.0",
     "@prisma/adapter-mariadb": "^7.0.0",
     "mariadb": "^3.4.5"
+  },
+  "devDependencies": {
+    "prisma": "^7.0.0"
   }
 }
 EOF
 
-# 依存関係をインストール
+# 依存関係をインストール（devDependenciesも含む）
 echo "Installing dependencies..."
 npm install
 
@@ -52,7 +55,12 @@ echo "Cleaning up unnecessary files..."
 rm -f schema.prisma
 rm -f package.json
 rm -f package-lock.json
-rm -rf node_modules/@prisma/client/node_modules 2>/dev/null || true
-rm -rf node_modules/@prisma/client/.git 2>/dev/null || true
+# prismaパッケージを削除（devDependencyのため）
+rm -rf node_modules/prisma 2>/dev/null || true
+# Prismaクライアントの不要なファイルを削除
+find node_modules/@prisma/client -name "*.ts" -type f -delete 2>/dev/null || true
+find node_modules/@prisma/client -name "*.tsbuildinfo" -type f -delete 2>/dev/null || true
+find node_modules/@prisma/client -name ".git" -type d -exec rm -rf {} + 2>/dev/null || true
+find node_modules/@prisma/client -name "node_modules" -type d -exec rm -rf {} + 2>/dev/null || true
 
 echo "Prisma Layer build completed!"
