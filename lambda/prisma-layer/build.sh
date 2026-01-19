@@ -55,12 +55,48 @@ echo "Cleaning up unnecessary files..."
 rm -f schema.prisma
 rm -f package.json
 rm -f package-lock.json
+
 # prismaパッケージを削除（devDependencyのため）
 rm -rf node_modules/prisma 2>/dev/null || true
+
 # Prismaクライアントの不要なファイルを削除
+echo "Removing unnecessary Prisma Client files..."
+# TypeScriptソースファイルを削除
 find node_modules/@prisma/client -name "*.ts" -type f -delete 2>/dev/null || true
 find node_modules/@prisma/client -name "*.tsbuildinfo" -type f -delete 2>/dev/null || true
+find node_modules/@prisma/client -name "*.map" -type f -delete 2>/dev/null || true
+# ドキュメントファイルを削除
+find node_modules/@prisma/client -name "*.md" -type f -delete 2>/dev/null || true
+find node_modules/@prisma/client -name "CHANGELOG*" -type f -delete 2>/dev/null || true
+find node_modules/@prisma/client -name "LICENSE*" -type f -delete 2>/dev/null || true
+# テストファイルを削除
+find node_modules/@prisma/client -name "*.test.*" -type f -delete 2>/dev/null || true
+find node_modules/@prisma/client -name "*.spec.*" -type f -delete 2>/dev/null || true
+# .gitディレクトリを削除
 find node_modules/@prisma/client -name ".git" -type d -exec rm -rf {} + 2>/dev/null || true
+# ネストされたnode_modulesを削除
 find node_modules/@prisma/client -name "node_modules" -type d -exec rm -rf {} + 2>/dev/null || true
+
+# mariadbパッケージの不要なファイルを削除
+echo "Removing unnecessary mariadb files..."
+find node_modules/mariadb -name "*.md" -type f -delete 2>/dev/null || true
+find node_modules/mariadb -name "*.test.*" -type f -delete 2>/dev/null || true
+find node_modules/mariadb -name "*.spec.*" -type f -delete 2>/dev/null || true
+find node_modules/mariadb -name "test" -type d -exec rm -rf {} + 2>/dev/null || true
+find node_modules/mariadb -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true
+find node_modules/mariadb -name "examples" -type d -exec rm -rf {} + 2>/dev/null || true
+
+# @prisma/adapter-mariadbの不要なファイルを削除
+if [ -d "node_modules/@prisma/adapter-mariadb" ]; then
+  echo "Removing unnecessary @prisma/adapter-mariadb files..."
+  find node_modules/@prisma/adapter-mariadb -name "*.ts" -type f -delete 2>/dev/null || true
+  find node_modules/@prisma/adapter-mariadb -name "*.md" -type f -delete 2>/dev/null || true
+  find node_modules/@prisma/adapter-mariadb -name "*.map" -type f -delete 2>/dev/null || true
+fi
+
+# その他の不要なファイルを削除
+find node_modules -name ".npmignore" -type f -delete 2>/dev/null || true
+find node_modules -name ".gitignore" -type f -delete 2>/dev/null || true
+find node_modules -name "README*" -type f -delete 2>/dev/null || true
 
 echo "Prisma Layer build completed!"
