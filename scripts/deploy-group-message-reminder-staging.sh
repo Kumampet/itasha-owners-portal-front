@@ -120,6 +120,47 @@ if "$AWS_CMD" cloudformation describe-stacks --stack-name aws-sam-cli-managed-de
   fi
 fi
 
+# メインスタックの状態を確認して、ROLLBACK_COMPLETE状態の場合は削除
+STACK_NAME="group-message-reminder-staging"
+if "$AWS_CMD" cloudformation describe-stacks --stack-name "$STACK_NAME" --profile "$AWS_PROFILE" --region "$AWS_REGION" &> /dev/null; then
+  MAIN_STACK_STATUS=$("$AWS_CMD" cloudformation describe-stacks \
+    --stack-name "$STACK_NAME" \
+    --profile "$AWS_PROFILE" \
+    --region "$AWS_REGION" \
+    --query "Stacks[0].StackStatus" \
+    --output text 2>/dev/null || echo "UNKNOWN")
+  
+  if [ "$MAIN_STACK_STATUS" = "ROLLBACK_COMPLETE" ]; then
+    echo "Found stack in ROLLBACK_COMPLETE state. Deleting before redeploy..."
+    "$AWS_CMD" cloudformation delete-stack \
+      --stack-name "$STACK_NAME" \
+      --profile "$AWS_PROFILE" \
+      --region "$AWS_REGION" 2>&1 || true
+    
+    echo "Waiting for stack deletion to complete..."
+    "$AWS_CMD" cloudformation wait stack-delete-complete \
+      --stack-name "$STACK_NAME" \
+      --profile "$AWS_PROFILE" \
+      --region "$AWS_REGION" 2>&1 || {
+      echo "Waiting for deletion (this may take a few minutes)..."
+      MAX_WAIT=20
+      COUNT=0
+      while [ $COUNT -lt $MAX_WAIT ]; do
+        if ! "$AWS_CMD" cloudformation describe-stacks \
+          --stack-name "$STACK_NAME" \
+          --profile "$AWS_PROFILE" \
+          --region "$AWS_REGION" &> /dev/null; then
+          echo "Stack deleted successfully."
+          break
+        fi
+        echo "Still waiting... ($((COUNT + 1))/$MAX_WAIT)"
+        sleep 30
+        COUNT=$((COUNT + 1))
+      done
+    }
+  fi
+fi
+
 # Lambda関数をビルド
 echo "Building Lambda function..."
 npm run lambda:build

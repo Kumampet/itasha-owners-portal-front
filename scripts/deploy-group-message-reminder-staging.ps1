@@ -94,6 +94,54 @@ try {
     Write-Host "No failed stacks found or cleanup not needed." -ForegroundColor Gray
 }
 
+# メインスタックの状態を確認して、ROLLBACK_COMPLETE状態の場合は削除
+$mainStackName = "group-message-reminder-staging"
+try {
+    $mainStackExists = aws cloudformation describe-stacks --stack-name $mainStackName --profile $env:AWS_PROFILE --region $env:AWS_REGION 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        $mainStackStatus = aws cloudformation describe-stacks `
+            --stack-name $mainStackName `
+            --profile $env:AWS_PROFILE `
+            --region $env:AWS_REGION `
+            --query "Stacks[0].StackStatus" `
+            --output text 2>&1
+        
+        if ($mainStackStatus -eq "ROLLBACK_COMPLETE") {
+            Write-Host "Found stack in ROLLBACK_COMPLETE state. Deleting before redeploy..." -ForegroundColor Yellow
+            aws cloudformation delete-stack `
+                --stack-name $mainStackName `
+                --profile $env:AWS_PROFILE `
+                --region $env:AWS_REGION 2>&1 | Out-Null
+            
+            Write-Host "Waiting for stack deletion to complete..." -ForegroundColor Yellow
+            try {
+                aws cloudformation wait stack-delete-complete `
+                    --stack-name $mainStackName `
+                    --profile $env:AWS_PROFILE `
+                    --region $env:AWS_REGION 2>&1 | Out-Null
+                Write-Host "Stack deleted successfully." -ForegroundColor Green
+            } catch {
+                Write-Host "Waiting for deletion (this may take a few minutes)..." -ForegroundColor Yellow
+                $maxWait = 20
+                $count = 0
+                while ($count -lt $maxWait) {
+                    $stillExists = aws cloudformation describe-stacks --stack-name $mainStackName --profile $env:AWS_PROFILE --region $env:AWS_REGION 2>&1
+                    if ($LASTEXITCODE -ne 0) {
+                        Write-Host "Stack deleted successfully." -ForegroundColor Green
+                        break
+                    }
+                    Write-Host "Still waiting... ($($count + 1)/$maxWait)" -ForegroundColor Gray
+                    Start-Sleep -Seconds 30
+                    $count++
+                }
+            }
+        }
+    }
+} catch {
+    # スタックが存在しない場合は無視
+    Write-Host "Main stack not found or cleanup not needed." -ForegroundColor Gray
+}
+
 # Lambda関数をビルド
 Write-Host "Building Lambda function..." -ForegroundColor Yellow
 npm run lambda:build
