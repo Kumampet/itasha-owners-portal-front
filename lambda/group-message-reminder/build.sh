@@ -14,6 +14,11 @@ npm install
 echo "Building TypeScript..."
 npm run build
 
+# Prismaクライアントをdistから削除（Lambda Layerから提供されるため不要）
+echo "Removing Prisma Client from dist (provided by Layer)..."
+rm -rf dist/@prisma 2>/dev/null || true
+rm -rf dist/.prisma 2>/dev/null || true
+
 # distディレクトリの内容をルートにコピー（SAM CLIのビルドプロセス用）
 echo "Copying dist contents to root for SAM build..."
 cp dist/handler.js . 2>/dev/null || true
