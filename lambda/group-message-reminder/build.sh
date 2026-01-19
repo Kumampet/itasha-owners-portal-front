@@ -10,6 +10,11 @@ cd "$(dirname "$0")"
 echo "Installing dependencies..."
 npm install
 
+# Prismaクライアントがnode_modulesに含まれている場合は削除（Layerから提供されるため）
+echo "Removing Prisma Client from node_modules (provided by Layer)..."
+rm -rf node_modules/@prisma 2>/dev/null || true
+rm -rf node_modules/.prisma 2>/dev/null || true
+
 # TypeScriptをビルド
 echo "Building TypeScript..."
 npm run build
