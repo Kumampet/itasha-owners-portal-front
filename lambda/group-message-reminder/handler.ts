@@ -115,12 +115,10 @@ export const handler = async (event: unknown) => {
   const prisma = getPrisma();
 
   try {
-    // 全ユーザーを取得（メールアドレスがあるユーザーのみ）
+    // 全ユーザーを取得（削除されていないユーザーのみ）
+    // emailフィールドはスキーマ上必須なので、nullチェックは不要
     const users = await prisma.user.findMany({
       where: {
-        email: {
-          not: null,
-        },
         deleted_at: null,
       },
       select: {
