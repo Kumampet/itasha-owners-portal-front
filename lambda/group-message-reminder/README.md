@@ -1,87 +1,85 @@
 # Group Message Reminder Lambda Function
 
-団体メッセージの未読リマインドメールを送信するLambda関数です。
+## 概要
 
-## 機能
+未読のグループメッセージがあるユーザーにリマインダーメールを送信するLambda関数です。
 
-- 全ユーザーの未読メッセージをチェック
-- 未読メッセージがあるユーザーにリマインドメールを送信
-- AWS SESを使用してメール送信
+## テストイベント
 
-## ビルド方法
+AWS Lambdaコンソールでテストする際に使用できるテストイベントファイルです。
+
+### EventBridge Scheduler形式のテストイベント
+
+`test-event.json` - EventBridge Schedulerから送られてくる形式のイベント
+
+```json
+{
+  "version": "0",
+  "id": "test-event-id-12345",
+  "detail-type": "Scheduled Event",
+  "source": "aws.scheduler",
+  "account": "059948105185",
+  "time": "2026-01-19T20:00:00Z",
+  "region": "ap-northeast-1",
+  "resources": [
+    "arn:aws:scheduler:ap-northeast-1:059948105185:schedule/default/staging-group-message-reminder-morning"
+  ],
+  "detail": {}
+}
+```
+
+### 空のJSONオブジェクト（SAMテンプレートのInput設定に合わせた形式）
+
+`test-event-empty.json` - SAMテンプレートで`Input: '{}'`が設定されている場合の形式
+
+```json
+{}
+```
+
+## AWS Lambdaコンソールでのテスト方法
+
+1. [AWS Lambdaコンソール](https://console.aws.amazon.com/lambda/)にアクセス
+2. 関数 `staging-group-message-reminder` を選択
+3. 「テスト」タブをクリック
+4. 「新しいイベントを作成」をクリック
+5. イベント名を入力（例: `test-eventbridge-scheduler`）
+6. 上記のJSONのいずれかをコピー＆ペースト
+7. 「保存」をクリック
+8. 「テスト」ボタンをクリックして実行
+
+## ローカルでのテスト方法
 
 ```bash
-# プロジェクトルートから実行
-./lambda/group-message-reminder/build.sh
+# SAM CLIを使用してローカルでテスト
+sam local invoke GroupMessageReminderFunction \
+  --event lambda/group-message-reminder/test-event.json \
+  --env-vars lambda/group-message-reminder/env.json
 ```
-
-または手動で：
-
-```bash
-cd lambda/group-message-reminder
-
-# Prismaクライアントを生成
-npx prisma generate --schema=./schema.prisma
-
-# 依存関係をインストール
-npm install
-
-# TypeScriptをビルド
-npm run build
-
-# Prismaクライアントをdistにコピー
-cp -r node_modules/.prisma dist/
-cp -r node_modules/@prisma dist/
-```
-
-## デプロイ方法
-
-### STG環境へのデプロイ
-
-#### Linux/Mac
-
-```bash
-npm run lambda:deploy:staging
-```
-
-#### Windows PowerShell
-
-```powershell
-npm run lambda:deploy:staging:win
-```
-
-### 本番環境へのデプロイ
-
-#### Linux/Mac
-
-```bash
-npm run lambda:deploy:prod
-```
-
-#### Windows PowerShell
-
-```powershell
-npm run lambda:deploy:prod:win
-```
-
-**注意**: 本番環境へのデプロイ時は確認プロンプトが表示されます。
-
-### 手動デプロイ
-
-詳細は [デプロイメントガイド](../../docs/group-message-reminder-deployment.md) を参照してください。
 
 ## 環境変数
 
-- `DATABASE_URL`: データベース接続文字列（必須）
+以下の環境変数が必要です：
+
+- `DATABASE_URL`: データベース接続文字列
+- `SES_FROM_EMAIL`: SES送信元メールアドレス
 - `DATABASE_POOL_SIZE`: データベース接続プールサイズ（デフォルト: 5）
-- `AWS_REGION`: AWSリージョン（デフォルト: ap-northeast-1）
-- `SES_FROM_EMAIL`: SES送信元メールアドレス（必須）
 
-## EventBridge Scheduler
+## 実行結果
 
-このLambda関数はEventBridge Schedulerから1日4回呼び出されます：
+成功時のレスポンス：
 
-- 朝9時（JST = UTC 0時）
-- 昼12時（JST = UTC 3時）
-- 夕方18時（JST = UTC 9時）
-- 夜21時（JST = UTC 12時）
+```json
+{
+  "statusCode": 200,
+  "body": "{\"checked\":10,\"emailsSent\":5,\"emailsFailed\":0,\"timestamp\":\"2026-01-19T20:00:00.000Z\"}"
+}
+```
+
+失敗時のレスポンス：
+
+```json
+{
+  "statusCode": 500,
+  "body": "{\"error\":\"Failed to check unread messages\",\"details\":\"...\"}"
+}
+```
