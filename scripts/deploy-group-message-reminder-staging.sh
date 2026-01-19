@@ -60,8 +60,8 @@ if "$AWS_CMD" cloudformation describe-stacks --stack-name aws-sam-cli-managed-de
     --query "Stacks[0].StackStatus" \
     --output text 2>/dev/null || echo "UNKNOWN")
   
-  if [ "$STACK_STATUS" = "ROLLBACK_FAILED" ] || [ "$STACK_STATUS" = "CREATE_FAILED" ] || [ "$STACK_STATUS" = "DELETE_FAILED" ]; then
-    echo "Found failed SAM managed stack. Cleaning up..."
+  if [ "$STACK_STATUS" = "ROLLBACK_FAILED" ] || [ "$STACK_STATUS" = "CREATE_FAILED" ]; then
+    echo "Found failed SAM managed stack (status: $STACK_STATUS). Attempting cleanup..."
     "$AWS_CMD" cloudformation delete-stack \
       --stack-name aws-sam-cli-managed-default \
       --profile "$AWS_PROFILE" \
@@ -72,6 +72,28 @@ if "$AWS_CMD" cloudformation describe-stacks --stack-name aws-sam-cli-managed-de
       --stack-name aws-sam-cli-managed-default \
       --profile "$AWS_PROFILE" \
       --region "$AWS_REGION" || echo "Stack deletion in progress..."
+  elif [ "$STACK_STATUS" = "DELETE_FAILED" ]; then
+    echo "ERROR: SAM managed stack is in DELETE_FAILED state."
+    echo "This stack cannot be automatically deleted."
+    echo ""
+    echo "Please manually delete the stack using one of the following methods:"
+    echo ""
+    echo "Option 1: AWS Console"
+    echo "  1. Go to CloudFormation console: https://console.aws.amazon.com/cloudformation"
+    echo "  2. Find stack 'aws-sam-cli-managed-default'"
+    echo "  3. Select it and click 'Delete'"
+    echo ""
+    echo "Option 2: AWS CLI (if resources allow)"
+    echo "  $AWS_CMD cloudformation delete-stack \\"
+    echo "    --stack-name aws-sam-cli-managed-default \\"
+    echo "    --profile $AWS_PROFILE \\"
+    echo "    --region $AWS_REGION"
+    echo ""
+    echo "Option 3: Use a custom S3 bucket instead"
+    echo "  Set SAM_S3_BUCKET environment variable to use an existing bucket:"
+    echo "  export SAM_S3_BUCKET=your-existing-bucket-name"
+    echo ""
+    exit 1
   fi
 fi
 
@@ -107,18 +129,41 @@ echo "Building SAM template..."
 
 # SAMデプロイ（AWSプロファイルを使用）
 echo "Deploying to AWS..."
-"$SAM_CMD" deploy \
-  --stack-name group-message-reminder-staging \
-  --capabilities CAPABILITY_IAM \
-  --parameter-overrides \
-    Environment=staging \
-    DatabaseUrl="$DATABASE_URL" \
-    SesFromEmail="$SES_FROM_EMAIL" \
-  --region "$AWS_REGION" \
-  --profile "$AWS_PROFILE" \
-  --resolve-s3 \
-  --no-confirm-changeset \
-  --no-fail-on-empty-changeset
+
+# S3バケットの設定
+if [ -n "$SAM_S3_BUCKET" ]; then
+  echo "Using custom S3 bucket: $SAM_S3_BUCKET"
+  SAM_DEPLOY_ARGS=(
+    --stack-name group-message-reminder-staging
+    --capabilities CAPABILITY_IAM
+    --parameter-overrides
+      Environment=staging
+      DatabaseUrl="$DATABASE_URL"
+      SesFromEmail="$SES_FROM_EMAIL"
+    --region "$AWS_REGION"
+    --profile "$AWS_PROFILE"
+    --s3-bucket "$SAM_S3_BUCKET"
+    --no-confirm-changeset
+    --no-fail-on-empty-changeset
+  )
+else
+  echo "Using SAM managed S3 bucket (--resolve-s3)"
+  SAM_DEPLOY_ARGS=(
+    --stack-name group-message-reminder-staging
+    --capabilities CAPABILITY_IAM
+    --parameter-overrides
+      Environment=staging
+      DatabaseUrl="$DATABASE_URL"
+      SesFromEmail="$SES_FROM_EMAIL"
+    --region "$AWS_REGION"
+    --profile "$AWS_PROFILE"
+    --resolve-s3
+    --no-confirm-changeset
+    --no-fail-on-empty-changeset
+  )
+fi
+
+"$SAM_CMD" deploy "${SAM_DEPLOY_ARGS[@]}"
 
 echo "Deployment completed successfully!"
 echo "Lambda function ARN: Check CloudFormation outputs"

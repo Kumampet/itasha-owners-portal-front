@@ -58,8 +58,8 @@ try {
             --query "Stacks[0].StackStatus" `
             --output text 2>&1
         
-        if ($stackStatus -eq "ROLLBACK_FAILED" -or $stackStatus -eq "CREATE_FAILED" -or $stackStatus -eq "DELETE_FAILED") {
-            Write-Host "Found failed SAM managed stack. Cleaning up..." -ForegroundColor Yellow
+        if ($stackStatus -eq "ROLLBACK_FAILED" -or $stackStatus -eq "CREATE_FAILED") {
+            Write-Host "Found failed SAM managed stack (status: $stackStatus). Attempting cleanup..." -ForegroundColor Yellow
             aws cloudformation delete-stack `
                 --stack-name aws-sam-cli-managed-default `
                 --profile $env:AWS_PROFILE `
@@ -71,6 +71,22 @@ try {
                 --profile $env:AWS_PROFILE `
                 --region $env:AWS_REGION 2>&1 | Out-Null
             Write-Host "Cleanup completed." -ForegroundColor Green
+        } elseif ($stackStatus -eq "DELETE_FAILED") {
+            Write-Host "ERROR: SAM managed stack is in DELETE_FAILED state." -ForegroundColor Red
+            Write-Host "This stack cannot be automatically deleted." -ForegroundColor Red
+            Write-Host ""
+            Write-Host "Please manually delete the stack using one of the following methods:" -ForegroundColor Yellow
+            Write-Host ""
+            Write-Host "Option 1: AWS Console" -ForegroundColor Cyan
+            Write-Host "  1. Go to CloudFormation console: https://console.aws.amazon.com/cloudformation" -ForegroundColor White
+            Write-Host "  2. Find stack 'aws-sam-cli-managed-default'" -ForegroundColor White
+            Write-Host "  3. Select it and click 'Delete'" -ForegroundColor White
+            Write-Host ""
+            Write-Host "Option 2: Use a custom S3 bucket instead" -ForegroundColor Cyan
+            Write-Host "  Set SAM_S3_BUCKET environment variable to use an existing bucket:" -ForegroundColor White
+            Write-Host "  `$env:SAM_S3_BUCKET = 'your-existing-bucket-name'" -ForegroundColor White
+            Write-Host ""
+            exit 1
         }
     }
 } catch {
@@ -88,18 +104,37 @@ sam build --template-file infrastructure/group-message-reminder.yaml
 
 # SAMデプロイ（AWSプロファイルを使用）
 Write-Host "Deploying to AWS..." -ForegroundColor Yellow
-sam deploy `
-  --stack-name group-message-reminder-staging `
-  --capabilities CAPABILITY_IAM `
-  --parameter-overrides `
-    Environment=staging `
-    DatabaseUrl="$env:DATABASE_URL" `
-    SesFromEmail="$env:SES_FROM_EMAIL" `
-  --region "$env:AWS_REGION" `
-  --profile "$env:AWS_PROFILE" `
-  --resolve-s3 `
-  --no-confirm-changeset `
-  --no-fail-on-empty-changeset
+
+# S3バケットの設定
+if ($env:SAM_S3_BUCKET) {
+    Write-Host "Using custom S3 bucket: $env:SAM_S3_BUCKET" -ForegroundColor Cyan
+    sam deploy `
+      --stack-name group-message-reminder-staging `
+      --capabilities CAPABILITY_IAM `
+      --parameter-overrides `
+        Environment=staging `
+        DatabaseUrl="$env:DATABASE_URL" `
+        SesFromEmail="$env:SES_FROM_EMAIL" `
+      --region "$env:AWS_REGION" `
+      --profile "$env:AWS_PROFILE" `
+      --s3-bucket "$env:SAM_S3_BUCKET" `
+      --no-confirm-changeset `
+      --no-fail-on-empty-changeset
+} else {
+    Write-Host "Using SAM managed S3 bucket (--resolve-s3)" -ForegroundColor Cyan
+    sam deploy `
+      --stack-name group-message-reminder-staging `
+      --capabilities CAPABILITY_IAM `
+      --parameter-overrides `
+        Environment=staging `
+        DatabaseUrl="$env:DATABASE_URL" `
+        SesFromEmail="$env:SES_FROM_EMAIL" `
+      --region "$env:AWS_REGION" `
+      --profile "$env:AWS_PROFILE" `
+      --resolve-s3 `
+      --no-confirm-changeset `
+      --no-fail-on-empty-changeset
+}
 
 Write-Host "Deployment completed successfully!" -ForegroundColor Green
 Write-Host "Lambda function ARN: Check CloudFormation outputs" -ForegroundColor Cyan
