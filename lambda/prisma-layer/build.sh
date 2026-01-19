@@ -40,10 +40,25 @@ fi
 
 # PrismaスキーマにbinaryTargetsを追加（LambdaはLinux x86_64のみ必要）
 echo "Updating Prisma schema for Lambda..."
-# generatorセクションにbinaryTargetsを追加
-sed -i.bak 's/generator client {/generator client {\n  binaryTargets = ["native"]/' schema.prisma 2>/dev/null || \
-sed -i '' 's/generator client {/generator client {\n  binaryTargets = ["native"]/' schema.prisma 2>/dev/null || \
-echo "Warning: Could not update schema.prisma, using as-is"
+# generatorセクションにbinaryTargetsを追加（Linux x86_64用）
+if grep -q "binaryTargets" schema.prisma; then
+  echo "binaryTargets already exists in schema"
+else
+  # Windows用のsedコマンド（Git Bash）
+  sed -i.bak 's/generator client {/generator client {\n  binaryTargets = ["linux-musl-openssl-3.0.x"]/' schema.prisma 2>/dev/null || \
+  # macOS用のsedコマンド
+  sed -i '' 's/generator client {/generator client {\n  binaryTargets = ["linux-musl-openssl-3.0.x"]/' schema.prisma 2>/dev/null || \
+  # フォールバック: 手動で追加
+  python3 -c "
+import re
+with open('schema.prisma', 'r') as f:
+    content = f.read()
+if 'binaryTargets' not in content:
+    content = re.sub(r'(generator client \{)', r'\1\n  binaryTargets = [\"linux-musl-openssl-3.0.x\"]', content)
+    with open('schema.prisma', 'w') as f:
+        f.write(content)
+" 2>/dev/null || echo "Warning: Could not update schema.prisma, using as-is"
+fi
 
 # Prismaクライアントを生成
 echo "Generating Prisma Client..."
@@ -52,7 +67,7 @@ if [ -f "../../../prisma.config.ts" ]; then
   mv ../../../prisma.config.ts ../../../prisma.config.ts.bak 2>/dev/null || true
 fi
 # Linux x86_64のみを指定して生成
-PRISMA_CLI_BINARY_TARGETS=linux-musl-openssl-3.0.x npx prisma generate --schema=./schema.prisma
+npx prisma generate --schema=./schema.prisma
 # prisma.config.tsを復元
 if [ -f "../../../prisma.config.ts.bak" ]; then
   mv ../../../prisma.config.ts.bak ../../../prisma.config.ts 2>/dev/null || true
