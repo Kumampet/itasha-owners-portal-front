@@ -1,36 +1,35 @@
 # Group Message Reminder Lambda Function
 
-## 概要
-
-未読のグループメッセージがあるユーザーにリマインダーメールを送信するLambda関数です。
+未読の団体メッセージがあるユーザーにリマインダーメールを送信するLambda関数です。
 
 ## テストイベント
 
-AWS Lambdaコンソールでテストする際に使用できるテストイベントファイルです。
+### テストモード用のテストイベント
 
-### EventBridge Scheduler形式のテストイベント
+AWS Lambdaコンソールでテスト実行する際に使用するテストイベントJSONです。
 
-`test-event.json` - EventBridge Schedulerから送られてくる形式のイベント
+#### テストメール送信用
+
+`test-event.json`を使用すると、指定したメールアドレスにテストメールを送信できます。
 
 ```json
 {
-  "version": "0",
-  "id": "test-event-id-12345",
-  "detail-type": "Scheduled Event",
-  "source": "aws.scheduler",
-  "account": "059948105185",
-  "time": "2026-01-19T20:00:00Z",
-  "region": "ap-northeast-1",
-  "resources": [
-    "arn:aws:scheduler:ap-northeast-1:059948105185:schedule/default/staging-group-message-reminder-morning"
-  ],
-  "detail": {}
+  "testMode": true,
+  "testEmail": "itashaownersnavi@gmail.com",
+  "displayName": "いたなび！管理者",
+  "groupName": "テスト団体"
 }
 ```
 
-### 空のJSONオブジェクト（SAMテンプレートのInput設定に合わせた形式）
+**パラメータ説明:**
+- `testMode`: `true`に設定するとテストモードが有効になります
+- `testEmail`: テストメールを送信するメールアドレス
+- `displayName`: メール本文に表示されるユーザー名（デフォルト: "ユーザー"）
+- `groupName`: メール本文に表示される団体名（デフォルト: "テスト団体"）
 
-`test-event-empty.json` - SAMテンプレートで`Input: '{}'`が設定されている場合の形式
+#### 通常実行用（全ユーザーをチェック）
+
+`test-event-empty.json`を使用すると、通常の実行モード（全ユーザーをチェックして未読メッセージがあるユーザーにメール送信）になります。
 
 ```json
 {}
@@ -38,48 +37,23 @@ AWS Lambdaコンソールでテストする際に使用できるテストイベ�
 
 ## AWS Lambdaコンソールでのテスト方法
 
-1. [AWS Lambdaコンソール](https://console.aws.amazon.com/lambda/)にアクセス
-2. 関数 `staging-group-message-reminder` を選択
+1. AWS Lambdaコンソールにアクセス
+2. `group-message-reminder-staging-GroupMessageReminderFunction-*` 関数を選択
 3. 「テスト」タブをクリック
-4. 「新しいイベントを作成」をクリック
-5. イベント名を入力（例: `test-eventbridge-scheduler`）
-6. 上記のJSONのいずれかをコピー＆ペースト
-7. 「保存」をクリック
+4. 「新しいテストイベントを作成」を選択
+5. イベント名を入力（例: `test-email-send`）
+6. 上記のJSONをコピー＆ペースト
+7. 「作成」をクリック
 8. 「テスト」ボタンをクリックして実行
 
-## ローカルでのテスト方法
+## ローカルでのテスト
 
 ```bash
-# SAM CLIを使用してローカルでテスト
+# Lambda関数をビルド
+npm run lambda:build
+
+# SAM CLIでローカル実行
 sam local invoke GroupMessageReminderFunction \
   --event lambda/group-message-reminder/test-event.json \
   --env-vars lambda/group-message-reminder/env.json
-```
-
-## 環境変数
-
-以下の環境変数が必要です：
-
-- `DATABASE_URL`: データベース接続文字列
-- `SES_FROM_EMAIL`: SES送信元メールアドレス
-- `DATABASE_POOL_SIZE`: データベース接続プールサイズ（デフォルト: 5）
-
-## 実行結果
-
-成功時のレスポンス：
-
-```json
-{
-  "statusCode": 200,
-  "body": "{\"checked\":10,\"emailsSent\":5,\"emailsFailed\":0,\"timestamp\":\"2026-01-19T20:00:00.000Z\"}"
-}
-```
-
-失敗時のレスポンス：
-
-```json
-{
-  "statusCode": 500,
-  "body": "{\"error\":\"Failed to check unread messages\",\"details\":\"...\"}"
-}
 ```
