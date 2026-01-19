@@ -14,11 +14,14 @@
 
 ### Windows環境
 
+**重要**: Windows環境では`sudo`コマンドは使用できません。以下の方法を使用してください。
+
 #### 方法1: MSIインストーラーを使用（推奨）
 
 1. [AWS CLIのダウンロードページ](https://aws.amazon.com/cli/)にアクセス
 2. 「**Download the AWS CLI MSI installer for Windows (64-bit)**」をクリック
 3. ダウンロードした`.msi`ファイルを実行
+   - 管理者権限が必要な場合があります（UACプロンプトが表示されたら「はい」をクリック）
 4. インストールウィザードに従ってインストール
 5. コマンドプロンプトまたはPowerShellを再起動
 6. インストール確認：
@@ -27,9 +30,14 @@
 aws --version
 ```
 
+**Git Bashを使用している場合**:
+- Git Bashからも`aws`コマンドが使用できるはずです
+- 使用できない場合は、PowerShellまたはコマンドプロンプトから実行してください
+
 #### 方法2: Chocolateyを使用
 
 ```powershell
+# PowerShellを管理者として実行
 # Chocolateyがインストールされている場合
 choco install awscli
 
@@ -43,7 +51,17 @@ aws --version
 # PowerShellを管理者として実行
 Invoke-WebRequest -Uri "https://awscli.amazonaws.com/AWSCLIV2.msi" -OutFile "$env:TEMP\AWSCLIV2.msi"
 Start-Process msiexec.exe -ArgumentList "/i $env:TEMP\AWSCLIV2.msi /quiet" -Wait
+
+# インストール確認
+aws --version
 ```
+
+#### 方法4: 手動でインストーラーをダウンロード
+
+1. ブラウザで [AWS CLI v2 ダウンロードページ](https://awscli.amazonaws.com/AWSCLIV2.msi) にアクセス
+2. ダウンロードした`AWSCLIV2.msi`ファイルをダブルクリック
+3. インストールウィザードに従ってインストール
+4. コマンドプロンプトまたはPowerShellを再起動
 
 ### Mac環境
 
@@ -100,7 +118,9 @@ sudo dnf install awscli
 aws --version
 ```
 
-#### 方法2: バンドルインストーラーを使用
+#### 方法2: バンドルインストーラーを使用（Linux/Macのみ）
+
+**注意**: この方法はLinux/Mac環境でのみ使用できます。Windows環境では使用できません。
 
 ```bash
 # インストーラーをダウンロード
@@ -109,7 +129,7 @@ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip
 # 解凍
 unzip awscliv2.zip
 
-# インストール
+# インストール（Linux/Mac環境のみ）
 sudo ./aws/install
 
 # インストール確認
@@ -118,6 +138,10 @@ aws --version
 # クリーンアップ
 rm -rf aws awscliv2.zip
 ```
+
+**Windows環境でGit Bashを使用している場合**:
+- Windows環境では`sudo`コマンドは使用できません
+- 上記の「方法1: MSIインストーラーを使用」を推奨します
 
 ### インストール確認
 
