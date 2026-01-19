@@ -1,0 +1,13 @@
+{
+  "version": "0",
+  "id": "test-event-id-12345",
+  "detail-type": "Scheduled Event",
+  "source": "aws.scheduler",
+  "account": "059948105185",
+  "time": "2026-01-19T20:00:00Z",
+  "region": "ap-northeast-1",
+  "resources": [
+    "arn:aws:scheduler:ap-northeast-1:059948105185:schedule/default/staging-group-message-reminder-morning"
+  ],
+  "detail": {}
+}
