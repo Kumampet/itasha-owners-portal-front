@@ -316,31 +316,45 @@ aws iam create-access-key \
 
 #### 方法1: AWS CLIで設定（推奨）
 
-##### デフォルトプロファイルとして設定
+##### ローカル環境からデプロイ用のプロファイルとして設定
+
+ローカル環境からLambda関数をデプロイする場合は、専用のプロファイル名`Itanavi-Lambda-Deploy-local`を使用します：
+
+```bash
+aws configure --profile Itanavi-Lambda-Deploy-local
+```
+
+以下の情報を順番に入力します：
+
+1. **AWS Access Key ID**: IAMユーザーで作成したAccess Key IDを入力
+2. **AWS Secret Access Key**: IAMユーザーで作成したSecret Access Keyを入力
+3. **Default region name**: `ap-northeast-1` を入力
+4. **Default output format**: `json` を入力（Enterキーでデフォルトのjsonを選択）
+
+**注意**: デプロイスクリプト（`npm run lambda:deploy:staging`など）は自動的にこのプロファイルを使用します。
+
+##### デフォルトプロファイルとして設定（オプション）
+
+他の用途でAWS CLIを使用する場合は、デフォルトプロファイルとして設定することもできます：
 
 ```bash
 aws configure
 ```
 
-以下の情報を順番に入力します：
+同じ情報を入力します。
 
-1. **AWS Access Key ID**: 上記で取得したAccess Key IDを入力
-2. **AWS Secret Access Key**: 上記で取得したSecret Access Keyを入力
-3. **Default region name**: `ap-northeast-1` を入力
-4. **Default output format**: `json` を入力（Enterキーでデフォルトのjsonを選択）
-
-##### 名前付きプロファイルとして設定
+##### 名前付きプロファイルとして設定（その他の用途）
 
 複数のAWSアカウントや環境を使い分ける場合は、名前付きプロファイルを使用します：
 
 ```bash
-aws configure --profile group-message-reminder-deploy
+aws configure --profile your-profile-name
 ```
 
-同じ情報を入力します。使用する場合は、`--profile`オプションを追加：
+使用する場合は、`--profile`オプションを追加：
 
 ```bash
-aws sts get-caller-identity --profile group-message-reminder-deploy
+aws sts get-caller-identity --profile your-profile-name
 ```
 
 ##### 設定ファイルの確認

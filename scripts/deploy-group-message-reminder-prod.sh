@@ -19,22 +19,26 @@ fi
 export AWS_REGION=${AWS_REGION:-ap-northeast-1}
 export ENVIRONMENT=prod
 
+# ローカル環境からデプロイする場合は、AWSプロファイルを設定
+export AWS_PROFILE=Itanavi-Lambda-Deploy-local
+
 echo "Environment: $ENVIRONMENT"
 echo "AWS Region: $AWS_REGION"
+echo "AWS Profile: $AWS_PROFILE (for local deployment)"
 echo "SES From Email: $SES_FROM_EMAIL"
 
-# AWS認証情報の確認
+# AWS認証情報の確認（プロファイルを使用）
 echo "Checking AWS credentials..."
-if ! aws sts get-caller-identity &> /dev/null; then
-  echo "Error: AWS credentials not configured."
+if ! aws sts get-caller-identity --profile "$AWS_PROFILE" &> /dev/null; then
+  echo "Error: AWS credentials not configured for profile '$AWS_PROFILE'."
   echo "Please configure AWS credentials using one of the following methods:"
-  echo "  1. Run 'aws configure'"
+  echo "  1. Run 'aws configure --profile Itanavi-Lambda-Deploy-local'"
   echo "  2. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables"
   echo "  3. Use AWS SSO or IAM roles"
   exit 1
 fi
 
-AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null)
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --profile "$AWS_PROFILE" --query Account --output text 2>/dev/null)
 echo "AWS Account ID: $AWS_ACCOUNT_ID"
 
 # 確認プロンプト
@@ -74,7 +78,7 @@ echo "Using SAM CLI: $SAM_CMD"
 echo "Building SAM template..."
 "$SAM_CMD" build --template-file infrastructure/group-message-reminder.yaml
 
-# SAMデプロイ
+# SAMデプロイ（AWSプロファイルを使用）
 echo "Deploying to AWS..."
 "$SAM_CMD" deploy \
   --stack-name group-message-reminder-prod \
@@ -84,6 +88,7 @@ echo "Deploying to AWS..."
     DatabaseUrl="$DATABASE_URL" \
     SesFromEmail="$SES_FROM_EMAIL" \
   --region "$AWS_REGION" \
+  --profile "$AWS_PROFILE" \
   --resolve-s3
 
 echo "Deployment completed successfully!"
