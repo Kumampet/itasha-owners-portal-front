@@ -41,10 +41,7 @@
                 "lambda:UntagResource",
                 "lambda:ListTags"
             ],
-            "Resource": [
-                "arn:aws:lambda:*:*:function:staging-group-message-reminder",
-                "arn:aws:lambda:*:*:function:prod-group-message-reminder"
-            ]
+            "Resource": "*"
         },
         {
             "Sid": "EventBridgeSchedulerPermissions",
@@ -59,12 +56,7 @@
                 "scheduler:UntagResource",
                 "scheduler:ListTagsForResource"
             ],
-            "Resource": [
-                "arn:aws:scheduler:*:*:schedule/staging-group-message-reminder-*",
-                "arn:aws:scheduler:*:*:schedule/prod-group-message-reminder-*",
-                "arn:aws:scheduler:*:*:schedule/default/staging-group-message-reminder-*",
-                "arn:aws:scheduler:*:*:schedule/default/prod-group-message-reminder-*"
-            ]
+            "Resource": "*"
         },
         {
             "Sid": "IAMRolePermissions",
@@ -86,14 +78,7 @@
                 "iam:UntagRole",
                 "iam:PassRole"
             ],
-            "Resource": [
-                "arn:aws:iam::*:role/staging-group-message-reminder-*",
-                "arn:aws:iam::*:role/prod-group-message-reminder-*",
-                "arn:aws:iam::*:role/group-message-reminder-staging-*",
-                "arn:aws:iam::*:role/group-message-reminder-prod-*",
-                "arn:aws:iam::*:role/group-message-reminder-st-*",
-                "arn:aws:iam::*:role/group-message-reminder-pr-*"
-            ]
+            "Resource": "*"
         },
         {
             "Sid": "S3ListBucketsPermission",
@@ -133,10 +118,7 @@
                 "logs:DescribeLogGroups",
                 "logs:DeleteLogGroup"
             ],
-            "Resource": [
-                "arn:aws:logs:*:*:log-group:/aws/lambda/staging-group-message-reminder",
-                "arn:aws:logs:*:*:log-group:/aws/lambda/prod-group-message-reminder"
-            ]
+            "Resource": "*"
         },
         {
             "Sid": "STSPermissions",
