@@ -50,11 +50,12 @@ Resources:
                 - ses:SendEmail
                 - ses:SendRawEmail
               Resource: '*'
-      VpcConfig:
-        # VPC設定が必要な場合はここに追加
-        # ただし、RDSがパブリックアクセス可能な場合は不要
-        SecurityGroupIds: []
-        SubnetIds: []
+      # VPC設定が必要な場合は以下のコメントを解除して設定
+      # VpcConfig:
+      #   SecurityGroupIds:
+      #     - sg-xxxxxxxxx
+      #   SubnetIds:
+      #     - subnet-xxxxxxxxx
 
   # EventBridge Scheduler - 朝9時（JST = UTC 0時）
   MorningReminderSchedule:
