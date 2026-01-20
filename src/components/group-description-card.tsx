@@ -42,7 +42,20 @@ export function GroupDescriptionCard({
     setSaving(true);
     try {
       // HTMLモードの場合はHTML直接編集の値を、そうでない場合はWYSIWYGエディタの値を使用
-      const valueToSave = isHtmlMode ? htmlEditValue : editValue;
+      let valueToSave = isHtmlMode ? htmlEditValue : editValue;
+
+      // HTML直接編集モードの場合、DOCTYPEやhtml/bodyタグを削除（SafeHtmlContent内で表示される部分のみ）
+      if (isHtmlMode && valueToSave) {
+        // DOCTYPE、html、head、bodyタグを削除
+        valueToSave = valueToSave
+          .replace(/<!DOCTYPE[^>]*>/gi, "")
+          .replace(/<html[^>]*>/gi, "")
+          .replace(/<\/html>/gi, "")
+          .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "")
+          .replace(/<body[^>]*>/gi, "")
+          .replace(/<\/body>/gi, "")
+          .trim();
+      }
 
       // クライアントサイドでサニタイズ（サーバーサイドでも再度サニタイズされる）
       const sanitizedValue = sanitizeHtml(valueToSave.trim());
@@ -58,8 +71,23 @@ export function GroupDescriptionCard({
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to update group description");
+        // Content-Typeを確認してからJSONをパース
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || "Failed to update group description");
+        } else {
+          // HTMLエラーページが返された場合
+          const errorText = await res.text();
+          console.error("API Error Response:", errorText);
+          throw new Error(`サーバーエラーが発生しました (${res.status})`);
+        }
+      }
+
+      // レスポンスがJSONか確認
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        await res.json(); // レスポンスを読み込む
       }
 
       setIsEditing(false);
@@ -156,17 +184,17 @@ export function GroupDescriptionCard({
             /* HTML直接編集モード */
             <div className="space-y-2">
               <label className="block text-xs font-medium text-zinc-700">
-                HTML直接編集（許可タグ: p, span, div, strong, em, u, s, a, br, h1-h6）
+                HTML直接編集
               </label>
               <textarea
                 value={htmlEditValue}
                 onChange={(e) => setHtmlEditValue(e.target.value)}
-                placeholder="HTMLを直接入力してください..."
+                placeholder={`<p>ここに内容を入力してください</p>`}
                 rows={10}
                 className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 resize-none"
               />
               <p className="text-xs text-zinc-500">
-                注意: 使用できるタグとスタイルは一部のみとなります。
+                注意: SafeHtmlContent内で表示される部分のみを入力してください。<br />許可タグ: p, span, div, strong, em, u, s, a, br, h1-h6
               </p>
             </div>
           )}

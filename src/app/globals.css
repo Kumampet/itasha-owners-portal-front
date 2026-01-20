@@ -118,3 +118,18 @@ body {
 .group-description-content [style*='font-family: "Poppins"'] {
   font-family: "Poppins", sans-serif !important;
 }
+
+/* HTML表示用のリンクスタイル（SafeHtmlContent用） */
+.group-description-content a {
+  color: #2563eb !important; /* 標準の青色 */
+  text-decoration: underline;
+}
+
+.group-description-content a:hover {
+  color: #1d4ed8 !important; /* ホバー時の濃い青色 */
+  text-decoration: underline;
+}
+
+.group-description-content a:visited {
+  color: #7c3aed !important; /* 訪問済みリンクの紫色 */
+}

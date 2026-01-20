@@ -124,9 +124,28 @@ export async function PATCH(
     
     // HTMLをサニタイズ（サーバーサイドでもXSS対策）
     if (descriptionValue && typeof descriptionValue === "string") {
-      descriptionValue = sanitizeHtmlServer(descriptionValue);
-      // サニタイズ後に空文字列になった場合はnullに変換
-      if (descriptionValue.trim() === "") {
+      try {
+        // DOCTYPE、html、head、bodyタグを削除（SafeHtmlContent内で表示される部分のみ）
+        descriptionValue = descriptionValue
+          .replace(/<!DOCTYPE[^>]*>/gi, "")
+          .replace(/<html[^>]*>/gi, "")
+          .replace(/<\/html>/gi, "")
+          .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "")
+          .replace(/<body[^>]*>/gi, "")
+          .replace(/<\/body>/gi, "")
+          .trim();
+        
+        descriptionValue = sanitizeHtmlServer(descriptionValue);
+        // サニタイズ後に空文字列になった場合はnullに変換
+        if (descriptionValue.trim() === "") {
+          descriptionValue = null;
+        }
+      } catch (sanitizeError) {
+        console.error("Error sanitizing HTML:", sanitizeError);
+        const sanitizeErrorMessage = sanitizeError instanceof Error ? sanitizeError.message : String(sanitizeError);
+        const sanitizeErrorStack = sanitizeError instanceof Error ? sanitizeError.stack : undefined;
+        console.error("Sanitize error details:", { sanitizeErrorMessage, sanitizeErrorStack });
+        // サニタイズに失敗した場合はnullに変換（セキュリティのため）
         descriptionValue = null;
       }
     }
@@ -152,8 +171,14 @@ export async function PATCH(
     );
   } catch (error) {
     console.error("Error updating group description:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error("Error details:", { errorMessage, errorStack });
     return NextResponse.json(
-      { error: "Failed to update group description" },
+      { 
+        error: "Failed to update group description",
+        details: process.env.NODE_ENV === "development" ? errorMessage : undefined,
+      },
       { status: 500 }
     );
   }

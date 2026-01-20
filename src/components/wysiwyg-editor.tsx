@@ -187,6 +187,14 @@ export function WysiwygEditor({
           color: #9ca3af;
           font-style: normal;
         }
+        /* WYSIWYGエディタ内のリンクのスタイル */
+        .wysiwyg-editor-wrapper .ql-editor a {
+          color: #2563eb !important; /* 標準の青色 */
+          text-decoration: underline;
+        }
+        .wysiwyg-editor-wrapper .ql-editor a:hover {
+          color: #1d4ed8 !important; /* ホバー時の濃い青色 */
+        }
       `}</style>
       <div ref={editorRef} />
     </div>
