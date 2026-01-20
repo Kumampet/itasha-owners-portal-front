@@ -259,6 +259,9 @@ model Group {
   // 団体オーナーからのお知らせ（備考欄）
   owner_note String? @db.Text
 
+  // 団体説明（WYSIWYG形式のHTML）
+  group_description String? @db.Text
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 

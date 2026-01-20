@@ -12,6 +12,7 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { MessageBubble } from "@/components/message-bubble";
 import { GroupInviteLinkCopyButton } from "@/components/group-invite-link-copy-button";
 import { GroupOwnerNoteCard } from "@/components/group-owner-note-card";
+import { GroupDescriptionCard } from "@/components/group-description-card";
 import { MemberActionMenu } from "@/components/member-action-menu";
 
 type GroupDetail = {
@@ -23,6 +24,7 @@ type GroupDetail = {
   memberCount: number;
   isLeader: boolean;
   ownerNote: string | null;
+  groupDescription: string | null;
   event: {
     id: string;
     name: string;
@@ -578,6 +580,13 @@ export default function GroupDetailPage({
                   </p>
                   <GroupInviteLinkCopyButton groupCode={group.groupCode} />
                 </section>
+
+                <GroupDescriptionCard
+                  groupId={group.id}
+                  groupDescription={group.groupDescription}
+                  isLeader={group.isLeader}
+                  onUpdate={fetchGroup}
+                />
 
                 <GroupOwnerNoteCard
                   groupId={group.id}

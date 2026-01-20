@@ -17,3 +17,104 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* WYSIWYGエディタ用のフォントスタイル */
+.ql-font-noto-sans-jp {
+  font-family: "Noto Sans JP", sans-serif !important;
+}
+.ql-font-roboto {
+  font-family: "Roboto", sans-serif !important;
+}
+.ql-font-open-sans {
+  font-family: "Open Sans", sans-serif !important;
+}
+.ql-font-lato {
+  font-family: "Lato", sans-serif !important;
+}
+.ql-font-montserrat {
+  font-family: "Montserrat", sans-serif !important;
+}
+.ql-font-playfair-display {
+  font-family: "Playfair Display", serif !important;
+}
+.ql-font-pacifico {
+  font-family: "Pacifico", cursive !important;
+}
+.ql-font-bebas-neue {
+  font-family: "Bebas Neue", sans-serif !important;
+}
+.ql-font-dancing-script {
+  font-family: "Dancing Script", cursive !important;
+}
+.ql-font-poppins {
+  font-family: "Poppins", sans-serif !important;
+}
+
+/* WYSIWYGエディタ用のサイズスタイル */
+.ql-size-極小 {
+  font-size: 10px !important;
+}
+.ql-size-小 {
+  font-size: 12px !important;
+}
+.ql-size-中 {
+  font-size: 14px !important;
+}
+.ql-size-大 {
+  font-size: 18px !important;
+}
+.ql-size-特大 {
+  font-size: 24px !important;
+}
+
+/* HTML表示用のフォントスタイル（SafeHtmlContent用） */
+.group-description-content .ql-font-noto-sans-jp,
+.group-description-content [style*="font-family: 'Noto Sans JP'"],
+.group-description-content [style*='font-family: "Noto Sans JP"'] {
+  font-family: "Noto Sans JP", sans-serif !important;
+}
+.group-description-content .ql-font-roboto,
+.group-description-content [style*="font-family: 'Roboto'"],
+.group-description-content [style*='font-family: "Roboto"'] {
+  font-family: "Roboto", sans-serif !important;
+}
+.group-description-content .ql-font-open-sans,
+.group-description-content [style*="font-family: 'Open Sans'"],
+.group-description-content [style*='font-family: "Open Sans"'] {
+  font-family: "Open Sans", sans-serif !important;
+}
+.group-description-content .ql-font-lato,
+.group-description-content [style*="font-family: 'Lato'"],
+.group-description-content [style*='font-family: "Lato"'] {
+  font-family: "Lato", sans-serif !important;
+}
+.group-description-content .ql-font-montserrat,
+.group-description-content [style*="font-family: 'Montserrat'"],
+.group-description-content [style*='font-family: "Montserrat"'] {
+  font-family: "Montserrat", sans-serif !important;
+}
+.group-description-content .ql-font-playfair-display,
+.group-description-content [style*="font-family: 'Playfair Display'"],
+.group-description-content [style*='font-family: "Playfair Display"'] {
+  font-family: "Playfair Display", serif !important;
+}
+.group-description-content .ql-font-pacifico,
+.group-description-content [style*="font-family: 'Pacifico'"],
+.group-description-content [style*='font-family: "Pacifico"'] {
+  font-family: "Pacifico", cursive !important;
+}
+.group-description-content .ql-font-bebas-neue,
+.group-description-content [style*="font-family: 'Bebas Neue'"],
+.group-description-content [style*='font-family: "Bebas Neue"'] {
+  font-family: "Bebas Neue", sans-serif !important;
+}
+.group-description-content .ql-font-dancing-script,
+.group-description-content [style*="font-family: 'Dancing Script'"],
+.group-description-content [style*='font-family: "Dancing Script"'] {
+  font-family: "Dancing Script", cursive !important;
+}
+.group-description-content .ql-font-poppins,
+.group-description-content [style*="font-family: 'Poppins'"],
+.group-description-content [style*='font-family: "Poppins"'] {
+  font-family: "Poppins", sans-serif !important;
+}
