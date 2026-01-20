@@ -43,7 +43,7 @@ export function GroupDescriptionCard({
     try {
       // HTMLモードの場合はHTML直接編集の値を、そうでない場合はWYSIWYGエディタの値を使用
       const valueToSave = isHtmlMode ? htmlEditValue : editValue;
-      
+
       // クライアントサイドでサニタイズ（サーバーサイドでも再度サニタイズされる）
       const sanitizedValue = sanitizeHtml(valueToSave.trim());
 
@@ -166,7 +166,7 @@ export function GroupDescriptionCard({
                 className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 resize-none"
               />
               <p className="text-xs text-zinc-500">
-                注意: XSS対策のため、使用できるタグとスタイルは制限されています。
+                注意: 使用できるタグとスタイルは一部のみとなります。
               </p>
             </div>
           )}

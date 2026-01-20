@@ -11,6 +11,10 @@ type GroupOwnerNoteCardProps = {
   onUpdate: () => void;
 };
 
+/**
+ * 団体オーナーからのお知らせカードコンポーネント
+ * 既存のプレーンテキスト形式の「お知らせ」機能
+ */
 export function GroupOwnerNoteCard({
   groupId,
   ownerNote,

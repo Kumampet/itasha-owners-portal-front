@@ -2,10 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import "react-quill/dist/quill.snow.css";
-
-// React Quillを動的インポート（SSRを回避）
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+import "quill/dist/quill.snow.css";
 
 interface WysiwygEditorProps {
   value: string;
@@ -16,7 +13,7 @@ interface WysiwygEditorProps {
 
 /**
  * WYSIWYGエディタコンポーネント
- * React Quillを使用してリッチテキストエディタを提供
+ * Quillを直接使用してReact 19互換のリッチテキストエディタを提供
  */
 export function WysiwygEditor({
   value,
@@ -24,6 +21,7 @@ export function WysiwygEditor({
   placeholder = "テキストを入力してください...",
   disabled = false,
 }: WysiwygEditorProps) {
+  const editorRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<any>(null);
 
   // フォントリスト（10種類）
@@ -59,53 +57,121 @@ export function WysiwygEditor({
   // 文字サイズリスト（5段階）
   const sizes = ["極小", "小", "中", "大", "特大"];
 
-  // React Quillの設定
-  const modules = {
-    toolbar: {
-      container: [
-        [{ font: fonts }],
-        [{ size: sizes }],
-        [{ color: colors }, { background: colors }],
-        ["bold", "italic", "underline", "strike"],
-        [{ align: [] }],
-        ["link"],
-        ["clean"],
-      ],
-    },
-  };
-
-  const formats = [
-    "font",
-    "size",
-    "color",
-    "background",
-    "bold",
-    "italic",
-    "underline",
-    "strike",
-    "align",
-    "link",
-  ];
-
-  // Quillの設定をカスタマイズ
   useEffect(() => {
-    if (typeof window !== "undefined" && quillRef.current) {
-      const ReactQuillLib = require("react-quill");
-      const Quill = ReactQuillLib.default.Quill || ReactQuillLib.Quill;
-      
-      if (Quill) {
-        // フォントのホワイトリストを設定
+    if (typeof window === "undefined" || !editorRef.current) {
+      return;
+    }
+
+    // 既にQuillが初期化されている場合はスキップ
+    if (quillRef.current) {
+      return;
+    }
+
+    let isMounted = true;
+
+    // Quillを動的インポート
+    import("quill").then((QuillModule) => {
+      if (!isMounted || !editorRef.current || quillRef.current) {
+        return;
+      }
+
+      const Quill = QuillModule.default;
+
+      // フォントのホワイトリストを設定（一度だけ）
+      if (!Quill.imports["formats/font"].whitelist || Quill.imports["formats/font"].whitelist.length === 0) {
         const Font = Quill.import("formats/font");
         Font.whitelist = fonts;
         Quill.register(Font, true);
+      }
 
-        // サイズのホワイトリストを設定
+      // サイズのホワイトリストを設定（一度だけ）
+      if (!Quill.imports["formats/size"].whitelist || Quill.imports["formats/size"].whitelist.length === 0) {
         const Size = Quill.import("formats/size");
         Size.whitelist = sizes;
         Quill.register(Size, true);
       }
+
+      // 既存のコンテンツをクリア（ツールバーの重複を防ぐ）
+      if (editorRef.current) {
+        editorRef.current.innerHTML = "";
+      }
+
+      // Quillエディタを初期化
+      const quill = new Quill(editorRef.current!, {
+        theme: "snow",
+        placeholder,
+        readOnly: disabled,
+        modules: {
+          toolbar: {
+            container: [
+              [{ font: fonts }],
+              [{ size: sizes }],
+              [{ color: colors }, { background: colors }],
+              ["bold", "italic", "underline", "strike"],
+              [{ align: [] }],
+              ["link"],
+              ["clean"],
+            ],
+          },
+        },
+        formats: [
+          "font",
+          "size",
+          "color",
+          "background",
+          "bold",
+          "italic",
+          "underline",
+          "strike",
+          "align",
+          "link",
+        ],
+      });
+
+      // 初期値を設定
+      if (value) {
+        quill.root.innerHTML = value;
+      }
+
+      // 変更イベントを監視
+      quill.on("text-change", () => {
+        if (isMounted) {
+          const html = quill.root.innerHTML;
+          onChange(html);
+        }
+      });
+
+      quillRef.current = quill;
+    });
+
+    return () => {
+      isMounted = false;
+      if (quillRef.current && editorRef.current) {
+        // Quillインスタンスを破棄
+        const quill = quillRef.current;
+        quill.off("text-change");
+        // エディタのDOMをクリーンアップ
+        if (editorRef.current) {
+          editorRef.current.innerHTML = "";
+        }
+        quillRef.current = null;
+      }
+    };
+  }, []); // 空の依存配列で一度だけ実行
+
+  // 外部からの値の変更を反映
+  useEffect(() => {
+    if (quillRef.current && value !== quillRef.current.root.innerHTML) {
+      quillRef.current.root.innerHTML = value || "";
     }
-  }, []);
+  }, [value]);
+
+  // disabled状態の変更を反映
+  useEffect(() => {
+    if (quillRef.current) {
+      quillRef.current.enable(!disabled);
+    }
+  }, [disabled]);
 
   return (
     <div className="wysiwyg-editor-wrapper">
@@ -122,15 +188,7 @@ export function WysiwygEditor({
           font-style: normal;
         }
       `}</style>
-      <ReactQuill
-        theme="snow"
-        value={value}
-        onChange={onChange}
-        modules={modules}
-        formats={formats}
-        placeholder={placeholder}
-        readOnly={disabled}
-      />
+      <div ref={editorRef} />
     </div>
   );
 }
