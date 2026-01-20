@@ -147,7 +147,7 @@ export function GroupDescriptionCard({
                 onClick={() => setIsHtmlMode(false)}
                 disabled={saving}
               >
-                WYSIWYG編集
+                エディター編集
               </Button>
               <Button
                 variant={isHtmlMode ? "primary" : "secondary"}
@@ -156,7 +156,7 @@ export function GroupDescriptionCard({
                 onClick={() => setIsHtmlMode(true)}
                 disabled={saving}
               >
-                HTML直接編集
+                HTML編集
               </Button>
             </div>
             <Button
@@ -184,7 +184,7 @@ export function GroupDescriptionCard({
             /* HTML直接編集モード */
             <div className="space-y-2">
               <label className="block text-xs font-medium text-zinc-700">
-                HTML直接編集
+                HTML編集
               </label>
               <textarea
                 value={htmlEditValue}
