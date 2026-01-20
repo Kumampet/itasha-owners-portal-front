@@ -27,7 +27,8 @@ const ALLOWED_TAGS = [
 // 許可するHTML属性
 const ALLOWED_ATTR = ["href", "target", "rel", "style"];
 
-// 許可するインラインスタイルプロパティ
+// 許可するインラインスタイルプロパティ（将来の拡張用に定義）
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ALLOWED_STYLES = [
   "color",
   "font-family",
@@ -66,7 +67,7 @@ export function sanitizeHtml(html: string): string {
     RETURN_TRUSTED_TYPE: false,
     // インラインスタイルの許可プロパティを設定
     ALLOW_DATA_ATTR: false,
-  } as any));
+  } as Parameters<typeof DOMPurify.sanitize>[1]));
 }
 
 /**

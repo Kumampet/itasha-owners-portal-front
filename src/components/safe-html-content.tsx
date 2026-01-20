@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { sanitizeHtmlForDisplay } from "@/lib/html-sanitizer";
 
 interface SafeHtmlContentProps {
@@ -22,16 +22,12 @@ export function SafeHtmlContent({
   html,
   className = "",
 }: SafeHtmlContentProps) {
-  const [sanitizedHtml, setSanitizedHtml] = useState<string>("");
-
-  useEffect(() => {
+  const sanitizedHtml = useMemo(() => {
     if (typeof window !== "undefined") {
-      const sanitized = sanitizeHtmlForDisplay(html);
-      setSanitizedHtml(sanitized);
-    } else {
-      // サーバーサイドでは空文字列を設定（クライアントサイドで再サニタイズ）
-      setSanitizedHtml("");
+      return sanitizeHtmlForDisplay(html);
     }
+    // サーバーサイドでは空文字列を返す（クライアントサイドで再サニタイズ）
+    return "";
   }, [html]);
 
   if (!sanitizedHtml) {

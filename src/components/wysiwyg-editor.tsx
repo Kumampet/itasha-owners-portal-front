@@ -532,7 +532,6 @@ export function WysiwygEditor({
         }
 
         const newEditorState = EditorState.createWithContent(contentState);
-        // eslint-disable-next-line react-hooks/rules-of-hooks
         setEditorState(newEditorState);
         setIsInitialized(true);
 
@@ -547,7 +546,7 @@ export function WysiwygEditor({
     } else if (!isInitialized && !value) {
       setIsInitialized(true);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, isInitialized]);
 
   // EditorStateの変更をHTMLに変換して親に通知
@@ -559,7 +558,31 @@ export function WysiwygEditor({
 
   // インラインスタイルの適用
   const toggleInlineStyle = (inlineStyle: string) => {
-    handleChange(RichUtils.toggleInlineStyle(editorState, inlineStyle));
+    const selection = editorState.getSelection();
+    const contentState = editorState.getCurrentContent();
+
+    // 選択範囲がない場合（カーソル位置のみ）、現在のブロック全体を選択
+    if (selection.isCollapsed()) {
+      const blockKey = selection.getStartKey();
+      const block = contentState.getBlockForKey(blockKey);
+      const blockLength = block.getLength();
+
+      if (blockLength > 0) {
+        // ブロック全体を選択範囲として設定
+        const newSelection = selection.merge({
+          anchorOffset: 0,
+          focusOffset: blockLength,
+        });
+        const newEditorState = EditorState.forceSelection(editorState, newSelection);
+        handleChange(RichUtils.toggleInlineStyle(newEditorState, inlineStyle));
+        return;
+      }
+    }
+
+    // 選択範囲がある場合、通常通り処理
+    // RichUtils.toggleInlineStyleを使用してスタイルをトグル
+    const newEditorState = RichUtils.toggleInlineStyle(editorState, inlineStyle);
+    handleChange(newEditorState);
   };
 
   // ブロックスタイルの適用（テキスト配置）
@@ -717,15 +740,25 @@ export function WysiwygEditor({
           padding: 1rem;
           min-height: 200px;
           font-size: 0.875rem;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Roboto", "Helvetica Neue", Arial, sans-serif;
         }
         .wysiwyg-editor-content .DraftEditor-root {
           min-height: 200px;
+          font-family: inherit;
         }
         .wysiwyg-editor-content .DraftEditor-editorContainer {
           min-height: 200px;
+          font-family: inherit;
         }
         .wysiwyg-editor-content .public-DraftEditor-content {
           min-height: 200px;
+          font-family: inherit;
+        }
+        .wysiwyg-editor-content .public-DraftStyleDefault-block {
+          font-family: inherit;
+        }
+        .wysiwyg-editor-content .public-DraftStyleDefault-ltr {
+          font-family: inherit;
         }
         .wysiwyg-editor-content a {
           color: #2563eb;
@@ -745,6 +778,47 @@ export function WysiwygEditor({
         .wysiwyg-editor-content .text-right .public-DraftStyleDefault-block,
         .wysiwyg-editor-content .text-right .public-DraftStyleDefault-ltr {
           text-align: right;
+        }
+        /* Draft.jsのインラインスタイル用のCSS */
+        /* BOLDスタイルが適用されたspanタグ - より具体的なセレクタで確実に適用 */
+        .wysiwyg-editor-content .public-DraftStyleDefault-block span[style*="font-weight"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-block span[style*="font-weight: bold"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-block span[style*="font-weight:bold"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-block span[style*="font-weight: 700"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-block span[style*="font-weight:700"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-ltr span[style*="font-weight"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-ltr span[style*="font-weight: bold"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-ltr span[style*="font-weight:bold"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-ltr span[style*="font-weight: 700"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-ltr span[style*="font-weight:700"],
+        .wysiwyg-editor-content span[data-offset-key][style*="font-weight"] {
+          font-weight: 700 !important;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
+        }
+        /* ITALICスタイルが適用されたspanタグ */
+        .wysiwyg-editor-content .public-DraftStyleDefault-block span[style*="font-style"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-block span[style*="font-style: italic"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-block span[style*="font-style:italic"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-ltr span[style*="font-style"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-ltr span[style*="font-style: italic"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-ltr span[style*="font-style:italic"] {
+          font-style: italic !important;
+        }
+        /* UNDERLINEスタイルが適用されたspanタグ */
+        .wysiwyg-editor-content .public-DraftStyleDefault-block span[style*="text-decoration"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-block span[style*="text-decoration: underline"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-block span[style*="text-decoration:underline"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-ltr span[style*="text-decoration"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-ltr span[style*="text-decoration: underline"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-ltr span[style*="text-decoration:underline"] {
+          text-decoration: underline !important;
+        }
+        /* STRIKETHROUGHスタイルが適用されたspanタグ */
+        .wysiwyg-editor-content .public-DraftStyleDefault-block span[style*="text-decoration: line-through"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-block span[style*="text-decoration:line-through"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-ltr span[style*="text-decoration: line-through"],
+        .wysiwyg-editor-content .public-DraftStyleDefault-ltr span[style*="text-decoration:line-through"] {
+          text-decoration: line-through !important;
         }
       `}</style>
 
@@ -787,7 +861,10 @@ export function WysiwygEditor({
         {/* 太字 */}
         <button
           type="button"
-          onClick={() => toggleInlineStyle("BOLD")}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            toggleInlineStyle("BOLD");
+          }}
           disabled={disabled}
           className={getCurrentInlineStyle().has("BOLD") ? "active" : ""}
           title="太字"
@@ -798,7 +875,10 @@ export function WysiwygEditor({
         {/* 斜体 */}
         <button
           type="button"
-          onClick={() => toggleInlineStyle("ITALIC")}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            toggleInlineStyle("ITALIC");
+          }}
           disabled={disabled}
           className={getCurrentInlineStyle().has("ITALIC") ? "active" : ""}
           title="斜体"
@@ -809,7 +889,10 @@ export function WysiwygEditor({
         {/* 下線 */}
         <button
           type="button"
-          onClick={() => toggleInlineStyle("UNDERLINE")}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            toggleInlineStyle("UNDERLINE");
+          }}
           disabled={disabled}
           className={getCurrentInlineStyle().has("UNDERLINE") ? "active" : ""}
           title="下線"
@@ -820,7 +903,10 @@ export function WysiwygEditor({
         {/* 取り消し線 */}
         <button
           type="button"
-          onClick={() => toggleInlineStyle("STRIKETHROUGH")}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            toggleInlineStyle("STRIKETHROUGH");
+          }}
           disabled={disabled}
           className={
             getCurrentInlineStyle().has("STRIKETHROUGH") ? "active" : ""
@@ -901,6 +987,12 @@ export function WysiwygEditor({
           readOnly={disabled}
           blockStyleFn={blockStyleFn}
           customStyleMap={{
+            // デフォルトのインラインスタイル
+            BOLD: { fontWeight: 'bold' },
+            ITALIC: { fontStyle: 'italic' },
+            UNDERLINE: { textDecoration: 'underline' },
+            STRIKETHROUGH: { textDecoration: 'line-through' },
+            // カスタムスタイル
             ...Object.fromEntries(
               colors.map((color) => [`COLOR-${color.value}`, { color: color.value }])
             ),

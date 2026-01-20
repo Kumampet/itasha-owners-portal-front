@@ -4,7 +4,8 @@
  * クライアントサイドでDOMPurifyによるサニタイズが行われていることを前提とする
  */
 
-// 許可するHTMLタグ
+// 許可するHTMLタグ（将来の拡張用に定義）
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ALLOWED_TAGS = [
   "p",
   "span",

@@ -133,3 +133,63 @@ body {
 .group-description-content a:visited {
   color: #7c3aed !important; /* 訪問済みリンクの紫色 */
 }
+
+/* HTML表示用のテキストスタイル（SafeHtmlContent用） */
+/* フォントファミリーを明示的に設定（太字をサポートするフォント） */
+.group-description-content {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Roboto", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* 通常のテキストは400（normal）を維持 */
+.group-description-content * {
+  font-weight: 400;
+}
+
+/* 太字スタイル - strongタグとfont-weightが設定されている要素のみ */
+.group-description-content strong,
+.group-description-content strong * {
+  font-weight: 700 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+.group-description-content span[style*="font-weight: bold"],
+.group-description-content span[style*="font-weight:bold"],
+.group-description-content span[style*="font-weight: 700"],
+.group-description-content span[style*="font-weight:700"],
+.group-description-content div[style*="font-weight: bold"],
+.group-description-content div[style*="font-weight:bold"],
+.group-description-content div[style*="font-weight: 700"],
+.group-description-content div[style*="font-weight:700"] {
+  font-weight: 700 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* 斜体スタイル */
+.group-description-content em {
+  font-style: italic !important;
+}
+
+.group-description-content [style*="font-style: italic"],
+.group-description-content [style*="font-style:italic"] {
+  font-style: italic !important;
+}
+
+/* 下線スタイル */
+.group-description-content u {
+  text-decoration: underline !important;
+}
+
+.group-description-content [style*="text-decoration: underline"],
+.group-description-content [style*="text-decoration:underline"] {
+  text-decoration: underline !important;
+}
+
+/* 取り消し線スタイル */
+.group-description-content s {
+  text-decoration: line-through !important;
+}
+
+.group-description-content [style*="text-decoration: line-through"],
+.group-description-content [style*="text-decoration:line-through"] {
+  text-decoration: line-through !important;
+}
