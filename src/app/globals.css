@@ -50,21 +50,21 @@ body {
   font-family: "Poppins", sans-serif !important;
 }
 
-/* WYSIWYGエディタ用のサイズスタイル */
+/* WYSIWYGエディタ用のサイズスタイル（rem単位で他の要素に影響しない） */
 .ql-size-極小 {
-  font-size: 10px !important;
+  font-size: 0.625rem !important; /* 10px相当 */
 }
 .ql-size-小 {
-  font-size: 12px !important;
+  font-size: 0.75rem !important; /* 12px相当 */
 }
 .ql-size-中 {
-  font-size: 14px !important;
+  font-size: 0.875rem !important; /* 14px相当 */
 }
 .ql-size-大 {
-  font-size: 18px !important;
+  font-size: 1.125rem !important; /* 18px相当 */
 }
 .ql-size-特大 {
-  font-size: 24px !important;
+  font-size: 1.5rem !important; /* 24px相当 */
 }
 
 /* HTML表示用のフォントスタイル（SafeHtmlContent用） */
