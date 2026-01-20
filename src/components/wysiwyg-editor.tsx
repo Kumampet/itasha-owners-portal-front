@@ -10,6 +10,7 @@ import {
   CompositeDecorator,
   convertFromHTML,
   SelectionState,
+  ContentBlock,
 } from "draft-js";
 import { stateToHTML } from "draft-js-export-html";
 import "draft-js/dist/Draft.css";
@@ -64,6 +65,196 @@ export function WysiwygEditor({
   });
   const editorRef = useRef<Editor>(null);
 
+  // EditorStateをHTMLに変換する共通関数
+  const convertEditorStateToHtml = (editorState: EditorState): string => {
+    const contentState = editorState.getCurrentContent();
+
+    // カスタムスタイルマップを作成
+    const customStyleMap: Record<string, { element: string; style: React.CSSProperties }> = {};
+    colors.forEach((color) => {
+      customStyleMap[`COLOR-${color.value}`] = { element: "span", style: { color: color.value } };
+    });
+    sizes.forEach((size) => {
+      customStyleMap[`SIZE-${size}`] = { element: "span", style: sizeStyleMap[size] };
+    });
+
+    // すべてのブロックを取得（空のブロックも含む）
+    const blockMap = contentState.getBlockMap();
+    const blocksArray = blockMap.toArray();
+
+    // 空のブロックを明示的に処理するため、カスタムのHTML生成を行う
+    let html = '';
+    blocksArray.forEach((block) => {
+      if (!block) return;
+
+      const blockType = block.getType();
+      const text = block.getText();
+      const isEmpty = text === '';
+
+      // 空のブロックの処理
+      if (isEmpty) {
+        if (blockType === 'align-left') {
+          html += '<div style="text-align: left;"><br></div>';
+        } else if (blockType === 'align-center') {
+          html += '<div style="text-align: center;"><br></div>';
+        } else if (blockType === 'align-right') {
+          html += '<div style="text-align: right;"><br></div>';
+        } else {
+          html += '<div><br></div>';
+        }
+        return;
+      }
+
+      // テキストがあるブロックの処理
+      const blockContentState = ContentState.createFromBlockArray(
+        [block],
+        contentState.getEntityMap()
+      );
+      const blockHtml = stateToHTML(blockContentState, {
+        inlineStyles: {
+          BOLD: { element: "strong" },
+          ITALIC: { element: "em" },
+          UNDERLINE: { element: "u" },
+          STRIKETHROUGH: { element: "s" },
+          ...customStyleMap,
+        },
+        entityStyleFn: (entity) => {
+          const entityType = entity.getType();
+          if (entityType === "LINK") {
+            const data = entity.getData();
+            return {
+              element: "a",
+              attributes: {
+                href: data.url,
+                target: "_blank",
+                rel: "nofollow noreferrer",
+              },
+            };
+          }
+          return {};
+        },
+      });
+
+      // blockHtmlから最初のdivまたはpタグの内容を取得
+      // stateToHTMLが生成したHTMLには、strong、em、u、s、spanなどのタグが含まれている
+      // このcontentをそのまま使用することで、文字色、太文字などのスタイルが保持される
+      let content = '';
+      if (blockHtml.trim()) {
+        const contentMatch = blockHtml.match(/<(?:div|p)[^>]*>([\s\S]*?)<\/(?:div|p)>/);
+        if (contentMatch && contentMatch[1]) {
+          content = contentMatch[1];
+        } else {
+          // マッチしない場合（例：タグなしのテキストのみ）、blockHtml全体を使用
+          content = blockHtml.trim();
+        }
+      }
+      // blockHtmlが空の場合のみ、プレーンテキストを使用
+      if (!content) {
+        content = text;
+      }
+
+      // stateToHTMLがfontSizeを正しく処理しない場合があるため、
+      // ブロック内のすべての文字範囲に対してfontSizeを確認し、必要に応じて修正
+      // ブロック全体を走査して、各文字範囲のインラインスタイルを確認
+      const blockLength = block.getLength();
+      if (blockLength > 0 && content) {
+        // ブロック内のすべての文字範囲を走査
+        let currentOffset = 0;
+        const fontSizeRanges: Array<{ start: number; end: number; fontSize: string }> = [];
+
+        while (currentOffset < blockLength) {
+          const inlineStyle = block.getInlineStyleAt(currentOffset);
+          let fontSize: string | null = null;
+          inlineStyle.forEach((style) => {
+            if (style && style.startsWith('SIZE-')) {
+              const size = style.replace('SIZE-', '');
+              if (sizeStyleMap[size] && sizeStyleMap[size].fontSize) {
+                fontSize = sizeStyleMap[size].fontSize as string;
+              }
+            }
+          });
+
+          if (fontSize) {
+            // 同じfontSizeが続く範囲の終わりを見つける
+            let endOffset = currentOffset + 1;
+            while (endOffset < blockLength) {
+              const nextInlineStyle = block.getInlineStyleAt(endOffset);
+              let nextFontSize: string | null = null;
+              nextInlineStyle.forEach((style) => {
+                if (style && style.startsWith('SIZE-')) {
+                  const size = style.replace('SIZE-', '');
+                  if (sizeStyleMap[size] && sizeStyleMap[size].fontSize) {
+                    nextFontSize = sizeStyleMap[size].fontSize as string;
+                  }
+                }
+              });
+              if (nextFontSize === fontSize) {
+                endOffset++;
+              } else {
+                break;
+              }
+            }
+            fontSizeRanges.push({ start: currentOffset, end: endOffset, fontSize });
+            currentOffset = endOffset;
+          } else {
+            currentOffset++;
+          }
+        }
+
+        // fontSizeが設定されている範囲に対して、content内の対応するテキストにfontSizeを追加
+        if (fontSizeRanges.length > 0) {
+          // 簡易的な方法：ブロック全体にfontSizeが適用されている場合のみ処理
+          if (fontSizeRanges.length === 1 && fontSizeRanges[0].start === 0 && fontSizeRanges[0].end === blockLength) {
+            // ブロック全体にfontSizeが適用されている場合
+            const fontSize = fontSizeRanges[0].fontSize;
+            // content内にfont-sizeが設定されていない場合のみ追加
+            if (!content.match(/style=["'][^"']*font-size[^"']*["']/)) {
+              // content内の最初のspanタグにfontSizeを追加、またはcontent全体をspanタグでラップ
+              // ただし、contentが既にHTMLタグ（strong、em、u、s、aなど）を含んでいる場合は、それらを保持
+              if (content.match(/^<span[^>]*>/)) {
+                // 既にspanタグがある場合、style属性を追加または更新
+                content = content.replace(
+                  /^(<span)([^>]*)(>)/,
+                  (match, tag, attrs, closing) => {
+                    const styleMatch = attrs.match(/style=["']([^"']*)["']/);
+                    if (styleMatch && styleMatch[1]) {
+                      let style = styleMatch[1];
+                      if (!style.includes('font-size:')) {
+                        style += ` font-size: ${fontSize};`;
+                        return `${tag}${attrs.replace(/style=["'][^"']*["']/, `style="${style}"`)}${closing}`;
+                      }
+                    } else {
+                      return `${tag}${attrs} style="font-size: ${fontSize};"${closing}`;
+                    }
+                    return match;
+                  }
+                );
+              } else {
+                // spanタグがない場合、content全体をspanタグでラップ
+                // contentには既にstrong、em、u、s、aなどのタグが含まれている可能性があるため、それらを保持
+                content = `<span style="font-size: ${fontSize};">${content}</span>`;
+              }
+            }
+          }
+        }
+      }
+
+      // ブロックタイプに応じてdivでラップ
+      if (blockType === 'align-left') {
+        html += `<div style="text-align: left;">${content}</div>`;
+      } else if (blockType === 'align-center') {
+        html += `<div style="text-align: center;">${content}</div>`;
+      } else if (blockType === 'align-right') {
+        html += `<div style="text-align: right;">${content}</div>`;
+      } else {
+        html += `<div>${content}</div>`;
+      }
+    });
+
+    return html;
+  };
+
+
   // HTMLからEditorStateに変換（初回のみ）
   const [isInitialized, setIsInitialized] = useState(false);
   useEffect(() => {
@@ -77,7 +268,7 @@ export function WysiwygEditor({
         // text-alignスタイルとテキスト内容のマッピングを作成
         // 空のブロック（<br>のみ）も考慮
         const alignmentMap: Array<{ text: string; alignment: string; isEmpty: boolean }> = [];
-        divs.forEach((div, index) => {
+        divs.forEach((div) => {
           const style = div.getAttribute('style') || '';
           const textAlignMatch = style.match(/text-align:\s*(left|center|right)/i);
           if (textAlignMatch) {
@@ -92,6 +283,29 @@ export function WysiwygEditor({
           }
         });
 
+        // HTML内のすべてのdivタグを取得（空のブロックも含む）
+        // body直下のdivのみを取得（ネストされたdivは除外）
+        const body = doc.body;
+        const divBlocks: Array<{ text: string; isEmpty: boolean; alignment?: string }> = [];
+
+        // body直下の子要素を順番に処理
+        Array.from(body.childNodes).forEach((node) => {
+          if (node.nodeType === 1 && (node as Element).tagName === 'DIV') {
+            const div = node as HTMLDivElement;
+            const text = div.textContent || '';
+            const isEmpty = text.trim() === '' || div.innerHTML.trim() === '<br>' || div.innerHTML.trim() === '';
+            const style = div.getAttribute('style') || '';
+            const textAlignMatch = style.match(/text-align:\s*(left|center|right)/i);
+            const alignment = textAlignMatch ? `align-${textAlignMatch[1].toLowerCase()}` : undefined;
+
+            divBlocks.push({
+              text: isEmpty ? '' : text.trim(),
+              isEmpty,
+              alignment
+            });
+          }
+        });
+
         // convertFromHTMLでブロックを取得
         const blocksFromHTML = convertFromHTML(value);
         let contentState = ContentState.createFromBlockArray(
@@ -99,42 +313,233 @@ export function WysiwygEditor({
           blocksFromHTML.entityMap
         );
 
-        // ブロックタイプを設定（text-alignスタイルに基づいて）
+        // ブロックマップを取得（fontSize処理のため）
         const blockMap = contentState.getBlockMap();
-        let alignmentIndex = 0;
-        blockMap.forEach((block, blockKey) => {
-          if (!block || !blockKey) return;
+        const blocksArray = blockMap.toArray();
+
+        // HTML内のfontSizeスタイルを検出して、Draft.jsのインラインスタイルに変換
+        // すべてのdivタグを順番に処理し、その中のspanタグのfontSizeを検出
+        const divElements = Array.from(body.childNodes).filter(
+          (node) => node.nodeType === 1 && (node as Element).tagName === 'DIV'
+        ) as HTMLDivElement[];
+
+        divElements.forEach((div, divIndex) => {
+          // このdivに対応するブロックを取得
+          if (divIndex >= blocksArray.length) return;
+          const block = blocksArray[divIndex];
+          if (!block) return;
+
+          // div内のすべてのspanタグを取得（font-sizeとcolorの両方を処理）
+          const spans = div.querySelectorAll('span[style]');
+          spans.forEach((span) => {
+            const style = span.getAttribute('style') || '';
+            const spanText = span.textContent || '';
+            if (!spanText) return;
+
+            // ブロック内でこのテキストの位置を探す
+            const blockText = block.getText();
+            const textIndex = blockText.indexOf(spanText);
+            if (textIndex === -1) return;
+
+            const blockKey = block.getKey();
+            const selection = SelectionState.createEmpty(blockKey).merge({
+              anchorOffset: textIndex,
+              focusOffset: textIndex + spanText.length,
+            });
+
+            // fontSizeの処理
+            const fontSizeMatch = style.match(/font-size:\s*([^;]+)/i);
+            if (fontSizeMatch) {
+              const fontSize = fontSizeMatch[1].trim();
+              // fontSizeから対応するサイズ名を取得
+              let sizeName: string | null = null;
+              for (const [name, styleProps] of Object.entries(sizeStyleMap)) {
+                if (styleProps.fontSize === fontSize) {
+                  sizeName = name;
+                  break;
+                }
+              }
+
+              if (sizeName) {
+                // 既存のサイズスタイルを削除
+                sizes.forEach((s) => {
+                  contentState = Modifier.removeInlineStyle(
+                    contentState,
+                    selection,
+                    `SIZE-${s}`
+                  );
+                });
+
+                // 新しいサイズスタイルを適用
+                contentState = Modifier.applyInlineStyle(
+                  contentState,
+                  selection,
+                  `SIZE-${sizeName}`
+                );
+              }
+            }
+
+            // 文字色の処理
+            const colorMatch = style.match(/color:\s*([^;]+)/i);
+            if (colorMatch) {
+              const colorValue = colorMatch[1].trim();
+              // colorValueから対応する色名を取得
+              // 色の値は#RRGGBB形式またはrgb()形式の可能性があるため、正規化が必要
+              let colorName: string | null = null;
+              for (const color of colors) {
+                // 色の値を比較（大文字小文字を無視、空白を除去）
+                const normalizedValue = colorValue.toLowerCase().replace(/\s/g, '');
+                const normalizedColorValue = color.value.toLowerCase().replace(/\s/g, '');
+                if (normalizedValue === normalizedColorValue) {
+                  colorName = color.value;
+                  break;
+                }
+              }
+
+              if (colorName) {
+                // 既存の色スタイルを削除
+                colors.forEach((c) => {
+                  contentState = Modifier.removeInlineStyle(
+                    contentState,
+                    selection,
+                    `COLOR-${c.value}`
+                  );
+                });
+
+                // 新しい色スタイルを適用
+                contentState = Modifier.applyInlineStyle(
+                  contentState,
+                  selection,
+                  `COLOR-${colorName}`
+                );
+              }
+            }
+          });
+        });
+
+        // ブロックタイプを設定（text-alignスタイルに基づいて）
+        // HTML内のdivの順序とブロックの順序を正確にマッチング
+        // 注意: fontSize処理でcontentStateが変更されている可能性があるため再取得
+        const blockMapForAlignment = contentState.getBlockMap();
+        const blocksArrayForAlignment = blockMapForAlignment.toArray();
+
+        let divIndex = 0;
+        let blockIndex = 0;
+
+        // HTML内のdivとブロックを順番にマッチング
+        while (divIndex < divBlocks.length && blockIndex < blocksArrayForAlignment.length) {
+          const divBlock = divBlocks[divIndex];
+          const block = blocksArrayForAlignment[blockIndex];
+
+          if (!block) {
+            blockIndex++;
+            continue;
+          }
 
           const blockText = block.getText().trim();
           const isEmpty = blockText === '';
 
-          // 空のブロックの場合は、alignmentMapの順序に基づいてマッチング
-          let alignmentInfo;
-          if (isEmpty) {
-            // 空のブロックの場合、alignmentMapから空のブロックを探す
-            alignmentInfo = alignmentMap.find(item => item.isEmpty);
-            if (alignmentInfo && alignmentIndex < alignmentMap.length) {
-              alignmentInfo = alignmentMap[alignmentIndex];
-              alignmentIndex++;
+          // テキストが一致するか、空のブロックの場合はブロックタイプを設定
+          if ((isEmpty && divBlock.isEmpty) || (!isEmpty && !divBlock.isEmpty && divBlock.text === blockText)) {
+            if (divBlock.alignment) {
+              const blockKey = block.getKey();
+              const selection = SelectionState.createEmpty(blockKey).merge({
+                anchorOffset: 0,
+                focusOffset: block.getLength(),
+              });
+              contentState = Modifier.setBlockType(contentState, selection, divBlock.alignment);
+            }
+            divIndex++;
+            blockIndex++;
+          } else if (divBlock.isEmpty && !isEmpty) {
+            // HTMLに空のブロックがあるが、convertFromHTMLがスキップした場合
+            // 現在のブロックの前に空のブロックを挿入
+            const blockKey = block.getKey();
+            const selection = SelectionState.createEmpty(blockKey).merge({
+              anchorOffset: 0,
+              focusOffset: 0,
+            });
+            const newContentState = Modifier.insertText(
+              contentState,
+              selection,
+              '\n'
+            );
+            const newBlockMap = newContentState.getBlockMap();
+            const newBlocksArray = newBlockMap.toArray();
+            const newBlockKey = newBlocksArray[blockIndex]?.getKey();
+            if (newBlockKey) {
+              const newSelection = SelectionState.createEmpty(newBlockKey).merge({
+                anchorOffset: 0,
+                focusOffset: 1,
+              });
+              const finalContentState = Modifier.setBlockType(
+                newContentState,
+                newSelection,
+                divBlock.alignment || 'unstyled'
+              );
+              contentState = finalContentState;
+              // ブロック配列を再取得
+              const reUpdatedBlockMap = contentState.getBlockMap();
+              const reUpdatedBlocksArray = reUpdatedBlockMap.toArray();
+              blocksArrayForAlignment.length = 0;
+              blocksArrayForAlignment.push(...reUpdatedBlocksArray);
+              divIndex++;
+              // blockIndexはそのまま（空のブロックが挿入されたため）
+            } else {
+              divIndex++;
             }
           } else {
-            // テキストがある場合は、テキストでマッチング
-            alignmentInfo = alignmentMap.find(item => !item.isEmpty && item.text === blockText);
+            // マッチしない場合、次のブロックを確認
+            blockIndex++;
           }
+        }
 
-          if (alignmentInfo) {
-            // ブロックタイプを変更
-            const selection = SelectionState.createEmpty(blockKey as string).merge({
-              anchorOffset: 0,
-              focusOffset: block.getLength(),
-            });
-            contentState = Modifier.setBlockType(contentState, selection, alignmentInfo.alignment);
+        // 残っている空のブロックを追加（convertFromHTMLがスキップした場合）
+        while (divIndex < divBlocks.length) {
+          const divBlock = divBlocks[divIndex];
+          if (divBlock.isEmpty) {
+            // 最後に空のブロックを追加
+            const lastBlock = contentState.getBlockMap().last();
+            if (lastBlock) {
+              const lastBlockKey = lastBlock.getKey();
+              const selection = SelectionState.createEmpty(lastBlockKey).merge({
+                anchorOffset: lastBlock.getLength(),
+                focusOffset: lastBlock.getLength(),
+              });
+              const newContentState = Modifier.insertText(
+                contentState,
+                selection,
+                '\n'
+              );
+              const newBlockMap = newContentState.getBlockMap();
+              const newBlocksArray = newBlockMap.toArray();
+              const newBlockKey = newBlocksArray[newBlocksArray.length - 1]?.getKey();
+              if (newBlockKey) {
+                const newSelection = SelectionState.createEmpty(newBlockKey).merge({
+                  anchorOffset: 0,
+                  focusOffset: 1,
+                });
+                const finalContentState = Modifier.setBlockType(
+                  newContentState,
+                  newSelection,
+                  divBlock.alignment || 'unstyled'
+                );
+                contentState = finalContentState;
+              }
+            }
           }
-        });
+          divIndex++;
+        }
 
         const newEditorState = EditorState.createWithContent(contentState);
+        // eslint-disable-next-line react-hooks/rules-of-hooks
         setEditorState(newEditorState);
         setIsInitialized(true);
+
+        // 初期化時に現在のEditorStateをHTMLに変換してonChangeを呼び出す
+        // これにより、エディタで何も変更しない場合でも、空のブロックが保持される
+        const initialHtml = convertEditorStateToHtml(newEditorState);
+        onChange(initialHtml);
       } catch (error) {
         console.error("Error converting HTML to EditorState:", error);
         setIsInitialized(true);
@@ -142,241 +547,13 @@ export function WysiwygEditor({
     } else if (!isInitialized && !value) {
       setIsInitialized(true);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, isInitialized]);
 
   // EditorStateの変更をHTMLに変換して親に通知
   const handleChange = (newEditorState: EditorState) => {
     setEditorState(newEditorState);
-    const contentState = newEditorState.getCurrentContent();
-
-    // カスタムスタイルマップを作成
-    const customStyleMap: Record<string, any> = {};
-    colors.forEach((color) => {
-      customStyleMap[`COLOR-${color.value}`] = { element: "span", style: { color: color.value } };
-    });
-    sizes.forEach((size) => {
-      customStyleMap[`SIZE-${size}`] = { element: "span", style: sizeStyleMap[size] };
-    });
-
-    // HTMLを生成（blockRenderersで配置を処理）
-    const html = stateToHTML(contentState, {
-      inlineStyles: {
-        BOLD: { element: "strong" },
-        ITALIC: { element: "em" },
-        UNDERLINE: { element: "u" },
-        STRIKETHROUGH: { element: "s" },
-        ...customStyleMap,
-      },
-      blockRenderers: {
-        'align-left': (block: any) => {
-          // ブロックの内容を取得（インラインスタイルを含む）
-          const blockKey = block.getKey();
-          const blockMap = contentState.getBlockMap();
-          const currentBlock = blockMap.get(blockKey);
-          if (!currentBlock) return '';
-
-          // ブロックのテキストを取得
-          const text = currentBlock.getText();
-          // 空のブロックも保持する（改行のみの場合）
-          if (!text) {
-            return '<div style="text-align: left;"><br></div>';
-          }
-
-          // このブロックだけをHTMLに変換（インラインスタイルを含む）
-          // entityMapも含めてContentStateを作成
-          const blockContentState = ContentState.createFromBlockArray(
-            [currentBlock],
-            contentState.getEntityMap()
-          );
-          const blockHtml = stateToHTML(blockContentState, {
-            inlineStyles: {
-              BOLD: { element: "strong" },
-              ITALIC: { element: "em" },
-              UNDERLINE: { element: "u" },
-              STRIKETHROUGH: { element: "s" },
-              ...customStyleMap,
-            },
-            entityStyleFn: (entity) => {
-              const entityType = entity.getType();
-              if (entityType === "LINK") {
-                const data = entity.getData();
-                return {
-                  element: "a",
-                  attributes: {
-                    href: data.url,
-                    target: "_blank",
-                    rel: "nofollow noreferrer",
-                  },
-                };
-              }
-              return {};
-            },
-          });
-
-          // text-alignスタイルを追加したdivでラップ
-          // blockHtmlから最初のdivまたはpタグの内容を取得
-          const contentMatch = blockHtml.match(/<(?:div|p)[^>]*>([\s\S]*?)<\/(?:div|p)>/);
-          const content = contentMatch ? contentMatch[1] : text;
-
-          return `<div style="text-align: left;">${content}</div>`;
-        },
-        'align-center': (block: any) => {
-          const blockKey = block.getKey();
-          const blockMap = contentState.getBlockMap();
-          const currentBlock = blockMap.get(blockKey);
-          if (!currentBlock) return '';
-          const text = currentBlock.getText();
-          // 空のブロックも保持する（改行のみの場合）
-          if (!text) {
-            return '<div style="text-align: center;"><br></div>';
-          }
-
-          const blockContentState = ContentState.createFromBlockArray(
-            [currentBlock],
-            contentState.getEntityMap()
-          );
-          const blockHtml = stateToHTML(blockContentState, {
-            inlineStyles: {
-              BOLD: { element: "strong" },
-              ITALIC: { element: "em" },
-              UNDERLINE: { element: "u" },
-              STRIKETHROUGH: { element: "s" },
-              ...customStyleMap,
-            },
-            entityStyleFn: (entity) => {
-              const entityType = entity.getType();
-              if (entityType === "LINK") {
-                const data = entity.getData();
-                return {
-                  element: "a",
-                  attributes: {
-                    href: data.url,
-                    target: "_blank",
-                    rel: "nofollow noreferrer",
-                  },
-                };
-              }
-              return {};
-            },
-          });
-
-          const contentMatch = blockHtml.match(/<(?:div|p)[^>]*>([\s\S]*?)<\/(?:div|p)>/);
-          const content = contentMatch ? contentMatch[1] : text;
-
-          return `<div style="text-align: center;">${content}</div>`;
-        },
-        'align-right': (block: any) => {
-          const blockKey = block.getKey();
-          const blockMap = contentState.getBlockMap();
-          const currentBlock = blockMap.get(blockKey);
-          if (!currentBlock) return '';
-          const text = currentBlock.getText();
-          // 空のブロックも保持する（改行のみの場合）
-          if (!text) {
-            return '<div style="text-align: right;"><br></div>';
-          }
-
-          const blockContentState = ContentState.createFromBlockArray(
-            [currentBlock],
-            contentState.getEntityMap()
-          );
-          const blockHtml = stateToHTML(blockContentState, {
-            inlineStyles: {
-              BOLD: { element: "strong" },
-              ITALIC: { element: "em" },
-              UNDERLINE: { element: "u" },
-              STRIKETHROUGH: { element: "s" },
-              ...customStyleMap,
-            },
-            entityStyleFn: (entity) => {
-              const entityType = entity.getType();
-              if (entityType === "LINK") {
-                const data = entity.getData();
-                return {
-                  element: "a",
-                  attributes: {
-                    href: data.url,
-                    target: "_blank",
-                    rel: "nofollow noreferrer",
-                  },
-                };
-              }
-              return {};
-            },
-          });
-
-          const contentMatch = blockHtml.match(/<(?:div|p)[^>]*>([\s\S]*?)<\/(?:div|p)>/);
-          const content = contentMatch ? contentMatch[1] : text;
-
-          return `<div style="text-align: right;">${content}</div>`;
-        },
-        'unstyled': (block: any) => {
-          // 通常のブロック（空のブロックも保持）
-          const blockKey = block.getKey();
-          const blockMap = contentState.getBlockMap();
-          const currentBlock = blockMap.get(blockKey);
-          if (!currentBlock) return '';
-
-          const text = currentBlock.getText();
-          // 空のブロックも保持する（改行のみの場合）
-          if (!text) {
-            return '<div><br></div>';
-          }
-
-          // このブロックだけをHTMLに変換（インラインスタイルを含む）
-          const blockContentState = ContentState.createFromBlockArray(
-            [currentBlock],
-            contentState.getEntityMap()
-          );
-          const blockHtml = stateToHTML(blockContentState, {
-            inlineStyles: {
-              BOLD: { element: "strong" },
-              ITALIC: { element: "em" },
-              UNDERLINE: { element: "u" },
-              STRIKETHROUGH: { element: "s" },
-              ...customStyleMap,
-            },
-            entityStyleFn: (entity) => {
-              const entityType = entity.getType();
-              if (entityType === "LINK") {
-                const data = entity.getData();
-                return {
-                  element: "a",
-                  attributes: {
-                    href: data.url,
-                    target: "_blank",
-                    rel: "nofollow noreferrer",
-                  },
-                };
-              }
-              return {};
-            },
-          });
-
-          // blockHtmlから最初のdivまたはpタグの内容を取得
-          const contentMatch = blockHtml.match(/<(?:div|p)[^>]*>([\s\S]*?)<\/(?:div|p)>/);
-          const content = contentMatch ? contentMatch[1] : text;
-
-          return `<div>${content}</div>`;
-        },
-      },
-      entityStyleFn: (entity) => {
-        const entityType = entity.getType();
-        if (entityType === "LINK") {
-          const data = entity.getData();
-          return {
-            element: "a",
-            attributes: {
-              href: data.url,
-              target: "_blank",
-              rel: "nofollow noreferrer",
-            },
-          };
-        }
-        return {};
-      },
-    });
-
+    const html = convertEditorStateToHtml(newEditorState);
     onChange(html);
   };
 
@@ -417,7 +594,7 @@ export function WysiwygEditor({
   };
 
   // ブロックスタイル関数（CSSクラスを適用）
-  const blockStyleFn = (block: any) => {
+  const blockStyleFn = (block: ContentBlock) => {
     const blockType = block.getType();
     if (blockType === 'align-left') {
       return 'text-left';
@@ -495,22 +672,6 @@ export function WysiwygEditor({
     return editorState.getCurrentInlineStyle();
   };
 
-  // カスタムスタイルレンダラー
-  const styleFn = (style: string) => {
-    if (style.startsWith("COLOR-")) {
-      const color = style.replace("COLOR-", "");
-      return { color };
-    }
-    if (style.startsWith("BGCOLOR-")) {
-      const color = style.replace("BGCOLOR-", "");
-      return { backgroundColor: color };
-    }
-    if (style.startsWith("SIZE-")) {
-      const size = style.replace("SIZE-", "");
-      return sizeStyleMap[size] || {};
-    }
-    return {};
-  };
 
   return (
     <div className="wysiwyg-editor-wrapper">
