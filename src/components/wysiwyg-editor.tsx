@@ -24,20 +24,6 @@ export function WysiwygEditor({
   const editorRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<any>(null);
 
-  // フォントリスト（10種類）
-  const fonts = [
-    "noto-sans-jp",
-    "roboto",
-    "open-sans",
-    "lato",
-    "montserrat",
-    "playfair-display",
-    "pacifico",
-    "bebas-neue",
-    "dancing-script",
-    "poppins",
-  ];
-
   // 文字色リスト（12色）
   const colors = [
     "#000000", // 黒
@@ -77,19 +63,10 @@ export function WysiwygEditor({
 
       const Quill = QuillModule.default;
 
-      // フォントのホワイトリストを設定（一度だけ）
-      if (!Quill.imports["formats/font"].whitelist || Quill.imports["formats/font"].whitelist.length === 0) {
-        const Font = Quill.import("formats/font");
-        Font.whitelist = fonts;
-        Quill.register(Font, true);
-      }
-
-      // サイズのホワイトリストを設定（一度だけ）
-      if (!Quill.imports["formats/size"].whitelist || Quill.imports["formats/size"].whitelist.length === 0) {
-        const Size = Quill.import("formats/size");
-        Size.whitelist = sizes;
-        Quill.register(Size, true);
-      }
+      // サイズのホワイトリストを設定（Quillエディタ初期化前）
+      const Size = Quill.import("formats/size") as any;
+      Size.whitelist = sizes;
+      Quill.register(Size, true);
 
       // 既存のコンテンツをクリア（ツールバーの重複を防ぐ）
       if (editorRef.current) {
@@ -104,7 +81,6 @@ export function WysiwygEditor({
         modules: {
           toolbar: {
             container: [
-              [{ font: fonts }],
               [{ size: sizes }],
               [{ color: colors }, { background: colors }],
               ["bold", "italic", "underline", "strike"],
@@ -115,7 +91,6 @@ export function WysiwygEditor({
           },
         },
         formats: [
-          "font",
           "size",
           "color",
           "background",

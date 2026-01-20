@@ -57,3 +57,6 @@ scripts/test-reminder-check.ts
 /public/fallback-*.js
 /public/workbox-*.js.map
 /public/fallback-*.js.map
+
+.aws-sam/
+scripts/
