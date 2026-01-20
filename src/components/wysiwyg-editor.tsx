@@ -94,7 +94,6 @@ export function WysiwygEditor({
     const customStyleMap: Record<string, any> = {};
     colors.forEach((color) => {
       customStyleMap[`COLOR-${color.value}`] = { element: "span", style: { color: color.value } };
-      customStyleMap[`BGCOLOR-${color.value}`] = { element: "span", style: { backgroundColor: color.value } };
     });
     sizes.forEach((size) => {
       customStyleMap[`SIZE-${size}`] = { element: "span", style: sizeStyleMap[size] };
@@ -166,34 +165,6 @@ export function WysiwygEditor({
     }
   };
 
-  // 背景色の適用
-  const applyBackgroundColor = (color: string) => {
-    const selection = editorState.getSelection();
-    if (!selection.isCollapsed()) {
-      const contentState = editorState.getCurrentContent();
-      // 既存の背景色スタイルを削除
-      let newContentState = contentState;
-      colors.forEach((c) => {
-        newContentState = Modifier.removeInlineStyle(
-          newContentState,
-          selection,
-          `BGCOLOR-${c.value}`
-        );
-      });
-      // 新しい背景色スタイルを適用
-      newContentState = Modifier.applyInlineStyle(
-        newContentState,
-        selection,
-        `BGCOLOR-${color}`
-      );
-      const newEditorState = EditorState.push(
-        editorState,
-        newContentState,
-        "change-inline-style"
-      );
-      handleChange(newEditorState);
-    }
-  };
 
   // 文字サイズの適用
   const applySize = (size: string) => {
@@ -345,23 +316,6 @@ export function WysiwygEditor({
           ))}
         </select>
 
-        {/* 背景色 */}
-        <select
-          onChange={(e) => {
-            if (e.target.value) {
-              applyBackgroundColor(e.target.value);
-            }
-          }}
-          disabled={disabled}
-        >
-          <option value="">背景色</option>
-          {colors.map((color) => (
-            <option key={color.value} value={color.value}>
-              {color.label}
-            </option>
-          ))}
-        </select>
-
         {/* 太字 */}
         <button
           type="button"
@@ -482,12 +436,8 @@ export function WysiwygEditor({
               colors.map((color) => [`COLOR-${color.value}`, { color: color.value }])
             ),
             ...Object.fromEntries(
-              colors.map((color) => [
-                `BGCOLOR-${color.value}`,
-                { backgroundColor: color.value },
-              ])
+              sizes.map((size) => [`SIZE-${size}`, sizeStyleMap[size]])
             ),
-            ...sizeStyleMap,
           }}
         />
       </div>
