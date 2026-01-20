@@ -9,6 +9,7 @@ import {
   ContentState,
   CompositeDecorator,
   convertFromHTML,
+  SelectionState,
 } from "draft-js";
 import { stateToHTML } from "draft-js-export-html";
 import "draft-js/dist/Draft.css";
@@ -68,11 +69,69 @@ export function WysiwygEditor({
   useEffect(() => {
     if (!isInitialized && value) {
       try {
+        // HTMLをパースしてtext-alignスタイルをブロックタイプに変換
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(value, 'text/html');
+        const divs = doc.querySelectorAll('div[style*="text-align"]');
+
+        // text-alignスタイルとテキスト内容のマッピングを作成
+        // 空のブロック（<br>のみ）も考慮
+        const alignmentMap: Array<{ text: string; alignment: string; isEmpty: boolean }> = [];
+        divs.forEach((div, index) => {
+          const style = div.getAttribute('style') || '';
+          const textAlignMatch = style.match(/text-align:\s*(left|center|right)/i);
+          if (textAlignMatch) {
+            const alignment = textAlignMatch[1].toLowerCase();
+            const text = div.textContent || '';
+            const isEmpty = text.trim() === '' || div.innerHTML.trim() === '<br>' || div.innerHTML.trim() === '';
+            alignmentMap.push({
+              text: isEmpty ? '' : text.trim(),
+              alignment: `align-${alignment}`,
+              isEmpty
+            });
+          }
+        });
+
+        // convertFromHTMLでブロックを取得
         const blocksFromHTML = convertFromHTML(value);
-        const contentState = ContentState.createFromBlockArray(
+        let contentState = ContentState.createFromBlockArray(
           blocksFromHTML.contentBlocks,
           blocksFromHTML.entityMap
         );
+
+        // ブロックタイプを設定（text-alignスタイルに基づいて）
+        const blockMap = contentState.getBlockMap();
+        let alignmentIndex = 0;
+        blockMap.forEach((block, blockKey) => {
+          if (!block || !blockKey) return;
+
+          const blockText = block.getText().trim();
+          const isEmpty = blockText === '';
+
+          // 空のブロックの場合は、alignmentMapの順序に基づいてマッチング
+          let alignmentInfo;
+          if (isEmpty) {
+            // 空のブロックの場合、alignmentMapから空のブロックを探す
+            alignmentInfo = alignmentMap.find(item => item.isEmpty);
+            if (alignmentInfo && alignmentIndex < alignmentMap.length) {
+              alignmentInfo = alignmentMap[alignmentIndex];
+              alignmentIndex++;
+            }
+          } else {
+            // テキストがある場合は、テキストでマッチング
+            alignmentInfo = alignmentMap.find(item => !item.isEmpty && item.text === blockText);
+          }
+
+          if (alignmentInfo) {
+            // ブロックタイプを変更
+            const selection = SelectionState.createEmpty(blockKey as string).merge({
+              anchorOffset: 0,
+              focusOffset: block.getLength(),
+            });
+            contentState = Modifier.setBlockType(contentState, selection, alignmentInfo.alignment);
+          }
+        });
+
         const newEditorState = EditorState.createWithContent(contentState);
         setEditorState(newEditorState);
         setIsInitialized(true);
@@ -99,6 +158,7 @@ export function WysiwygEditor({
       customStyleMap[`SIZE-${size}`] = { element: "span", style: sizeStyleMap[size] };
     });
 
+    // HTMLを生成（blockRenderersで配置を処理）
     const html = stateToHTML(contentState, {
       inlineStyles: {
         BOLD: { element: "strong" },
@@ -106,6 +166,199 @@ export function WysiwygEditor({
         UNDERLINE: { element: "u" },
         STRIKETHROUGH: { element: "s" },
         ...customStyleMap,
+      },
+      blockRenderers: {
+        'align-left': (block: any) => {
+          // ブロックの内容を取得（インラインスタイルを含む）
+          const blockKey = block.getKey();
+          const blockMap = contentState.getBlockMap();
+          const currentBlock = blockMap.get(blockKey);
+          if (!currentBlock) return '';
+
+          // ブロックのテキストを取得
+          const text = currentBlock.getText();
+          // 空のブロックも保持する（改行のみの場合）
+          if (!text) {
+            return '<div style="text-align: left;"><br></div>';
+          }
+
+          // このブロックだけをHTMLに変換（インラインスタイルを含む）
+          // entityMapも含めてContentStateを作成
+          const blockContentState = ContentState.createFromBlockArray(
+            [currentBlock],
+            contentState.getEntityMap()
+          );
+          const blockHtml = stateToHTML(blockContentState, {
+            inlineStyles: {
+              BOLD: { element: "strong" },
+              ITALIC: { element: "em" },
+              UNDERLINE: { element: "u" },
+              STRIKETHROUGH: { element: "s" },
+              ...customStyleMap,
+            },
+            entityStyleFn: (entity) => {
+              const entityType = entity.getType();
+              if (entityType === "LINK") {
+                const data = entity.getData();
+                return {
+                  element: "a",
+                  attributes: {
+                    href: data.url,
+                    target: "_blank",
+                    rel: "nofollow noreferrer",
+                  },
+                };
+              }
+              return {};
+            },
+          });
+
+          // text-alignスタイルを追加したdivでラップ
+          // blockHtmlから最初のdivまたはpタグの内容を取得
+          const contentMatch = blockHtml.match(/<(?:div|p)[^>]*>([\s\S]*?)<\/(?:div|p)>/);
+          const content = contentMatch ? contentMatch[1] : text;
+
+          return `<div style="text-align: left;">${content}</div>`;
+        },
+        'align-center': (block: any) => {
+          const blockKey = block.getKey();
+          const blockMap = contentState.getBlockMap();
+          const currentBlock = blockMap.get(blockKey);
+          if (!currentBlock) return '';
+          const text = currentBlock.getText();
+          // 空のブロックも保持する（改行のみの場合）
+          if (!text) {
+            return '<div style="text-align: center;"><br></div>';
+          }
+
+          const blockContentState = ContentState.createFromBlockArray(
+            [currentBlock],
+            contentState.getEntityMap()
+          );
+          const blockHtml = stateToHTML(blockContentState, {
+            inlineStyles: {
+              BOLD: { element: "strong" },
+              ITALIC: { element: "em" },
+              UNDERLINE: { element: "u" },
+              STRIKETHROUGH: { element: "s" },
+              ...customStyleMap,
+            },
+            entityStyleFn: (entity) => {
+              const entityType = entity.getType();
+              if (entityType === "LINK") {
+                const data = entity.getData();
+                return {
+                  element: "a",
+                  attributes: {
+                    href: data.url,
+                    target: "_blank",
+                    rel: "nofollow noreferrer",
+                  },
+                };
+              }
+              return {};
+            },
+          });
+
+          const contentMatch = blockHtml.match(/<(?:div|p)[^>]*>([\s\S]*?)<\/(?:div|p)>/);
+          const content = contentMatch ? contentMatch[1] : text;
+
+          return `<div style="text-align: center;">${content}</div>`;
+        },
+        'align-right': (block: any) => {
+          const blockKey = block.getKey();
+          const blockMap = contentState.getBlockMap();
+          const currentBlock = blockMap.get(blockKey);
+          if (!currentBlock) return '';
+          const text = currentBlock.getText();
+          // 空のブロックも保持する（改行のみの場合）
+          if (!text) {
+            return '<div style="text-align: right;"><br></div>';
+          }
+
+          const blockContentState = ContentState.createFromBlockArray(
+            [currentBlock],
+            contentState.getEntityMap()
+          );
+          const blockHtml = stateToHTML(blockContentState, {
+            inlineStyles: {
+              BOLD: { element: "strong" },
+              ITALIC: { element: "em" },
+              UNDERLINE: { element: "u" },
+              STRIKETHROUGH: { element: "s" },
+              ...customStyleMap,
+            },
+            entityStyleFn: (entity) => {
+              const entityType = entity.getType();
+              if (entityType === "LINK") {
+                const data = entity.getData();
+                return {
+                  element: "a",
+                  attributes: {
+                    href: data.url,
+                    target: "_blank",
+                    rel: "nofollow noreferrer",
+                  },
+                };
+              }
+              return {};
+            },
+          });
+
+          const contentMatch = blockHtml.match(/<(?:div|p)[^>]*>([\s\S]*?)<\/(?:div|p)>/);
+          const content = contentMatch ? contentMatch[1] : text;
+
+          return `<div style="text-align: right;">${content}</div>`;
+        },
+        'unstyled': (block: any) => {
+          // 通常のブロック（空のブロックも保持）
+          const blockKey = block.getKey();
+          const blockMap = contentState.getBlockMap();
+          const currentBlock = blockMap.get(blockKey);
+          if (!currentBlock) return '';
+
+          const text = currentBlock.getText();
+          // 空のブロックも保持する（改行のみの場合）
+          if (!text) {
+            return '<div><br></div>';
+          }
+
+          // このブロックだけをHTMLに変換（インラインスタイルを含む）
+          const blockContentState = ContentState.createFromBlockArray(
+            [currentBlock],
+            contentState.getEntityMap()
+          );
+          const blockHtml = stateToHTML(blockContentState, {
+            inlineStyles: {
+              BOLD: { element: "strong" },
+              ITALIC: { element: "em" },
+              UNDERLINE: { element: "u" },
+              STRIKETHROUGH: { element: "s" },
+              ...customStyleMap,
+            },
+            entityStyleFn: (entity) => {
+              const entityType = entity.getType();
+              if (entityType === "LINK") {
+                const data = entity.getData();
+                return {
+                  element: "a",
+                  attributes: {
+                    href: data.url,
+                    target: "_blank",
+                    rel: "nofollow noreferrer",
+                  },
+                };
+              }
+              return {};
+            },
+          });
+
+          // blockHtmlから最初のdivまたはpタグの内容を取得
+          const contentMatch = blockHtml.match(/<(?:div|p)[^>]*>([\s\S]*?)<\/(?:div|p)>/);
+          const content = contentMatch ? contentMatch[1] : text;
+
+          return `<div>${content}</div>`;
+        },
       },
       entityStyleFn: (entity) => {
         const entityType = entity.getType();
@@ -123,6 +376,7 @@ export function WysiwygEditor({
         return {};
       },
     });
+
     onChange(html);
   };
 
@@ -131,9 +385,50 @@ export function WysiwygEditor({
     handleChange(RichUtils.toggleInlineStyle(editorState, inlineStyle));
   };
 
-  // ブロックスタイルの適用
+  // ブロックスタイルの適用（テキスト配置）
   const toggleBlockType = (blockType: string) => {
-    handleChange(RichUtils.toggleBlockType(editorState, blockType));
+    const selection = editorState.getSelection();
+    const contentState = editorState.getCurrentContent();
+    const blockKey = selection.getStartKey();
+    const block = contentState.getBlockForKey(blockKey);
+    const currentBlockType = block.getType();
+
+    // 既存の配置ブロックタイプを削除
+    const alignmentTypes = ['align-left', 'align-center', 'align-right'];
+    let newBlockType = currentBlockType;
+
+    if (alignmentTypes.includes(currentBlockType)) {
+      // 既存の配置ブロックタイプの場合は、unstyledに戻す
+      newBlockType = 'unstyled';
+    }
+
+    // 新しいブロックタイプを適用
+    if (blockType === 'left' || blockType === 'center' || blockType === 'right') {
+      newBlockType = `align-${blockType}`;
+    }
+
+    const newContentState = Modifier.setBlockType(contentState, selection, newBlockType);
+    const newEditorState = EditorState.push(
+      editorState,
+      newContentState,
+      'change-block-type'
+    );
+    handleChange(newEditorState);
+  };
+
+  // ブロックスタイル関数（CSSクラスを適用）
+  const blockStyleFn = (block: any) => {
+    const blockType = block.getType();
+    if (blockType === 'align-left') {
+      return 'text-left';
+    }
+    if (blockType === 'align-center') {
+      return 'text-center';
+    }
+    if (blockType === 'align-right') {
+      return 'text-right';
+    }
+    return '';
   };
 
   // 文字色の適用
@@ -277,6 +572,18 @@ export function WysiwygEditor({
         }
         .wysiwyg-editor-content a:hover {
           color: #1d4ed8;
+        }
+        .wysiwyg-editor-content .text-left .public-DraftStyleDefault-block,
+        .wysiwyg-editor-content .text-left .public-DraftStyleDefault-ltr {
+          text-align: left;
+        }
+        .wysiwyg-editor-content .text-center .public-DraftStyleDefault-block,
+        .wysiwyg-editor-content .text-center .public-DraftStyleDefault-ltr {
+          text-align: center;
+        }
+        .wysiwyg-editor-content .text-right .public-DraftStyleDefault-block,
+        .wysiwyg-editor-content .text-right .public-DraftStyleDefault-ltr {
+          text-align: right;
         }
       `}</style>
 
@@ -431,6 +738,7 @@ export function WysiwygEditor({
           onChange={handleChange}
           placeholder={placeholder}
           readOnly={disabled}
+          blockStyleFn={blockStyleFn}
           customStyleMap={{
             ...Object.fromEntries(
               colors.map((color) => [`COLOR-${color.value}`, { color: color.value }])
