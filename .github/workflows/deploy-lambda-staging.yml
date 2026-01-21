@@ -1,0 +1,229 @@
+name: Deploy Lambda to Staging
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  deploy:
+    name: Deploy Lambda to Staging
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://console.aws.amazon.com/lambda/home
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install AWS SAM CLI
+        run: |
+          pip install aws-sam-cli
+          sam --version
+
+      - name: Build Prisma Layer
+        working-directory: lambda/prisma-layer
+        run: |
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Build Lambda function
+        working-directory: lambda/group-message-reminder
+        run: |
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Build with SAM CLI
+        working-directory: lambda/group-message-reminder
+        run: |
+          sam build --template-file template/group-message-reminder.yml
+
+      - name: Check existing CloudFormation stack
+        run: |
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name staging-group-message-reminder \
+            --region ${{ secrets.AWS_REGION }} \
+            --query "Stacks[0].StackStatus" \
+            --output text 2>/dev/null || echo "NOT_EXIST")
+          
+          echo "Stack status: $STACK_STATUS"
+          
+          # Delete any pending change sets
+          if [ "$STACK_STATUS" != "NOT_EXIST" ]; then
+            echo "Listing change sets..."
+            CHANGE_SETS=$(aws cloudformation list-change-sets \
+              --stack-name staging-group-message-reminder \
+              --region ${{ secrets.AWS_REGION }} \
+              --query "Summaries[?Status=='CREATE_PENDING' || Status=='CREATE_IN_PROGRESS' || Status=='FAILED'].ChangeSetName" \
+              --output text 2>/dev/null || echo "")
+            
+            if [ -n "$CHANGE_SETS" ]; then
+              echo "Deleting pending change sets..."
+              for cs in $CHANGE_SETS; do
+                echo "Deleting change set: $cs"
+                aws cloudformation delete-change-set \
+                  --stack-name staging-group-message-reminder \
+                  --change-set-name "$cs" \
+                  --region ${{ secrets.AWS_REGION }} || true
+              done
+            fi
+            
+            if [ "$STACK_STATUS" == "REVIEW_IN_PROGRESS" ] || [ "$STACK_STATUS" == "CREATE_IN_PROGRESS" ] || [ "$STACK_STATUS" == "UPDATE_IN_PROGRESS" ]; then
+              echo "Waiting for stack to be ready..."
+              aws cloudformation wait stack-create-complete \
+                --stack-name staging-group-message-reminder \
+                --region ${{ secrets.AWS_REGION }} 2>/dev/null || \
+              aws cloudformation wait stack-update-complete \
+                --stack-name staging-group-message-reminder \
+                --region ${{ secrets.AWS_REGION }} 2>/dev/null || \
+              echo "Stack is ready or does not exist"
+            fi
+          fi
+          
+          # Check for existing Prisma Layer
+          EXISTING_LAYER=$(aws lambda list-layers \
+            --region ${{ secrets.AWS_REGION }} \
+            --query "Layers[?LayerName=='staging-prisma-layer'].LayerArn" \
+            --output text 2>/dev/null || echo "")
+          
+          if [ -n "$EXISTING_LAYER" ] && [ "$EXISTING_LAYER" != "None" ]; then
+            echo "Found existing Layer: $EXISTING_LAYER"
+            echo "Checking if Layer is managed by CloudFormation..."
+            # Check if Layer is referenced in any CloudFormation stack
+            LAYER_IN_STACK=$(aws cloudformation list-stack-resources \
+              --stack-name staging-group-message-reminder \
+              --region ${{ secrets.AWS_REGION }} \
+              --query "StackResourceSummaries[?LogicalResourceId=='PrismaLayer'].PhysicalResourceId" \
+              --output text 2>/dev/null || echo "")
+            
+            if [ -z "$LAYER_IN_STACK" ] || [ "$LAYER_IN_STACK" == "None" ]; then
+              echo "Warning: Layer exists but is not managed by this stack."
+              echo "This may cause EarlyValidation errors."
+              echo "Consider deleting the Layer manually or using a different Layer name."
+            fi
+          else
+            echo "No existing Layer found"
+          fi
+          
+          # Clean up any failed or pending change sets
+          if [ "$STACK_STATUS" != "NOT_EXIST" ]; then
+            ALL_CHANGE_SETS=$(aws cloudformation list-change-sets \
+              --stack-name staging-group-message-reminder \
+              --region ${{ secrets.AWS_REGION }} \
+              --query "Summaries[?Status=='FAILED' || Status=='CREATE_PENDING' || Status=='CREATE_IN_PROGRESS'].ChangeSetName" \
+              --output text 2>/dev/null || echo "")
+            
+            if [ -n "$ALL_CHANGE_SETS" ]; then
+              echo "Cleaning up change sets..."
+              for cs in $ALL_CHANGE_SETS; do
+                echo "Deleting change set: $cs"
+                aws cloudformation delete-change-set \
+                  --stack-name staging-group-message-reminder \
+                  --change-set-name "$cs" \
+                  --region ${{ secrets.AWS_REGION }} || true
+              done
+            fi
+            
+            # If stack is stuck in REVIEW_IN_PROGRESS, delete and recreate
+            if [ "$STACK_STATUS" == "REVIEW_IN_PROGRESS" ]; then
+              echo "Stack is stuck in REVIEW_IN_PROGRESS state."
+              echo "Attempting to delete the stack..."
+              aws cloudformation delete-stack \
+                --stack-name staging-group-message-reminder \
+                --region ${{ secrets.AWS_REGION }} || true
+              
+              echo "Waiting for stack deletion..."
+              aws cloudformation wait stack-delete-complete \
+                --stack-name staging-group-message-reminder \
+                --region ${{ secrets.AWS_REGION }} 2>/dev/null || \
+              echo "Stack deletion completed or stack does not exist"
+            fi
+          fi
+
+      - name: Deploy Lambda function to Staging
+        working-directory: lambda/group-message-reminder
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          SES_FROM_EMAIL: ${{ secrets.SES_FROM_EMAIL }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+        run: |
+          sam deploy \
+            --template-file template/group-message-reminder.yml \
+            --stack-name staging-group-message-reminder \
+            --capabilities CAPABILITY_IAM \
+            --s3-bucket $S3_BUCKET \
+            --parameter-overrides \
+              Environment=staging \
+              DatabaseUrl=$DATABASE_URL \
+              AppBaseUrl=$APP_BASE_URL \
+              SesFromEmail=$SES_FROM_EMAIL \
+            --region ${{ secrets.AWS_REGION }} \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset || \
+          (echo "Deployment failed, checking CloudFormation events..." && \
+           echo "=== Recent Stack Events ===" && \
+           aws cloudformation describe-stack-events \
+             --stack-name staging-group-message-reminder \
+             --region ${{ secrets.AWS_REGION }} \
+             --max-items 20 \
+             --query "StackEvents[*].[Timestamp,ResourceStatus,ResourceType,LogicalResourceId,ResourceStatusReason]" \
+             --output table && \
+           echo "=== Failed Events ===" && \
+           aws cloudformation describe-stack-events \
+             --stack-name staging-group-message-reminder \
+             --region ${{ secrets.AWS_REGION }} \
+             --query "StackEvents[?ResourceStatus=='CREATE_FAILED' || ResourceStatus=='UPDATE_FAILED' || ResourceStatus=='DELETE_FAILED']" \
+             --output table && \
+           echo "=== Change Set Details ===" && \
+           sleep 3 && \
+           CHANGE_SETS=$(aws cloudformation list-change-sets \
+             --stack-name staging-group-message-reminder \
+             --region ${{ secrets.AWS_REGION }} \
+             --query "Summaries[*].[ChangeSetName,Status,StatusReason]" \
+             --output table 2>/dev/null || echo "No change sets found") && \
+           echo "$CHANGE_SETS" && \
+           LATEST_CHANGE_SET=$(aws cloudformation list-change-sets \
+             --stack-name staging-group-message-reminder \
+             --region ${{ secrets.AWS_REGION }} \
+             --query "Summaries | sort_by(@, &CreationTime) | [-1].ChangeSetName" \
+             --output text 2>/dev/null || echo "") && \
+           if [ -n "$LATEST_CHANGE_SET" ] && [ "$LATEST_CHANGE_SET" != "None" ]; then
+             echo "=== Latest Change Set: $LATEST_CHANGE_SET ===" && \
+             aws cloudformation describe-change-set \
+               --stack-name staging-group-message-reminder \
+               --change-set-name "$LATEST_CHANGE_SET" \
+               --region ${{ secrets.AWS_REGION }} \
+               --query "[Status,StatusReason]" \
+               --output text 2>/dev/null || echo "Failed to get change set details" && \
+             echo "=== Change Set Changes ===" && \
+             aws cloudformation describe-change-set \
+               --stack-name staging-group-message-reminder \
+               --change-set-name "$LATEST_CHANGE_SET" \
+               --region ${{ secrets.AWS_REGION }} \
+               --query "Changes[*].[Action,LogicalResourceId,ResourceType]" \
+               --output table 2>/dev/null || echo "Failed to get changes"
+           fi && \
+           echo "=== Checking for existing Layer conflicts ===" && \
+           aws lambda list-layers \
+             --region ${{ secrets.AWS_REGION }} \
+             --query "Layers[?LayerName=='staging-prisma-layer']" \
+             --output table 2>/dev/null || echo "No layer found" && \
+           exit 1)
