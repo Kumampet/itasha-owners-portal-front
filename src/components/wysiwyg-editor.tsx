@@ -9,7 +9,6 @@ import {
   ContentState,
   CompositeDecorator,
   convertFromHTML,
-  SelectionState,
   ContentBlock,
 } from "draft-js";
 import { stateToHTML } from "draft-js-export-html";
@@ -133,37 +132,44 @@ export function WysiwygEditor({
       return;
     }
 
-    if (!value) {
-      const decorator = new CompositeDecorator([
-        {
-          strategy: findLinkEntities,
-          component: LinkComponent,
-        },
-      ]);
-      setEditorState(EditorState.createEmpty(decorator));
-      lastOutputHtmlRef.current = "";
-      return;
-    }
+    // setStateを非同期で実行してReactの警告を回避
+    const updateEditorState = () => {
+      if (!value) {
+        const decorator = new CompositeDecorator([
+          {
+            strategy: findLinkEntities,
+            component: LinkComponent,
+          },
+        ]);
+        setEditorState(EditorState.createEmpty(decorator));
+        lastOutputHtmlRef.current = "";
+        return;
+      }
 
-    try {
-      const blocksFromHTML = convertFromHTML(value);
-      const contentState = ContentState.createFromBlockArray(
-        blocksFromHTML.contentBlocks,
-        blocksFromHTML.entityMap
-      );
+      try {
+        const blocksFromHTML = convertFromHTML(value);
+        const contentState = ContentState.createFromBlockArray(
+          blocksFromHTML.contentBlocks,
+          blocksFromHTML.entityMap
+        );
 
-      const decorator = new CompositeDecorator([
-        {
-          strategy: findLinkEntities,
-          component: LinkComponent,
-        },
-      ]);
-      const newEditorState = EditorState.createWithContent(contentState, decorator);
-      setEditorState(newEditorState);
-      lastOutputHtmlRef.current = value;
-    } catch (error) {
-      console.error("Error converting HTML to EditorState:", error);
-    }
+        const decorator = new CompositeDecorator([
+          {
+            strategy: findLinkEntities,
+            component: LinkComponent,
+          },
+        ]);
+        const newEditorState = EditorState.createWithContent(contentState, decorator);
+        setEditorState(newEditorState);
+        lastOutputHtmlRef.current = value;
+      } catch (error) {
+        console.error("Error converting HTML to EditorState:", error);
+      }
+    };
+
+    // 次のイベントループで実行
+    const timeoutId = setTimeout(updateEditorState, 0);
+    return () => clearTimeout(timeoutId);
   }, [value]);
 
   // EditorStateの変更をHTMLに変換して親に通知
