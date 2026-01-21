@@ -57,10 +57,45 @@ jobs:
 
       - name: Check existing CloudFormation stack
         run: |
-          aws cloudformation describe-stacks \
+          STACK_STATUS=$(aws cloudformation describe-stacks \
             --stack-name staging-group-message-reminder \
             --region ${{ secrets.AWS_REGION }} \
-            2>/dev/null || echo "Stack does not exist"
+            --query "Stacks[0].StackStatus" \
+            --output text 2>/dev/null || echo "NOT_EXIST")
+          
+          echo "Stack status: $STACK_STATUS"
+          
+          if [ "$STACK_STATUS" == "REVIEW_IN_PROGRESS" ] || [ "$STACK_STATUS" == "CREATE_IN_PROGRESS" ] || [ "$STACK_STATUS" == "UPDATE_IN_PROGRESS" ]; then
+            echo "Stack is in progress state, listing change sets..."
+            aws cloudformation list-change-sets \
+              --stack-name staging-group-message-reminder \
+              --region ${{ secrets.AWS_REGION }} \
+              --output table || true
+            
+            echo "Deleting pending change sets..."
+            CHANGE_SETS=$(aws cloudformation list-change-sets \
+              --stack-name staging-group-message-reminder \
+              --region ${{ secrets.AWS_REGION }} \
+              --query "Summaries[?Status=='CREATE_PENDING' || Status=='CREATE_IN_PROGRESS'].ChangeSetName" \
+              --output text 2>/dev/null || echo "")
+            
+            for cs in $CHANGE_SETS; do
+              echo "Deleting change set: $cs"
+              aws cloudformation delete-change-set \
+                --stack-name staging-group-message-reminder \
+                --change-set-name "$cs" \
+                --region ${{ secrets.AWS_REGION }} || true
+            done
+            
+            echo "Waiting for stack to be ready..."
+            aws cloudformation wait stack-create-complete \
+              --stack-name staging-group-message-reminder \
+              --region ${{ secrets.AWS_REGION }} 2>/dev/null || \
+            aws cloudformation wait stack-update-complete \
+              --stack-name staging-group-message-reminder \
+              --region ${{ secrets.AWS_REGION }} 2>/dev/null || \
+            echo "Stack is ready or does not exist"
+          fi
           
           # Check for existing Prisma Layer
           aws lambda list-layers \
@@ -90,9 +125,31 @@ jobs:
             --no-confirm-changeset \
             --no-fail-on-empty-changeset || \
           (echo "Deployment failed, checking CloudFormation events..." && \
+           echo "=== Recent Stack Events ===" && \
            aws cloudformation describe-stack-events \
              --stack-name staging-group-message-reminder \
              --region ${{ secrets.AWS_REGION }} \
-             --query "StackEvents[?ResourceStatus=='CREATE_FAILED' || ResourceStatus=='UPDATE_FAILED']" \
+             --max-items 20 \
+             --query "StackEvents[*].[Timestamp,ResourceStatus,ResourceType,LogicalResourceId,ResourceStatusReason]" \
              --output table && \
+           echo "=== Failed Events ===" && \
+           aws cloudformation describe-stack-events \
+             --stack-name staging-group-message-reminder \
+             --region ${{ secrets.AWS_REGION }} \
+             --query "StackEvents[?ResourceStatus=='CREATE_FAILED' || ResourceStatus=='UPDATE_FAILED' || ResourceStatus=='DELETE_FAILED']" \
+             --output table && \
+           echo "=== Change Set Details ===" && \
+           CHANGE_SET_ID=$(aws cloudformation list-change-sets \
+             --stack-name staging-group-message-reminder \
+             --region ${{ secrets.AWS_REGION }} \
+             --query "Summaries[0].ChangeSetId" \
+             --output text 2>/dev/null || echo "") && \
+           if [ -n "$CHANGE_SET_ID" ] && [ "$CHANGE_SET_ID" != "None" ]; then
+             aws cloudformation describe-change-set \
+               --stack-name staging-group-message-reminder \
+               --change-set-name "$CHANGE_SET_ID" \
+               --region ${{ secrets.AWS_REGION }} \
+               --query "StatusReason" \
+               --output text || true
+           fi && \
            exit 1)
