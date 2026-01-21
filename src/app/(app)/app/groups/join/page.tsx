@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
@@ -38,7 +39,9 @@ function getErrorMessage(error: string, statusCode?: number): string {
 function GroupJoinForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
   const groupCodeFromUrl = searchParams.get("groupCode") || "";
+  const hasRedirected = useRef(false);
 
   const [groupCode, setGroupCode] = useState("");
   const [joining, setJoining] = useState(false);
@@ -46,6 +49,21 @@ function GroupJoinForm() {
   const [warningMessage, setWarningMessage] = useState<string>("");
   const [pendingGroupCode, setPendingGroupCode] = useState<string>("");
   const [error, setError] = useState<string>("");
+
+  // 認証チェック：未ログインの場合はログインページにリダイレクト
+  useEffect(() => {
+    if (status === "loading" || hasRedirected.current) return;
+
+    if (!session) {
+      hasRedirected.current = true;
+      // クエリパラメータを含む完全なパスをcallbackUrlとして渡す
+      const currentPath = `/app/groups/join${groupCodeFromUrl ? `?groupCode=${encodeURIComponent(groupCodeFromUrl)}` : ""}`;
+      router.replace(`/app/auth?callbackUrl=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+
+    hasRedirected.current = false;
+  }, [session, status, router, groupCodeFromUrl]);
 
   // URLからgroupCodeが渡された場合は自動的に設定
   useEffect(() => {
@@ -59,6 +77,19 @@ function GroupJoinForm() {
   useEffect(() => {
     document.title = "団体に加入 | 痛車オーナーズナビ | いたなび！";
   }, []);
+
+  // ローディング中または未ログインの場合はローディングスピナーを表示
+  if (status === "loading" || !session) {
+    return (
+      <main className="flex-1">
+        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinner size="lg" />
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   const handleJoin = async (force = false) => {
     const codeToUse = pendingGroupCode || groupCode;

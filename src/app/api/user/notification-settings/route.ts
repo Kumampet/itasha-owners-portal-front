@@ -26,7 +26,8 @@ export async function GET() {
         data: {
           user_id: userId,
           browser_notification_enabled: false,
-          email_notification_enabled: false,
+          email_notification_enabled: true,
+          group_message_unread_notification_enabled: true,
         },
       });
     }
@@ -42,8 +43,14 @@ export async function GET() {
     );
   } catch (error) {
     console.error("Error fetching notification settings:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorStack = error instanceof Error ? error.stack : undefined;
     return NextResponse.json(
-      { error: "Failed to fetch notification settings" },
+      {
+        error: "Failed to fetch notification settings",
+        details: errorMessage,
+        ...(process.env.NODE_ENV === "development" && { stack: errorStack }),
+      },
       { status: 500 }
     );
   }
@@ -68,20 +75,30 @@ export async function PATCH(request: Request) {
       where: { user_id: userId },
       update: {
         browser_notification_enabled: body.browser_notification_enabled ?? false,
-        email_notification_enabled: body.email_notification_enabled ?? false,
+        email_notification_enabled: body.email_notification_enabled ?? true,
+        group_message_unread_notification_enabled:
+          body.group_message_unread_notification_enabled ?? true,
       },
       create: {
         user_id: userId,
         browser_notification_enabled: body.browser_notification_enabled ?? false,
-        email_notification_enabled: body.email_notification_enabled ?? false,
+        email_notification_enabled: body.email_notification_enabled ?? true,
+        group_message_unread_notification_enabled:
+          body.group_message_unread_notification_enabled ?? true,
       },
     });
 
     return NextResponse.json(settings);
   } catch (error) {
     console.error("Error updating notification settings:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorStack = error instanceof Error ? error.stack : undefined;
     return NextResponse.json(
-      { error: "Failed to update notification settings" },
+      {
+        error: "Failed to update notification settings",
+        details: errorMessage,
+        ...(process.env.NODE_ENV === "development" && { stack: errorStack }),
+      },
       { status: 500 }
     );
   }

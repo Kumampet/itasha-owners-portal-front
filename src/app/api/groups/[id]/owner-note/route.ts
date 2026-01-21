@@ -32,7 +32,7 @@ export async function GET(
       );
     }
 
-    // ユーザーがこの団体に参加しているか確認
+    // ユーザーがこの団体に参加しているか確認（複数団体参加対応：UserGroupテーブルを使用）
     const userGroup = await prisma.userGroup.findUnique({
       where: {
         user_id_group_id: {
@@ -42,13 +42,30 @@ export async function GET(
       },
     });
 
-    if (!userGroup) {
+    // オーナー（リーダー）の場合はUserGroupに存在しなくてもアクセス可能
+    const isLeader = group.leader_user_id === session.user.id;
+    if (!userGroup && !isLeader) {
       return NextResponse.json(
         { error: "You are not a member of this group" },
         { status: 403 }
       );
     }
 
+    // オーナーがUserGroupに存在しない場合、UserGroupに追加（データ整合性のため）
+    if (isLeader && !userGroup) {
+      try {
+        await prisma.userGroup.create({
+          data: {
+            user_id: group.leader_user_id,
+            group_id: id,
+            event_id: group.event_id,
+            status: "INTERESTED",
+          },
+        });
+      } catch {
+        // 既に存在する場合は無視
+      }
+    }
     return NextResponse.json(
       {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
