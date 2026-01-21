@@ -433,8 +433,11 @@ model UserNotificationSettings {
   // ブラウザ通知を有効にするか
   browser_notification_enabled Boolean @default(false)
 
-  // メール通知を有効にするか
-  email_notification_enabled Boolean @default(false)
+  // メール通知を有効にするか（親設定：これがOFFの場合はすべてのメール通知を無効化）
+  email_notification_enabled Boolean @default(true)
+
+  // 団体メッセージ未読通知を有効にするか
+  group_message_unread_notification_enabled Boolean @default(true)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

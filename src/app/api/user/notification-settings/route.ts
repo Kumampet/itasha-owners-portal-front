@@ -26,7 +26,8 @@ export async function GET() {
         data: {
           user_id: userId,
           browser_notification_enabled: false,
-          email_notification_enabled: false,
+          email_notification_enabled: true,
+          group_message_unread_notification_enabled: true,
         },
       });
     }
@@ -68,12 +69,16 @@ export async function PATCH(request: Request) {
       where: { user_id: userId },
       update: {
         browser_notification_enabled: body.browser_notification_enabled ?? false,
-        email_notification_enabled: body.email_notification_enabled ?? false,
+        email_notification_enabled: body.email_notification_enabled ?? true,
+        group_message_unread_notification_enabled:
+          body.group_message_unread_notification_enabled ?? true,
       },
       create: {
         user_id: userId,
         browser_notification_enabled: body.browser_notification_enabled ?? false,
-        email_notification_enabled: body.email_notification_enabled ?? false,
+        email_notification_enabled: body.email_notification_enabled ?? true,
+        group_message_unread_notification_enabled:
+          body.group_message_unread_notification_enabled ?? true,
       },
     });
 

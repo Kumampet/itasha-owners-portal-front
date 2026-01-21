@@ -188,6 +188,31 @@ export const handler = async (event: any) => {
 
         // 未読メッセージがある団体があればメールを送信
         if (unreadGroups.length > 0) {
+          // ユーザーの通知設定を取得
+          const notificationSettings =
+            await prisma.userNotificationSettings.findUnique({
+              where: { user_id: user.id },
+            });
+
+          // 通知設定の確認
+          // 1. メール通知が有効か
+          // 2. 団体メッセージ未読通知が有効か
+          const emailNotificationEnabled =
+            notificationSettings?.email_notification_enabled ?? false;
+          const groupMessageUnreadNotificationEnabled =
+            notificationSettings?.group_message_unread_notification_enabled ??
+            true; // デフォルトはtrue
+
+          if (
+            !emailNotificationEnabled ||
+            !groupMessageUnreadNotificationEnabled
+          ) {
+            console.log(
+              `[Group Message Reminder] ⏭️ Skipping email to ${user.email}: email_notification_enabled=${emailNotificationEnabled}, group_message_unread_notification_enabled=${groupMessageUnreadNotificationEnabled}`
+            );
+            continue;
+          }
+
           // 最初の未読団体の情報を使用（複数ある場合は最初の1つ）
           const firstUnreadGroup = unreadGroups[0];
           const displayName = user.display_name || user.name || "ユーザー";
