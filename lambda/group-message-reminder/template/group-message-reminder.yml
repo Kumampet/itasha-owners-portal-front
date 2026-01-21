@@ -1,11 +1,15 @@
-# この AWS SAM テンプレートは、関数の設定から生成されました。関数に 1 つ以上のトリガーがある場合は、これらのトリガーに関連付けられている AWS
-# リソースがこのテンプレートで完全に指定されておらず、プレースホルダ値も含まれていないことに注意してください。AWS Infrastructure
-# Composer またはお気に入りの IDE でこのテンプレートを開き、他の AWS リソースでサーバーレスアプリケーションを指定するように変更します。
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: An AWS Serverless Application Model template describing your function.
+Description: Group Message Reminder Lambda function with EventBridge Scheduler
 
 Parameters:
+  Environment:
+    Type: String
+    Description: Environment name (staging or prod)
+    AllowedValues:
+      - staging
+      - prod
+    Default: staging
   AppBaseUrl:
     Type: String
     Description: Base URL of the application
@@ -20,9 +24,10 @@ Parameters:
     NoEcho: true
 
 Resources:
-  staginggroupmessagereminder:
+  GroupMessageReminderFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub '${Environment}-group-message-reminder'
       CodeUri: ..
       Description: Send reminder emails for unread group messages
       MemorySize: 512
@@ -44,7 +49,7 @@ Resources:
         MaximumEventAgeInSeconds: 21600
         MaximumRetryAttempts: 2
       Layers:
-        - !Ref Layer1
+        - !Ref PrismaLayer
       PackageType: Zip
       Policies:
         - Statement:
@@ -64,14 +69,104 @@ Resources:
         ApplyOn: None
       RuntimeManagementConfig:
         UpdateRuntimeOn: Auto
-  # This resource represents your Layer with name staging-prisma-layer. To
-# download the content of your Layer, go to
-# 
-# aws.amazon.com/go/view?arn=arn%3Aaws%3Alambda%3Aap-northeast-1%3A059948105185%3Alayer%3Astaging-prisma-layer%3A4&source=lambda
-  Layer1:
+
+  PrismaLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
+      LayerName: !Sub '${Environment}-prisma-layer'
       ContentUri: ../../prisma-layer
-      LayerName: staging-prisma-layer
       CompatibleRuntimes:
         - nodejs20.x
+
+  EventBridgeSchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt GroupMessageReminderFunction.Arn
+
+  MorningReminderSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub '${Environment}-group-message-reminder-morning'
+      Description: Morning reminder for unread group messages (9:00 JST)
+      ScheduleExpression: cron(0 0 * * ? *)
+      ScheduleExpressionTimezone: Asia/Tokyo
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      Target:
+        Arn: !GetAtt GroupMessageReminderFunction.Arn
+        RoleArn: !GetAtt EventBridgeSchedulerRole.Arn
+        Input: '{}'
+      State: ENABLED
+
+  NoonReminderSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub '${Environment}-group-message-reminder-noon'
+      Description: Noon reminder for unread group messages (12:00 JST)
+      ScheduleExpression: cron(0 3 * * ? *)
+      ScheduleExpressionTimezone: Asia/Tokyo
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      Target:
+        Arn: !GetAtt GroupMessageReminderFunction.Arn
+        RoleArn: !GetAtt EventBridgeSchedulerRole.Arn
+        Input: '{}'
+      State: ENABLED
+
+  EveningReminderSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub '${Environment}-group-message-reminder-evening'
+      Description: Evening reminder for unread group messages (18:00 JST)
+      ScheduleExpression: cron(0 9 * * ? *)
+      ScheduleExpressionTimezone: Asia/Tokyo
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      Target:
+        Arn: !GetAtt GroupMessageReminderFunction.Arn
+        RoleArn: !GetAtt EventBridgeSchedulerRole.Arn
+        Input: '{}'
+      State: ENABLED
+
+  NightReminderSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub '${Environment}-group-message-reminder-night'
+      Description: Night reminder for unread group messages (21:00 JST)
+      ScheduleExpression: cron(0 12 * * ? *)
+      ScheduleExpressionTimezone: Asia/Tokyo
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      Target:
+        Arn: !GetAtt GroupMessageReminderFunction.Arn
+        RoleArn: !GetAtt EventBridgeSchedulerRole.Arn
+        Input: '{}'
+      State: ENABLED
+
+Outputs:
+  GroupMessageReminderFunctionArn:
+    Description: ARN of the Group Message Reminder Lambda function
+    Value: !GetAtt GroupMessageReminderFunction.Arn
+    Export:
+      Name: !Sub '${Environment}-GroupMessageReminderFunctionArn'
+  
+  PrismaLayerArn:
+    Description: ARN of the Prisma Layer
+    Value: !Ref PrismaLayer
+    Export:
+      Name: !Sub '${Environment}-PrismaLayerArn'
