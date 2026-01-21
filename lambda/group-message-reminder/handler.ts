@@ -220,24 +220,24 @@ export const handler = async (event: Record<string, unknown>) => {
           const groupName = firstUnreadGroup.groupName;
 
           const subject = `【いたなび！】${groupName} | 未読メッセージのお知らせ`;
-          const body = `${displayName}さん
-
-いつもいたなび！をご利用いただきありがとうございます。
-
---------------------------
-
-${groupName}に未読メッセージがあります！
-チェックしてみませんか？
-
-マイページはこちら
-https://itasha-owners-navi.link/app/mypage
-
---------------------------
-
-引き続きいたなび！をよろしくお願いします。
-
-※このメールは送信専用です。返信されても回答できません。
-※その他お問い合わせは以下の専用フォームからお願いします。
+          const body = `${displayName}さん\n
+\n
+いつもいたなび！をご利用いただきありがとうございます。\n
+\n
+--------------------------\n
+\n
+${groupName}に未読メッセージがあります！\n
+チェックしてみませんか？\n
+\n
+マイページはこちら\n
+https://itasha-owners-navi.link/app/mypage\n
+\n
+--------------------------\n
+\n
+引き続きいたなび！をよろしくお願いします。\n
+\n
+※このメールは送信専用です。返信されても回答できません。\n
+※その他お問い合わせは以下の専用フォームからお願いします。\n
 https://itasha-owners-navi.link/app/contact
 `;
 
