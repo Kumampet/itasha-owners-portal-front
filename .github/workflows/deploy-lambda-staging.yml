@@ -122,23 +122,38 @@ jobs:
             echo "No existing Layer found"
           fi
           
-          # Clean up any failed change sets
+          # Clean up any failed or pending change sets
           if [ "$STACK_STATUS" != "NOT_EXIST" ]; then
-            FAILED_CHANGE_SETS=$(aws cloudformation list-change-sets \
+            ALL_CHANGE_SETS=$(aws cloudformation list-change-sets \
               --stack-name staging-group-message-reminder \
               --region ${{ secrets.AWS_REGION }} \
-              --query "Summaries[?Status=='FAILED'].ChangeSetName" \
+              --query "Summaries[?Status=='FAILED' || Status=='CREATE_PENDING' || Status=='CREATE_IN_PROGRESS'].ChangeSetName" \
               --output text 2>/dev/null || echo "")
             
-            if [ -n "$FAILED_CHANGE_SETS" ]; then
-              echo "Cleaning up failed change sets..."
-              for cs in $FAILED_CHANGE_SETS; do
-                echo "Deleting failed change set: $cs"
+            if [ -n "$ALL_CHANGE_SETS" ]; then
+              echo "Cleaning up change sets..."
+              for cs in $ALL_CHANGE_SETS; do
+                echo "Deleting change set: $cs"
                 aws cloudformation delete-change-set \
                   --stack-name staging-group-message-reminder \
                   --change-set-name "$cs" \
                   --region ${{ secrets.AWS_REGION }} || true
               done
+            fi
+            
+            # If stack is stuck in REVIEW_IN_PROGRESS, delete and recreate
+            if [ "$STACK_STATUS" == "REVIEW_IN_PROGRESS" ]; then
+              echo "Stack is stuck in REVIEW_IN_PROGRESS state."
+              echo "Attempting to delete the stack..."
+              aws cloudformation delete-stack \
+                --stack-name staging-group-message-reminder \
+                --region ${{ secrets.AWS_REGION }} || true
+              
+              echo "Waiting for stack deletion..."
+              aws cloudformation wait stack-delete-complete \
+                --stack-name staging-group-message-reminder \
+                --region ${{ secrets.AWS_REGION }} 2>/dev/null || \
+              echo "Stack deletion completed or stack does not exist"
             fi
           fi
 
