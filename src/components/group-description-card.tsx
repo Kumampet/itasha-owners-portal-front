@@ -35,7 +35,6 @@ export function GroupDescriptionCard({
   const [showModeSwitchWarning, setShowModeSwitchWarning] = useState(false);
   const [isTypingEditValue, setIsTypingEditValue] = useState(false);
   const [isTypingHtmlEditValue, setIsTypingHtmlEditValue] = useState(false);
-  const [pendingModeSwitch, setPendingModeSwitch] = useState<"editor" | "html" | null>(null);
 
   // 編集モードに入ったときに値をリセット
   useEffect(() => {
@@ -72,7 +71,6 @@ export function GroupDescriptionCard({
 
     if (shouldShowWarning) {
       // 変更がある場合は警告モーダルを表示
-      setPendingModeSwitch(targetMode);
       setShowModeSwitchWarning(true);
     } else {
       // 変更がない場合は直接切り替え
@@ -83,7 +81,6 @@ export function GroupDescriptionCard({
   // 警告モーダルのOKボタンクリック時の処理（モードは変更しない）
   const handleModeSwitchConfirm = () => {
     setShowModeSwitchWarning(false);
-    setPendingModeSwitch(null);
   };
 
   const handleSave = async () => {
