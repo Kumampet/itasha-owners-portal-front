@@ -50,6 +50,57 @@ const colors = [
 // 文字サイズリスト（5段階）
 const sizes = ["極小", "小", "中", "大", "特大"];
 
+// リンク用のデコレータストラテジー
+const findLinkEntities = (
+  contentBlock: ContentBlock,
+  callback: (start: number, end: number) => void,
+  contentState: ContentState
+) => {
+  contentBlock.findEntityRanges((character) => {
+    const entityKey = character.getEntity();
+    if (entityKey !== null) {
+      const entity = contentState.getEntity(entityKey);
+      return entity.getType() === "LINK";
+    }
+    return false;
+  }, callback);
+};
+
+// リンク用のコンポーネント
+const LinkComponent = (props: {
+  contentState: ContentState;
+  entityKey: string;
+  children: React.ReactNode;
+}) => {
+  const { contentState, entityKey, children } = props;
+  const entity = contentState.getEntity(entityKey);
+  const data = entity.getData();
+
+  // convertFromHTMLが作成するリンクエンティティのデータ構造に対応
+  // convertFromHTMLはurlプロパティを使用するが、hrefプロパティも確認
+  const url = data.url || data.href || '';
+  const target = data.target || '_blank';
+
+  return (
+    <a
+      href={url}
+      target={target}
+      rel="nofollow noreferrer"
+      style={{
+        color: "#2563eb",
+        textDecoration: "underline",
+        cursor: "pointer",
+      }}
+      onClick={(e) => {
+        // エディタ内でのクリックは編集モードを維持するため、デフォルトの動作を防ぐ
+        e.preventDefault();
+      }}
+    >
+      {children}
+    </a>
+  );
+};
+
 /**
  * WYSIWYGエディタコンポーネント（Draft.js使用）
  */
@@ -60,7 +111,12 @@ export function WysiwygEditor({
   disabled = false,
 }: WysiwygEditorProps) {
   const [editorState, setEditorState] = useState<EditorState>(() => {
-    const decorator = new CompositeDecorator([]);
+    const decorator = new CompositeDecorator([
+      {
+        strategy: findLinkEntities,
+        component: LinkComponent,
+      },
+    ]);
     return EditorState.createEmpty(decorator);
   });
   const editorRef = useRef<Editor>(null);
@@ -537,7 +593,14 @@ export function WysiwygEditor({
           divIndex++;
         }
 
-        const newEditorState = EditorState.createWithContent(contentState);
+        // デコレータを適用してEditorStateを作成
+        const decorator = new CompositeDecorator([
+          {
+            strategy: findLinkEntities,
+            component: LinkComponent,
+          },
+        ]);
+        const newEditorState = EditorState.createWithContent(contentState, decorator);
         setEditorState(newEditorState);
         setIsInitialized(true);
 
