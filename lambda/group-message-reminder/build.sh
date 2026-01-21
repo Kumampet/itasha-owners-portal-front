@@ -6,18 +6,32 @@ echo "Building Group Message Reminder Lambda function..."
 # Lambda関数ディレクトリに移動
 cd "$(dirname "$0")"
 
-# 依存関係をインストール（PrismaはLayerから提供されるため除外）
+# 依存関係をインストール
 echo "Installing dependencies..."
 npm install
 
-# Prismaクライアントがnode_modulesに含まれている場合は削除（Layerから提供されるため）
-echo "Removing Prisma Client from node_modules (provided by Layer)..."
-rm -rf node_modules/@prisma 2>/dev/null || true
-rm -rf node_modules/.prisma 2>/dev/null || true
+# PrismaスキーマをコピーしてPrisma Clientを生成（ビルド時に必要）
+echo "Generating Prisma Client for build..."
+if [ -f "../../prisma/schema.prisma" ]; then
+  cp ../../prisma/schema.prisma ./schema.prisma
+  echo "Prisma schema copied from prisma/schema.prisma"
+else
+  echo "Error: schema.prisma not found in expected location"
+  exit 1
+fi
+
+# Prisma Clientを生成（ビルド時に必要）
+npx prisma generate --schema=./schema.prisma
 
 # TypeScriptをビルド
 echo "Building TypeScript..."
 npm run build
+
+# Prismaクライアントを削除（実行時はLayerから提供されるため不要）
+echo "Removing Prisma Client (provided by Layer at runtime)..."
+rm -rf node_modules/@prisma 2>/dev/null || true
+rm -rf node_modules/.prisma 2>/dev/null || true
+rm -f schema.prisma 2>/dev/null || true
 
 # Prismaクライアントをdistから削除（Lambda Layerから提供されるため不要）
 echo "Removing Prisma Client from dist (provided by Layer)..."
@@ -39,7 +53,7 @@ rm -f handler.js.map 2>/dev/null || true
 # handler.tsとtsconfig.jsonはソースファイルなので削除しない
 # rm -f handler.ts 2>/dev/null || true
 # rm -f tsconfig.json 2>/dev/null || true
-rm -f schema.prisma 2>/dev/null || true
+# schema.prismaは既に削除済み（上記で削除）
 rm -f test-event*.json 2>/dev/null || true
 rm -f README.md 2>/dev/null || true
 # build.shは最後に削除しない（SAM CLIのビルドプロセスで使用される可能性があるため）
