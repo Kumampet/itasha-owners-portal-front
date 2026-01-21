@@ -34,9 +34,54 @@ export function GroupDescriptionCard({
     }
   }, [isEditing, groupDescription]);
 
+  // HTMLが実質的に空かどうかをチェック（<div><br></div>なども空とみなす）
+  const isEmptyHtml = (html: string): boolean => {
+    if (!html || !html.trim()) {
+      return true;
+    }
+
+    // HTMLタグを除去してテキストのみを取得
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = html;
+    const textContent = tempDiv.textContent || tempDiv.innerText || "";
+
+    // テキストが空、または空白文字のみの場合は空とみなす
+    return !textContent.trim();
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
+      // エディターが空の場合はnullを送信してクリア
+      if (isEmptyHtml(editValue)) {
+        const res = await fetch(`/api/groups/${groupId}/description`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            groupDescription: null,
+          }),
+        });
+
+        if (!res.ok) {
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || "Failed to update group description");
+          } else {
+            const errorText = await res.text();
+            console.error("API Error Response:", errorText);
+            throw new Error(`サーバーエラーが発生しました (${res.status})`);
+          }
+        }
+
+        await res.json();
+        setIsEditing(false);
+        onUpdate();
+        return;
+      }
+
       // クライアントサイドでサニタイズ（サーバーサイドでも再度サニタイズされる）
       const sanitizedValue = sanitizeHtml(editValue.trim());
 
@@ -81,8 +126,6 @@ export function GroupDescriptionCard({
     setEditValue(groupDescription || "");
     setIsEditing(false);
   };
-
-  console.log({ editValue, groupDescription })
 
   return (
     <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
