@@ -23,23 +23,51 @@ export async function GET(
 
     const { id } = await params;
 
-    // 団体を取得して、ユーザーがメンバーか確認
+    // 団体を取得
     const group = await prisma.group.findUnique({
       where: { id },
-      include: {
-        members: {
-          where: {
-            user_id: session.user.id,
-          },
+    });
+
+    if (!group) {
+      return NextResponse.json(
+        { error: "Group not found" },
+        { status: 404 }
+      );
+    }
+
+    // ユーザーがこの団体に参加しているか確認（複数団体参加対応：UserGroupテーブルを使用）
+    const userGroup = await prisma.userGroup.findUnique({
+      where: {
+        user_id_group_id: {
+          user_id: session.user.id,
+          group_id: id,
         },
       },
     });
 
-    if (!group || group.members.length === 0) {
+    // オーナー（リーダー）の場合はUserGroupに存在しなくてもアクセス可能
+    const isLeader = group.leader_user_id === session.user.id;
+    if (!userGroup && !isLeader) {
       return NextResponse.json(
         { error: "You are not a member of this group" },
         { status: 403 }
       );
+    }
+
+    // オーナーがUserGroupに存在しない場合、UserGroupに追加（データ整合性のため）
+    if (isLeader && !userGroup) {
+      try {
+        await prisma.userGroup.create({
+          data: {
+            user_id: group.leader_user_id,
+            group_id: id,
+            event_id: group.event_id,
+            status: "INTERESTED",
+          },
+        });
+      } catch {
+        // 既に存在する場合は無視
+      }
     }
 
     // メッセージを取得（新しい順）
@@ -158,28 +186,10 @@ export async function POST(
       );
     }
 
-    // 団体を取得して、ユーザーがメンバーか確認
+    // 団体を取得
     const group = await prisma.group.findUnique({
       where: { id },
       include: {
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
-        leader: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
         event: {
           select: {
             name: true,
@@ -195,14 +205,56 @@ export async function POST(
       );
     }
 
-    // ユーザーがメンバーか確認
-    const isMember = group.members.some((m) => m.user_id === session.user.id);
-    if (!isMember) {
+    // ユーザーがこの団体に参加しているか確認（複数団体参加対応：UserGroupテーブルを使用）
+    const userGroup = await prisma.userGroup.findUnique({
+      where: {
+        user_id_group_id: {
+          user_id: session.user.id,
+          group_id: id,
+        },
+      },
+    });
+
+    // オーナー（リーダー）の場合はUserGroupに存在しなくてもアクセス可能
+    const isLeader = group.leader_user_id === session.user.id;
+    if (!userGroup && !isLeader) {
       return NextResponse.json(
         { error: "You are not a member of this group" },
         { status: 403 }
       );
     }
+
+    // オーナーがUserGroupに存在しない場合、UserGroupに追加（データ整合性のため）
+    if (isLeader && !userGroup) {
+      try {
+        await prisma.userGroup.create({
+          data: {
+            user_id: group.leader_user_id,
+            group_id: id,
+            event_id: group.event_id,
+            status: "INTERESTED",
+          },
+        });
+      } catch {
+        // 既に存在する場合は無視
+      }
+    }
+
+    // メンバー一覧を取得（プッシュ通知送信用）
+    const groupMembers = await prisma.userGroup.findMany({
+      where: {
+        group_id: id,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
 
     // メッセージを作成
     const message = await prisma.groupMessage.create({
@@ -226,9 +278,9 @@ export async function POST(
 
     // プッシュ通知を送信（送信者以外の全メンバーに）
     try {
-      const recipientUserIds = group.members
-        .filter((m) => m.user_id !== session.user.id)
-        .map((m) => m.user_id);
+      const recipientUserIds = groupMembers
+        .filter((gm) => gm.user_id !== session.user.id)
+        .map((gm) => gm.user_id);
 
       if (recipientUserIds.length > 0) {
         const senderName = session.user.name || session.user.email || "メンバー";

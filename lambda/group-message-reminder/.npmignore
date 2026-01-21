@@ -1,0 +1,23 @@
+# ソースファイル
+*.ts
+!*.d.ts
+tsconfig.json
+tsconfig.tsbuildinfo
+
+# テストファイル
+test-event*.json
+README.md
+
+# ビルドスクリプト
+build.sh
+
+# Prismaスキーマ（生成されたクライアントは使用する）
+schema.prisma
+
+# 開発用ファイル
+.gitignore
+*.log
+
+# 一時ファイル
+*.bak
+*.tmp

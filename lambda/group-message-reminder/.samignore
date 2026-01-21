@@ -1,0 +1,29 @@
+# TypeScriptソースファイル
+*.ts
+!*.d.ts
+tsconfig.json
+tsconfig.tsbuildinfo
+
+# テストファイル
+test-event*.json
+README.md
+
+# ビルドスクリプト
+build.sh
+
+# Prismaスキーマ（生成されたクライアントは使用する）
+schema.prisma
+
+# 開発用ファイル
+.gitignore
+*.log
+
+# 一時ファイル
+*.bak
+*.tmp
+
+# ソースマップ（本番環境では不要）
+*.map
+
+# 型定義ファイル（実行時には不要）
+*.d.ts

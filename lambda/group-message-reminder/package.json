@@ -1,0 +1,20 @@
+{
+  "name": "group-message-reminder",
+  "version": "1.0.0",
+  "description": "Lambda function to send reminder emails for unread group messages",
+  "main": "handler.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf node_modules dist *.js *.d.ts",
+    "postbuild": "npm prune --production"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ses": "^3.939.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5",
+    "prisma": "^7.0.0",
+    "@prisma/client": "^7.0.0"
+  }
+}

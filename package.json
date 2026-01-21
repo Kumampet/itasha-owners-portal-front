@@ -17,7 +17,15 @@
     "db:clear-sessions": "tsx scripts/clear-sessions.ts",
     "db:view-users": "tsx scripts/view-users.ts",
     "test:reminder-check": "tsx scripts/test-reminder-check.ts",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "lambda:group-message-reminder:build": "bash lambda/group-message-reminder/build.sh",
+    "lambda:build:layer": "bash lambda/prisma-layer/build.sh",
+    "lambda:prisma-layer:deploy:staging": "bash scripts/deploy-prisma-layer-staging.sh",
+    "lambda:prisma-layer:deploy:prod": "bash scripts/deploy-prisma-layer-prod.sh",
+    "lambda:group-message-reminder:deploy:staging": "bash scripts/deploy-group-message-reminder-staging.sh",
+    "lambda:group-message-reminder:deploy:prod": "bash scripts/deploy-group-message-reminder-prod.sh",
+    "lambda:group-message-reminder:deploy:staging:win": "powershell -ExecutionPolicy Bypass -File scripts/deploy-group-message-reminder-staging.ps1",
+    "lambda:group-message-reminder:deploy:prod:win": "powershell -ExecutionPolicy Bypass -File scripts/deploy-group-message-reminder-prod.ps1"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

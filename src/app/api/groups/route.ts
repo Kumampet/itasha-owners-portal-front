@@ -51,20 +51,24 @@ export async function GET() {
       },
     });
 
+    // groupがnullの場合は除外（削除された団体のUserGroupレコードが残っている場合の対策）
     const groups = userGroups
-      .filter((ug) => ug.group)
-      .map((ug) => ({
-        id: ug.group!.id,
-        name: ug.group!.name,
-        theme: ug.group!.theme,
-        groupCode: ug.group!.group_code,
-        maxMembers: ug.group!.max_members,
-        memberCount: ug.group!._count.user_groups,
-        isLeader: ug.group!.leader_user_id === session.user.id,
-        event: ug.group!.event,
-        leader: ug.group!.leader,
-        createdAt: ug.group!.created_at,
-      }));
+      .filter((ug) => ug.group !== null)
+      .map((ug) => {
+        const group = ug.group!;
+        return {
+          id: group.id,
+          name: group.name,
+          theme: group.theme,
+          groupCode: group.group_code,
+          maxMembers: group.max_members,
+          memberCount: group._count.user_groups,
+          isLeader: group.leader_user_id === session.user.id,
+          event: group.event,
+          leader: group.leader,
+          createdAt: group.created_at,
+        };
+      });
 
     // ユーザー固有データのため、privateディレクティブを使用して5秒間キャッシュ
     return NextResponse.json(
@@ -77,8 +81,13 @@ export async function GET() {
     );
   } catch (error) {
     console.error("Error fetching groups:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to fetch groups" },
+      {
+        error: "Failed to fetch groups",
+        details: errorMessage,
+      },
       { status: 500 }
     );
   }

@@ -48,11 +48,20 @@ export default function GroupsPage() {
   const fetchGroups = async () => {
     try {
       const res = await fetch("/api/groups");
-      if (!res.ok) throw new Error("Failed to fetch groups");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        const errorMessage =
+          errorData.details || errorData.error || "Failed to fetch groups";
+        throw new Error(errorMessage);
+      }
       const data = await res.json();
       setGroups(data);
     } catch (error) {
       console.error("Failed to fetch groups:", error);
+      // エラーをユーザーに表示（必要に応じて）
+      if (error instanceof Error) {
+        console.error("Error details:", error.message);
+      }
     } finally {
       setLoading(false);
     }
