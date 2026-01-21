@@ -43,8 +43,14 @@ export async function GET() {
     );
   } catch (error) {
     console.error("Error fetching notification settings:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorStack = error instanceof Error ? error.stack : undefined;
     return NextResponse.json(
-      { error: "Failed to fetch notification settings" },
+      {
+        error: "Failed to fetch notification settings",
+        details: errorMessage,
+        ...(process.env.NODE_ENV === "development" && { stack: errorStack }),
+      },
       { status: 500 }
     );
   }
@@ -85,8 +91,14 @@ export async function PATCH(request: Request) {
     return NextResponse.json(settings);
   } catch (error) {
     console.error("Error updating notification settings:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorStack = error instanceof Error ? error.stack : undefined;
     return NextResponse.json(
-      { error: "Failed to update notification settings" },
+      {
+        error: "Failed to update notification settings",
+        details: errorMessage,
+        ...(process.env.NODE_ENV === "development" && { stack: errorStack }),
+      },
       { status: 500 }
     );
   }

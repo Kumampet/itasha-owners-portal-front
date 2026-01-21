@@ -6,6 +6,12 @@ echo "Building Prisma Layer..."
 # Layerディレクトリに移動
 cd "$(dirname "$0")"
 
+# nodejsディレクトリが存在しない場合は作成
+if [ ! -d "nodejs" ]; then
+  echo "Creating nodejs directory..."
+  mkdir -p nodejs
+fi
+
 # nodejsディレクトリに移動
 cd nodejs
 

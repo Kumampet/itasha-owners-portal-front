@@ -73,3 +73,4 @@ lambda/group-message-reminder/.prisma/
 lambda/group-message-reminder/@prisma/
 lambda/group-message-reminder/handler.js
 lambda/group-message-reminder/package-lock.json
+lambda/prisma-layer/nodejs/

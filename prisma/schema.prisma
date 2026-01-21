@@ -158,23 +158,22 @@ model UserEvent {
 }
 
 model Group {
-  id             String         @id @default(uuid()) @db.VarChar(36)
-  event_id       String         @db.VarChar(36)
-  name           String
-  theme          String?
-  max_members    Int?
-  leader_user_id String         @db.VarChar(36)
-  created_at     DateTime       @default(now())
-  updated_at     DateTime       @updatedAt
-  group_code     String         @unique @db.VarChar(8)
-  owner_note     String?        @db.Text
-  // 団体の説明（今後仕様予定）
-  group_description String?     @db.Text
-  messages       GroupMessage[]
-  event          Event          @relation(fields: [event_id], references: [id])
-  leader         User           @relation("GroupLeader", fields: [leader_user_id], references: [id])
-  members        UserEvent[]
-  user_groups    UserGroup[]
+  id                String         @id @default(uuid()) @db.VarChar(36)
+  event_id          String         @db.VarChar(36)
+  name              String
+  theme             String?
+  max_members       Int?
+  leader_user_id    String         @db.VarChar(36)
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @updatedAt
+  group_code        String         @unique @db.VarChar(8)
+  owner_note        String?        @db.Text
+  group_description String?        @db.Text
+  messages          GroupMessage[]
+  event             Event          @relation(fields: [event_id], references: [id])
+  leader            User           @relation("GroupLeader", fields: [leader_user_id], references: [id])
+  members           UserEvent[]
+  user_groups       UserGroup[]
 
   @@unique([event_id, name])
   @@index([leader_user_id], map: "groups_leader_user_id_fkey")

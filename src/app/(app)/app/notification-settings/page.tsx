@@ -39,13 +39,23 @@ function NotificationSettingsPageContent() {
     try {
       const res = await fetch("/api/user/notification-settings");
       if (!res.ok) {
-        throw new Error("Failed to fetch notification settings");
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Error fetching notification settings:", {
+          status: res.status,
+          statusText: res.statusText,
+          error: errorData,
+        });
+        throw new Error(
+          errorData.details || errorData.error || "Failed to fetch notification settings"
+        );
       }
       const data = await res.json();
       setSettings(data);
     } catch (error) {
       console.error("Error fetching notification settings:", error);
-      alert("通知設定の取得に失敗しました");
+      const errorMessage =
+        error instanceof Error ? error.message : "通知設定の取得に失敗しました";
+      alert(`通知設定の取得に失敗しました: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -68,14 +78,24 @@ function NotificationSettingsPageContent() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to update notification settings");
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Error updating notification settings:", {
+          status: res.status,
+          statusText: res.statusText,
+          error: errorData,
+        });
+        throw new Error(
+          errorData.details || errorData.error || "Failed to update notification settings"
+        );
       }
 
       const updatedSettings = await res.json();
       setSettings(updatedSettings);
     } catch (error) {
       console.error("Error updating notification settings:", error);
-      alert("通知設定の更新に失敗しました");
+      const errorMessage =
+        error instanceof Error ? error.message : "通知設定の更新に失敗しました";
+      alert(`通知設定の更新に失敗しました: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
