@@ -166,6 +166,7 @@ const handler = async (event) => {
                     // 1. メール通知が有効か
                     // 2. 団体メッセージ未読通知が有効か
                     const emailNotificationEnabled = notificationSettings?.email_notification_enabled ?? false;
+                    // Prisma Clientの型定義に含まれていない可能性があるため、型アサーションを使用
                     const groupMessageUnreadNotificationEnabled = notificationSettings?.group_message_unread_notification_enabled ??
                         true; // デフォルトはtrue
                     if (!emailNotificationEnabled ||
@@ -177,27 +178,37 @@ const handler = async (event) => {
                     const firstUnreadGroup = unreadGroups[0];
                     const displayName = user.display_name || user.name || "ユーザー";
                     const groupName = firstUnreadGroup.groupName;
+                    // 環境変数からアプリのベースURLを取得（デフォルトは本番環境）
+                    const appBaseUrl = process.env.APP_BASE_URL || "https://itasha-owners-navi.link";
                     const subject = `【いたなび！】${groupName} | 未読メッセージのお知らせ`;
-                    const body = `${displayName}さん\n
-\n
-いつもいたなび！をご利用いただきありがとうございます。\n
-\n
---------------------------\n
-\n
-${groupName}に未読メッセージがあります！\n
-チェックしてみませんか？\n
-\n
-マイページはこちら\n
-https://itasha-owners-navi.link/app/mypage\n
-\n
---------------------------\n
-\n
-引き続きいたなび！をよろしくお願いします。\n
-\n
-※このメールは送信専用です。返信されても回答できません。\n
-※その他お問い合わせは以下の専用フォームからお願いします。\n
-https://itasha-owners-navi.link/app/contact
-`;
+                    const body = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333;">
+  <p>${displayName}さん</p>
+  
+  <p>いつもいたなび！をご利用いただきありがとうございます。</p>
+  
+  <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+  
+  <p><strong>${groupName}</strong>に未読メッセージがあります！<br>
+  チェックしてみませんか？</p>
+  
+  <p><a href="${appBaseUrl}/app/mypage" style="color: #0066cc; text-decoration: none;">マイページはこちら</a></p>
+  
+  <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+  
+  <p>引き続きいたなび！をよろしくお願いします。</p>
+  
+  <p style="font-size: 12px; color: #666; margin-top: 30px;">
+    ※このメールは送信専用です。返信されても回答できません。<br>
+    ※その他お問い合わせは以下の専用フォームからお願いします。<br>
+    <a href="${appBaseUrl}/app/contact" style="color: #0066cc; text-decoration: none;">${appBaseUrl}/app/contact</a>
+  </p>
+</body>
+</html>`;
                     try {
                         await sendEmail({
                             to: user.email,
