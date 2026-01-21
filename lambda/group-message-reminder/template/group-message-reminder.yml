@@ -103,7 +103,7 @@ Resources:
     Properties:
       Name: !Sub '${Environment}-group-message-reminder-morning'
       Description: Morning reminder for unread group messages (9:00 JST)
-      ScheduleExpression: cron(0 0 * * ? *)
+      ScheduleExpression: cron(0 9 * * ? *)
       ScheduleExpressionTimezone: Asia/Tokyo
       FlexibleTimeWindow:
         Mode: 'OFF'
@@ -118,7 +118,7 @@ Resources:
     Properties:
       Name: !Sub '${Environment}-group-message-reminder-noon'
       Description: Noon reminder for unread group messages (12:00 JST)
-      ScheduleExpression: cron(0 3 * * ? *)
+      ScheduleExpression: cron(0 12 * * ? *)
       ScheduleExpressionTimezone: Asia/Tokyo
       FlexibleTimeWindow:
         Mode: 'OFF'
@@ -133,7 +133,7 @@ Resources:
     Properties:
       Name: !Sub '${Environment}-group-message-reminder-evening'
       Description: Evening reminder for unread group messages (18:00 JST)
-      ScheduleExpression: cron(0 9 * * ? *)
+      ScheduleExpression: cron(0 18 * * ? *)
       ScheduleExpressionTimezone: Asia/Tokyo
       FlexibleTimeWindow:
         Mode: 'OFF'
@@ -148,7 +148,7 @@ Resources:
     Properties:
       Name: !Sub '${Environment}-group-message-reminder-night'
       Description: Night reminder for unread group messages (21:00 JST)
-      ScheduleExpression: cron(0 12 * * ? *)
+      ScheduleExpression: cron(0 21 * * ? *)
       ScheduleExpressionTimezone: Asia/Tokyo
       FlexibleTimeWindow:
         Mode: 'OFF'
