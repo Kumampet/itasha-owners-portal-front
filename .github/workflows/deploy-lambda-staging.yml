@@ -55,6 +55,19 @@ jobs:
         run: |
           sam build --template-file template/group-message-reminder.yml
 
+      - name: Check existing CloudFormation stack
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name staging-group-message-reminder \
+            --region ${{ secrets.AWS_REGION }} \
+            2>/dev/null || echo "Stack does not exist"
+          
+          # Check for existing Prisma Layer
+          aws lambda list-layers \
+            --region ${{ secrets.AWS_REGION }} \
+            --query "Layers[?LayerName=='staging-prisma-layer']" \
+            --output table || echo "No existing layer found"
+
       - name: Deploy Lambda function to Staging
         working-directory: lambda/group-message-reminder
         env:
@@ -75,4 +88,11 @@ jobs:
               SesFromEmail=$SES_FROM_EMAIL \
             --region ${{ secrets.AWS_REGION }} \
             --no-confirm-changeset \
-            --no-fail-on-empty-changeset
+            --no-fail-on-empty-changeset || \
+          (echo "Deployment failed, checking CloudFormation events..." && \
+           aws cloudformation describe-stack-events \
+             --stack-name staging-group-message-reminder \
+             --region ${{ secrets.AWS_REGION }} \
+             --query "StackEvents[?ResourceStatus=='CREATE_FAILED' || ResourceStatus=='UPDATE_FAILED']" \
+             --output table && \
+           exit 1)
