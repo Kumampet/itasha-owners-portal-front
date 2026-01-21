@@ -73,7 +73,7 @@ Resources:
   PrismaLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
-      LayerName: !Sub '${Environment}-prisma-layer'
+      LayerName: !Sub '${Environment}-prisma-layer-${AWS::StackName}'
       ContentUri: ../../prisma-layer
       CompatibleRuntimes:
         - nodejs20.x
