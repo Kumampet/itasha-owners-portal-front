@@ -64,6 +64,12 @@ export function WysiwygEditor({
     return EditorState.createEmpty(decorator);
   });
   const editorRef = useRef<Editor>(null);
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const linkButtonRef = useRef<HTMLButtonElement>(null);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkTitle, setLinkTitle] = useState("");
+  const [linkTarget, setLinkTarget] = useState<"_self" | "_blank">("_blank");
+  const [linkDialogPosition, setLinkDialogPosition] = useState<{ top?: number; bottom?: number; left?: number }>({});
 
   // EditorStateをHTMLに変換する共通関数
   const convertEditorStateToHtml = (editorState: EditorState): string => {
@@ -126,7 +132,7 @@ export function WysiwygEditor({
               element: "a",
               attributes: {
                 href: data.url,
-                target: "_blank",
+                target: data.target || "_blank",
                 rel: "nofollow noreferrer",
               },
             };
@@ -556,6 +562,72 @@ export function WysiwygEditor({
     onChange(html);
   };
 
+  // リンクを追加する処理
+  const handleAddLink = () => {
+    if (!linkUrl.trim()) {
+      return;
+    }
+
+    const selection = editorState.getSelection();
+    const contentState = editorState.getCurrentContent();
+
+    if (selection.isCollapsed()) {
+      // カーソル位置のみの場合、タイトルをテキストとして挿入してリンクを適用
+      const textToInsert = linkTitle.trim() || linkUrl;
+      const entityKey = contentState.createEntity("LINK", "MUTABLE", {
+        url: linkUrl.trim(),
+        target: linkTarget,
+      }).getLastCreatedEntityKey();
+
+      const newContentState = Modifier.insertText(
+        contentState,
+        selection,
+        textToInsert,
+        undefined,
+        entityKey
+      );
+
+      const newEditorState = EditorState.push(
+        editorState,
+        newContentState,
+        "insert-characters"
+      );
+
+      // カーソルを挿入したテキストの後に移動
+      const newSelection = selection.merge({
+        anchorOffset: selection.getStartOffset() + textToInsert.length,
+        focusOffset: selection.getStartOffset() + textToInsert.length,
+      });
+
+      handleChange(EditorState.forceSelection(newEditorState, newSelection));
+    } else {
+      // 選択範囲がある場合、その範囲にリンクを適用
+      const entityKey = contentState.createEntity("LINK", "MUTABLE", {
+        url: linkUrl.trim(),
+        target: linkTarget,
+      }).getLastCreatedEntityKey();
+
+      const newContentState = Modifier.applyEntity(
+        contentState,
+        selection,
+        entityKey
+      );
+
+      const newEditorState = EditorState.push(
+        editorState,
+        newContentState,
+        "apply-entity"
+      );
+
+      handleChange(newEditorState);
+    }
+
+    setShowLinkDialog(false);
+    setLinkUrl("");
+    setLinkTitle("");
+    setLinkTarget("_blank");
+  };
+
   // インラインスタイルの適用
   const toggleInlineStyle = (inlineStyle: string) => {
     const selection = editorState.getSelection();
@@ -947,34 +1019,171 @@ export function WysiwygEditor({
         </button>
 
         {/* リンク */}
-        <button
-          type="button"
-          onClick={() => {
-            const url = prompt("URLを入力してください:");
-            if (url) {
+        <div className="relative">
+          <button
+            ref={linkButtonRef}
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              // ボタンの位置を取得してダイアログの位置を計算
+              if (linkButtonRef.current) {
+                const rect = linkButtonRef.current.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
+                const viewportWidth = window.innerWidth;
+                const dialogHeight = 300; // ダイアログの推定高さ
+                const dialogWidth = 320; // ダイアログの幅
+                const spaceBelow = viewportHeight - rect.bottom;
+                const spaceAbove = rect.top;
+
+                let top: number | undefined;
+                let bottom: number | undefined;
+                let left: number;
+
+                // 縦方向の位置を決定
+                if (spaceBelow < dialogHeight && spaceAbove > spaceBelow) {
+                  // 下にスペースがない場合、上に表示
+                  bottom = viewportHeight - rect.top + 4;
+                } else {
+                  // 通常は下に表示
+                  top = rect.bottom + 4;
+                }
+
+                // 横方向の位置を決定（画面からはみ出さないように）
+                if (rect.left + dialogWidth > viewportWidth) {
+                  // 右側にはみ出す場合、左側に調整
+                  left = Math.max(8, viewportWidth - dialogWidth - 8);
+                } else {
+                  left = rect.left;
+                }
+
+                setLinkDialogPosition({ top, bottom, left });
+              }
+
+              setShowLinkDialog(true);
+              // 選択範囲のテキストを取得してタイトルに設定
               const selection = editorState.getSelection();
-              const contentState = editorState.getCurrentContent();
-              const entityKey = contentState.createEntity("LINK", "MUTABLE", {
-                url,
-              }).getLastCreatedEntityKey();
-              const newContentState = Modifier.applyEntity(
-                contentState,
-                selection,
-                entityKey
-              );
-              const newEditorState = EditorState.push(
-                editorState,
-                newContentState,
-                "apply-entity"
-              );
-              handleChange(newEditorState);
-            }
-          }}
-          disabled={disabled}
-          title="リンク"
-        >
-          🔗
-        </button>
+              if (!selection.isCollapsed()) {
+                const contentState = editorState.getCurrentContent();
+                const selectedText = contentState.getPlainText().slice(
+                  selection.getStartOffset(),
+                  selection.getEndOffset()
+                );
+                setLinkTitle(selectedText);
+              } else {
+                setLinkTitle("");
+              }
+              setLinkUrl("");
+              setLinkTarget("_blank");
+            }}
+            disabled={disabled}
+            title="リンク"
+          >
+            🔗
+          </button>
+
+          {/* リンク追加ダイアログ */}
+          {showLinkDialog && (
+            <>
+              {/* オーバーレイ */}
+              <div
+                className="fixed inset-0 z-[100]"
+                onClick={() => setShowLinkDialog(false)}
+              />
+              {/* ダイアログ */}
+              <div
+                className="fixed z-[101] bg-white border border-zinc-300 rounded-lg shadow-lg p-4 min-w-[320px] max-w-[90vw]"
+                style={{
+                  ...(linkDialogPosition.top !== undefined ? { top: `${linkDialogPosition.top}px` } : {}),
+                  ...(linkDialogPosition.bottom !== undefined ? { bottom: `${linkDialogPosition.bottom}px` } : {}),
+                  ...(linkDialogPosition.left !== undefined ? { left: `${linkDialogPosition.left}px` } : {}),
+                }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-zinc-900">リンクを追加</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowLinkDialog(false)}
+                    className="text-red-500 hover:text-red-700 text-xl leading-none"
+                    aria-label="閉じる"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {/* URL入力 */}
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-700 mb-1">
+                      URL
+                    </label>
+                    <input
+                      type="url"
+                      value={linkUrl}
+                      onChange={(e) => setLinkUrl(e.target.value)}
+                      placeholder="http://"
+                      className="w-full rounded border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && linkUrl.trim()) {
+                          e.preventDefault();
+                          // リンクを追加する処理を実行
+                          handleAddLink();
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* タイトル入力 */}
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-700 mb-1">
+                      タイトル
+                    </label>
+                    <input
+                      type="text"
+                      value={linkTitle}
+                      onChange={(e) => setLinkTitle(e.target.value)}
+                      placeholder="リンクテキスト"
+                      className="w-full rounded border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && linkUrl.trim()) {
+                          e.preventDefault();
+                          handleAddLink();
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* ウィンドウ選択 */}
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-700 mb-1">
+                      ウィンドウ
+                    </label>
+                    <select
+                      value={linkTarget}
+                      onChange={(e) => setLinkTarget(e.target.value as "_self" | "_blank")}
+                      className="w-full rounded border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                    >
+                      <option value="_blank">新しいウィンドウで開く</option>
+                      <option value="_self">同じウィンドウで開く</option>
+                    </select>
+                  </div>
+
+                  {/* 追加ボタン */}
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="button"
+                      onClick={handleAddLink}
+                      disabled={!linkUrl.trim()}
+                      className="px-4 py-2 text-sm font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-zinc-900 text-zinc-900 hover:bg-zinc-800 disabled:hover:bg-zinc-900"
+                    >
+                      リンクを追加
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* エディタ */}
