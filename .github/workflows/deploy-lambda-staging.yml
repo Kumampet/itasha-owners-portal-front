@@ -1,0 +1,76 @@
+name: Deploy Lambda to Staging
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  deploy:
+    name: Deploy Lambda to Staging
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://console.aws.amazon.com/lambda/home
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install AWS SAM CLI
+        run: |
+          pip install aws-sam-cli
+          sam --version
+
+      - name: Build Prisma Layer
+        working-directory: lambda/prisma-layer
+        run: |
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Build Lambda function
+        working-directory: lambda/group-message-reminder
+        run: |
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Build with SAM CLI
+        working-directory: lambda/group-message-reminder
+        run: |
+          sam build --template-file template/group-message-reminder.yml
+
+      - name: Deploy Lambda function to Staging
+        working-directory: lambda/group-message-reminder
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          SES_FROM_EMAIL: ${{ secrets.SES_FROM_EMAIL }}
+        run: |
+          sam deploy \
+            --template-file template/group-message-reminder.yml \
+            --stack-name staging-group-message-reminder \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides \
+              Environment=staging \
+              DatabaseUrl=$DATABASE_URL \
+              AppBaseUrl=$APP_BASE_URL \
+              SesFromEmail=$SES_FROM_EMAIL \
+            --region ${{ secrets.AWS_REGION }} \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset
