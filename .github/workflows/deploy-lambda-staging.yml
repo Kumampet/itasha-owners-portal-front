@@ -65,43 +65,82 @@ jobs:
           
           echo "Stack status: $STACK_STATUS"
           
-          if [ "$STACK_STATUS" == "REVIEW_IN_PROGRESS" ] || [ "$STACK_STATUS" == "CREATE_IN_PROGRESS" ] || [ "$STACK_STATUS" == "UPDATE_IN_PROGRESS" ]; then
-            echo "Stack is in progress state, listing change sets..."
-            aws cloudformation list-change-sets \
-              --stack-name staging-group-message-reminder \
-              --region ${{ secrets.AWS_REGION }} \
-              --output table || true
-            
-            echo "Deleting pending change sets..."
+          # Delete any pending change sets
+          if [ "$STACK_STATUS" != "NOT_EXIST" ]; then
+            echo "Listing change sets..."
             CHANGE_SETS=$(aws cloudformation list-change-sets \
               --stack-name staging-group-message-reminder \
               --region ${{ secrets.AWS_REGION }} \
-              --query "Summaries[?Status=='CREATE_PENDING' || Status=='CREATE_IN_PROGRESS'].ChangeSetName" \
+              --query "Summaries[?Status=='CREATE_PENDING' || Status=='CREATE_IN_PROGRESS' || Status=='FAILED'].ChangeSetName" \
               --output text 2>/dev/null || echo "")
             
-            for cs in $CHANGE_SETS; do
-              echo "Deleting change set: $cs"
-              aws cloudformation delete-change-set \
-                --stack-name staging-group-message-reminder \
-                --change-set-name "$cs" \
-                --region ${{ secrets.AWS_REGION }} || true
-            done
+            if [ -n "$CHANGE_SETS" ]; then
+              echo "Deleting pending change sets..."
+              for cs in $CHANGE_SETS; do
+                echo "Deleting change set: $cs"
+                aws cloudformation delete-change-set \
+                  --stack-name staging-group-message-reminder \
+                  --change-set-name "$cs" \
+                  --region ${{ secrets.AWS_REGION }} || true
+              done
+            fi
             
-            echo "Waiting for stack to be ready..."
-            aws cloudformation wait stack-create-complete \
-              --stack-name staging-group-message-reminder \
-              --region ${{ secrets.AWS_REGION }} 2>/dev/null || \
-            aws cloudformation wait stack-update-complete \
-              --stack-name staging-group-message-reminder \
-              --region ${{ secrets.AWS_REGION }} 2>/dev/null || \
-            echo "Stack is ready or does not exist"
+            if [ "$STACK_STATUS" == "REVIEW_IN_PROGRESS" ] || [ "$STACK_STATUS" == "CREATE_IN_PROGRESS" ] || [ "$STACK_STATUS" == "UPDATE_IN_PROGRESS" ]; then
+              echo "Waiting for stack to be ready..."
+              aws cloudformation wait stack-create-complete \
+                --stack-name staging-group-message-reminder \
+                --region ${{ secrets.AWS_REGION }} 2>/dev/null || \
+              aws cloudformation wait stack-update-complete \
+                --stack-name staging-group-message-reminder \
+                --region ${{ secrets.AWS_REGION }} 2>/dev/null || \
+              echo "Stack is ready or does not exist"
+            fi
           fi
           
           # Check for existing Prisma Layer
-          aws lambda list-layers \
+          EXISTING_LAYER=$(aws lambda list-layers \
             --region ${{ secrets.AWS_REGION }} \
-            --query "Layers[?LayerName=='staging-prisma-layer']" \
-            --output table || echo "No existing layer found"
+            --query "Layers[?LayerName=='staging-prisma-layer'].LayerArn" \
+            --output text 2>/dev/null || echo "")
+          
+          if [ -n "$EXISTING_LAYER" ] && [ "$EXISTING_LAYER" != "None" ]; then
+            echo "Found existing Layer: $EXISTING_LAYER"
+            echo "Checking if Layer is managed by CloudFormation..."
+            # Check if Layer is referenced in any CloudFormation stack
+            LAYER_IN_STACK=$(aws cloudformation list-stack-resources \
+              --stack-name staging-group-message-reminder \
+              --region ${{ secrets.AWS_REGION }} \
+              --query "StackResourceSummaries[?LogicalResourceId=='PrismaLayer'].PhysicalResourceId" \
+              --output text 2>/dev/null || echo "")
+            
+            if [ -z "$LAYER_IN_STACK" ] || [ "$LAYER_IN_STACK" == "None" ]; then
+              echo "Warning: Layer exists but is not managed by this stack."
+              echo "This may cause EarlyValidation errors."
+              echo "Consider deleting the Layer manually or using a different Layer name."
+            fi
+          else
+            echo "No existing Layer found"
+          fi
+          
+          # Clean up any failed change sets
+          if [ "$STACK_STATUS" != "NOT_EXIST" ]; then
+            FAILED_CHANGE_SETS=$(aws cloudformation list-change-sets \
+              --stack-name staging-group-message-reminder \
+              --region ${{ secrets.AWS_REGION }} \
+              --query "Summaries[?Status=='FAILED'].ChangeSetName" \
+              --output text 2>/dev/null || echo "")
+            
+            if [ -n "$FAILED_CHANGE_SETS" ]; then
+              echo "Cleaning up failed change sets..."
+              for cs in $FAILED_CHANGE_SETS; do
+                echo "Deleting failed change set: $cs"
+                aws cloudformation delete-change-set \
+                  --stack-name staging-group-message-reminder \
+                  --change-set-name "$cs" \
+                  --region ${{ secrets.AWS_REGION }} || true
+              done
+            fi
+          fi
 
       - name: Deploy Lambda function to Staging
         working-directory: lambda/group-message-reminder
