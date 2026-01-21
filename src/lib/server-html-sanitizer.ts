@@ -22,7 +22,63 @@ const ALLOWED_TAGS = [
   "h4",
   "h5",
   "h6",
+  "ul",
+  "ol",
+  "li",
+  "img",
 ];
+
+// 許可するインラインスタイルプロパティ（クライアントサイドと同じリスト）
+const ALLOWED_STYLE_PROPERTIES = [
+  "color",
+  "font-family",
+  "font-size",
+  "font-weight",
+  "font-style",
+  "text-decoration",
+  "text-align",
+  "margin",
+  "margin-top",
+  "margin-bottom",
+  "margin-left",
+  "margin-right",
+  "padding",
+  "padding-top",
+  "padding-bottom",
+  "padding-left",
+  "padding-right",
+  "letter-spacing",
+];
+
+/**
+ * style属性から許可されていないスタイルプロパティを削除（サーバーサイド用）
+ * @param styleValue style属性の値
+ * @returns 許可されたスタイルのみを含む文字列
+ */
+function filterAllowedStyles(styleValue: string): string {
+  if (!styleValue || typeof styleValue !== "string") {
+    return "";
+  }
+
+  // スタイルプロパティをパース
+  const styles = styleValue.split(";").map((s) => s.trim()).filter(Boolean);
+  const allowedStyles: string[] = [];
+
+  for (const style of styles) {
+    const colonIndex = style.indexOf(":");
+    if (colonIndex === -1) continue;
+
+    const property = style.substring(0, colonIndex).trim().toLowerCase();
+    const value = style.substring(colonIndex + 1).trim();
+
+    // 許可されたプロパティかチェック
+    if (ALLOWED_STYLE_PROPERTIES.includes(property)) {
+      allowedStyles.push(`${property}: ${value}`);
+    }
+  }
+
+  return allowedStyles.join("; ");
+}
 
 /**
  * HTMLをサニタイズして安全にします（サーバーサイド用）
@@ -43,7 +99,8 @@ export function sanitizeHtmlServer(html: string): string {
     .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, "")
     .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
     .replace(/on\w+\s*=\s*["'][^"']*["']/gi, "") // イベントハンドラーを削除
-    .replace(/javascript:/gi, ""); // javascript:プロトコルを削除
+    .replace(/javascript:/gi, "") // javascript:プロトコルを削除
+    .replace(/<img\b[^>]*src\s*=\s*["']javascript:/gi, ""); // imgタグのjavascript:プロトコルを削除
 
   // 許可されたタグ以外をエスケープ（基本的な検証）
   // ただし、クライアントサイドで既にサニタイズされていることを前提とする
@@ -94,6 +151,28 @@ export function sanitizeHtmlServer(html: string): string {
   } catch (linkError) {
     // リンクの処理に失敗した場合はそのまま返す（クライアントサイドでサニタイズされていることを前提）
     console.error("Error processing links:", linkError);
+  }
+
+  // style属性から許可されていないスタイルを削除
+  try {
+    sanitized = sanitized.replace(
+      /style\s*=\s*["']([^"']*)["']/gi,
+      (match, styleValue) => {
+        try {
+          const filteredStyle = filterAllowedStyles(styleValue);
+          if (filteredStyle) {
+            return `style="${filteredStyle}"`;
+          }
+          // 許可されたスタイルが1つもない場合はstyle属性を削除
+          return "";
+        } catch (styleError) {
+          console.error("Error filtering styles:", styleError);
+          return "";
+        }
+      }
+    );
+  } catch (styleFilterError) {
+    console.error("Error processing styles:", styleFilterError);
   }
 
   return sanitized;

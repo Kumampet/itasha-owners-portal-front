@@ -22,14 +22,17 @@ const ALLOWED_TAGS = [
   "h4",
   "h5",
   "h6",
+  "ul",
+  "ol",
+  "li",
+  "img",
 ];
 
 // 許可するHTML属性
-const ALLOWED_ATTR = ["href", "target", "rel", "style"];
+const ALLOWED_ATTR = ["href", "target", "rel", "style", "src", "alt", "width"];
 
-// 許可するインラインスタイルプロパティ（将来の拡張用に定義）
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const ALLOWED_STYLES = [
+// 許可するインラインスタイルプロパティ
+const ALLOWED_STYLE_PROPERTIES = [
   "color",
   "font-family",
   "font-size",
@@ -37,7 +40,52 @@ const ALLOWED_STYLES = [
   "font-style",
   "text-decoration",
   "text-align",
+  "margin",
+  "margin-top",
+  "margin-bottom",
+  "margin-left",
+  "margin-right",
+  "padding",
+  "padding-top",
+  "padding-bottom",
+  "padding-left",
+  "padding-right",
+  "letter-spacing",
 ];
+
+const ALLOWED_STYLES: Record<string, string[]> = {
+  "*": ALLOWED_STYLE_PROPERTIES,
+};
+
+/**
+ * style属性から許可されていないスタイルプロパティを削除
+ * @param styleValue style属性の値（例: "color: red; font-size: 16px; position: absolute;"）
+ * @returns 許可されたスタイルのみを含む文字列（例: "color: red; font-size: 16px;"）
+ */
+function filterAllowedStyles(styleValue: string): string {
+  if (!styleValue || typeof styleValue !== "string") {
+    return "";
+  }
+
+  // スタイルプロパティをパース
+  const styles = styleValue.split(";").map((s) => s.trim()).filter(Boolean);
+  const allowedStyles: string[] = [];
+
+  for (const style of styles) {
+    const colonIndex = style.indexOf(":");
+    if (colonIndex === -1) continue;
+
+    const property = style.substring(0, colonIndex).trim().toLowerCase();
+    const value = style.substring(colonIndex + 1).trim();
+
+    // 許可されたプロパティかチェック
+    if (ALLOWED_STYLE_PROPERTIES.includes(property)) {
+      allowedStyles.push(`${property}: ${value}`);
+    }
+  }
+
+  return allowedStyles.join("; ");
+}
 
 /**
  * HTMLをサニタイズして安全にします
@@ -51,7 +99,8 @@ export function sanitizeHtml(html: string): string {
     return html;
   }
 
-  return String(DOMPurify.sanitize(html, {
+  // DOMPurifyでサニタイズ
+  const sanitized = String(DOMPurify.sanitize(html, {
     ALLOWED_TAGS,
     ALLOWED_ATTR,
     // styleタグは許可しない（インラインスタイルのみ）
@@ -67,7 +116,28 @@ export function sanitizeHtml(html: string): string {
     RETURN_TRUSTED_TYPE: false,
     // インラインスタイルの許可プロパティを設定
     ALLOW_DATA_ATTR: false,
+    ALLOWED_STYLES,
   } as Parameters<typeof DOMPurify.sanitize>[1]));
+
+  // DOMPurifyの処理後、許可されていないスタイルをさらにフィルタリング
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(sanitized, "text/html");
+  const elementsWithStyle = doc.querySelectorAll("[style]");
+
+  elementsWithStyle.forEach((element) => {
+    const styleValue = element.getAttribute("style");
+    if (styleValue) {
+      const filteredStyle = filterAllowedStyles(styleValue);
+      if (filteredStyle) {
+        element.setAttribute("style", filteredStyle);
+      } else {
+        // 許可されたスタイルが1つもない場合はstyle属性を削除
+        element.removeAttribute("style");
+      }
+    }
+  });
+
+  return doc.body.innerHTML;
 }
 
 /**
