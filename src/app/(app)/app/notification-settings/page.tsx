@@ -19,7 +19,7 @@ interface NotificationSettings {
 
 function NotificationSettingsPageContent() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

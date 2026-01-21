@@ -104,7 +104,8 @@ async function sendEmail({
 }
 
 // Lambda関数のハンドラー
-export const handler = async (event: any) => {
+// EventBridge Schedulerからのイベント（通常は空のJSONオブジェクト）
+export const handler = async (event: Record<string, unknown>) => {
   console.log("[Group Message Reminder] Starting reminder check...");
   console.log("[Group Message Reminder] Event:", JSON.stringify(event, null, 2));
 
