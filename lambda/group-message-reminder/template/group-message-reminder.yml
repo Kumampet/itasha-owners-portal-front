@@ -22,6 +22,13 @@ Parameters:
     Type: String
     Description: SES sender email address
     NoEcho: true
+  PrismaLayerArn:
+    Type: String
+    Description: ARN of the Prisma Layer (optional, will create new if not provided)
+    Default: ""
+
+Conditions:
+  HasPrismaLayerArn: !Not [!Equals [!Ref PrismaLayerArn, ""]]
 
 Resources:
   GroupMessageReminderFunction:
@@ -49,7 +56,10 @@ Resources:
         MaximumEventAgeInSeconds: 21600
         MaximumRetryAttempts: 2
       Layers:
-        - !Ref PrismaLayer
+        - !If
+          - HasPrismaLayerArn
+          - !Ref PrismaLayerArn
+          - !GetAtt PrismaLayer.Arn
       PackageType: Zip
       Policies:
         - Statement:

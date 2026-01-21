@@ -1,0 +1,91 @@
+name: Deploy Prisma Layer to Staging
+
+on:
+  push:
+    branches:
+      - staging
+    paths:
+      - 'prisma/schema.prisma'
+      - 'lambda/prisma-layer/**'
+      - '.github/workflows/deploy-prisma-layer-staging.yml'
+
+jobs:
+  deploy-layer:
+    name: Deploy Prisma Layer to Staging
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://console.aws.amazon.com/lambda/home
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install AWS SAM CLI
+        run: |
+          pip install aws-sam-cli
+          sam --version
+
+      - name: Build Prisma Layer
+        working-directory: lambda/prisma-layer
+        run: |
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Deploy Prisma Layer to Staging
+        working-directory: lambda/group-message-reminder
+        env:
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+        run: |
+          # Layerのみをデプロイするための一時的なテンプレートを作成
+          cat > layer-template.yml << 'EOF'
+          AWSTemplateFormatVersion: '2010-09-09'
+          Transform: AWS::Serverless-2016-10-31
+          Description: Prisma Layer for Lambda
+          
+          Parameters:
+            Environment:
+              Type: String
+              Default: staging
+          
+          Resources:
+            PrismaLayer:
+              Type: AWS::Serverless::LayerVersion
+              Properties:
+                LayerName: !Sub '${Environment}-prisma-layer'
+                ContentUri: ../../prisma-layer
+          
+          Outputs:
+            PrismaLayerArn:
+              Description: ARN of the Prisma Layer
+              Value: !Ref PrismaLayer
+              Export:
+                Name: !Sub '${Environment}-PrismaLayerArn'
+          EOF
+          
+          sam deploy \
+            --template-file layer-template.yml \
+            --stack-name staging-prisma-layer \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides \
+              Environment=staging \
+            --s3-bucket $S3_BUCKET \
+            --region ${{ secrets.AWS_REGION }} \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset
