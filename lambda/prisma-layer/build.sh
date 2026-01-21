@@ -95,6 +95,9 @@ rm -f package-lock.json
 # prismaパッケージを削除（devDependencyのため）
 rm -rf node_modules/prisma 2>/dev/null || true
 
+# .binディレクトリを削除（Lambda Layerには不要、シンボリックリンクが壊れるのを防ぐ）
+rm -rf node_modules/.bin 2>/dev/null || true
+
 # Prismaクライアントの不要なファイルを削除
 echo "Removing unnecessary Prisma Client files..."
 # TypeScriptソースファイルを削除
