@@ -178,17 +178,37 @@ jobs:
              --query "StackEvents[?ResourceStatus=='CREATE_FAILED' || ResourceStatus=='UPDATE_FAILED' || ResourceStatus=='DELETE_FAILED']" \
              --output table && \
            echo "=== Change Set Details ===" && \
-           CHANGE_SET_ID=$(aws cloudformation list-change-sets \
+           sleep 3 && \
+           CHANGE_SETS=$(aws cloudformation list-change-sets \
              --stack-name staging-group-message-reminder \
              --region ${{ secrets.AWS_REGION }} \
-             --query "Summaries[0].ChangeSetId" \
+             --query "Summaries[*].[ChangeSetName,Status,StatusReason]" \
+             --output table 2>/dev/null || echo "No change sets found") && \
+           echo "$CHANGE_SETS" && \
+           LATEST_CHANGE_SET=$(aws cloudformation list-change-sets \
+             --stack-name staging-group-message-reminder \
+             --region ${{ secrets.AWS_REGION }} \
+             --query "Summaries | sort_by(@, &CreationTime) | [-1].ChangeSetName" \
              --output text 2>/dev/null || echo "") && \
-           if [ -n "$CHANGE_SET_ID" ] && [ "$CHANGE_SET_ID" != "None" ]; then
+           if [ -n "$LATEST_CHANGE_SET" ] && [ "$LATEST_CHANGE_SET" != "None" ]; then
+             echo "=== Latest Change Set: $LATEST_CHANGE_SET ===" && \
              aws cloudformation describe-change-set \
                --stack-name staging-group-message-reminder \
-               --change-set-name "$CHANGE_SET_ID" \
+               --change-set-name "$LATEST_CHANGE_SET" \
                --region ${{ secrets.AWS_REGION }} \
-               --query "StatusReason" \
-               --output text || true
+               --query "[Status,StatusReason]" \
+               --output text 2>/dev/null || echo "Failed to get change set details" && \
+             echo "=== Change Set Changes ===" && \
+             aws cloudformation describe-change-set \
+               --stack-name staging-group-message-reminder \
+               --change-set-name "$LATEST_CHANGE_SET" \
+               --region ${{ secrets.AWS_REGION }} \
+               --query "Changes[*].[Action,LogicalResourceId,ResourceType]" \
+               --output table 2>/dev/null || echo "Failed to get changes"
            fi && \
+           echo "=== Checking for existing Layer conflicts ===" && \
+           aws lambda list-layers \
+             --region ${{ secrets.AWS_REGION }} \
+             --query "Layers[?LayerName=='staging-prisma-layer']" \
+             --output table 2>/dev/null || echo "No layer found" && \
            exit 1)
