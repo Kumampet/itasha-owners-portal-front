@@ -69,7 +69,7 @@ jobs:
               Type: AWS::Serverless::LayerVersion
               Properties:
                 LayerName: !Sub '${Environment}-prisma-layer'
-                ContentUri: ../../prisma-layer
+                ContentUri: ../prisma-layer
           
           Outputs:
             PrismaLayerArn:
