@@ -5,6 +5,7 @@ import { Button } from "@/components/button";
 import { SafeHtmlContent } from "@/components/safe-html-content";
 import { WysiwygEditor } from "@/components/wysiwyg-editor";
 import { sanitizeHtml } from "@/lib/html-sanitizer";
+import { ModalBase } from "@/components/modal-base";
 
 type GroupDescriptionCardProps = {
   groupId: string;
@@ -27,7 +28,14 @@ export function GroupDescriptionCard({
   const [editValue, setEditValue] = useState(groupDescription || "");
   const [saving, setSaving] = useState(false);
   const [isHtmlMode, setIsHtmlMode] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [htmlEditValue, setHtmlEditValue] = useState("");
+  const [hasEditValueChanged, setHasEditValueChanged] = useState(false);
+  const [hasHtmlEditValueChanged, setHasHtmlEditValueChanged] = useState(false);
+  const [showModeSwitchWarning, setShowModeSwitchWarning] = useState(false);
+  const [isTypingEditValue, setIsTypingEditValue] = useState(false);
+  const [isTypingHtmlEditValue, setIsTypingHtmlEditValue] = useState(false);
+  const [pendingModeSwitch, setPendingModeSwitch] = useState<"editor" | "html" | null>(null);
 
   // 編集モードに入ったときに値をリセット
   useEffect(() => {
@@ -35,8 +43,48 @@ export function GroupDescriptionCard({
       setEditValue(groupDescription || "");
       setHtmlEditValue(groupDescription || "");
       setIsHtmlMode(false);
+      setHasEditValueChanged(false);
+      setHasHtmlEditValueChanged(false);
     }
+    setIsInitialized(true);
   }, [isEditing, groupDescription]);
+
+  // editValueの変更を監視
+  useEffect(() => {
+    if (isTypingEditValue && isEditing && isInitialized && !hasEditValueChanged && editValue !== (groupDescription || "")) {
+      setHasEditValueChanged(true);
+    }
+  }, [isTypingEditValue, isEditing, isInitialized, editValue, groupDescription, hasEditValueChanged]);
+
+  // htmlEditValueの変更を監視
+  useEffect(() => {
+    if (isTypingHtmlEditValue && isEditing && isInitialized && !hasHtmlEditValueChanged && htmlEditValue !== (groupDescription || "")) {
+      setHasHtmlEditValueChanged(true);
+    }
+  }, [isTypingHtmlEditValue, isEditing, isInitialized, htmlEditValue, groupDescription, hasHtmlEditValueChanged]);
+
+  // モード切り替えの処理
+  const handleModeSwitch = (targetMode: "editor" | "html") => {
+    // 現在のモードに応じて変更フラグをチェック
+    const shouldShowWarning =
+      (!isHtmlMode && hasEditValueChanged) ||
+      (isHtmlMode && hasHtmlEditValueChanged);
+
+    if (shouldShowWarning) {
+      // 変更がある場合は警告モーダルを表示
+      setPendingModeSwitch(targetMode);
+      setShowModeSwitchWarning(true);
+    } else {
+      // 変更がない場合は直接切り替え
+      setIsHtmlMode(targetMode === "html");
+    }
+  };
+
+  // 警告モーダルのOKボタンクリック時の処理（モードは変更しない）
+  const handleModeSwitchConfirm = () => {
+    setShowModeSwitchWarning(false);
+    setPendingModeSwitch(null);
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -144,7 +192,7 @@ export function GroupDescriptionCard({
                 variant={!isHtmlMode ? "primary" : "secondary"}
                 size="sm"
                 rounded="md"
-                onClick={() => setIsHtmlMode(false)}
+                onClick={() => handleModeSwitch("editor")}
                 disabled={saving}
               >
                 エディター編集
@@ -153,7 +201,7 @@ export function GroupDescriptionCard({
                 variant={isHtmlMode ? "primary" : "secondary"}
                 size="sm"
                 rounded="md"
-                onClick={() => setIsHtmlMode(true)}
+                onClick={() => handleModeSwitch("html")}
                 disabled={saving}
               >
                 HTML編集
@@ -175,9 +223,15 @@ export function GroupDescriptionCard({
             <div className="border border-zinc-300 rounded-lg overflow-hidden">
               <WysiwygEditor
                 value={editValue}
-                onChange={setEditValue}
+                onChange={(value) => {
+                  console.log("editor mode typing");
+                  setEditValue(value);
+                }}
                 placeholder="団体説明を入力してください..."
                 disabled={saving}
+                onKeyDown={() => {
+                  setIsTypingEditValue(true);
+                }}
               />
             </div>
           ) : (
@@ -188,10 +242,17 @@ export function GroupDescriptionCard({
               </label>
               <textarea
                 value={htmlEditValue}
-                onChange={(e) => setHtmlEditValue(e.target.value)}
+                onChange={(e) => {
+                  console.log("html mode typing");
+                  setHtmlEditValue(e.target.value);
+                }}
+                onKeyDown={() => {
+                  setIsTypingHtmlEditValue(true);
+                }}
                 placeholder={`<p>ここに内容を入力してください</p>`}
                 rows={10}
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 resize-none"
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 resize-none whitespace-pre-wrap"
+                style={{ whiteSpace: 'pre-wrap' }}
               />
               <p className="text-xs text-zinc-500">
                 注意: SafeHtmlContent内で表示される部分のみを入力してください。<br />許可タグ: p, span, div, strong, em, u, s, a, br, h1-h6
@@ -219,6 +280,27 @@ export function GroupDescriptionCard({
               {saving ? "保存中..." : "保存"}
             </Button>
           </div>
+
+          {/* モード切り替え警告モーダル */}
+          <ModalBase
+            isOpen={showModeSwitchWarning}
+            onClose={handleModeSwitchConfirm}
+            title="編集モードの切り替え"
+            footer={
+              <Button
+                variant="primary"
+                size="sm"
+                rounded="md"
+                onClick={handleModeSwitchConfirm}
+              >
+                OK
+              </Button>
+            }
+          >
+            <p className="text-sm text-zinc-700">
+              編集モードを変えると記述内容が保持されません。一度保存をしてください。
+            </p>
+          </ModalBase>
         </div>
       ) : (
         <div className="mt-4">

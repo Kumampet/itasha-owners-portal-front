@@ -20,6 +20,7 @@ interface WysiwygEditorProps {
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  onKeyDown?: (e: React.KeyboardEvent) => void;
 }
 
 // 文字サイズのスタイルマップ
@@ -109,6 +110,7 @@ export function WysiwygEditor({
   onChange,
   placeholder = "テキストを入力してください...",
   disabled = false,
+  onKeyDown,
 }: WysiwygEditorProps) {
   const [editorState, setEditorState] = useState<EditorState>(() => {
     const decorator = new CompositeDecorator([
@@ -126,6 +128,7 @@ export function WysiwygEditor({
   const [linkTitle, setLinkTitle] = useState("");
   const [linkTarget, setLinkTarget] = useState<"_self" | "_blank">("_blank");
   const [linkDialogPosition, setLinkDialogPosition] = useState<{ top?: number; bottom?: number; left?: number }>({});
+  const lastOutputHtmlRef = useRef<string>(""); // エディターから最後に出力されたHTMLを記録（無限ループ防止用）
 
   // EditorStateをHTMLに変換する共通関数
   const convertEditorStateToHtml = (editorState: EditorState): string => {
@@ -317,9 +320,14 @@ export function WysiwygEditor({
   };
 
 
-  // HTMLからEditorStateに変換（初回のみ）
+  // HTMLからEditorStateに変換（valueが変更されたとき）
   const [isInitialized, setIsInitialized] = useState(false);
   useEffect(() => {
+    // エディターから出力されたHTMLと一致する場合は更新しない（無限ループ防止）
+    if (value === lastOutputHtmlRef.current) {
+      return;
+    }
+
     if (!isInitialized && value) {
       try {
         // HTMLをパースしてtext-alignスタイルをブロックタイプに変換
@@ -603,10 +611,12 @@ export function WysiwygEditor({
         const newEditorState = EditorState.createWithContent(contentState, decorator);
         setEditorState(newEditorState);
         setIsInitialized(true);
+        lastOutputHtmlRef.current = value; // 更新したHTMLを記録
 
         // 初期化時に現在のEditorStateをHTMLに変換してonChangeを呼び出す
         // これにより、エディタで何も変更しない場合でも、空のブロックが保持される
         const initialHtml = convertEditorStateToHtml(newEditorState);
+        lastOutputHtmlRef.current = initialHtml; // 初期化時のHTMLも記録
         onChange(initialHtml);
       } catch (error) {
         console.error("Error converting HTML to EditorState:", error);
@@ -614,6 +624,240 @@ export function WysiwygEditor({
       }
     } else if (!isInitialized && !value) {
       setIsInitialized(true);
+      lastOutputHtmlRef.current = "";
+    } else if (isInitialized && value && value !== lastOutputHtmlRef.current) {
+      // 既に初期化済みで、valueが変更された場合（HTML編集からの同期）
+      // エディターの内容を更新（無限ループを防ぐため、エディターからの出力と一致する場合はスキップ）
+      try {
+        // HTMLからEditorStateに変換する処理（初期化時と同じロジック）
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(value, 'text/html');
+        const body = doc.body;
+        const divBlocks: Array<{ text: string; isEmpty: boolean; alignment?: string }> = [];
+
+        Array.from(body.childNodes).forEach((node) => {
+          if (node.nodeType === 1 && (node as Element).tagName === 'DIV') {
+            const div = node as HTMLDivElement;
+            const style = div.getAttribute('style') || '';
+            const textAlignMatch = style.match(/text-align:\s*(left|center|right)/i);
+            const text = div.textContent || '';
+            const isEmpty = text.trim() === '' || div.innerHTML.trim() === '<br>' || div.innerHTML.trim() === '';
+            divBlocks.push({
+              text: isEmpty ? '' : text.trim(),
+              isEmpty,
+              alignment: textAlignMatch ? `align-${textAlignMatch[1].toLowerCase()}` : undefined
+            });
+          }
+        });
+
+        const blocksFromHTML = convertFromHTML(value);
+        let contentState = ContentState.createFromBlockArray(
+          blocksFromHTML.contentBlocks,
+          blocksFromHTML.entityMap
+        );
+
+        const blockMap = contentState.getBlockMap();
+        const blocksArray = blockMap.toArray();
+
+        const divElements = Array.from(body.childNodes).filter(
+          (node) => node.nodeType === 1 && (node as Element).tagName === 'DIV'
+        ) as HTMLDivElement[];
+
+        divElements.forEach((div, divIndex) => {
+          if (divIndex >= blocksArray.length) return;
+          const block = blocksArray[divIndex];
+          if (!block) return;
+
+          const spans = div.querySelectorAll('span[style]');
+          spans.forEach((span) => {
+            const style = span.getAttribute('style') || '';
+            const spanText = span.textContent || '';
+            if (!spanText) return;
+
+            const blockText = block.getText();
+            const textIndex = blockText.indexOf(spanText);
+            if (textIndex === -1) return;
+
+            const blockKey = block.getKey();
+            const selection = SelectionState.createEmpty(blockKey).merge({
+              anchorOffset: textIndex,
+              focusOffset: textIndex + spanText.length,
+            });
+
+            const fontSizeMatch = style.match(/font-size:\s*([^;]+)/i);
+            if (fontSizeMatch) {
+              const fontSize = fontSizeMatch[1].trim();
+              let sizeName: string | null = null;
+              for (const [name, styleProps] of Object.entries(sizeStyleMap)) {
+                if (styleProps.fontSize === fontSize) {
+                  sizeName = name;
+                  break;
+                }
+              }
+
+              if (sizeName) {
+                sizes.forEach((s) => {
+                  contentState = Modifier.removeInlineStyle(
+                    contentState,
+                    selection,
+                    `SIZE-${s}`
+                  );
+                });
+
+                contentState = Modifier.applyInlineStyle(
+                  contentState,
+                  selection,
+                  `SIZE-${sizeName}`
+                );
+              }
+            }
+
+            const colorMatch = style.match(/color:\s*([^;]+)/i);
+            if (colorMatch) {
+              const colorValue = colorMatch[1].trim();
+              let colorName: string | null = null;
+              for (const color of colors) {
+                const normalizedValue = colorValue.toLowerCase().replace(/\s/g, '');
+                const normalizedColorValue = color.value.toLowerCase().replace(/\s/g, '');
+                if (normalizedValue === normalizedColorValue) {
+                  colorName = color.value;
+                  break;
+                }
+              }
+
+              if (colorName) {
+                colors.forEach((c) => {
+                  contentState = Modifier.removeInlineStyle(
+                    contentState,
+                    selection,
+                    `COLOR-${c.value}`
+                  );
+                });
+
+                contentState = Modifier.applyInlineStyle(
+                  contentState,
+                  selection,
+                  `COLOR-${colorName}`
+                );
+              }
+            }
+          });
+        });
+
+        const blockMapForAlignment = contentState.getBlockMap();
+        const blocksArrayForAlignment = blockMapForAlignment.toArray();
+
+        let divIndex = 0;
+        let blockIndex = 0;
+
+        while (divIndex < divBlocks.length && blockIndex < blocksArrayForAlignment.length) {
+          const divBlock = divBlocks[divIndex];
+          const block = blocksArrayForAlignment[blockIndex];
+
+          if (!block) {
+            blockIndex++;
+            continue;
+          }
+
+          const blockText = block.getText().trim();
+          const isEmpty = blockText === '';
+
+          if ((isEmpty && divBlock.isEmpty) || (!isEmpty && !divBlock.isEmpty && divBlock.text === blockText)) {
+            if (divBlock.alignment) {
+              const blockKey = block.getKey();
+              const selection = SelectionState.createEmpty(blockKey).merge({
+                anchorOffset: 0,
+                focusOffset: block.getLength(),
+              });
+              contentState = Modifier.setBlockType(contentState, selection, divBlock.alignment);
+            }
+            divIndex++;
+            blockIndex++;
+          } else if (divBlock.isEmpty && !isEmpty) {
+            const blockKey = block.getKey();
+            const selection = SelectionState.createEmpty(blockKey).merge({
+              anchorOffset: 0,
+              focusOffset: 0,
+            });
+            const newContentState = Modifier.insertText(
+              contentState,
+              selection,
+              '\n'
+            );
+            const newBlockMap = newContentState.getBlockMap();
+            const newBlocksArray = newBlockMap.toArray();
+            const newBlockKey = newBlocksArray[blockIndex]?.getKey();
+            if (newBlockKey) {
+              const newSelection = SelectionState.createEmpty(newBlockKey).merge({
+                anchorOffset: 0,
+                focusOffset: 1,
+              });
+              const finalContentState = Modifier.setBlockType(
+                newContentState,
+                newSelection,
+                divBlock.alignment || 'unstyled'
+              );
+              contentState = finalContentState;
+              const reUpdatedBlockMap = contentState.getBlockMap();
+              const reUpdatedBlocksArray = reUpdatedBlockMap.toArray();
+              blocksArrayForAlignment.length = 0;
+              blocksArrayForAlignment.push(...reUpdatedBlocksArray);
+              divIndex++;
+            } else {
+              divIndex++;
+            }
+          } else {
+            blockIndex++;
+          }
+        }
+
+        while (divIndex < divBlocks.length) {
+          const divBlock = divBlocks[divIndex];
+          if (divBlock.isEmpty) {
+            const lastBlock = contentState.getBlockMap().last();
+            if (lastBlock) {
+              const lastBlockKey = lastBlock.getKey();
+              const selection = SelectionState.createEmpty(lastBlockKey).merge({
+                anchorOffset: lastBlock.getLength(),
+                focusOffset: lastBlock.getLength(),
+              });
+              const newContentState = Modifier.insertText(
+                contentState,
+                selection,
+                '\n'
+              );
+              const newBlockMap = newContentState.getBlockMap();
+              const newBlocksArray = newBlockMap.toArray();
+              const newBlockKey = newBlocksArray[newBlocksArray.length - 1]?.getKey();
+              if (newBlockKey) {
+                const newSelection = SelectionState.createEmpty(newBlockKey).merge({
+                  anchorOffset: 0,
+                  focusOffset: 1,
+                });
+                const finalContentState = Modifier.setBlockType(
+                  newContentState,
+                  newSelection,
+                  divBlock.alignment || 'unstyled'
+                );
+                contentState = finalContentState;
+              }
+            }
+          }
+          divIndex++;
+        }
+
+        const decorator = new CompositeDecorator([
+          {
+            strategy: findLinkEntities,
+            component: LinkComponent,
+          },
+        ]);
+        const newEditorState = EditorState.createWithContent(contentState, decorator);
+        setEditorState(newEditorState);
+        lastOutputHtmlRef.current = value;
+      } catch (error) {
+        console.error("Error updating editor from HTML:", error);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, isInitialized]);
@@ -622,6 +866,7 @@ export function WysiwygEditor({
   const handleChange = (newEditorState: EditorState) => {
     setEditorState(newEditorState);
     const html = convertEditorStateToHtml(newEditorState);
+    lastOutputHtmlRef.current = html; // エディターから出力されたHTMLを記録
     onChange(html);
   };
 
@@ -1250,7 +1495,10 @@ export function WysiwygEditor({
       </div>
 
       {/* エディタ */}
-      <div className="wysiwyg-editor-content">
+      <div
+        className="wysiwyg-editor-content"
+        onKeyDown={onKeyDown}
+      >
         <Editor
           ref={editorRef}
           editorState={editorState}
