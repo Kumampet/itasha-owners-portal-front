@@ -375,9 +375,9 @@ export default function MyPage() {
                     <LinkCard href="/app/notification-settings" className="hover:-translate-y-0.5 hover:shadow-md">
                         <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
                             {/* 通知設定アイコン */}
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-zinc-100 sm:mb-3 sm:h-14 sm:w-14">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 sm:mb-3 sm:h-14 sm:w-14">
                                 <svg
-                                    className="h-6 w-6 text-zinc-900 sm:h-7 sm:w-7"
+                                    className="h-6 w-6 text-amber-600 sm:h-7 sm:w-7"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
