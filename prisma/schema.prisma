@@ -1,78 +1,47 @@
-// Prisma 7では、datasource.urlはprisma.config.tsで設定します
-datasource db {
-  provider = "mysql"
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-// ユーザー情報
+datasource db {
+  provider = "mysql"
+}
+
 model User {
-  // MySQLではUUIDに対応するデータ型を明示的に指定
-  id            String    @id @default(uuid()) @map("id") @db.VarChar(36) // UUIDは通常VARCHAR(36)を使用
-  email         String    @unique
-  emailVerified DateTime?
-  name          String?
-  display_name  String? // 表示名（ニックネーム、任意）
-  image         String?
-  is_banned     Boolean   @default(false)
-  role          String    @default("USER") // USER, ADMIN, ORGANIZER
-
-  // 公開プロフィール設定
-  is_profile_public  Boolean @default(false)
-  custom_profile_url String? @unique // 例: /user/itasha_taro
-
-  // 管理画面用パスワード（ハッシュ化済み、通常ユーザーはnull）
-  password String? @db.VarChar(255)
-
-  // 初回ログイン時にパスワード変更を強制するフラグ
-  must_change_password Boolean @default(false)
-
-  // MySQLではDateTimeの代わりにDateTimeTzを使用しないため、@db.DateTime(6) などで精度を指定できますが、
-  // デフォルトのままにしておきます。
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  deleted_at DateTime? // 論理削除用（nullの場合は削除されていない）
-
-  // NextAuth.js用のリレーション
-  accounts Account[]
-  sessions Session[]
-
-  // リレーション
-  events_participating UserEvent[] // 参加/フォローしているイベント
-  groups_leading       Group[]            @relation("GroupLeader") // リーダーを務める団体
-  group_messages       GroupMessage[]     @relation("GroupMessageSender") // 団体メッセージの履歴
-  group_message_reads  GroupMessageRead[] @relation("GroupMessageReadUser") // 団体メッセージの既読情報
-  group_message_reactions GroupMessageReaction[] @relation("GroupMessageReactionUser") // 団体メッセージのリアクション
-  event_follows        EventFollow[] // フォローしているイベント
-  user_groups          UserGroup[] // 参加している団体（複数対応）
-
-  // 登録したイベントのリスト（イベントを登録したアカウント）
-  events_created Event[] @relation("EventCreator")
-
-  // 情報提供フォーム
-  event_submissions EventSubmission[]
-
-  // お問い合わせフォーム
-  contact_submissions ContactSubmission[]
-
-  // オーガナイザー登録申請
-  organizer_applications OrganizerApplication[]
-
-  // リマインダー
-  reminders Reminder[]
-
-  // 通知設定
-  notification_settings UserNotificationSettings?
-
-  // Push通知サブスクリプション
-  push_subscriptions PushSubscription[]
+  id                      String                    @id @default(uuid()) @map("id") @db.VarChar(36)
+  email                   String?                   @unique
+  is_banned               Boolean                   @default(false)
+  role                    String                    @default("USER")
+  is_profile_public       Boolean                   @default(false)
+  custom_profile_url      String?                   @unique
+  created_at              DateTime                  @default(now())
+  updated_at              DateTime                  @updatedAt
+  emailVerified           DateTime?
+  image                   String?
+  name                    String?
+  password                String?                   @db.VarChar(255)
+  must_change_password    Boolean                   @default(false)
+  display_name            String?
+  deleted_at              DateTime?
+  accounts                Account[]
+  contact_submissions     ContactSubmission[]
+  event_follows           EventFollow[]
+  event_submissions       EventSubmission[]
+  events_created          Event[]                   @relation("EventCreator")
+  group_message_reactions GroupMessageReaction[]    @relation("GroupMessageReactionUser")
+  group_message_reads     GroupMessageRead[]        @relation("GroupMessageReadUser")
+  group_messages          GroupMessage[]            @relation("GroupMessageSender")
+  groups_leading          Group[]                   @relation("GroupLeader")
+  organizer_applications  OrganizerApplication[]
+  push_subscriptions      PushSubscription[]
+  reminders               Reminder[]
+  sessions                Session[]
+  events_participating    UserEvent[]
+  user_groups             UserGroup[]
+  notification_settings   UserNotificationSettings?
 
   @@map("users")
 }
 
-// NextAuth.js用のAccountモデル
 model Account {
   id                String  @id @default(uuid()) @db.VarChar(36)
   userId            String  @db.VarChar(36)
@@ -86,14 +55,13 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId], map: "accounts_userId_fkey")
   @@map("accounts")
 }
 
-// NextAuth.js用のSessionモデル
 model Session {
   id           String   @id @default(uuid()) @db.VarChar(36)
   sessionToken String   @unique
@@ -101,10 +69,10 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId], map: "sessions_userId_fkey")
   @@map("sessions")
 }
 
-// NextAuth.js用のVerificationTokenモデル
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -114,136 +82,98 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-// イベント情報 (マスターデータ)
 model Event {
-  id          String @id @default(uuid()) @db.VarChar(36)
-  name        String
-  // イベント概要文（必須、最大200文字）
-  description String @db.VarChar(200)
+  id                     String        @id @default(uuid()) @db.VarChar(36)
+  name                   String
+  description            String        @db.VarChar(200)
+  event_date             DateTime
+  approval_status        String        @default("DRAFT")
+  created_at             DateTime      @default(now())
+  updated_at             DateTime      @updatedAt
+  city                   String?
+  postal_code            String?
+  prefecture             String?
+  street_address         String?
+  venue_name             String?
+  event_end_date         DateTime?
+  image_url              String?       @db.VarChar(500)
+  is_multi_day           Boolean       @default(false)
+  keywords               Json?
+  official_urls          Json
+  payment_methods        Json?
+  created_by_user_id     String?       @db.VarChar(36)
+  entry_selection_method String        @default("FIRST_COME")
+  max_participants       Int?
+  entries                EventEntry[]
+  followers              EventFollow[]
+  tags                   EventTag[]
+  created_by_user        User?         @relation("EventCreator", fields: [created_by_user_id], references: [id])
+  groups                 Group[]
+  reminders              Reminder[]
+  participants           UserEvent[]
+  user_groups            UserGroup[]
 
-  // 開催日情報
-  event_date     DateTime // 開催日（必須）
-  is_multi_day   Boolean   @default(false) // 複数日開催フラグ
-  event_end_date DateTime? // 終了日（複数日開催の場合必須）
-
-  // 開催地（住所）情報
-  postal_code    String? // 郵便番号（任意）
-  prefecture     String? // 都道府県（必須）
-  city           String? // 市区町村（必須）
-  street_address String? // 番地（必須）
-  venue_name     String? // 固有会場名（任意）
-
-  // キーワードタグ（任意、配列で格納）
-  keywords Json? @db.Json // ["キーワード1", "キーワード2", ...]
-
-  // 公式サイトURL（1個以上必須、配列で保持）
-  official_urls Json @db.Json // ["https://example.com", ...]
-
-  // 支払方法（任意）
-  payment_methods Json? @db.Json // { bank_transfer: boolean, credit_card: boolean, cash_on_day: boolean, other_cashless: boolean, other_cashless_text?: string }
-
-  // エントリー決定方法（必須）
-  entry_selection_method String @default("FIRST_COME") // "FIRST_COME" | "LOTTERY" | "SELECTION"
-
-  // 参加可能台数（任意）
-  max_participants Int? // 参加可能台数
-
-  // イメージ画像（任意、16:9推奨）
-  image_url String? @db.VarChar(500)
-
-  // 承認ステータス (DRAFT, PENDING, APPROVED, REJECTED)
-  // DRAFT: 下書き（未公開）、PENDING: 承認待ち、APPROVED: 承認済み、REJECTED: 却下
-  approval_status String @default("DRAFT")
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  // イベント登録者（イベントを登録したアカウント、変更不可、フロントには表示しない）
-  created_by_user    User?   @relation("EventCreator", fields: [created_by_user_id], references: [id])
-  created_by_user_id String? @db.VarChar(36)
-
-  participants UserEvent[]
-  groups       Group[]
-  user_groups  UserGroup[] // ユーザーと団体の参加関係
-  tags         EventTag[]
-  followers    EventFollow[]
-  reminders    Reminder[]
-  entries      EventEntry[] // エントリー情報（複数対応）
-
-  // パフォーマンス最適化のためのインデックス
   @@index([event_date])
   @@index([approval_status])
-  @@index([event_date, approval_status]) // 複合インデックス（よく使われるクエリパターン）
+  @@index([event_date, approval_status])
+  @@index([created_by_user_id], map: "events_created_by_user_id_fkey")
   @@map("events")
 }
 
-// エントリー情報（一次、二次、三次...最大五次まで）
 model EventEntry {
-  id       String @id @default(uuid()) @db.VarChar(36)
-  event    Event  @relation(fields: [event_id], references: [id], onDelete: Cascade)
-  event_id String @db.VarChar(36)
-
-  // エントリー番号（1次、2次、3次...）
-  entry_number Int // 1, 2, 3, 4, 5
-
-  // エントリー開始日（必須）
-  entry_start_at DateTime
-
-  // エントリー開始日公開日時（任意、未入力時即時公開）
-  entry_start_public_at DateTime?
-
-  // エントリー締切日（任意、エントリー開始日公開日時と同時公開）
-  entry_deadline_at DateTime?
-
-  // 支払期限タイプ（ABSOLUTE: 絶対値, RELATIVE: エントリー申し込みからn日以内）
-  payment_due_type String @default("ABSOLUTE") // "ABSOLUTE" | "RELATIVE"
-
-  // 支払期限日時（絶対値の場合、payment_due_typeがABSOLUTEの時は必須）
-  payment_due_at DateTime?
-
-  // 支払期限日数（相対値の場合、エントリー申し込みからn日以内、payment_due_typeがRELATIVEの時は必須）
+  id                           String    @id @default(uuid()) @db.VarChar(36)
+  event_id                     String    @db.VarChar(36)
+  entry_number                 Int
+  entry_start_at               DateTime
+  entry_start_public_at        DateTime?
+  entry_deadline_at            DateTime?
+  payment_due_at               DateTime?
+  payment_due_public_at        DateTime?
+  created_at                   DateTime  @default(now())
+  updated_at                   DateTime  @updatedAt
   payment_due_days_after_entry Int?
+  payment_due_type             String    @default("ABSOLUTE")
+  event                        Event     @relation(fields: [event_id], references: [id], onDelete: Cascade)
 
-  // 支払期限日時公開日時（任意、未入力時即時公開）
-  payment_due_public_at DateTime?
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  @@unique([event_id, entry_number]) // 同一イベント内でエントリー番号はユニーク
+  @@unique([event_id, entry_number])
   @@map("event_entries")
 }
 
-// ユーザーとイベントの参加・フォロー状況 (User_Events Tableを代替)
 model UserEvent {
-  user     User   @relation(fields: [user_id], references: [id])
-  user_id  String @db.VarChar(36)
-  event    Event  @relation(fields: [event_id], references: [id])
-  event_id String @db.VarChar(36)
-
-  // ユーザーがどの併せ（団体）に参加しているかを示すID (Optional)
-  group    Group?  @relation(fields: [group_id], references: [id])
-  group_id String? @db.VarChar(36)
-
-  // 参加ステータス (INTERESTED, REGISTERED, PAID, ATTENDED)
-  status String @default("INTERESTED")
-
-  // プッシュ通知のサブスクリプション情報 (FCMトークンなど)
-  // MySQLではネイティブなJSON型を使用
+  user_id           String   @db.VarChar(36)
+  event_id          String   @db.VarChar(36)
+  group_id          String?  @db.VarChar(36)
+  status            String   @default("INTERESTED")
   push_subscription Json?
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  event             Event    @relation(fields: [event_id], references: [id])
+  group             Group?   @relation(fields: [group_id], references: [id])
+  user              User     @relation(fields: [user_id], references: [id])
 
   @@id([user_id, event_id])
+  @@index([event_id], map: "user_events_event_id_fkey")
+  @@index([group_id], map: "user_events_group_id_fkey")
   @@map("user_events")
 }
 
-// 団体情報 (併せ)
 model Group {
-  id       String @id @default(uuid()) @db.VarChar(36)
-  event    Event  @relation(fields: [event_id], references: [id])
-  event_id String @db.VarChar(36)
+  id                String         @id @default(uuid()) @db.VarChar(36)
+  event_id          String         @db.VarChar(36)
+  name              String
+  theme             String?
+  max_members       Int?
+  leader_user_id    String         @db.VarChar(36)
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @updatedAt
+  group_code        String         @unique @db.VarChar(8)
+  owner_note        String?        @db.Text
+  group_description String?        @db.Text
+  messages          GroupMessage[]
+  event             Event          @relation(fields: [event_id], references: [id])
+  leader            User           @relation("GroupLeader", fields: [leader_user_id], references: [id])
+  members           UserEvent[]
+  user_groups       UserGroup[]
 
   name        String
   theme       String?
@@ -271,42 +201,34 @@ model Group {
   messages GroupMessage[]
 
   @@unique([event_id, name]) // 同一イベント内で団体名はユニーク
+  @@index([leader_user_id], map: "groups_leader_user_id_fkey")
   @@map("groups")
 }
 
-// 団体メッセージ (一斉連絡/掲示板)
 model GroupMessage {
-  id        String @id @default(uuid()) @db.VarChar(36)
-  group     Group  @relation(fields: [group_id], references: [id])
-  group_id  String @db.VarChar(36)
-  sender    User   @relation("GroupMessageSender", fields: [sender_id], references: [id])
-  sender_id String @db.VarChar(36)
+  id              String                 @id @default(uuid()) @db.VarChar(36)
+  group_id        String                 @db.VarChar(36)
+  sender_id       String                 @db.VarChar(36)
+  content         String                 @db.Text
+  is_announcement Boolean                @default(false)
+  created_at      DateTime               @default(now())
+  reactions       GroupMessageReaction[]
+  reads           GroupMessageRead[]
+  group           Group                  @relation(fields: [group_id], references: [id])
+  sender          User                   @relation("GroupMessageSender", fields: [sender_id], references: [id])
 
-  content String @db.Text // MySQLのTEXT型
-
-  // trueの場合、SESによるメール通知も行う (一斉連絡フラグ)
-  is_announcement Boolean @default(false)
-
-  created_at DateTime @default(now())
-
-  // 既読情報
-  reads GroupMessageRead[]
-
-  // リアクション情報
-  reactions GroupMessageReaction[]
-
+  @@index([group_id], map: "group_messages_group_id_fkey")
+  @@index([sender_id], map: "group_messages_sender_id_fkey")
   @@map("group_messages")
 }
 
-// 団体メッセージの既読管理
 model GroupMessageRead {
   id         String       @id @default(uuid()) @db.VarChar(36)
-  message    GroupMessage @relation(fields: [message_id], references: [id], onDelete: Cascade)
   message_id String       @db.VarChar(36)
-  user       User         @relation("GroupMessageReadUser", fields: [user_id], references: [id], onDelete: Cascade)
   user_id    String       @db.VarChar(36)
-
-  read_at DateTime @default(now())
+  read_at    DateTime     @default(now())
+  message    GroupMessage @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  user       User         @relation("GroupMessageReadUser", fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([message_id, user_id])
   @@index([user_id])
@@ -314,226 +236,168 @@ model GroupMessageRead {
   @@map("group_message_reads")
 }
 
-// 団体メッセージのリアクション
 model GroupMessageReaction {
   id         String       @id @default(uuid()) @db.VarChar(36)
-  message    GroupMessage @relation(fields: [message_id], references: [id], onDelete: Cascade)
   message_id String       @db.VarChar(36)
-  user       User         @relation("GroupMessageReactionUser", fields: [user_id], references: [id], onDelete: Cascade)
   user_id    String       @db.VarChar(36)
-  emoji      String       @db.VarChar(10) // 絵文字（Unicode文字列、最大10文字）
+  emoji      String       @db.VarChar(10)
+  created_at DateTime     @default(now())
+  message    GroupMessage @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  user       User         @relation("GroupMessageReactionUser", fields: [user_id], references: [id], onDelete: Cascade)
 
-  created_at DateTime @default(now())
-
-  @@unique([message_id, user_id, emoji]) // 同一ユーザーは同じメッセージに同じ絵文字を1つだけ付けられる
+  @@unique([message_id, user_id, emoji])
   @@index([message_id])
   @@index([user_id])
   @@map("group_message_reactions")
 }
 
-// タグマスター
 model Tag {
-  id          String @id @default(uuid()) @db.VarChar(36)
-  name        String @unique
-  usage_count Int    @default(1)
-
-  // リレーション
-  events EventTag[]
+  id          String     @id @default(uuid()) @db.VarChar(36)
+  name        String     @unique
+  usage_count Int        @default(1)
+  events      EventTag[]
 
   @@map("tags")
 }
 
-// イベント-タグ紐付け
 model EventTag {
-  event    Event  @relation(fields: [event_id], references: [id])
-  event_id String @db.VarChar(36)
-  tag      Tag    @relation(fields: [tag_id], references: [id])
-  tag_id   String @db.VarChar(36)
-
+  event_id   String   @db.VarChar(36)
+  tag_id     String   @db.VarChar(36)
   created_at DateTime @default(now())
+  event      Event    @relation(fields: [event_id], references: [id])
+  tag        Tag      @relation(fields: [tag_id], references: [id])
 
   @@id([event_id, tag_id])
+  @@index([tag_id], map: "event_tags_tag_id_fkey")
   @@map("event_tags")
 }
 
-// イベントのフォロー (SNS要素ではない、単なるリマインダーリスト)
 model EventFollow {
-  user     User   @relation(fields: [user_id], references: [id])
-  user_id  String @db.VarChar(36)
-  event    Event  @relation(fields: [event_id], references: [id])
-  event_id String @db.VarChar(36)
-
+  user_id     String   @db.VarChar(36)
+  event_id    String   @db.VarChar(36)
   followed_at DateTime @default(now())
+  event       Event    @relation(fields: [event_id], references: [id])
+  user        User     @relation(fields: [user_id], references: [id])
 
   @@id([user_id, event_id])
+  @@index([event_id], map: "event_follows_event_id_fkey")
   @@map("event_follows")
 }
 
-// ユーザーからのイベント情報提供
 model EventSubmission {
-  id String @id @default(uuid()) @db.VarChar(36)
+  id              String    @id @default(uuid()) @db.VarChar(36)
+  submitter_id    String?   @db.VarChar(36)
+  submitter_email String?
+  name            String
+  theme           String?
+  description     String?   @db.Text
+  original_url    String?
+  event_date      DateTime?
+  entry_start_at  DateTime?
+  payment_due_at  DateTime?
+  status          String    @default("PENDING")
+  admin_note      String?   @db.Text
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  submitter       User?     @relation(fields: [submitter_id], references: [id])
 
-  // 提供者情報（未ログインの場合はnull）
-  submitter       User?   @relation(fields: [submitter_id], references: [id])
-  submitter_id    String? @db.VarChar(36)
-  submitter_email String? // 未ログインの場合のメールアドレス
-
-  // イベント情報
-  name           String
-  original_url   String? // イベント情報URL（HPやSNS等）（推奨・任意）
-  event_date     DateTime? // 開催日（任意）
-  description    String?   @db.Text // その他備考欄
-  theme          String? // 旧フィールド（後方互換性のため残す）
-  entry_start_at DateTime? // 旧フィールド（後方互換性のため残す）
-  payment_due_at DateTime? // 旧フィールド（後方互換性のため残す）
-
-  // 処理ステータス (PENDING, PROCESSED, REJECTED)
-  status String @default("PENDING")
-
-  // 処理メモ（管理者が記入）
-  admin_note String? @db.Text
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
+  @@index([submitter_id], map: "event_submissions_submitter_id_fkey")
   @@map("event_submissions")
 }
 
-// リマインダー
 model Reminder {
-  id       String  @id @default(uuid()) @db.VarChar(36)
-  user     User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  user_id  String  @db.VarChar(36)
-  event    Event?  @relation(fields: [event_id], references: [id], onDelete: Cascade)
-  event_id String? @db.VarChar(36)
-
-  // リマインダーの種類（将来の仕様変更に対応するため、JSONで柔軟に保存）
-  // 例: {"type": "entry_start", "datetime": "2025-01-01T00:00:00Z", "label": "エントリー開始"}
-  reminder_data Json @db.Json
-
-  // 備考（任意）
-  note String? @db.Text
-
-  // 通知送信済みフラグ
-  notified Boolean @default(false)
-
-  // 通知送信日時
-  notified_at DateTime?
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id            String    @id @default(uuid()) @db.VarChar(36)
+  user_id       String    @db.VarChar(36)
+  event_id      String?   @db.VarChar(36)
+  reminder_data Json
+  notified      Boolean   @default(false)
+  notified_at   DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  note          String?   @db.Text
+  event         Event?    @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id, event_id])
+  @@index([event_id], map: "reminders_event_id_fkey")
   @@map("reminders")
 }
 
-// ユーザー通知設定
 model UserNotificationSettings {
-  id      String @id @default(uuid()) @db.VarChar(36)
-  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  user_id String @unique @db.VarChar(36)
-
-  // ブラウザ通知を有効にするか
-  browser_notification_enabled Boolean @default(false)
-
-  // メール通知を有効にするか
-  email_notification_enabled Boolean @default(false)
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id                                        String   @id @default(uuid()) @db.VarChar(36)
+  user_id                                   String   @unique @db.VarChar(36)
+  browser_notification_enabled              Boolean  @default(false)
+  email_notification_enabled                Boolean  @default(true)
+  created_at                                DateTime @default(now())
+  updated_at                                DateTime @updatedAt
+  group_message_unread_notification_enabled Boolean  @default(true)
+  user                                      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("user_notification_settings")
 }
 
-// Push通知サブスクリプション
 model PushSubscription {
-  id      String @id @default(uuid()) @db.VarChar(36)
-  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  user_id String @db.VarChar(36)
-
-  // Push通知のエンドポイントURL
-  endpoint String @db.VarChar(500)
-
-  // Push通知のキー（Base64エンコードされた文字列）
-  p256dh String @db.Text
-  auth   String @db.Text
-
+  id         String   @id @default(uuid()) @db.VarChar(36)
+  user_id    String   @db.VarChar(36)
+  endpoint   String   @db.VarChar(500)
+  p256dh     String   @db.Text
+  auth       String   @db.Text
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, endpoint])
   @@index([user_id])
   @@map("push_subscriptions")
 }
 
-// お問い合わせフォーム
 model ContactSubmission {
-  id String @id @default(uuid()) @db.VarChar(36)
+  id           String   @id @default(uuid()) @db.VarChar(36)
+  submitter_id String?  @db.VarChar(36)
+  title        String   @db.VarChar(255)
+  name         String   @db.VarChar(100)
+  email        String   @db.VarChar(255)
+  content      String   @db.Text
+  status       String   @default("PENDING")
+  admin_note   String?  @db.Text
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  submitter    User?    @relation(fields: [submitter_id], references: [id])
 
-  // 提供者情報（未ログインの場合はnull）
-  submitter    User?   @relation(fields: [submitter_id], references: [id])
-  submitter_id String? @db.VarChar(36)
-
-  // お問い合わせ情報
-  title   String @db.VarChar(255) // タイトル
-  name    String @db.VarChar(100) // お名前（ニックネーム可）
-  email   String @db.VarChar(255) // メールアドレス
-  content String @db.Text // お問い合わせ内容（長文）
-
-  // 処理ステータス (PENDING: 未処理, PROCESSING: 処理中, RESOLVED: 対応済)
-  status String @default("PENDING")
-
-  // 処理メモ（管理者が記入）
-  admin_note String? @db.Text
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
+  @@index([submitter_id], map: "contact_submissions_submitter_id_fkey")
   @@map("contact_submissions")
 }
 
-// オーガナイザー登録申請
 model OrganizerApplication {
-  id String @id @default(uuid()) @db.VarChar(36)
+  id           String   @id @default(uuid()) @db.VarChar(36)
+  applicant_id String?  @db.VarChar(36)
+  display_name String   @db.VarChar(100)
+  email        String   @db.VarChar(255)
+  experience   String   @db.Text
+  status       String   @default("PENDING")
+  admin_note   String?  @db.Text
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  applicant    User?    @relation(fields: [applicant_id], references: [id])
 
-  // 申請者情報（未ログインの場合はnull）
-  applicant    User?   @relation(fields: [applicant_id], references: [id])
-  applicant_id String? @db.VarChar(36)
-
-  // 申請情報
-  display_name String @db.VarChar(100) // 表示名
-  email        String @db.VarChar(255) // メールアドレス
-  experience   String @db.Text // 歴代の運営実績（無い場合は今後申請予定イベントの簡潔な説明）
-
-  // 処理ステータス (PENDING: 未処理, APPROVED: 承認済み, REJECTED: 却下)
-  status String @default("PENDING")
-
-  // 処理メモ（管理者が記入）
-  admin_note String? @db.Text
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
+  @@index([applicant_id], map: "organizer_applications_applicant_id_fkey")
   @@map("organizer_applications")
 }
 
-// ユーザーと団体の参加関係（複数団体参加対応）
 model UserGroup {
-  user     User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  user_id  String @db.VarChar(36)
-  group    Group  @relation(fields: [group_id], references: [id], onDelete: Cascade)
-  group_id String @db.VarChar(36)
-  event    Event  @relation(fields: [event_id], references: [id], onDelete: Cascade)
-  event_id String @db.VarChar(36)
-
-  // 参加ステータス (INTERESTED, REGISTERED, PAID, ATTENDED)
-  status String @default("INTERESTED")
-
+  user_id    String   @db.VarChar(36)
+  group_id   String   @db.VarChar(36)
+  event_id   String   @db.VarChar(36)
+  status     String   @default("INTERESTED")
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+  event      Event    @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  group      Group    @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@id([user_id, group_id])
   @@index([user_id, event_id])
   @@index([group_id])
+  @@index([event_id], map: "user_groups_event_id_fkey")
   @@map("user_groups")
 }

@@ -45,10 +45,16 @@ next-env.d.ts
 # docs directory
 /docs
 
-# temporary scripts
-scripts/view-users.ts
-scripts/fix-user-account.ts
-scripts/test-reminder-check.ts
+# scripts directory
+/scripts
+
+# infrastructure directory
+/infrastructure
+
+# temporary scripts (already covered by /scripts above)
+# scripts/view-users.ts
+# scripts/fix-user-account.ts
+# scripts/test-reminder-check.ts
 
 # next-pwa generated files
 # 注意: /public/sw.jsは既存のPush通知機能を含むため、コミットが必要です
@@ -58,5 +64,13 @@ scripts/test-reminder-check.ts
 /public/workbox-*.js.map
 /public/fallback-*.js.map
 
-.aws-sam/
-scripts/
+# aws sam
+/.aws-sam
+samconfig.toml
+
+# lambda build artifacts
+lambda/group-message-reminder/.prisma/
+lambda/group-message-reminder/@prisma/
+lambda/group-message-reminder/handler.js
+lambda/group-message-reminder/package-lock.json
+lambda/prisma-layer/nodejs/
