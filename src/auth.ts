@@ -284,9 +284,9 @@ const configBase: NextAuthConfig = {
                 if (existingAccount?.user) {
                   dbUser = existingAccount.user;
                   token.id = dbUser.id;
-                  token.email = dbUser.email; // トークンにもメールアドレスを保存
+                  token.email = dbUser.email || undefined; // トークンにもメールアドレスを保存
                   user.id = dbUser.id;
-                  console.log(`[JWT] Found existing Twitter user via Account: ${dbUser.id} (${dbUser.email})`);
+                  console.log(`[JWT] Found existing Twitter user via Account: ${dbUser.id} (${dbUser.email || "no email"})`);
                 }
               }
 
@@ -311,7 +311,7 @@ const configBase: NextAuthConfig = {
                   // 既存のユーザーが見つかった場合、トークンのIDを更新
                   if (dbUser) {
                     token.id = dbUser.id;
-                    token.email = dbUser.email; // トークンにもメールアドレスを保存
+                    token.email = dbUser.email || undefined; // トークンにもメールアドレスを保存
                     user.id = dbUser.id;
                   }
                 }
@@ -343,7 +343,7 @@ const configBase: NextAuthConfig = {
                 });
                 dbUser = newUser;
                 token.id = newUser.id;
-                token.email = newUser.email || null; // メールアドレスがnullの場合もトークンに保存
+                token.email = newUser.email || undefined; // メールアドレスがnullの場合もトークンに保存
                 user.id = newUser.id;
                 console.log(`[JWT] Created user in DB: ${newUser.id} (${newUser.email || "no email"})`);
 
