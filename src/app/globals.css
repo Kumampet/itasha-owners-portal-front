@@ -17,3 +17,263 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* WYSIWYGエディタ用のフォントスタイル */
+.ql-font-noto-sans-jp {
+  font-family: "Noto Sans JP", sans-serif !important;
+}
+
+.ql-font-roboto {
+  font-family: "Roboto", sans-serif !important;
+}
+
+.ql-font-open-sans {
+  font-family: "Open Sans", sans-serif !important;
+}
+
+.ql-font-lato {
+  font-family: "Lato", sans-serif !important;
+}
+
+.ql-font-montserrat {
+  font-family: "Montserrat", sans-serif !important;
+}
+
+.ql-font-playfair-display {
+  font-family: "Playfair Display", serif !important;
+}
+
+.ql-font-pacifico {
+  font-family: "Pacifico", cursive !important;
+}
+
+.ql-font-bebas-neue {
+  font-family: "Bebas Neue", sans-serif !important;
+}
+
+.ql-font-dancing-script {
+  font-family: "Dancing Script", cursive !important;
+}
+
+.ql-font-poppins {
+  font-family: "Poppins", sans-serif !important;
+}
+
+/* WYSIWYGエディタ用のサイズスタイル（rem単位で他の要素に影響しない） */
+.ql-size-極小 {
+  font-size: 0.625rem !important;
+  /* 10px相当 */
+}
+
+.ql-size-小 {
+  font-size: 0.75rem !important;
+  /* 12px相当 */
+}
+
+.ql-size-中 {
+  font-size: 0.875rem !important;
+  /* 14px相当 */
+}
+
+.ql-size-大 {
+  font-size: 1.125rem !important;
+  /* 18px相当 */
+}
+
+.ql-size-特大 {
+  font-size: 1.5rem !important;
+  /* 24px相当 */
+}
+
+/* HTML表示用のフォントスタイル（SafeHtmlContent用） */
+.group-description-content .ql-font-noto-sans-jp,
+.group-description-content [style*="font-family: 'Noto Sans JP'"],
+.group-description-content [style*='font-family: "Noto Sans JP"'] {
+  font-family: "Noto Sans JP", sans-serif !important;
+}
+
+.group-description-content .ql-font-roboto,
+.group-description-content [style*="font-family: 'Roboto'"],
+.group-description-content [style*='font-family: "Roboto"'] {
+  font-family: "Roboto", sans-serif !important;
+}
+
+.group-description-content .ql-font-open-sans,
+.group-description-content [style*="font-family: 'Open Sans'"],
+.group-description-content [style*='font-family: "Open Sans"'] {
+  font-family: "Open Sans", sans-serif !important;
+}
+
+.group-description-content .ql-font-lato,
+.group-description-content [style*="font-family: 'Lato'"],
+.group-description-content [style*='font-family: "Lato"'] {
+  font-family: "Lato", sans-serif !important;
+}
+
+.group-description-content .ql-font-montserrat,
+.group-description-content [style*="font-family: 'Montserrat'"],
+.group-description-content [style*='font-family: "Montserrat"'] {
+  font-family: "Montserrat", sans-serif !important;
+}
+
+.group-description-content .ql-font-playfair-display,
+.group-description-content [style*="font-family: 'Playfair Display'"],
+.group-description-content [style*='font-family: "Playfair Display"'] {
+  font-family: "Playfair Display", serif !important;
+}
+
+.group-description-content .ql-font-pacifico,
+.group-description-content [style*="font-family: 'Pacifico'"],
+.group-description-content [style*='font-family: "Pacifico"'] {
+  font-family: "Pacifico", cursive !important;
+}
+
+.group-description-content .ql-font-bebas-neue,
+.group-description-content [style*="font-family: 'Bebas Neue'"],
+.group-description-content [style*='font-family: "Bebas Neue"'] {
+  font-family: "Bebas Neue", sans-serif !important;
+}
+
+.group-description-content .ql-font-dancing-script,
+.group-description-content [style*="font-family: 'Dancing Script'"],
+.group-description-content [style*='font-family: "Dancing Script"'] {
+  font-family: "Dancing Script", cursive !important;
+}
+
+.group-description-content .ql-font-poppins,
+.group-description-content [style*="font-family: 'Poppins'"],
+.group-description-content [style*='font-family: "Poppins"'] {
+  font-family: "Poppins", sans-serif !important;
+}
+
+/* HTML表示用のリンクスタイル（SafeHtmlContent用） */
+.group-description-content a {
+  color: #2563eb !important;
+  /* 標準の青色 */
+  text-decoration: underline;
+}
+
+.group-description-content a:hover {
+  color: #1d4ed8 !important;
+  /* ホバー時の濃い青色 */
+  text-decoration: underline;
+}
+
+.group-description-content a:visited {
+  color: #7c3aed !important;
+  /* 訪問済みリンクの紫色 */
+}
+
+/* HTML表示用のテキストスタイル（SafeHtmlContent用） */
+/* フォントファミリーを明示的に設定（太字をサポートするフォント） */
+.group-description-content {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Roboto", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* 通常のテキストは400（normal）を維持 */
+.group-description-content * {
+  font-weight: 400;
+}
+
+/* 太字スタイル - strongタグとfont-weightが設定されている要素のみ */
+.group-description-content strong,
+.group-description-content strong * {
+  font-weight: 700 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+.group-description-content span[style*="font-weight: bold"],
+.group-description-content span[style*="font-weight:bold"],
+.group-description-content span[style*="font-weight: 700"],
+.group-description-content span[style*="font-weight:700"],
+.group-description-content div[style*="font-weight: bold"],
+.group-description-content div[style*="font-weight:bold"],
+.group-description-content div[style*="font-weight: 700"],
+.group-description-content div[style*="font-weight:700"] {
+  font-weight: 700 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* 斜体スタイル */
+.group-description-content em {
+  font-style: italic !important;
+}
+
+.group-description-content [style*="font-style: italic"],
+.group-description-content [style*="font-style:italic"] {
+  font-style: italic !important;
+}
+
+/* 下線スタイル */
+.group-description-content u {
+  text-decoration: underline !important;
+}
+
+.group-description-content [style*="text-decoration: underline"],
+.group-description-content [style*="text-decoration:underline"] {
+  text-decoration: underline !important;
+}
+
+/* 取り消し線スタイル */
+.group-description-content s {
+  text-decoration: line-through !important;
+}
+
+.group-description-content [style*="text-decoration: line-through"],
+.group-description-content [style*="text-decoration:line-through"] {
+  text-decoration: line-through !important;
+}
+
+/* リストスタイル */
+.group-description-content ul {
+  list-style-type: disc !important;
+  list-style-position: outside !important;
+  padding-left: 1.5em !important;
+  margin: 0.5em 0 !important;
+}
+
+.group-description-content ol {
+  list-style-type: decimal !important;
+  list-style-position: outside !important;
+  padding-left: 1.5em !important;
+  margin: 0.5em 0 !important;
+}
+
+.group-description-content li {
+  margin: 0.25em 0 !important;
+}
+
+/* WYSIWYGエディタコンポーネント用のスタイル */
+.wysiwyg-editor-wrapper [contenteditable][data-placeholder]:empty:before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.wysiwyg-editor-wrapper [contenteditable] a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.wysiwyg-editor-wrapper [contenteditable] a:hover {
+  color: #1d4ed8;
+}
+
+/* WYSIWYGエディタ内のリストスタイル */
+.wysiwyg-editor-wrapper [contenteditable] ul {
+  list-style-type: disc !important;
+  list-style-position: outside !important;
+  padding-left: 1.5em !important;
+  margin: 0.5em 0 !important;
+}
+
+.wysiwyg-editor-wrapper [contenteditable] ol {
+  list-style-type: decimal !important;
+  list-style-position: outside !important;
+  padding-left: 1.5em !important;
+  margin: 0.5em 0 !important;
+}
+
+.wysiwyg-editor-wrapper [contenteditable] li {
+  margin: 0.25em 0 !important;
+}
