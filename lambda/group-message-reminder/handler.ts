@@ -205,6 +205,14 @@ export const handler = async (event: Record<string, unknown>) => {
             (notificationSettings as { group_message_unread_notification_enabled?: boolean } | null)?.group_message_unread_notification_enabled ??
             true; // デフォルトはtrue
 
+          // メールアドレスがnullの場合はスキップ
+          if (!user.email) {
+            console.log(
+              `[Group Message Reminder] ⏭️ Skipping email to user ${user.id}: email is not set`
+            );
+            continue;
+          }
+
           if (
             !emailNotificationEnabled ||
             !groupMessageUnreadNotificationEnabled
