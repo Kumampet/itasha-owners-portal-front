@@ -34,14 +34,6 @@ export async function PATCH(request: Request) {
       );
     }
 
-    // 一時的なメールアドレス（@placeholder.local）でないことを確認
-    if (email.endsWith("@placeholder.local")) {
-      return NextResponse.json(
-        { error: "有効なメールアドレスを入力してください" },
-        { status: 400 }
-      );
-    }
-
     // 既存のメールアドレスとの重複チェック
     const existingUser = await prisma.user.findUnique({
       where: { email },

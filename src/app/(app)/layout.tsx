@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { DisplayNameModal } from "@/components/display-name-modal";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
+import { EmailRequiredBanner } from "@/components/email-required-banner";
 import { MenuController } from "@/components/menu-controller";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
@@ -143,7 +144,7 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
                   <p className="text-xs font-medium text-zinc-900 truncate">
                     {session.user?.name || "ユーザー"}
                   </p>
-                  {session.user?.email && (
+                  {session.user?.email && session.user.email.trim() !== "" && (
                     <p className="text-[10px] text-zinc-600 truncate">
                       {session.user.email}
                     </p>
@@ -444,6 +445,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         onLater={handleLater}
       />
       <PWAInstallBanner />
+      <EmailRequiredBanner />
     </>
   );
 }

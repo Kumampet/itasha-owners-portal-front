@@ -18,8 +18,8 @@ export default function ProfileEditPage() {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
     
-    // メールアドレスが未設定（@placeholder.localで終わる）かどうかを判定
-    const isEmailRequired = session?.user?.email?.endsWith("@placeholder.local") ?? false;
+    // メールアドレスが未設定（nullまたは空文字列）かどうかを判定
+    const isEmailRequired = !session?.user?.email || session.user.email.trim() === "";
 
     useEffect(() => {
         document.title = "プロフィール編集 | 痛車オーナーズナビ | いたなび！";
@@ -30,14 +30,12 @@ export default function ProfileEditPage() {
         if (session?.user?.displayName) {
             setDisplayName(session.user.displayName);
         }
-        if (session?.user?.email) {
-            // @placeholder.localで終わる場合は空文字列、それ以外はメールアドレスを設定
-            const userEmail = session.user.email;
-            if (userEmail.endsWith("@placeholder.local")) {
-                setEmail("");
-            } else {
-                setEmail(userEmail);
-            }
+        if (session?.user?.email && session.user.email.trim() !== "") {
+            // メールアドレスを設定
+            setEmail(session.user.email);
+        } else {
+            // メールアドレスが未設定の場合は空文字列
+            setEmail("");
         }
     }, [session?.user?.displayName, session?.user?.email]);
 
@@ -56,12 +54,6 @@ export default function ProfileEditPage() {
             // メールアドレスの形式チェック
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email.trim())) {
-                setError("有効なメールアドレスを入力してください");
-                return;
-            }
-
-            // 一時的なメールアドレスでないことを確認
-            if (email.trim().endsWith("@placeholder.local")) {
                 setError("有効なメールアドレスを入力してください");
                 return;
             }
@@ -186,7 +178,7 @@ export default function ProfileEditPage() {
                                     />
                                     {isEmailRequired && (
                                         <p className="mt-1 text-xs text-red-600">
-                                            X（Twitter）でログインした場合、メールアドレスの登録が必要です。
+                                            メールアドレスの登録が必要です。
                                         </p>
                                     )}
                                     {!isEmailRequired && session?.user?.email && (

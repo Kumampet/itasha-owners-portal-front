@@ -50,6 +50,9 @@ function GroupJoinForm() {
   const [pendingGroupCode, setPendingGroupCode] = useState<string>("");
   const [error, setError] = useState<string>("");
 
+  // メールアドレスが未設定（nullまたは空文字列）かどうかを判定
+  const isEmailRequired = !session?.user?.email || session.user.email.trim() === "";
+
   // 認証チェック：未ログインの場合はログインページにリダイレクト
   useEffect(() => {
     if (status === "loading" || hasRedirected.current) return;
@@ -205,7 +208,7 @@ function GroupJoinForm() {
               size="md"
               rounded="md"
               className="flex-1"
-              disabled={joining || groupCode.length !== 8}
+              disabled={joining || groupCode.length !== 8 || isEmailRequired}
             >
               {joining ? "加入中..." : "加入する"}
             </Button>
@@ -217,7 +220,13 @@ function GroupJoinForm() {
             </Link>
           </div>
 
-          {error && (
+          {isEmailRequired && (
+            <p className="text-xs text-red-700">
+              メールアドレスを設定してから操作してください。
+            </p>
+          )}
+
+          {error && !isEmailRequired && (
             <p className="text-xs text-red-700">
               {error}
             </p>

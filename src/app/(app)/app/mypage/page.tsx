@@ -92,8 +92,8 @@ export default function MyPage() {
     const [upcomingReminders, setUpcomingReminders] = useState<Reminder[]>([]);
     const [isLoadingReminders, setIsLoadingReminders] = useState(true);
     
-    // メールアドレスが未設定（@placeholder.localで終わる）かどうかを判定
-    const isEmailRequired = session?.user?.email?.endsWith("@placeholder.local") ?? false;
+    // メールアドレスが未設定（nullまたは空文字列）かどうかを判定
+    const isEmailRequired = !session?.user?.email || session.user.email.trim() === "";
 
     // URLパラメータに_refreshがある場合、セッションを強制的に再取得（キャッシュを無視）
     useEffect(() => {
@@ -176,7 +176,7 @@ export default function MyPage() {
                             メールアドレスの登録が必要です
                         </h2>
                         <p className="text-sm text-zinc-600 mb-4">
-                            X（Twitter）でログインした場合、メールアドレスの登録が必要です。
+                            メールアドレスの登録が必要です。
                             プロフィール編集画面でメールアドレスを設定してください。
                         </p>
                         <div className="flex gap-3">
@@ -211,8 +211,8 @@ export default function MyPage() {
                                 {session.user?.name && (
                                     <span className="font-medium">{session.user.name}</span>
                                 )}
-                                {session.user?.name && session.user?.email && !session.user.email.endsWith("@placeholder.local") && " / "}
-                                {session.user?.email && !session.user.email.endsWith("@placeholder.local") && (
+                                {session.user?.name && session.user?.email && session.user.email.trim() !== "" && " / "}
+                                {session.user?.email && session.user.email.trim() !== "" && (
                                     <span className="text-zinc-500">{session.user.email}</span>
                                 )}
                                 {isEmailRequired && (
