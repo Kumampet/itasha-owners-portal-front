@@ -175,7 +175,7 @@ model Group {
   members           UserEvent[]
   user_groups       UserGroup[]
 
-  @@unique([event_id, name])
+  @@unique([event_id, name]) // 同一イベント内で団体名はユニーク
   @@index([leader_user_id], map: "groups_leader_user_id_fkey")
   @@map("groups")
 }
