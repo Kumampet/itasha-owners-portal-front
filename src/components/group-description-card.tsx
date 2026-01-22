@@ -149,16 +149,11 @@ export function GroupDescriptionCard({
       {isEditing ? (
         <div className="mt-4 space-y-3">
           {/* WYSIWYGエディタ */}
-          <div className="border border-zinc-300 rounded-lg overflow-hidden">
-            <WysiwygEditor
-              value={editValue}
-              onChange={(value) => {
-                setEditValue(value);
-              }}
-              placeholder="団体説明を入力してください..."
-              disabled={saving}
-            />
-          </div>
+          <WysiwygEditor
+            value={editValue}
+            onChange={setEditValue}
+            placeholder="団体説明を入力してください..."
+          />
 
           <div className="flex justify-end gap-2">
             <Button
