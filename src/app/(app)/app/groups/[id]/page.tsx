@@ -437,9 +437,9 @@ export default function GroupDetailPage({
         throw new Error(errorData.error || "団体からの脱退に失敗しました");
       }
 
+      // 団体情報を再取得してUIを更新
+      await fetchGroup();
       showSnackbar("団体を抜けました", "success");
-      // 団体詳細画面に遷移（抜けた後なので未ログインでも見れる状態になる）
-      router.push(`/app/groups/${id}`);
     } catch (error) {
       console.error("Failed to leave group:", error);
       const errorMessage = error instanceof Error ? error.message : "団体からの脱退に失敗しました";
