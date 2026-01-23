@@ -16,6 +16,11 @@ import { GroupDescriptionCard } from "@/components/group-description-card";
 import { MemberActionMenu } from "@/components/member-action-menu";
 import { GroupJoinWarningModal } from "@/components/group-join-warning-modal";
 import { useSnackbar } from "@/contexts/snackbar-context";
+import { OwnerBadge } from "../_components/owner-badge";
+import { GroupContents } from "../_components/group-contents";
+import { GroupMembers } from "../_components/group-members";
+import { GroupMessage } from "../_components/group-message";
+import { GroupSettings } from "../_components/group-settings";
 
 type GroupDetail = {
   id: string;
@@ -86,7 +91,7 @@ export default function GroupDetailPage({
   const { showSnackbar } = useSnackbar();
   const [group, setGroup] = useState<GroupDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"info" | "members" | "messages">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "members" | "messages" | "settings">("info");
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [messageContent, setMessageContent] = useState("");
@@ -591,24 +596,36 @@ export default function GroupDetailPage({
     }
   }, [session, group, isMember, joining, searchParams, router, handleJoin]);
 
-  return (
-    <main className="flex-1">
-      <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-        {loading ? (
+  if (loading) {
+    return (
+      <main className="flex-1">
+        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
           <div className="flex items-center justify-center py-12">
             <LoadingSpinner size="lg" />
           </div>
-        ) : !group ? (
+        </section>
+      </main>
+    );
+  } else if (!group) {
+    return (
+      <main className="flex-1">
+        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
           <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center">
             <p className="text-sm text-zinc-600">団体が見つかりません</p>
             <Link
               href="/app/groups"
-              className="mt-4 inline-block text-sm text-emerald-600 hover:text-emerald-700"
+              className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
             >
-              団体一覧に戻る
+              ← 団体一覧に戻る
             </Link>
           </div>
-        ) : (
+        </section>
+      </main>
+    );
+  } else {
+    return (
+      <main className="flex-1">
+        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
           <>
             <header className="space-y-2">
               <div className="flex items-start justify-between gap-4">
@@ -624,11 +641,7 @@ export default function GroupDetailPage({
                       <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
                         {group.name}
                       </h1>
-                      {group.isLeader && (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                          オーナー
-                        </span>
-                      )}
+                      {group.isLeader && <OwnerBadge />}
                     </div>
                     {group.theme && (
                       <p className="mt-1 text-xs text-zinc-600 sm:text-sm">{group.theme}</p>
@@ -638,45 +651,6 @@ export default function GroupDetailPage({
                     </p>
                   </div>
                 </div>
-                {isLoggedIn && (
-                  <div className="flex flex-col gap-2">
-                    {group.isLeader ? (
-                      <>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          rounded="md"
-                          onClick={() => setShowDisbandModal(true)}
-                          disabled={processing}
-                          className="whitespace-nowrap"
-                        >
-                          解散する
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          rounded="md"
-                          onClick={() => setShowTransferModal(true)}
-                          disabled={processing}
-                          className="whitespace-nowrap"
-                        >
-                          オーナー権限譲渡
-                        </Button>
-                      </>
-                    ) : isMember ? (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        rounded="md"
-                        onClick={() => setShowLeaveModal(true)}
-                        disabled={processing}
-                        className="whitespace-nowrap"
-                      >
-                        団体を抜ける
-                      </Button>
-                    ) : null}
-                  </div>
-                )}
               </div>
             </header>
 
@@ -703,218 +677,75 @@ export default function GroupDetailPage({
                   団体メッセージ
                 </Tab>
               )}
+              {isLoggedIn && (
+                <Tab
+                  isActive={activeTab === "settings"}
+                  onClick={() => setActiveTab("settings")}
+                >
+                  設定
+                </Tab>
+              )}
             </Tabs>
 
             {/* タブコンテンツ */}
             {activeTab === "info" ? (
-              <div className="space-y-4">
-                <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
-                  <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
-                    団体コード
-                  </h2>
-                  <p className="mt-2 text-2xl font-mono font-semibold text-zinc-900">
-                    {group.groupCode}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    このコードを共有することで、他のメンバーがこの団体に加入できます。
-                  </p>
-                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-                    {!isMember && (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        rounded="md"
-                        onClick={() => handleJoin(false)}
-                        disabled={joining}
-                        className="whitespace-nowrap"
-                      >
-                        {joining ? "加入中..." : "加入する"}
-                      </Button>
-                    )}
-                    <GroupInviteLinkCopyButton groupCode={group.groupCode} />
-                  </div>
-                </section>
-
-                <GroupDescriptionCard
-                  groupId={group.id}
-                  groupDescription={group.groupDescription}
-                  isLeader={group.isLeader}
-                  onUpdate={fetchGroup}
-                />
-
-                <GroupOwnerNoteCard
-                  groupId={group.id}
-                  ownerNote={group.ownerNote}
-                  isLeader={group.isLeader}
-                  onUpdate={fetchGroup}
-                />
-              </div>
+              <GroupContents
+                group={{
+                  id: group.id,
+                  groupCode: group.groupCode,
+                  groupDescription: group.groupDescription,
+                  ownerNote: group.ownerNote,
+                  isLeader: group.isLeader,
+                }}
+                isMember={isMember}
+                joining={joining}
+                onJoin={handleJoin}
+                onUpdate={fetchGroup}
+              />
             ) : activeTab === "members" ? (
-              <div className="space-y-4">
-                <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
-                  <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
-                    メンバー一覧
-                  </h2>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    メンバー: {group.memberCount}
-                    {group.maxMembers && ` / ${group.maxMembers}人`}
-                  </p>
-                  <div className="mt-4 space-y-2 overflow-visible">
-                    {group.members.map((member) => {
-                      const isCurrentUser = member.id === session?.user?.id;
-                      const isLeader = group.isLeader;
-                      const canRemove = isLeader && member.id !== group.leader.id && !isCurrentUser;
-                      return (
-                        <div
-                          key={member.id}
-                          className={`relative flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 p-3 overflow-x-visible ${isCurrentUser && "overflow-hidden"}`}
-                        >
-                          {isCurrentUser && (
-                            <div className="absolute -left-4 top-1.5 w-16 bg-emerald-500 text-white text-[10px] font-semibold py-0.5 text-center transform -rotate-45 shadow-md">
-                              You
-                            </div>
-                          )}
-                          <div className={isCurrentUser ? "pl-6" : ""}>
-                            <p className="text-sm font-medium text-zinc-900">
-                              {member.displayName || member.name || "名前未設定"}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {member.id === group.leader.id && (
-                              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                                オーナー
-                              </span>
-                            )}
-                            {canRemove && (
-                              <MemberActionMenu
-                                onRemoveClick={() => {
-                                  setTargetMemberId(member.id);
-                                  setShowRemoveMemberModal(true);
-                                }}
-                              />
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              </div>
+              <GroupMembers
+                group={{
+                  memberCount: group.memberCount,
+                  maxMembers: group.maxMembers,
+                  isLeader: group.isLeader,
+                  leader: group.leader,
+                  members: group.members,
+                }}
+                currentUserId={session?.user?.id}
+                onRemoveClick={(memberId) => {
+                  setTargetMemberId(memberId);
+                  setShowRemoveMemberModal(true);
+                }}
+              />
             ) : activeTab === "messages" && isLoggedIn ? (
-              <div className="flex flex-col h-[calc(100vh-280px)] min-h-[400px] sm:h-[calc(100vh-300px)] sm:min-h-[500px] overflow-hidden">
-                {/* メッセージ一覧（スクロール可能） */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3 pb-24 sm:pb-4" data-messages-container>
-                  {messagesLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <LoadingSpinner size="md" />
-                    </div>
-                  ) : messages.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-zinc-500">
-                      まだメッセージがありません
-                    </p>
-                  ) : (
-                    // メッセージを表示（古い順）
-                    messages.map((message) => {
-                      const isOwnMessage = message.sender.id === session?.user?.id;
-                      const isHovered = hoveredMessageId === message.id;
-                      return (
-                        <div
-                          key={message.id}
-                          className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"} relative`}
-                        >
-                          <MessageBubble
-                            messageId={message.id}
-                            groupId={id}
-                            content={message.content}
-                            isAnnouncement={message.isAnnouncement}
-                            isOwnMessage={isOwnMessage}
-                            reactions={message.reactions || []}
-                            sender={{
-                              displayName: message.sender.displayName,
-                              name: message.sender.name,
-                            }}
-                            createdAt={message.createdAt}
-                            isMobile={isMobile}
-                            isHovered={isHovered}
-                            openEmojiPickerMessageId={openEmojiPickerMessageId}
-                            onReactionChange={() => fetchMessages(false, true)}
-                            onHoverChange={setHoveredMessageId}
-                            onEmojiPickerOpenChange={(messageId, isOpen) => {
-                              if (isOpen) {
-                                setOpenEmojiPickerMessageId(messageId);
-                              } else {
-                                setOpenEmojiPickerMessageId(null);
-                                // ホバー状態も解除
-                                // if (hoveredMessageId === messageId) {
-                                //   setHoveredMessageId(null);
-                                // }
-                              }
-                            }}
-                          />
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-
-                {/* メッセージ送信フォーム（固定） */}
-                <div className="border-t border-zinc-200 bg-white p-4 flex-shrink-0">
-                  {group.isLeader && (
-                    <label className="flex items-center gap-2 mb-3">
-                      <input
-                        type="checkbox"
-                        checked={isAnnouncement}
-                        onChange={(e) => setIsAnnouncement(e.target.checked)}
-                        className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
-                      />
-                      <span className="text-xs text-zinc-700">
-                        一斉連絡として送信
-                      </span>
-                    </label>
-                  )}
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <textarea
-                        value={messageContent}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          // 全角文字換算で1000文字を超える場合は制限
-                          const charCount = Array.from(value).length;
-                          if (charCount <= 1000) {
-                            setMessageContent(value);
-                          }
-                        }}
-                        placeholder="メッセージを入力してください..."
-                        rows={2}
-                        className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 resize-none"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            if (messageContent.trim() && !sending) {
-                              handleSendMessage();
-                            }
-                          }
-                        }}
-                      />
-                      <Button
-                        variant="primary"
-                        size="md"
-                        rounded="md"
-                        onClick={handleSendMessage}
-                        disabled={sending || !messageContent.trim()}
-                        className="whitespace-nowrap self-end"
-                      >
-                        {sending ? "送信中..." : "送信"}
-                      </Button>
-                    </div>
-                    <div className="flex justify-end">
-                      <p className="text-xs text-zinc-500">
-                        {Array.from(messageContent).length} / 1000文字
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <GroupMessage
+                groupId={id}
+                messages={messages}
+                messagesLoading={messagesLoading}
+                currentUserId={session?.user?.id}
+                hoveredMessageId={hoveredMessageId}
+                setHoveredMessageId={setHoveredMessageId}
+                openEmojiPickerMessageId={openEmojiPickerMessageId}
+                setOpenEmojiPickerMessageId={setOpenEmojiPickerMessageId}
+                onReactionChange={() => fetchMessages(false, true)}
+                isLeader={group.isLeader}
+                isAnnouncement={isAnnouncement}
+                setIsAnnouncement={setIsAnnouncement}
+                messageContent={messageContent}
+                setMessageContent={setMessageContent}
+                sending={sending}
+                onSendMessage={handleSendMessage}
+                isMobile={isMobile}
+              />
+            ) : activeTab === "settings" && isLoggedIn ? (
+              <GroupSettings
+                isLeader={group.isLeader}
+                isMember={isMember}
+                processing={processing}
+                onDisbandClick={() => setShowDisbandModal(true)}
+                onTransferClick={() => setShowTransferModal(true)}
+                onLeaveClick={() => setShowLeaveModal(true)}
+              />
             ) : null}
 
             {/* モーダル */}
@@ -970,9 +801,8 @@ export default function GroupDetailPage({
             />
 
           </>
-        )}
-      </section>
-    </main>
-  );
+        </section>
+      </main>
+    );
+  }
 }
-

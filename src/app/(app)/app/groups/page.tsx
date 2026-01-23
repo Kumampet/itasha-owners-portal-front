@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { Card } from "@/components/card";
+import { CreateGroupButton } from "./_components/create-group-button";
+import { JoinGroupButton } from "./_components/join-group-button";
+import { GroupListCard } from "./_components/group-list-card";
 
 type Group = {
   id: string;
@@ -78,14 +80,6 @@ export default function GroupsPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("ja-JP", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
@@ -105,74 +99,14 @@ export default function GroupsPage() {
               管理する画面です。
             </p>
           </div>
-
-          {/* アクションボタン */}
-          <div className="grid grid-cols-2 gap-4">
-            <Link
-              href="/app/groups/new"
-              className="block transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <Card className="transition hover:border-zinc-900">
-                <div className="flex items-center gap-3">
-                  {/* 新規作成アイコン */}
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-                    <svg
-                      className="h-5 w-5 text-emerald-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-zinc-900">
-                      新規団体を作成
-                    </h3>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-
-            <Link
-              href="/app/groups/join"
-              className="block transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <Card className="transition hover:border-zinc-900">
-                <div className="flex items-center gap-3">
-                  {/* 加入アイコン */}
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-100">
-                    <svg
-                      className="h-5 w-5 text-purple-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-zinc-900">
-                      既存団体に加入
-                    </h3>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          </div>
         </header>
 
         <div className="space-y-4">
+          {/* アクションボタン */}
+          <div className="grid grid-cols-2 gap-4">
+            <CreateGroupButton />
+            <JoinGroupButton />
+          </div>
           <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
             <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
               参加団体一覧
@@ -188,40 +122,11 @@ export default function GroupsPage() {
             ) : (
               <div className="mt-4 space-y-3">
                 {groups.map((group) => (
-                  <Link
+                  <GroupListCard
                     key={group.id}
-                    href={`/app/groups/${group.id}`}
-                    className="block rounded-lg border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 hover:shadow-md"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-semibold text-zinc-900">
-                            {group.name}
-                          </h3>
-                          {group.isLeader && (
-                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                              オーナー
-                            </span>
-                          )}
-                          {unreadCounts[group.id] && (
-                            <span className="h-2 w-2 rounded-full bg-red-500" title="新着メッセージあり"></span>
-                          )}
-                        </div>
-                        {group.theme && (
-                          <p className="mt-1 text-xs text-zinc-600">{group.theme}</p>
-                        )}
-                        <p className="mt-2 text-xs text-zinc-500">
-                          {group.event.name} / {formatDate(group.event.event_date)}
-                        </p>
-                        <p className="mt-1 text-xs text-zinc-500">
-                          メンバー: {group.memberCount}
-                          {group.maxMembers && ` / ${group.maxMembers}`}人
-                        </p>
-                      </div>
-                      <div className="text-sm text-zinc-500">→</div>
-                    </div>
-                  </Link>
+                    group={group}
+                    hasUnread={!!unreadCounts[group.id]}
+                  />
                 ))}
               </div>
             )}
