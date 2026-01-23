@@ -3,21 +3,13 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/groups/[id]
-// 団体詳細を取得
+// 団体詳細を取得（ログインなしでもアクセス可能）
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
-
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
     const { id } = await params;
 
     // 団体を取得
@@ -54,38 +46,37 @@ export async function GET(
       );
     }
 
-    // ユーザーがこの団体に参加しているか確認（複数団体参加対応：UserGroupテーブルを使用）
-    const userGroup = await prisma.userGroup.findUnique({
-      where: {
-        user_id_group_id: {
-          user_id: session.user.id,
-          group_id: id,
-        },
-      },
-    });
-
-    // オーナー（リーダー）の場合はUserGroupに存在しなくてもアクセス可能
-    const isLeader = group.leader_user_id === session.user.id;
-    if (!userGroup && !isLeader) {
-      return NextResponse.json(
-        { error: "You are not a member of this group" },
-        { status: 403 }
-      );
-    }
-
-    // オーナーがUserGroupに存在しない場合、UserGroupに追加（データ整合性のため）
-    if (isLeader && !userGroup) {
-      try {
-        await prisma.userGroup.create({
-          data: {
-            user_id: group.leader_user_id,
+    // ログインしている場合のみ、メンバーシップチェックとisLeaderを設定
+    let isLeader = false;
+    let userGroup = null;
+    if (session && session.user) {
+      // ユーザーがこの団体に参加しているか確認（複数団体参加対応：UserGroupテーブルを使用）
+      userGroup = await prisma.userGroup.findUnique({
+        where: {
+          user_id_group_id: {
+            user_id: session.user.id,
             group_id: id,
-            event_id: group.event_id,
-            status: "INTERESTED",
           },
-        });
-      } catch {
-        // 既に存在する場合は無視
+        },
+      });
+
+      // オーナー（リーダー）の場合はUserGroupに存在しなくてもアクセス可能
+      isLeader = group.leader_user_id === session.user.id;
+
+      // オーナーがUserGroupに存在しない場合、UserGroupに追加（データ整合性のため）
+      if (isLeader && !userGroup) {
+        try {
+          await prisma.userGroup.create({
+            data: {
+              user_id: group.leader_user_id,
+              group_id: id,
+              event_id: group.event_id,
+              status: "INTERESTED",
+            },
+          });
+        } catch {
+          // 既に存在する場合は無視
+        }
       }
     }
 
@@ -126,22 +117,25 @@ export async function GET(
         status: "INTERESTED",
       });
 
-      // リーダーをUserGroupに追加（データ整合性のため）
-      try {
-        await prisma.userGroup.create({
-          data: {
-            user_id: group.leader_user_id,
-            group_id: id,
-            event_id: group.event_id,
-            status: "INTERESTED",
-          },
-        });
-      } catch {
-        // 既に存在する場合は無視
+      // ログインしている場合のみ、リーダーをUserGroupに追加（データ整合性のため）
+      if (session && session.user) {
+        try {
+          await prisma.userGroup.create({
+            data: {
+              user_id: group.leader_user_id,
+              group_id: id,
+              event_id: group.event_id,
+              status: "INTERESTED",
+            },
+          });
+        } catch {
+          // 既に存在する場合は無視
+        }
       }
     }
 
-    // ユーザー固有データのため、privateディレクティブを使用して5秒間キャッシュ
+    // ログインしていない場合は公開情報のみ返す
+    // ログインしている場合は認証情報も含める
     return NextResponse.json(
       {
         id: group.id,
@@ -150,7 +144,7 @@ export async function GET(
         groupCode: group.group_code,
         maxMembers: group.max_members,
         memberCount: membersList.length,
-        isLeader: group.leader_user_id === session.user.id,
+        isLeader: session && session.user ? isLeader : false,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ownerNote: (group as any).owner_note ?? null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -167,7 +161,10 @@ export async function GET(
       },
       {
         headers: {
-          "Cache-Control": "private, s-maxage=5, stale-while-revalidate=10",
+          // ログインしていない場合でもキャッシュ可能（公開情報のため）
+          "Cache-Control": session && session.user 
+            ? "private, s-maxage=5, stale-while-revalidate=10"
+            : "public, s-maxage=60, stale-while-revalidate=120",
         },
       }
     );

@@ -3,6 +3,8 @@
 import { SessionProvider } from "next-auth/react";
 import { useEffect } from "react";
 import type { ReactNode } from "react";
+import { SnackbarProvider } from "@/contexts/snackbar-context";
+import { Snackbar } from "@/components/snackbar";
 
 type ProvidersProps = {
   children: ReactNode;
@@ -32,7 +34,10 @@ export function Providers({ children }: ProvidersProps) {
       // フォーカス時にセッションを再取得
       refetchOnWindowFocus={true}
     >
-      {children}
+      <SnackbarProvider>
+        {children}
+        <Snackbar />
+      </SnackbarProvider>
     </SessionProvider>
   );
 }

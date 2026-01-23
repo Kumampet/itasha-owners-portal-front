@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, use, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, use, useCallback, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import ConfirmModal from "@/components/confirm-modal";
@@ -14,6 +14,8 @@ import { GroupInviteLinkCopyButton } from "@/components/group-invite-link-copy-b
 import { GroupOwnerNoteCard } from "@/components/group-owner-note-card";
 import { GroupDescriptionCard } from "@/components/group-description-card";
 import { MemberActionMenu } from "@/components/member-action-menu";
+import { GroupJoinWarningModal } from "@/components/group-join-warning-modal";
+import { useSnackbar } from "@/contexts/snackbar-context";
 
 type GroupDetail = {
   id: string;
@@ -78,8 +80,10 @@ export default function GroupDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
   const { id } = use(params);
+  const { showSnackbar } = useSnackbar();
   const [group, setGroup] = useState<GroupDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"info" | "members" | "messages">("info");
@@ -97,6 +101,9 @@ export default function GroupDetailPage({
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const [openEmojiPickerMessageId, setOpenEmojiPickerMessageId] = useState<string | null>(null);
+  const [joining, setJoining] = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [warningMessage, setWarningMessage] = useState<string>("");
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== "undefined") {
       return window.innerWidth < 640;
@@ -214,8 +221,20 @@ export default function GroupDetailPage({
     fetchGroup();
   }, [fetchGroup]);
 
-  // 未読メッセージの状態を取得（メッセージタブが開いていない場合のみ）
+  // ログインしていない場合、メッセージタブが選択されていたら「info」タブに切り替える
   useEffect(() => {
+    if (!session && activeTab === "messages") {
+      setActiveTab("info");
+    }
+  }, [session, activeTab]);
+
+  // 未読メッセージの状態を取得（メッセージタブが開いていない場合のみ、ログインしている場合のみ）
+  useEffect(() => {
+    // ログインしていない場合は未読状態を取得しない
+    if (!session) {
+      return;
+    }
+
     // メッセージタブが開いている場合は、メッセージ取得時に既読処理されるので監視不要
     if (activeTab === "messages") {
       return;
@@ -239,11 +258,11 @@ export default function GroupDetailPage({
       const interval = setInterval(fetchUnreadStatus, 10000);
       return () => clearInterval(interval);
     }
-  }, [id, activeTab]);
+  }, [id, activeTab, session]);
 
-  // メッセージタブが開いているときはリアルタイムでメッセージを監視
+  // メッセージタブが開いているときはリアルタイムでメッセージを監視（ログインしている場合のみ）
   useEffect(() => {
-    if (activeTab === "messages" && group) {
+    if (activeTab === "messages" && group && session) {
       // 初回取得（ローディング表示あり）
       fetchMessages(true);
 
@@ -254,7 +273,7 @@ export default function GroupDetailPage({
 
       return () => clearInterval(messageInterval);
     }
-  }, [activeTab, group, fetchMessages]);
+  }, [activeTab, group, session, fetchMessages]);
 
   // メッセージタブが開かれたとき、またはメッセージが読み込まれたときに最新メッセージにスクロール
   useEffect(() => {
@@ -455,6 +474,121 @@ export default function GroupDetailPage({
     }
   };
 
+  // ログインしているかどうか、およびメンバーかどうかを判定
+  const isLoggedIn = !!session;
+  const isMember = useMemo(() => {
+    if (!group || !session?.user?.id) {
+      return false;
+    }
+    return group.members.some(m => m.id === session.user?.id);
+  }, [group, session?.user?.id]);
+
+  /**
+   * サーバー側のエラーメッセージをユーザーフレンドリーな日本語メッセージに変換する
+   */
+  const getErrorMessage = (error: string, statusCode?: number): string => {
+    // ステータスコードに基づくエラー処理
+    if (statusCode === 401) {
+      return "ログインが必要です。再度ログインしてください。";
+    }
+
+    // エラーメッセージに基づく処理
+    switch (error) {
+      case "Unauthorized":
+        return "ログインが必要です。再度ログインしてください。";
+      case "groupCode is required":
+        return "団体コードを入力してください。";
+      case "Group not found":
+        return "入力された団体コードが不正です。団体コードをお確かめください。";
+      case "Already joined this group":
+        return "この団体には既に加入しています。";
+      case "Group is full":
+        return "この団体は既に満員です。";
+      case "Failed to join group":
+        return "団体への加入処理中にエラーが発生しました。しばらく時間をおいて再度お試しください。";
+      default:
+        return "団体への加入に失敗しました。しばらく時間をおいて再度お試しください。";
+    }
+  };
+
+  const handleJoin = useCallback(async (force = false) => {
+    if (!group) return;
+
+    // ログインしていない場合はログイン画面へ遷移
+    if (!session) {
+      const currentPath = `/app/groups/${id}?autoJoin=true`;
+      router.push(`/app/auth?callbackUrl=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+
+    setJoining(true);
+    try {
+      const res = await fetch("/api/groups/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groupCode: group.groupCode,
+          force: force,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        const errorMessage = getErrorMessage(
+          data.error || "団体への加入に失敗しました",
+          res.status
+        );
+        throw new Error(errorMessage);
+      }
+
+      const data = await res.json();
+
+      // 警告メッセージがあり、確認が必要な場合
+      if (data.warning && data.requiresConfirmation && !force) {
+        setWarningMessage(data.warning);
+        setShowWarningModal(true);
+        setJoining(false);
+        return;
+      }
+
+      // 加入成功時は団体情報を再取得してページを更新
+      await fetchGroup();
+      showSnackbar("団体に加入しました", "success");
+    } catch (error) {
+      let errorMessage = "団体への加入に失敗しました。しばらく時間をおいて再度お試しください。";
+
+      if (error instanceof Error) {
+        // エラーメッセージが既に変換済みの場合はそのまま使用
+        // ネットワークエラーの場合は別のメッセージを表示
+        if (error.message.includes("fetch") || error.message.includes("network")) {
+          errorMessage = "ネットワークエラーが発生しました。インターネット接続を確認して再度お試しください。";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      alert(errorMessage);
+    } finally {
+      setJoining(false);
+    }
+  }, [group, session, id, router, fetchGroup, showSnackbar]);
+
+  const handleConfirmJoin = () => {
+    setShowWarningModal(false);
+    handleJoin(true);
+  };
+
+  // ログイン後に自動的に加入処理を実行（URLパラメータにautoJoin=trueがある場合）
+  useEffect(() => {
+    const autoJoin = searchParams.get("autoJoin") === "true";
+    if (autoJoin && session && group && !isMember && !joining) {
+      // URLパラメータを削除してから加入処理を実行
+      const newUrl = window.location.pathname;
+      router.replace(newUrl);
+      handleJoin(false);
+    }
+  }, [session, group, isMember, joining, searchParams, router, handleJoin]);
+
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
@@ -502,43 +636,45 @@ export default function GroupDetailPage({
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-col gap-2">
-                  {group.isLeader ? (
-                    <>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        rounded="md"
-                        onClick={() => setShowDisbandModal(true)}
-                        disabled={processing}
-                        className="whitespace-nowrap"
-                      >
-                        解散する
-                      </Button>
+                {isLoggedIn && (
+                  <div className="flex flex-col gap-2">
+                    {group.isLeader ? (
+                      <>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          rounded="md"
+                          onClick={() => setShowDisbandModal(true)}
+                          disabled={processing}
+                          className="whitespace-nowrap"
+                        >
+                          解散する
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          rounded="md"
+                          onClick={() => setShowTransferModal(true)}
+                          disabled={processing}
+                          className="whitespace-nowrap"
+                        >
+                          オーナー権限譲渡
+                        </Button>
+                      </>
+                    ) : (
                       <Button
                         variant="secondary"
                         size="sm"
                         rounded="md"
-                        onClick={() => setShowTransferModal(true)}
+                        onClick={() => setShowLeaveModal(true)}
                         disabled={processing}
                         className="whitespace-nowrap"
                       >
-                        オーナー権限譲渡
+                        団体を抜ける
                       </Button>
-                    </>
-                  ) : (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      rounded="md"
-                      onClick={() => setShowLeaveModal(true)}
-                      disabled={processing}
-                      className="whitespace-nowrap"
-                    >
-                      団体を抜ける
-                    </Button>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
               </div>
             </header>
 
@@ -556,13 +692,15 @@ export default function GroupDetailPage({
               >
                 メンバー一覧
               </Tab>
-              <Tab
-                isActive={activeTab === "messages"}
-                onClick={() => setActiveTab("messages")}
-                badge={hasUnreadMessages}
-              >
-                団体メッセージ
-              </Tab>
+              {isLoggedIn && (
+                <Tab
+                  isActive={activeTab === "messages"}
+                  onClick={() => setActiveTab("messages")}
+                  badge={hasUnreadMessages}
+                >
+                  団体メッセージ
+                </Tab>
+              )}
             </Tabs>
 
             {/* タブコンテンツ */}
@@ -578,7 +716,21 @@ export default function GroupDetailPage({
                   <p className="mt-1 text-xs text-zinc-500">
                     このコードを共有することで、他のメンバーがこの団体に加入できます。
                   </p>
-                  <GroupInviteLinkCopyButton groupCode={group.groupCode} />
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                    {!isMember && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        rounded="md"
+                        onClick={() => handleJoin(false)}
+                        disabled={joining}
+                        className="whitespace-nowrap"
+                      >
+                        {joining ? "加入中..." : "加入する"}
+                      </Button>
+                    )}
+                    <GroupInviteLinkCopyButton groupCode={group.groupCode} />
+                  </div>
                 </section>
 
                 <GroupDescriptionCard
@@ -646,7 +798,7 @@ export default function GroupDetailPage({
                   </div>
                 </section>
               </div>
-            ) : (
+            ) : activeTab === "messages" && isLoggedIn ? (
               <div className="flex flex-col h-[calc(100vh-280px)] min-h-[400px] sm:h-[calc(100vh-300px)] sm:min-h-[500px] overflow-hidden">
                 {/* メッセージ一覧（スクロール可能） */}
                 <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3 pb-24 sm:pb-4" data-messages-container>
@@ -761,7 +913,7 @@ export default function GroupDetailPage({
                   </div>
                 </div>
               </div>
-            )}
+            ) : null}
 
             {/* モーダル */}
             <ConfirmModal
@@ -803,6 +955,15 @@ export default function GroupDetailPage({
               message="このメンバーを団体から強制離脱させます。この操作は取り消せません。"
               confirmLabel="削除する"
               cancelLabel="キャンセル"
+            />
+
+            <GroupJoinWarningModal
+              isOpen={showWarningModal}
+              onClose={() => {
+                setShowWarningModal(false);
+              }}
+              onConfirm={handleConfirmJoin}
+              warningMessage={warningMessage}
             />
 
           </>
