@@ -663,7 +663,7 @@ export default function GroupDetailPage({
                           オーナー権限譲渡
                         </Button>
                       </>
-                    ) : (
+                    ) : isMember ? (
                       <Button
                         variant="secondary"
                         size="sm"
@@ -674,7 +674,7 @@ export default function GroupDetailPage({
                       >
                         団体を抜ける
                       </Button>
-                    )}
+                    ) : null}
                   </div>
                 )}
               </div>
