@@ -28,6 +28,7 @@ applications:
             - 'npx prisma migrate status || true'
             - 'echo "Resolving failed migration if exists..."'
             - 'npx prisma migrate resolve --applied 20260120000002_make_email_nullable_and_remove_placeholder_local || echo "Migration resolve skipped (migration may not be in failed state or already resolved)"'
+            - 'npx prisma migrate resolve --applied 20260120132004_add_group_description || echo "Migration resolve skipped (migration may not be in failed state or already resolved)"'
             - 'npx prisma migrate deploy && echo "Database migrations completed successfully" || (echo "ERROR: Database migration failed!" && exit 1)'
             - npm run build
       artifacts:
