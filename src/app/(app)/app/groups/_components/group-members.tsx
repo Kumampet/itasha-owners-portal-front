@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { OwnerBadge } from "./owner-badge";
-import { MemberActionMenu } from "@/components/member-action-menu";
 import ConfirmModal from "@/components/confirm-modal";
 import { useSnackbar } from "@/contexts/snackbar-context";
+import { MemberListCard } from "./member-list-card";
 
 interface GroupMembersProps {
   groupId: string;
@@ -79,35 +78,18 @@ export function GroupMembers({
           <div className="mt-4 space-y-2 overflow-visible">
             {group.members.map((member) => {
               const isCurrentUser = member.id === currentUserId;
-              const isLeader = group.isLeader;
-              const canRemove = isLeader && member.id !== group.leader.id && !isCurrentUser;
               return (
-                <div
+                <MemberListCard
                   key={member.id}
-                  className={`relative flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 p-3 overflow-x-visible ${isCurrentUser && "overflow-hidden"}`}
-                >
-                  {isCurrentUser && (
-                    <div className="absolute -left-4 top-1.5 w-16 bg-emerald-500 text-white text-[10px] font-semibold py-0.5 text-center transform -rotate-45 shadow-md">
-                      You
-                    </div>
-                  )}
-                  <div className={isCurrentUser ? "pl-6" : ""}>
-                    <p className="text-sm font-medium text-zinc-900">
-                      {member.displayName || member.name || "名前未設定"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {member.id === group.leader.id && <OwnerBadge />}
-                    {canRemove && (
-                      <MemberActionMenu
-                        onRemoveClick={() => {
-                          setTargetMemberId(member.id);
-                          setShowRemoveMemberModal(true);
-                        }}
-                      />
-                    )}
-                  </div>
-                </div>
+                  member={member}
+                  isCurrentUser={isCurrentUser}
+                  isLeader={group.isLeader}
+                  leaderId={group.leader.id}
+                  onRemoveClick={() => {
+                    setTargetMemberId(member.id);
+                    setShowRemoveMemberModal(true);
+                  }}
+                />
               );
             })}
           </div>
