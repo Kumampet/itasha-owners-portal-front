@@ -463,11 +463,12 @@ export default function GroupDetailPage({
         throw new Error(errorData.error || "メンバーの削除に失敗しました");
       }
 
-      alert("メンバーを削除しました");
+      showSnackbar("メンバーを削除しました", "success");
       fetchGroup(); // 団体情報を再取得
     } catch (error) {
       console.error("Failed to remove member:", error);
-      alert(`メンバーの削除に失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`);
+      const errorMessage = error instanceof Error ? error.message : "メンバーの削除に失敗しました";
+      showSnackbar(errorMessage, "error");
     } finally {
       setProcessing(false);
       setShowRemoveMemberModal(false);
