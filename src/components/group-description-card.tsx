@@ -5,6 +5,8 @@ import { Button } from "@/components/button";
 import { SafeHtmlContent } from "@/components/safe-html-content";
 import { WysiwygEditor } from "@/components/wysiwyg-editor";
 import { sanitizeHtml } from "@/lib/html-sanitizer";
+import ConfirmModal from "@/components/confirm-modal";
+import { useSnackbar } from "@/contexts/snackbar-context";
 
 type GroupDescriptionCardProps = {
   groupId: string;
@@ -26,6 +28,8 @@ export function GroupDescriptionCard({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(groupDescription || "");
   const [saving, setSaving] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const { showSnackbar } = useSnackbar();
 
   // 編集モードに入ったときに値をリセット
   useEffect(() => {
@@ -114,17 +118,34 @@ export function GroupDescriptionCard({
 
       setIsEditing(false);
       onUpdate();
+      showSnackbar("団体説明を保存しました", "success");
     } catch (error) {
       console.error("Failed to update group description:", error);
-      alert(`団体説明の更新に失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      showSnackbar(`団体説明の更新に失敗しました: ${errorMessage}`, "error");
     } finally {
       setSaving(false);
     }
   };
 
+  const hasChanges = () => {
+    const originalValue = groupDescription || "";
+    return editValue !== originalValue;
+  };
+
   const handleCancel = () => {
+    if (hasChanges()) {
+      setShowCancelModal(true);
+    } else {
+      setEditValue(groupDescription || "");
+      setIsEditing(false);
+    }
+  };
+
+  const handleConfirmCancel = () => {
     setEditValue(groupDescription || "");
     setIsEditing(false);
+    setShowCancelModal(false);
   };
 
   return (
@@ -192,6 +213,17 @@ export function GroupDescriptionCard({
           )}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleConfirmCancel}
+        title="変更を破棄しますか？"
+        message="変更内容が破棄されますがよろしいですか？"
+        confirmLabel="破棄する"
+        cancelLabel="キャンセル"
+        buttonVariant="error"
+      />
     </section>
   );
 }
