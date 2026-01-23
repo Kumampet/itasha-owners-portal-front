@@ -99,7 +99,12 @@ export function GroupMessage({
                   isOwnMessage={isOwnMessage}
                   reactions={(message.reactions || []).map((reaction) => ({
                     emoji: reaction.emoji,
-                    users: reaction.users.map((user) => ({ id: user.id })),
+                    count: reaction.count,
+                    users: reaction.users.map((user) => ({
+                      id: user.id,
+                      name: user.name,
+                      displayName: user.displayName,
+                    })),
                   }))}
                   sender={{
                     displayName: message.sender.displayName,
