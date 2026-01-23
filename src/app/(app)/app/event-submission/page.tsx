@@ -235,7 +235,7 @@ export default function EventSubmissionPage() {
         onClose={() => setShowSuccessModal(false)}
         title="送信完了"
         message="イベント掲載依頼を送信しました。ありがとうございます。"
-        variant="success"
+        buttonVariant="success"
         showCancel={false}
       />
 
@@ -245,7 +245,7 @@ export default function EventSubmissionPage() {
         onClose={() => setShowErrorModal(false)}
         title="送信失敗"
         message={errorMessage}
-        variant="error"
+        titleVariant="error"
         showCancel={false}
       />
     </main>

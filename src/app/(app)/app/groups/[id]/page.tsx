@@ -437,11 +437,13 @@ export default function GroupDetailPage({
         throw new Error(errorData.error || "団体からの脱退に失敗しました");
       }
 
-      alert("団体を抜けました");
-      router.push("/app/groups");
+      showSnackbar("団体を抜けました", "success");
+      // 団体詳細画面に遷移（抜けた後なので未ログインでも見れる状態になる）
+      router.push(`/app/groups/${id}`);
     } catch (error) {
       console.error("Failed to leave group:", error);
-      alert(`団体からの脱退に失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`);
+      const errorMessage = error instanceof Error ? error.message : "団体からの脱退に失敗しました";
+      showSnackbar(errorMessage, "error");
     } finally {
       setProcessing(false);
       setShowLeaveModal(false);
@@ -939,9 +941,10 @@ export default function GroupDetailPage({
               onClose={() => setShowLeaveModal(false)}
               onConfirm={handleLeave}
               title="団体を抜けますか？"
-              message="本当に団体を抜けますか？抜けると再度団体コードを入力しないと復帰できません。"
+              message="本当にこの団体を抜けますか？"
               confirmLabel="抜ける"
               cancelLabel="キャンセル"
+              buttonVariant="error"
             />
 
             <ConfirmModal
