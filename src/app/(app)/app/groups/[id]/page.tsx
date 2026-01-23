@@ -220,12 +220,12 @@ export default function GroupDetailPage({
     fetchGroup();
   }, [fetchGroup]);
 
-  // ログインしていない場合、メッセージタブが選択されていたら「info」タブに切り替える
+  // ログインしていない場合、「info」タブに切り替える
   useEffect(() => {
-    if (!session && activeTab === "messages") {
+    if (!session) {
       setActiveTab("info");
     }
-  }, [session, activeTab]);
+  }, [session]);
 
   // 未読メッセージの状態を取得（メッセージタブが開いていない場合のみ、ログインしている場合のみ）
   useEffect(() => {
