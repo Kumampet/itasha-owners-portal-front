@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/button";
 import { SafeMessageContent } from "@/components/safe-message-content";
+import ConfirmModal from "@/components/confirm-modal";
+import { useSnackbar } from "@/contexts/snackbar-context";
 
 type GroupOwnerNoteCardProps = {
   groupId: string;
@@ -24,6 +26,8 @@ export function GroupOwnerNoteCard({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(ownerNote || "");
   const [saving, setSaving] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const { showSnackbar } = useSnackbar();
 
   const handleSave = async () => {
     setSaving(true);
@@ -45,17 +49,34 @@ export function GroupOwnerNoteCard({
 
       setIsEditing(false);
       onUpdate();
+      showSnackbar("お知らせを保存しました", "success");
     } catch (error) {
       console.error("Failed to update owner note:", error);
-      alert(`お知らせの更新に失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      showSnackbar(`お知らせの更新に失敗しました: ${errorMessage}`, "error");
     } finally {
       setSaving(false);
     }
   };
 
+  const hasChanges = () => {
+    const originalValue = ownerNote || "";
+    return editValue.trim() !== originalValue.trim();
+  };
+
   const handleCancel = () => {
+    if (hasChanges()) {
+      setShowCancelModal(true);
+    } else {
+      setEditValue(ownerNote || "");
+      setIsEditing(false);
+    }
+  };
+
+  const handleConfirmCancel = () => {
     setEditValue(ownerNote || "");
     setIsEditing(false);
+    setShowCancelModal(false);
   };
 
   return (
@@ -124,6 +145,17 @@ export function GroupOwnerNoteCard({
           )}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleConfirmCancel}
+        title="変更を破棄しますか？"
+        message="変更内容が破棄されますがよろしいですか？"
+        confirmLabel="破棄する"
+        cancelLabel="キャンセル"
+        buttonVariant="error"
+      />
     </section>
   );
 }

@@ -3,9 +3,9 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { Pagination } from "@/components/pagination";
+import { NewGroupEventsListPanel } from "../_components/new-group-events-list-panel";
+import { NewGroupCreateForm } from "../_components/new-group-create-form";
 
 type Event = {
   id: string;
@@ -169,7 +169,7 @@ function NewGroupForm() {
               新規団体を作成
             </h1>
             <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
-              あなたが団体オーナーとなり、8桁の団体コードが自動で発行されます。
+              あなたが団体オーナーとなり、イベントに紐づく団体を新規作成します。
             </p>
           </div>
         </header>
@@ -179,172 +179,24 @@ function NewGroupForm() {
             <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
               イベントを選択してください
             </h2>
-            {eventsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <LoadingSpinner size="md" />
-              </div>
-            ) : events.length === 0 ? (
-              <p className="py-8 text-center text-sm text-zinc-500">
-                イベントが見つかりません
-              </p>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  {events.map((event) => (
-                    <Button
-                      key={event.id}
-                      variant="secondary"
-                      size="md"
-                      rounded="md"
-                      fullWidth
-                      onClick={() => handleEventSelect(event.id, event)}
-                      className="p-4 text-left justify-start hover:border-zinc-900"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-zinc-900">
-                            {event.name}
-                          </p>
-                          {event.theme && (
-                            <p className="mt-1 text-xs text-zinc-500">
-                              {event.theme}
-                            </p>
-                          )}
-                          <p className="mt-1 text-xs text-zinc-500">
-                            {new Date(event.event_date).toLocaleDateString("ja-JP", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </p>
-                        </div>
-                        <span className="text-xs font-semibold text-emerald-600">
-                          選択 →
-                        </span>
-                      </div>
-                    </Button>
-                  ))}
-                </div>
-                {pagination && pagination.totalPages > 1 && (
-                  <div className="mt-6">
-                    <Pagination
-                      currentPage={pagination.currentPage}
-                      totalPages={pagination.totalPages}
-                      onPageChange={setCurrentPage}
-                    />
-                  </div>
-                )}
-              </>
-            )}
+            <NewGroupEventsListPanel
+              events={events}
+              eventsLoading={eventsLoading}
+              pagination={pagination}
+              onEventSelect={handleEventSelect}
+              onPageChange={setCurrentPage}
+            />
           </div>
         ) : (
-          <form
+          <NewGroupCreateForm
+            error={error}
+            eventLoading={eventLoading}
+            selectedEvent={selectedEvent}
+            formData={formData}
+            onFormDataChange={setFormData}
+            saving={saving}
             onSubmit={handleSubmit}
-            className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5"
-          >
-            {error && (
-              <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
-                {error}
-              </div>
-            )}
-
-            {eventLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <LoadingSpinner size="sm" />
-              </div>
-            ) : selectedEvent ? (
-              <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 mb-2">
-                  対象イベント
-                </p>
-                <p className="text-base font-bold text-zinc-900">
-                  {selectedEvent.name}
-                </p>
-                {selectedEvent.theme && (
-                  <p className="mt-1 text-sm text-zinc-700">{selectedEvent.theme}</p>
-                )}
-                <p className="mt-2 text-xs text-zinc-600">
-                  {new Date(selectedEvent.event_date).toLocaleDateString("ja-JP", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
-                <p className="mt-3 text-xs text-zinc-600 border-t border-emerald-200 pt-3">
-                  このイベントに関連する団体を作成します
-                </p>
-              </div>
-            ) : null}
-
-            <div>
-              <label className="block text-sm font-medium text-zinc-700">
-                団体名 *
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                required
-                placeholder="例: レトロスポーツ痛車会"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-zinc-700">
-                テーマ（任意）
-              </label>
-              <input
-                type="text"
-                value={formData.theme}
-                onChange={(e) =>
-                  setFormData({ ...formData, theme: e.target.value })
-                }
-                className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                placeholder="例: 80年代スポーツカー中心"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-zinc-700">
-                最大メンバー数（任意）
-              </label>
-              <input
-                type="number"
-                value={formData.maxMembers}
-                onChange={(e) =>
-                  setFormData({ ...formData, maxMembers: e.target.value })
-                }
-                min="1"
-                className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                placeholder="例: 10"
-              />
-              <p className="mt-1 text-xs text-zinc-500">
-                指定しない場合は制限なし
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                type="submit"
-                variant="primary"
-                size="md"
-                rounded="md"
-                className="flex-1"
-                disabled={saving}
-              >
-                {saving ? "作成中..." : "作成する"}
-              </Button>
-              <Link
-                href="/app/groups"
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 whitespace-nowrap"
-              >
-                キャンセル
-              </Link>
-            </div>
-          </form>
+          />
         )}
       </section>
     </main>

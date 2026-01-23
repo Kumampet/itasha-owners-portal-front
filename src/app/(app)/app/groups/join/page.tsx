@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { GroupJoinWarningModal } from "@/components/group-join-warning-modal";
+import { LabeledTextInput } from "@/components/labeled-text-input";
 
 /**
  * サーバー側のエラーメッセージをユーザーフレンドリーな日本語メッセージに変換する
@@ -81,19 +82,6 @@ function GroupJoinForm() {
     document.title = "団体に加入 | 痛車オーナーズナビ | いたなび！";
   }, []);
 
-  // ローディング中または未ログインの場合はローディングスピナーを表示
-  if (status === "loading" || !session) {
-    return (
-      <main className="flex-1">
-        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-          <div className="flex items-center justify-center py-12">
-            <LoadingSpinner size="lg" />
-          </div>
-        </section>
-      </main>
-    );
-  }
-
   const handleJoin = async (force = false) => {
     const codeToUse = pendingGroupCode || groupCode;
     if (!codeToUse || codeToUse.length !== 8) {
@@ -159,6 +147,19 @@ function GroupJoinForm() {
     handleJoin(true);
   };
 
+  // ローディング中または未ログインの場合はローディングスピナーを表示
+  if (status === "loading" || !session) {
+    return (
+      <main className="flex-1">
+        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinner size="lg" />
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
@@ -180,26 +181,19 @@ function GroupJoinForm() {
         </header>
 
         <div className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
-          <div>
-            <label className="block text-sm font-medium text-zinc-900 mb-1">
-              団体コード（8桁）
-            </label>
-            <input
-              type="text"
-              value={groupCode}
-              onChange={(e) => {
-                const cleaned = e.target.value.replace(/\D/g, "").slice(0, 8);
-                setGroupCode(cleaned);
-                setError(""); // エラーをクリア
-              }}
-              placeholder="12345678"
-              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-              maxLength={8}
-            />
-            <p className="mt-1 text-xs text-zinc-500">
-              団体オーナーから共有された8桁の数字を入力してください。
-            </p>
-          </div>
+          <LabeledTextInput
+            label="団体コード（8桁）"
+            type="text"
+            value={groupCode}
+            onChange={(e) => {
+              const cleaned = e.target.value.replace(/\D/g, "").slice(0, 8);
+              setGroupCode(cleaned);
+              setError(""); // エラーをクリア
+            }}
+            placeholder="12345678"
+            maxLength={8}
+            helpText="団体オーナーから共有された8桁の数字を入力してください。"
+          />
 
           <div className="flex gap-2 mb-1">
             <Button

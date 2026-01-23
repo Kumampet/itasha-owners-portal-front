@@ -11,8 +11,11 @@ interface ConfirmModalProps {
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: "success" | "error" | "info";
+  buttonVariant?: "success" | "error" | "info";
+  titleVariant?: "success" | "error" | "info";
+  messageVariant?: "success" | "error" | "info";
   showCancel?: boolean;
+  disabled?: boolean;
 }
 
 export default function ConfirmModal({
@@ -23,8 +26,11 @@ export default function ConfirmModal({
   message,
   confirmLabel = "はい",
   cancelLabel = "いいえ",
-  variant = "info",
+  buttonVariant = "info",
+  titleVariant = "info",
+  messageVariant = "info",
   showCancel = true,
+  disabled = false,
 }: ConfirmModalProps) {
   const variantColors = {
     success: "text-green-600",
@@ -43,11 +49,18 @@ export default function ConfirmModal({
     }
   };
 
+  // ボタンのvariantを決定（errorの場合はdanger、それ以外はprimary）
+  const confirmButtonVariant = buttonVariant === "error" ? "danger" : buttonVariant === "success" ? "success" : "primary";
+  // タイトルの色を決定
+  const titleColor = titleVariant === "error" ? "text-red-600" : titleVariant === "success" ? "text-green-600" : "";
+
   return (
     <ModalBase
       isOpen={isOpen}
       onClose={onClose}
-      title={title}
+      title={
+        <span className={titleColor || ""}>{title}</span>
+      }
       footer={
         <>
           {showCancel && (
@@ -56,15 +69,17 @@ export default function ConfirmModal({
               size="md"
               rounded="md"
               onClick={onClose}
+              disabled={disabled}
             >
               {cancelLabel}
             </Button>
           )}
           <Button
-            variant="primary"
+            variant={confirmButtonVariant}
             size="md"
             rounded="md"
             onClick={handleConfirm}
+            disabled={disabled}
           >
             {isMessageMode ? "OK" : confirmLabel}
           </Button>
@@ -73,7 +88,7 @@ export default function ConfirmModal({
     >
       <div className="space-y-2">
         {message.split("\n").map((line, index) => (
-          <p key={index} className={`text-sm ${variantColors[variant]}`}>
+          <p key={index} className={`text-sm ${variantColors[messageVariant]}`}>
             {line}
           </p>
         ))}

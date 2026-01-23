@@ -29,10 +29,10 @@ describe('ConfirmModal', () => {
     const onClose = jest.fn()
     const user = userEvent.setup()
     render(<ConfirmModal {...defaultProps} onClose={onClose} />)
-    
+
     const cancelButton = screen.getByRole('button', { name: /いいえ/i })
     await user.click(cancelButton)
-    
+
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
@@ -47,10 +47,10 @@ describe('ConfirmModal', () => {
         onConfirm={onConfirm}
       />
     )
-    
+
     const confirmButton = screen.getByRole('button', { name: /はい/i })
     await user.click(confirmButton)
-    
+
     expect(onConfirm).toHaveBeenCalledTimes(1)
     expect(onClose).not.toHaveBeenCalled()
   })
@@ -59,10 +59,10 @@ describe('ConfirmModal', () => {
     const onClose = jest.fn()
     const user = userEvent.setup()
     render(<ConfirmModal {...defaultProps} onClose={onClose} />)
-    
+
     const confirmButton = screen.getByRole('button', { name: /ok/i })
     await user.click(confirmButton)
-    
+
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
@@ -96,14 +96,14 @@ describe('ConfirmModal', () => {
 
   it('applies correct variant colors', () => {
     const { rerender } = render(
-      <ConfirmModal {...defaultProps} variant="success" />
+      <ConfirmModal {...defaultProps} messageVariant="success" />
     )
     expect(screen.getByText('Test Message')).toHaveClass('text-green-600')
 
-    rerender(<ConfirmModal {...defaultProps} variant="error" />)
+    rerender(<ConfirmModal {...defaultProps} messageVariant="error" />)
     expect(screen.getByText('Test Message')).toHaveClass('text-red-600')
 
-    rerender(<ConfirmModal {...defaultProps} variant="info" />)
+    rerender(<ConfirmModal {...defaultProps} messageVariant="info" />)
     expect(screen.getByText('Test Message')).toHaveClass('text-zinc-600')
   })
 })
