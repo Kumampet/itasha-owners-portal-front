@@ -15,6 +15,7 @@ interface ConfirmModalProps {
   titleVariant?: "success" | "error" | "info";
   messageVariant?: "success" | "error" | "info";
   showCancel?: boolean;
+  disabled?: boolean;
 }
 
 export default function ConfirmModal({
@@ -29,6 +30,7 @@ export default function ConfirmModal({
   titleVariant = "info",
   messageVariant = "info",
   showCancel = true,
+  disabled = false,
 }: ConfirmModalProps) {
   const variantColors = {
     success: "text-green-600",
@@ -67,6 +69,7 @@ export default function ConfirmModal({
               size="md"
               rounded="md"
               onClick={onClose}
+              disabled={disabled}
             >
               {cancelLabel}
             </Button>
@@ -76,6 +79,7 @@ export default function ConfirmModal({
             size="md"
             rounded="md"
             onClick={handleConfirm}
+            disabled={disabled}
           >
             {isMessageMode ? "OK" : confirmLabel}
           </Button>

@@ -94,8 +94,6 @@ export default function GroupDetailPage({
   const [showDisbandModal, setShowDisbandModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
-  const [showRemoveMemberModal, setShowRemoveMemberModal] = useState(false);
-  const [targetMemberId, setTargetMemberId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
@@ -449,32 +447,6 @@ export default function GroupDetailPage({
     }
   };
 
-  const handleRemoveMember = async () => {
-    if (!targetMemberId) return;
-
-    setProcessing(true);
-    try {
-      const res = await fetch(`/api/groups/${id}/members/${targetMemberId}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "メンバーの削除に失敗しました");
-      }
-
-      showSnackbar("メンバーを削除しました", "success");
-      fetchGroup(); // 団体情報を再取得
-    } catch (error) {
-      console.error("Failed to remove member:", error);
-      const errorMessage = error instanceof Error ? error.message : "メンバーの削除に失敗しました";
-      showSnackbar(errorMessage, "error");
-    } finally {
-      setProcessing(false);
-      setShowRemoveMemberModal(false);
-      setTargetMemberId(null);
-    }
-  };
 
   // ログインしているかどうか、およびメンバーかどうかを判定
   const isLoggedIn = !!session;
@@ -699,6 +671,7 @@ export default function GroupDetailPage({
               />
             ) : activeTab === "members" ? (
               <GroupMembers
+                groupId={id}
                 group={{
                   memberCount: group.memberCount,
                   maxMembers: group.maxMembers,
@@ -707,10 +680,7 @@ export default function GroupDetailPage({
                   members: group.members,
                 }}
                 currentUserId={session?.user?.id}
-                onRemoveClick={(memberId) => {
-                  setTargetMemberId(memberId);
-                  setShowRemoveMemberModal(true);
-                }}
+                onUpdate={fetchGroup}
               />
             ) : activeTab === "messages" && isLoggedIn ? (
               <GroupMessage
@@ -771,19 +741,6 @@ export default function GroupDetailPage({
               confirmLabel="抜ける"
               cancelLabel="キャンセル"
               buttonVariant="error"
-            />
-
-            <ConfirmModal
-              isOpen={showRemoveMemberModal}
-              onClose={() => {
-                setShowRemoveMemberModal(false);
-                setTargetMemberId(null);
-              }}
-              onConfirm={handleRemoveMember}
-              title="メンバーを削除しますか？"
-              message="このメンバーを団体から強制離脱させます。この操作は取り消せません。"
-              confirmLabel="削除する"
-              cancelLabel="キャンセル"
             />
 
             <GroupJoinWarningModal
