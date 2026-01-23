@@ -49,36 +49,34 @@ export function GroupInviteLinkCopyButton({
   };
 
   return (
-    <div className="mt-4">
-      <div className="relative inline-block">
-        <Button
-          variant="secondary"
-          size="sm"
-          rounded="md"
-          onClick={handleCopyInviteLink}
+    <div className="relative inline-block">
+      <Button
+        variant="secondary"
+        size="sm"
+        rounded="md"
+        onClick={handleCopyInviteLink}
+      >
+        <svg
+          className="mr-1.5 h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
         >
-          <svg
-            className="mr-1.5 h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-            />
-          </svg>
-          招待リンクをコピー
-        </Button>
-        {showCopyTooltip && (
-          <div className={`absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white shadow-lg transition-opacity duration-300 ${isFading ? "opacity-0" : "opacity-100"}`}>
-            コピーしました！
-            <div className="absolute left-1/2 top-full -translate-x-1/2 h-0 w-0 border-4 border-transparent border-t-zinc-900" />
-          </div>
-        )}
-      </div>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+          />
+        </svg>
+        招待リンクをコピー
+      </Button>
+      {showCopyTooltip && (
+        <div className={`absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white shadow-lg transition-opacity duration-300 ${isFading ? "opacity-0" : "opacity-100"}`}>
+          コピーしました！
+          <div className="absolute left-1/2 top-full -translate-x-1/2 h-0 w-0 border-4 border-transparent border-t-zinc-900" />
+        </div>
+      )}
     </div>
   );
 }
