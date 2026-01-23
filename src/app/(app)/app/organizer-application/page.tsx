@@ -106,7 +106,7 @@ export default function OrganizerApplicationPage() {
           onClose={() => setShowErrorModal(false)}
           title="申請失敗"
           message={errorMessage}
-          variant="error"
+          titleVariant="error"
           showCancel={false}
         />
       </main>
@@ -353,7 +353,7 @@ export default function OrganizerApplicationPage() {
         onClose={() => setShowErrorModal(false)}
         title="申請失敗"
         message={errorMessage}
-        variant="error"
+        titleVariant="error"
         showCancel={false}
       />
     </main>

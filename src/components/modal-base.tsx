@@ -1,11 +1,13 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 interface ModalBaseProps {
     isOpen: boolean;
     onClose: () => void;
-    title: string;
-    children: React.ReactNode;
-    footer: React.ReactNode;
+    title: ReactNode;
+    children: ReactNode;
+    footer: ReactNode;
 }
 
 export function ModalBase({
