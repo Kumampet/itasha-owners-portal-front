@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { transferGroupLeadership } from "@/lib/user-utils";
 
 // DELETE /api/admin/users/[id]/delete
 // ユーザーを論理削除するAPI
@@ -26,6 +27,33 @@ export async function DELETE(
       return NextResponse.json(
         { error: "自分自身を削除することはできません" },
         { status: 400 }
+      );
+    }
+
+    // ユーザー情報を取得
+    const userBefore = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        deleted_at: true,
+      },
+    });
+
+    if (!userBefore) {
+      return NextResponse.json(
+        { error: "ユーザーが見つかりません" },
+        { status: 404 }
+      );
+    }
+
+    // リーダーになっているグループのリーダー権限を委譲
+    const transferError = await transferGroupLeadership(id, { throwOnError: true });
+    if (transferError) {
+      return NextResponse.json(
+        {
+          error: `グループ「${transferError.groupName}」のリーダー権限委譲に失敗しました`,
+          message: transferError.message,
+        },
+        { status: 500 }
       );
     }
 

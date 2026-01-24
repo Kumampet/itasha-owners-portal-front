@@ -149,7 +149,7 @@ model UserEvent {
   updated_at        DateTime @updatedAt
   event             Event    @relation(fields: [event_id], references: [id])
   group             Group?   @relation(fields: [group_id], references: [id])
-  user              User     @relation(fields: [user_id], references: [id])
+  user              User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@id([user_id, event_id])
   @@index([event_id], map: "user_events_event_id_fkey")
@@ -190,7 +190,7 @@ model GroupMessage {
   reactions       GroupMessageReaction[]
   reads           GroupMessageRead[]
   group           Group                  @relation(fields: [group_id], references: [id])
-  sender          User                   @relation("GroupMessageSender", fields: [sender_id], references: [id])
+  sender          User                   @relation("GroupMessageSender", fields: [sender_id], references: [id], onDelete: Cascade)
 
   @@index([group_id], map: "group_messages_group_id_fkey")
   @@index([sender_id], map: "group_messages_sender_id_fkey")
@@ -252,7 +252,7 @@ model EventFollow {
   event_id    String   @db.VarChar(36)
   followed_at DateTime @default(now())
   event       Event    @relation(fields: [event_id], references: [id])
-  user        User     @relation(fields: [user_id], references: [id])
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@id([user_id, event_id])
   @@index([event_id], map: "event_follows_event_id_fkey")

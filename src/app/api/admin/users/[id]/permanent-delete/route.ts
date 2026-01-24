@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { transferGroupLeadership } from "@/lib/user-utils";
 
 // DELETE /api/admin/users/[id]/permanent-delete
 // ユーザーを物理削除するAPI（論理削除されたユーザーのみ）
@@ -50,6 +51,11 @@ export async function DELETE(
         { status: 400 }
       );
     }
+
+    // リーダーになっているグループを検索（論理削除時に移譲済みのはずだが、念のため確認）
+    // メンバーがいない場合はグループも削除
+    // エラーが発生しても続行（論理削除時に移譲済みの可能性がある）
+    await transferGroupLeadership(id, { throwOnError: false });
 
     // ユーザーを物理削除（関連データもCASCADEで削除される）
     await prisma.user.delete({
