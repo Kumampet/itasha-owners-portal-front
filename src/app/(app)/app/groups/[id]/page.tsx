@@ -530,6 +530,11 @@ export default function GroupDetailPage({
       // 加入成功時は団体情報を再取得してページを更新
       await fetchGroup();
       showSnackbar("団体に加入しました", "success");
+
+      // シェアモーダルを表示
+      if (group) {
+        setShowShareModal(true);
+      }
     } catch (error) {
       let errorMessage = "団体への加入に失敗しました。しばらく時間をおいて再度お試しください。";
 
@@ -564,6 +569,18 @@ export default function GroupDetailPage({
       handleJoin(false);
     }
   }, [session, group, isMember, joining, searchParams, router, handleJoin]);
+
+  // URLパラメータにshowShare=trueがある場合、シェアモーダルを表示
+  useEffect(() => {
+    const showShare = searchParams.get("showShare") === "true";
+    if (showShare && group && isMember) {
+      // URLパラメータを削除
+      const newUrl = window.location.pathname;
+      router.replace(newUrl);
+      // シェアモーダルを表示
+      setShowShareModal(true);
+    }
+  }, [searchParams, group, isMember, router]);
 
   if (loading) {
     return (
