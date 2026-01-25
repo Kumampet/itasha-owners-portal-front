@@ -121,8 +121,8 @@ function GroupJoinForm() {
         return;
       }
 
-      // 加入成功時は団体詳細ページに遷移
-      router.push(`/app/groups/${data.groupId}`);
+      // 加入成功時は団体詳細ページに遷移（シェアモーダルは遷移後に表示）
+      router.push(`/app/groups/${data.groupId}?showShare=true`);
     } catch (error) {
       let errorMessage = "団体への加入に失敗しました。しばらく時間をおいて再度お試しください。";
 

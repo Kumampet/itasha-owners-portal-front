@@ -9,6 +9,7 @@ import { TransferOwnershipModal } from "@/components/transfer-ownership-modal";
 import { Tabs, Tab } from "@/components/tabs";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { GroupJoinWarningModal } from "@/components/group-join-warning-modal";
+import { GroupShareModal } from "@/components/group-share-modal";
 import { useSnackbar } from "@/contexts/snackbar-context";
 import { OwnerBadge } from "../_components/owner-badge";
 import { GroupContents } from "../_components/group-contents";
@@ -100,6 +101,7 @@ export default function GroupDetailPage({
   const [openEmojiPickerMessageId, setOpenEmojiPickerMessageId] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [warningMessage, setWarningMessage] = useState<string>("");
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== "undefined") {
@@ -217,6 +219,15 @@ export default function GroupDetailPage({
   useEffect(() => {
     fetchGroup();
   }, [fetchGroup]);
+
+  // ログインしているかどうか、およびメンバーかどうかを判定
+  const isLoggedIn = !!session;
+  const isMember = useMemo(() => {
+    if (!group || !session?.user?.id) {
+      return false;
+    }
+    return group.members.some(m => m.id === session.user?.id);
+  }, [group, session?.user?.id]);
 
   // ログインしていない場合、「info」タブに切り替える
   useEffect(() => {
@@ -434,9 +445,10 @@ export default function GroupDetailPage({
         throw new Error(errorData.error || "団体からの脱退に失敗しました");
       }
 
-      // 団体情報を再取得してUIを更新
-      await fetchGroup();
+      // 団体情報タブに戻る
+      setActiveTab("info");
       showSnackbar("団体を抜けました", "success");
+      window.location.reload();
     } catch (error) {
       console.error("Failed to leave group:", error);
       const errorMessage = error instanceof Error ? error.message : "団体からの脱退に失敗しました";
@@ -446,16 +458,6 @@ export default function GroupDetailPage({
       setShowLeaveModal(false);
     }
   };
-
-
-  // ログインしているかどうか、およびメンバーかどうかを判定
-  const isLoggedIn = !!session;
-  const isMember = useMemo(() => {
-    if (!group || !session?.user?.id) {
-      return false;
-    }
-    return group.members.some(m => m.id === session.user?.id);
-  }, [group, session?.user?.id]);
 
   /**
    * サーバー側のエラーメッセージをユーザーフレンドリーな日本語メッセージに変換する
@@ -526,8 +528,8 @@ export default function GroupDetailPage({
       }
 
       // 加入成功時は団体情報を再取得してページを更新
-      await fetchGroup();
       showSnackbar("団体に加入しました", "success");
+      setShowShareModal(true);
     } catch (error) {
       let errorMessage = "団体への加入に失敗しました。しばらく時間をおいて再度お試しください。";
 
@@ -545,7 +547,7 @@ export default function GroupDetailPage({
     } finally {
       setJoining(false);
     }
-  }, [group, session, id, router, fetchGroup, showSnackbar]);
+  }, [group, session, id, router, showSnackbar]);
 
   const handleConfirmJoin = () => {
     setShowWarningModal(false);
@@ -562,6 +564,18 @@ export default function GroupDetailPage({
       handleJoin(false);
     }
   }, [session, group, isMember, joining, searchParams, router, handleJoin]);
+
+  // URLパラメータにshowShare=trueがある場合、シェアモーダルを表示
+  useEffect(() => {
+    const showShare = searchParams.get("showShare") === "true";
+    if (showShare && group && isMember) {
+      // URLパラメータを削除
+      const newUrl = window.location.pathname;
+      router.replace(newUrl);
+      // シェアモーダルを表示
+      setShowShareModal(true);
+    }
+  }, [searchParams, group, isMember, router]);
 
   if (loading) {
     return (
@@ -635,7 +649,7 @@ export default function GroupDetailPage({
               >
                 メンバー一覧
               </Tab>
-              {isLoggedIn && (
+              {isLoggedIn && isMember && (
                 <Tab
                   isActive={activeTab === "messages"}
                   onClick={() => setActiveTab("messages")}
@@ -644,7 +658,7 @@ export default function GroupDetailPage({
                   団体メッセージ
                 </Tab>
               )}
-              {isLoggedIn && (
+              {isLoggedIn && isMember && (
                 <Tab
                   isActive={activeTab === "settings"}
                   onClick={() => setActiveTab("settings")}
@@ -750,6 +764,20 @@ export default function GroupDetailPage({
               }}
               onConfirm={handleConfirmJoin}
               warningMessage={warningMessage}
+            />
+
+            <GroupShareModal
+              isOpen={showShareModal}
+              onClose={() => {
+                setShowShareModal(false);
+                window.location.reload();
+              }}
+              groupName={group.name}
+              groupUrl={
+                typeof window !== "undefined"
+                  ? `${window.location.origin}/app/groups/${group.id}`
+                  : ""
+              }
             />
 
           </>

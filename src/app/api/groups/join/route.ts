@@ -147,6 +147,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       groupId: group.id,
+      groupName: group.name,
       warning: warningMessage,
     });
   } catch (error) {
