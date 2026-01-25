@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, use, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -547,7 +547,7 @@ export default function GroupDetailPage({
     } finally {
       setJoining(false);
     }
-  }, [group, session, id, router, fetchGroup, showSnackbar]);
+  }, [group, session, id, router, showSnackbar]);
 
   const handleConfirmJoin = () => {
     setShowWarningModal(false);
