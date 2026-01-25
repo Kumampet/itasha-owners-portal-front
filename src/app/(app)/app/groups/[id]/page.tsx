@@ -9,6 +9,7 @@ import { TransferOwnershipModal } from "@/components/transfer-ownership-modal";
 import { Tabs, Tab } from "@/components/tabs";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { GroupJoinWarningModal } from "@/components/group-join-warning-modal";
+import { GroupShareModal } from "@/components/group-share-modal";
 import { useSnackbar } from "@/contexts/snackbar-context";
 import { OwnerBadge } from "../_components/owner-badge";
 import { GroupContents } from "../_components/group-contents";
@@ -100,6 +101,7 @@ export default function GroupDetailPage({
   const [openEmojiPickerMessageId, setOpenEmojiPickerMessageId] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [warningMessage, setWarningMessage] = useState<string>("");
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== "undefined") {
@@ -750,6 +752,19 @@ export default function GroupDetailPage({
               }}
               onConfirm={handleConfirmJoin}
               warningMessage={warningMessage}
+            />
+
+            <GroupShareModal
+              isOpen={showShareModal}
+              onClose={() => {
+                setShowShareModal(false);
+              }}
+              groupName={group.name}
+              groupUrl={
+                typeof window !== "undefined"
+                  ? `${window.location.origin}/app/groups/${group.id}`
+                  : ""
+              }
             />
 
           </>

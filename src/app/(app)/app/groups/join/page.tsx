@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { GroupJoinWarningModal } from "@/components/group-join-warning-modal";
+import { GroupShareModal } from "@/components/group-share-modal";
 import { LabeledTextInput } from "@/components/labeled-text-input";
 
 /**
@@ -47,9 +48,12 @@ function GroupJoinForm() {
   const [groupCode, setGroupCode] = useState("");
   const [joining, setJoining] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [warningMessage, setWarningMessage] = useState<string>("");
   const [pendingGroupCode, setPendingGroupCode] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [joinedGroupId, setJoinedGroupId] = useState<string | null>(null);
+  const [joinedGroupName, setJoinedGroupName] = useState<string>("");
 
   // メールアドレスが未設定（nullまたは空文字列）かどうかを判定
   const isEmailRequired = !session?.user?.email || session.user.email.trim() === "";
@@ -121,8 +125,15 @@ function GroupJoinForm() {
         return;
       }
 
-      // 加入成功時は団体詳細ページに遷移
-      router.push(`/app/groups/${data.groupId}`);
+      // 加入成功時はシェアモーダルを表示
+      if (typeof window !== "undefined" && data.groupId && data.groupName) {
+        setJoinedGroupId(data.groupId);
+        setJoinedGroupName(data.groupName);
+        setShowShareModal(true);
+      } else {
+        // フォールバック：シェアモーダルが表示できない場合は団体詳細ページに遷移
+        router.push(`/app/groups/${data.groupId}`);
+      }
     } catch (error) {
       let errorMessage = "団体への加入に失敗しました。しばらく時間をおいて再度お試しください。";
 
@@ -236,6 +247,23 @@ function GroupJoinForm() {
         }}
         onConfirm={handleConfirmJoin}
         warningMessage={warningMessage}
+      />
+
+      <GroupShareModal
+        isOpen={showShareModal}
+        onClose={() => {
+          setShowShareModal(false);
+          // シェアモーダルを閉じた後に団体詳細ページに遷移
+          if (joinedGroupId) {
+            router.push(`/app/groups/${joinedGroupId}`);
+          }
+        }}
+        groupName={joinedGroupName}
+        groupUrl={
+          typeof window !== "undefined" && joinedGroupId
+            ? `${window.location.origin}/app/groups/${joinedGroupId}`
+            : ""
+        }
       />
     </main>
   );
