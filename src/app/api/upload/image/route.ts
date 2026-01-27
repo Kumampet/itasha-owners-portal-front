@@ -9,9 +9,9 @@ const s3Client = new S3Client({
   region: process.env.APP_AWS_REGION || "ap-northeast-1",
   credentials: process.env.IMAGE_S3_AWS_ACCESS_KEY_ID && process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY
     ? {
-        accessKeyId: process.env.IMAGE_S3_AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY,
-      }
+      accessKeyId: process.env.IMAGE_S3_AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY,
+    }
     : undefined,
 });
 
@@ -33,13 +33,13 @@ function isValidImageFile(file: File): boolean {
   if (ALLOWED_MIME_TYPES.includes(file.type.toLowerCase())) {
     return true;
   }
-  
+
   // 拡張子で検証（MIMEタイプが不明な場合）
   const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
   if (ALLOWED_EXTENSIONS.includes(extension)) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -114,17 +114,17 @@ export async function POST(request: NextRequest) {
       // 動画形式の明示的な拒否
       const videoMimeTypes = ['video/', 'application/octet-stream'];
       const isVideo = videoMimeTypes.some(type => file.type.startsWith(type)) ||
-        ['.mp4', '.mov', '.avi', '.wmv', '.flv', '.webm'].some(ext => 
+        ['.mp4', '.mov', '.avi', '.wmv', '.flv', '.webm'].some(ext =>
           file.name.toLowerCase().endsWith(ext)
         );
-      
+
       if (isVideo) {
         return NextResponse.json(
           { error: "動画ファイルはアップロードできません。画像ファイル（PNG, JPG, JPEG）を選択してください" },
           { status: 400 }
         );
       }
-      
+
       return NextResponse.json(
         { error: "サポートされていないファイル形式です。PNG, JPG, JPEG形式の画像を選択してください" },
         { status: 400 }
@@ -173,31 +173,37 @@ export async function POST(request: NextRequest) {
     const isHeicOrHeif = fileExtension === '.heic' || fileExtension === '.heif';
     const format = metadata.format?.toLowerCase() || '';
 
+    // 変換後の形式を判定（Content-Typeと拡張子の決定に使用）
+    let outputFormat: 'jpeg' | 'png' = 'jpeg'; // デフォルトはJPEG
+    let contentType: 'image/jpeg' | 'image/png' = 'image/jpeg';
+
     if (isHeicOrHeif || format === 'heic' || format === 'heif') {
       image = image.jpeg({ quality: 80 });
+      outputFormat = 'jpeg';
+      contentType = 'image/jpeg';
     } else if (format === 'jpeg' || format === 'jpg') {
       image = image.jpeg({ quality: 80 });
+      outputFormat = 'jpeg';
+      contentType = 'image/jpeg';
     } else if (format === 'png') {
       image = image.png({ compressionLevel: 6 });
+      outputFormat = 'png';
+      contentType = 'image/png';
     } else {
       // その他の形式はJPEGに変換（安全のため）
       image = image.jpeg({ quality: 80 });
+      outputFormat = 'jpeg';
+      contentType = 'image/jpeg';
     }
 
     // 最適化された画像をバッファに変換
     const optimizedBuffer = await image.toBuffer();
 
-    // 変換後の形式に合わせてContent-Typeを設定
-    let contentType = 'image/jpeg'; // デフォルトはJPEG
-    if (metadata.format === 'png') {
-      contentType = 'image/png';
-    }
-
     // ファイル名を生成（タイムスタンプのみで元のファイル名は隠蔽）
     // 拡張子は変換後の形式に合わせる
     // 団体IDを含めて、団体ごとに画像を分離
     const timestamp = Date.now();
-    const extension = metadata.format === 'png' ? '.png' : '.jpg';
+    const extension = outputFormat === 'png' ? '.png' : '.jpg';
     const s3Key = `uploads/images/${groupId}/${timestamp}${extension}`;
 
     // S3にアップロード
@@ -226,11 +232,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: imageUrl }, { status: 200 });
   } catch (error) {
     console.error("Error uploading image:", error);
-    
+
     // より詳細なエラーメッセージを返す
     let errorMessage = "画像のアップロードに失敗しました";
     let statusCode = 500;
-    
+
     if (error instanceof Error) {
       // 環境変数が設定されていない場合
       if (error.message.includes("IMAGE_S3_BUCKET_NAME")) {
@@ -262,7 +268,7 @@ export async function POST(request: NextRequest) {
         statusCode = 500;
       }
     }
-    
+
     return NextResponse.json(
       { error: errorMessage },
       { status: statusCode }
