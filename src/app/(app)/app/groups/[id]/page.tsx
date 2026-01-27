@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use, useCallback, useMemo } from "react";
+import { useState, useEffect, use, useCallback, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -109,6 +109,8 @@ export default function GroupDetailPage({
     }
     return false;
   });
+  const [isInitialMessagesLoad, setIsInitialMessagesLoad] = useState(true);
+  const scrollPositionRef = useRef<number | null>(null);
 
   // モバイル判定
   useEffect(() => {
@@ -136,6 +138,41 @@ export default function GroupDetailPage({
       setLoading(false);
     }
   }, [id]);
+
+  // 画像の読み込み完了を待つ関数
+  const waitForImagesToLoad = useCallback((container: HTMLElement): Promise<void> => {
+    return new Promise((resolve) => {
+      const images = container.querySelectorAll('img');
+      if (images.length === 0) {
+        resolve();
+        return;
+      }
+
+      let loadedCount = 0;
+      const totalImages = images.length;
+
+      const checkComplete = () => {
+        loadedCount++;
+        if (loadedCount === totalImages) {
+          resolve();
+        }
+      };
+
+      images.forEach((img) => {
+        if (img.complete) {
+          checkComplete();
+        } else {
+          img.addEventListener('load', checkComplete, { once: true });
+          img.addEventListener('error', checkComplete, { once: true });
+        }
+      });
+
+      // タイムアウト（5秒）を設定して、画像が読み込まれない場合でも続行
+      setTimeout(() => {
+        resolve();
+      }, 5000);
+    });
+  }, []);
 
   const fetchMessages = useCallback(async (isInitialLoad = false, forceUpdate = false) => {
     if (isInitialLoad) {
@@ -268,11 +305,25 @@ export default function GroupDetailPage({
     }
   }, [id, activeTab, session]);
 
+  // メッセージタブから他のタブに切り替えるときにスクロール位置を保存
+  useEffect(() => {
+    if (activeTab !== "messages") {
+      const messagesContainer = document.querySelector('[data-messages-container]');
+      if (messagesContainer) {
+        scrollPositionRef.current = messagesContainer.scrollTop;
+      }
+    }
+  }, [activeTab]);
+
   // メッセージタブが開いているときはリアルタイムでメッセージを監視（ログインしている場合のみ）
   useEffect(() => {
     if (activeTab === "messages" && group && session) {
-      // 初回取得（ローディング表示あり）
-      fetchMessages(true);
+      // 初回取得（メッセージが既に存在する場合は再読み込みしない）
+      if (isInitialMessagesLoad || messages.length === 0) {
+        fetchMessages(true);
+        setIsInitialMessagesLoad(false);
+      }
+      // メッセージが既に存在する場合は、再読み込みをスキップ（スクロール位置を保持するため）
 
       // 2秒ごとにメッセージをチェック（新規メッセージがある場合のみ更新）
       const messageInterval = setInterval(() => {
@@ -281,23 +332,36 @@ export default function GroupDetailPage({
 
       return () => clearInterval(messageInterval);
     }
-  }, [activeTab, group, session, fetchMessages]);
+  }, [activeTab, group, session, fetchMessages, isInitialMessagesLoad, messages.length]);
 
-  // メッセージタブが開かれたとき、またはメッセージが読み込まれたときに最新メッセージにスクロール
+  // メッセージタブが開かれたとき、またはメッセージが読み込まれたときにスクロール位置を復元
   useEffect(() => {
     if (activeTab === "messages" && messages.length > 0 && !messagesLoading) {
-      // メッセージが読み込まれた後に最新メッセージ（最下部）にスクロール
-      const scrollToBottom = () => {
-        const messagesContainer = document.querySelector('[data-messages-container]');
-        if (messagesContainer) {
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-      };
+      const messagesContainer = document.querySelector('[data-messages-container]') as HTMLElement;
+      if (!messagesContainer) return;
 
-      // DOM更新を待ってからスクロール
-      setTimeout(scrollToBottom, 100);
+      // DOM更新を待ってから画像の読み込みを待つ
+      setTimeout(async () => {
+        // 画像の読み込みが完了するまで待つ
+        await waitForImagesToLoad(messagesContainer);
+
+        if (scrollPositionRef.current !== null && scrollPositionRef.current !== 0) {
+          // 保存されたスクロール位置を復元（0以外の場合のみ）
+          messagesContainer.scrollTop = scrollPositionRef.current;
+          scrollPositionRef.current = null; // 復元後はクリア
+        } else if (scrollPositionRef.current === null && messages.length > 0) {
+          // スクロール位置が保存されていない場合（初回読み込み時）は最下部にスクロール
+          // ただし、メッセージが既に存在する場合は何もしない（ユーザーが既にスクロールしている可能性があるため）
+          const wasAtBottom = Math.abs(
+            messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight
+          ) < 50;
+          if (wasAtBottom || messagesContainer.scrollTop === 0) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }
+        }
+      }, 100);
     }
-  }, [activeTab, messages.length, messagesLoading]);
+  }, [activeTab, messages.length, messagesLoading, waitForImagesToLoad]);
 
   // メッセージを表示したときに既読状態を更新
   useEffect(() => {
@@ -319,40 +383,96 @@ export default function GroupDetailPage({
     }
   }, [activeTab, messages, id]);
 
-  const handleSendMessage = async () => {
-    if (!messageContent.trim()) {
-      alert("メッセージを入力してください");
+  const handleSendMessage = async (imageFile: File | null) => {
+    const textContent = messageContent.trim();
+
+    // テキストも画像もない場合はエラー
+    if (!textContent && !imageFile) {
+      alert("メッセージを入力するか、画像を選択してください");
       return;
     }
 
-    // 全角文字換算で1000文字を超える場合はエラー
-    const charCount = Array.from(messageContent).length;
-    if (charCount > 1000) {
-      alert("メッセージは全角1000文字以内で入力してください");
-      return;
+    // テキストがある場合、全角文字換算で1000文字を超える場合はエラー
+    if (textContent) {
+      const charCount = Array.from(textContent).length;
+      if (charCount > 1000) {
+        alert("メッセージは全角1000文字以内で入力してください");
+        return;
+      }
     }
 
     setSending(true);
     try {
-      const res = await fetch(`/api/groups/${id}/messages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: messageContent,
-          isAnnouncement: isAnnouncement,
-        }),
-      });
+      // 画像をアップロード（画像がある場合）
+      let imageUrl: string | null = null;
+      if (imageFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", imageFile);
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to send message");
+        const uploadResponse = await fetch(`/api/upload/image?groupId=${id}`, {
+          method: "POST",
+          body: uploadFormData,
+        });
+
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json().catch(() => ({ error: "Unknown error" }));
+          const errorMessage = errorData.error || `画像のアップロードに失敗しました (HTTP ${uploadResponse.status})`;
+          throw new Error(errorMessage);
+        }
+
+        const uploadData = await uploadResponse.json();
+        imageUrl = uploadData.url;
       }
 
-      const newMessage = await res.json();
-      // 新しいメッセージを追加（配列の最後に追加）
-      setMessages([...messages, newMessage]);
+      // テキストメッセージを送信（テキストがある場合）
+      if (textContent) {
+        const textRes = await fetch(`/api/groups/${id}/messages`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content: textContent,
+            isAnnouncement: isAnnouncement,
+          }),
+        });
+
+        if (!textRes.ok) {
+          const errorData = await textRes.json();
+          throw new Error(errorData.error || "Failed to send message");
+        }
+
+        const newTextMessage = await textRes.json();
+        // 新しいメッセージを追加（配列の最後に追加）
+        setMessages((prev) => [...prev, newTextMessage]);
+      }
+
+      // 画像メッセージを送信（画像がある場合）
+      if (imageUrl) {
+        const imageTag = `<img src="${imageUrl}" alt="アップロードされた画像" style="max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0;" />`;
+
+        const imageRes = await fetch(`/api/groups/${id}/messages`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content: imageTag,
+            isAnnouncement: isAnnouncement,
+          }),
+        });
+
+        if (!imageRes.ok) {
+          const errorData = await imageRes.json();
+          throw new Error(errorData.error || "Failed to send image message");
+        }
+
+        const newImageMessage = await imageRes.json();
+        // 新しいメッセージを追加（配列の最後に追加）
+        setMessages((prev) => [...prev, newImageMessage]);
+      }
+
+      // フォームをクリア
       setMessageContent("");
       setIsAnnouncement(false);
 
@@ -395,11 +515,14 @@ export default function GroupDetailPage({
         throw new Error(errorData.error || "団体の解散に失敗しました");
       }
 
-      alert("団体を解散しました");
+      showSnackbar("団体を解散しました", "success");
       router.push("/app/groups");
     } catch (error) {
       console.error("Failed to disband group:", error);
-      alert(`団体の解散に失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`);
+      showSnackbar(
+        `団体の解散に失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`,
+        "error"
+      );
     } finally {
       setProcessing(false);
       setShowDisbandModal(false);
@@ -606,7 +729,7 @@ export default function GroupDetailPage({
   } else {
     return (
       <main className="flex-1">
-        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
+        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8 max-h-[100vh]">
           <>
             <header className="space-y-2">
               <div className="flex items-start justify-between gap-4">
