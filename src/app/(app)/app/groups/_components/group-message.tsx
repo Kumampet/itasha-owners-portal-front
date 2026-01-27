@@ -188,7 +188,7 @@ export function GroupMessage({
     }));
   }, [messages]);
   return (
-    <div className="flex flex-col min-h-[400px] sm:min-h-[500px] overflow-hidden">
+    <div className="flex flex-1 flex-col min-h-[400px] sm:min-h-[500px] overflow-hidden">
       {/* メッセージ一覧（スクロール可能） */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3 pb-24 sm:pb-4" data-messages-container>
         {messagesLoading ? (
@@ -232,7 +232,7 @@ export function GroupMessage({
       </div>
 
       {/* メッセージ送信フォーム（固定） */}
-      <div className="border-t border-zinc-200 bg-white p-4 flex-shrink-0">
+      <div className="border-t border-zinc-200 bg-white p-4 pb-0 flex-shrink-0">
         <div className="space-y-2">
           {/* 画像プレビュー */}
           {imagePreviewUrl && (
@@ -301,6 +301,7 @@ export function GroupMessage({
                 {/* 画像添付ボタン */}
                 <div className="flex items-center gap-2">
                   <input
+                    alt="画像を添付"
                     ref={fileInputRef}
                     type="file"
                     accept="image/png,image/jpeg,image/jpg,image/heic,image/heif"
