@@ -136,11 +136,16 @@ export function GroupMessage({
     setImagePreviewUrl(null);
   };
 
-  // クリーンアップ：コンポーネントのアンマウント時にプレビューURLを解放
+  // クリーンアップ：imagePreviewUrlが変更されるたびに古いURLを解放、アンマウント時にもクリーンアップ
   useEffect(() => {
+    // 現在のimagePreviewUrlを保存（クロージャで保持）
+    const currentUrl = imagePreviewUrl;
+
     return () => {
-      if (imagePreviewUrl) {
-        URL.revokeObjectURL(imagePreviewUrl);
+      // クリーンアップ時に保存したURLをrevoke
+      // imagePreviewUrlが変更されるたびに、古いURLが確実に解放される
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl);
       }
     };
   }, [imagePreviewUrl]);

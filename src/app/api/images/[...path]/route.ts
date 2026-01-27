@@ -4,6 +4,15 @@ import { Readable } from "stream";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
+// S3エラーの型定義
+interface S3Error {
+  name?: string;
+  $metadata?: {
+    httpStatusCode?: number;
+  };
+  message?: string;
+}
+
 // S3クライアントの初期化
 const s3Client = new S3Client({
   region: process.env.APP_AWS_REGION || "ap-northeast-1",
@@ -118,8 +127,8 @@ export async function GET(
     try {
       headResponse = await s3Client.send(headCommand);
     } catch (headError) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const error = headError as any;
+      // S3エラーの型をチェック
+      const error = headError as S3Error;
       if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
         return NextResponse.json(
           { error: "Image not found" },
@@ -226,8 +235,9 @@ export async function GET(
     }
 
     // 画像データを返却（キャッシュヘッダー付き）
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return new NextResponse(stream as any, {
+    // ReadableストリームをNextResponseで返す
+    // NextResponseはNode.jsのReadableストリームも受け付けるが、型定義上はunknownを経由してキャスト
+    return new NextResponse(stream as unknown as BodyInit, {
       headers,
     });
   } catch (error) {
