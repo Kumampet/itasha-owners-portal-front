@@ -133,11 +133,11 @@ export default function GroupDetailPage({
       setGroup(data);
     } catch (error) {
       console.error("Failed to fetch group:", error);
-      alert(`団体の取得に失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`);
+      showSnackbar(`団体の取得に失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`, "error");
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, showSnackbar]);
 
   // 画像の読み込み完了を待つ関数
   const waitForImagesToLoad = useCallback((container: HTMLElement): Promise<void> => {
@@ -247,11 +247,11 @@ export default function GroupDetailPage({
     } catch (error) {
       console.error("Failed to fetch messages:", error);
       if (isInitialLoad) {
-        alert("メッセージの取得に失敗しました");
+        showSnackbar("メッセージの取得に失敗しました", "error");
         setMessagesLoading(false);
       }
     }
-  }, [id]);
+  }, [id, showSnackbar]);
 
   useEffect(() => {
     fetchGroup();
@@ -388,7 +388,7 @@ export default function GroupDetailPage({
 
     // テキストも画像もない場合はエラー
     if (!textContent && !imageFile) {
-      alert("メッセージを入力するか、画像を選択してください");
+      showSnackbar("メッセージを入力するか、画像を選択してください", "error");
       return;
     }
 
@@ -396,7 +396,7 @@ export default function GroupDetailPage({
     if (textContent) {
       const charCount = Array.from(textContent).length;
       if (charCount > 1000) {
-        alert("メッセージは全角1000文字以内で入力してください");
+        showSnackbar("メッセージは全角1000文字以内で入力してください", "error");
         return;
       }
     }
@@ -488,7 +488,7 @@ export default function GroupDetailPage({
       }, 100);
     } catch (error) {
       console.error("Failed to send message:", error);
-      alert(`メッセージの送信に失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`);
+      showSnackbar(`メッセージの送信に失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`, "error");
     } finally {
       setSending(false);
     }
@@ -545,11 +545,11 @@ export default function GroupDetailPage({
         throw new Error(errorData.error || "権限の譲渡に失敗しました");
       }
 
-      alert("オーナー権限を譲渡しました");
+      showSnackbar("オーナー権限を譲渡しました", "success");
       fetchGroup(); // 団体情報を再取得
     } catch (error) {
       console.error("Failed to transfer ownership:", error);
-      alert(`権限の譲渡に失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`);
+      showSnackbar(`権限の譲渡に失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`, "error");
     } finally {
       setProcessing(false);
       setShowTransferModal(false);
@@ -666,7 +666,7 @@ export default function GroupDetailPage({
         }
       }
 
-      alert(errorMessage);
+      showSnackbar(errorMessage, "error");
     } finally {
       setJoining(false);
     }
