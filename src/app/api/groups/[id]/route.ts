@@ -1,6 +1,74 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { S3Client, ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
+
+// S3クライアントの初期化
+const s3Client = new S3Client({
+  region: process.env.APP_AWS_REGION || "ap-northeast-1",
+  credentials: process.env.IMAGE_S3_AWS_ACCESS_KEY_ID && process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY
+    ? {
+      accessKeyId: process.env.IMAGE_S3_AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY,
+    }
+    : undefined,
+});
+
+/**
+ * 団体に関連するS3の画像をすべて削除する
+ */
+async function deleteGroupImages(groupId: string): Promise<void> {
+  // 環境変数が設定されていない場合はスキップ
+  if (!process.env.IMAGE_S3_BUCKET_NAME) {
+    console.warn("IMAGE_S3_BUCKET_NAME is not set, skipping image deletion");
+    return;
+  }
+
+  // 認証情報が設定されていない場合はスキップ
+  if (!process.env.IMAGE_S3_AWS_ACCESS_KEY_ID || !process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY) {
+    console.warn("S3 credentials are not set, skipping image deletion");
+    return;
+  }
+
+  try {
+    const prefix = `uploads/images/${groupId}/`;
+    let continuationToken: string | undefined;
+
+    do {
+      // 団体ID配下のすべてのオブジェクトをリストアップ
+      const listCommand = new ListObjectsV2Command({
+        Bucket: process.env.IMAGE_S3_BUCKET_NAME,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      });
+
+      const listResponse = await s3Client.send(listCommand);
+
+      // オブジェクトが存在する場合、削除を実行
+      if (listResponse.Contents && listResponse.Contents.length > 0) {
+        // 各オブジェクトを削除
+        const deletePromises = listResponse.Contents.map((object) => {
+          if (!object.Key) return Promise.resolve();
+
+          const deleteCommand = new DeleteObjectCommand({
+            Bucket: process.env.IMAGE_S3_BUCKET_NAME,
+            Key: object.Key,
+          });
+          return s3Client.send(deleteCommand);
+        });
+
+        await Promise.all(deletePromises);
+      }
+
+      // 次のページがある場合は続行
+      continuationToken = listResponse.NextContinuationToken;
+    } while (continuationToken);
+  } catch (error) {
+    // S3削除エラーはログに記録するが、団体削除は続行する
+    console.error(`Error deleting images for group ${groupId}:`, error);
+    // エラーが発生しても団体削除は続行する（画像は後で手動削除可能）
+  }
+}
 
 // GET /api/groups/[id]
 // 団体詳細を取得（ログインなしでもアクセス可能）
@@ -162,7 +230,7 @@ export async function GET(
       {
         headers: {
           // ログインしていない場合でもキャッシュ可能（公開情報のため）
-          "Cache-Control": session && session.user 
+          "Cache-Control": session && session.user
             ? "private, s-maxage=5, stale-while-revalidate=10"
             : "public, s-maxage=60, stale-while-revalidate=120",
         },
@@ -238,6 +306,10 @@ export async function DELETE(
         where: { id },
       });
     });
+
+    // S3から団体に関連する画像を削除（トランザクション外で実行）
+    // エラーが発生しても団体削除は成功とする
+    await deleteGroupImages(id);
 
     // 書き込み操作で即座に反映が必要なのでキャッシュを無効にする
     return NextResponse.json(
