@@ -729,7 +729,7 @@ export default function GroupDetailPage({
   } else {
     return (
       <main className="flex-1">
-        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8 min-h-[100vh]">
+        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 py-6 min-h-[100vh] max-h-[100vh]">
           <>
             <header className="space-y-2">
               <div className="flex items-start justify-between gap-4">
