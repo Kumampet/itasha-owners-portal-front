@@ -190,7 +190,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         logoHref="/admin/dashboard"
-        breakpoint="lg"
+        breakpoint="sm"
         width="64"
         showPCLogo={true}
       >

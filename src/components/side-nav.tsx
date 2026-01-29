@@ -37,7 +37,7 @@ export function SideNav({
       )}
       {/* サイドバー（PC版） */}
       <aside
-        className={`hidden ${widthClass} flex-shrink-0 border-r border-zinc-200 bg-white ${breakpointClass}block ${breakpointClass}h-screen ${breakpointClass}sticky ${breakpointClass}top-0`}
+        className={`hidden sm:block ${widthClass} flex-shrink-0 border-r border-zinc-200 bg-white ${breakpointClass}h-screen ${breakpointClass}sticky ${breakpointClass}top-0`}
       >
         <div className="flex h-full flex-col">
           {showPCLogo && (
