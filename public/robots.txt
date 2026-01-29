@@ -23,11 +23,6 @@ User-agent: AdsBot-Google-Mobile
 Allow: /
 Crawl-delay: 0
 
-# Twitterbotを許可（OGP画像取得のため）
-User-agent: Twitterbot
-Allow: /
-Crawl-delay: 0
-
 # 代表的なSNSのクローラーを許可
 User-agent: facebookexternalhit
 Allow: /
@@ -111,6 +106,11 @@ Crawl-delay: 86400
 User-agent: ia_archiver
 Disallow: /
 Crawl-delay: 86400
+
+# Twitterbotを許可（OGP画像取得のため）- 最後のUser-agent: *より前に配置
+User-agent: Twitterbot
+Allow: /
+Crawl-delay: 0
 
 # その他のすべてのボットを拒否
 User-agent: *
