@@ -368,6 +368,10 @@ export function MessageReactions({
   }, []);
 
   const handleReactionClick = async (emoji: string) => {
+    // 自分のメッセージにはリアクションを付けられない
+    if (isOwnMessage) {
+      return;
+    }
     const success = await toggleReaction(groupId, messageId, emoji);
     if (success) {
       // リアクション変更を即座に反映
@@ -417,7 +421,12 @@ export function MessageReactions({
           return (
             <div key={reaction.emoji} className="relative group">
               <button
-                onClick={() => handleReactionClick(reaction.emoji)}
+                onClick={() => {
+                  // 自分のメッセージの場合はクリックを無効化
+                  if (!isOwnMessage) {
+                    handleReactionClick(reaction.emoji);
+                  }
+                }}
                 onMouseEnter={() => {
                   if (!isMobile) {
                     setShowReactionDetails(reaction.emoji);
@@ -436,12 +445,12 @@ export function MessageReactions({
                     );
                   }
                 }}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-colors ${hasUserReaction
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-colors cursor-pointer ${hasUserReaction
                   ? isOwnMessage
                     ? "bg-white/20 text-white border border-white/30"
                     : "bg-blue-100 text-blue-700 border border-blue-200"
                   : isOwnMessage
-                    ? "bg-white/10 text-white border border-white/20 hover:bg-white/20"
+                    ? "bg-white/10 text-white border border-white/20"
                     : "bg-zinc-100 text-zinc-700 border border-zinc-200 hover:bg-zinc-200"
                   }`}
               >
@@ -452,7 +461,7 @@ export function MessageReactions({
               {showReactionDetails === reaction.emoji && (
                 <div
                   ref={detailsRef}
-                  className="absolute bottom-full left-0 mb-1 z-50 bg-white border border-zinc-200 rounded-lg shadow-lg p-3 min-w-[200px] max-w-[300px]"
+                  className={`absolute bottom-full ${isOwnMessage ? "right-0" : "left-0"} mb-1 z-50 bg-white border border-zinc-200 rounded-lg shadow-lg p-3 w-max`}
                   onMouseEnter={() => setShowReactionDetails(reaction.emoji)}
                   onMouseLeave={() => setShowReactionDetails(null)}
                 >
@@ -533,6 +542,7 @@ export function ReactionListModal({
   onReactionChange,
   isOpen,
   onClose,
+  isOwnMessage,
 }: {
   messageId: string;
   groupId: string;
@@ -540,6 +550,7 @@ export function ReactionListModal({
   onReactionChange: () => void;
   isOpen: boolean;
   onClose: () => void;
+  isOwnMessage: boolean;
 }) {
   const { data: session } = useSession();
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -573,6 +584,10 @@ export function ReactionListModal({
   }, [isOpen]);
 
   const handleReactionClick = async (emoji: string) => {
+    // 自分のメッセージにはリアクションを付けられない
+    if (isOwnMessage) {
+      return;
+    }
     const success = await toggleReaction(groupId, messageId, emoji);
     if (success) {
       // リアクション変更を即座に反映
@@ -614,7 +629,8 @@ export function ReactionListModal({
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => handleReactionClick(reaction.emoji)}
-                        className={`text-2xl ${hasUserReaction ? "opacity-100" : "opacity-60"}`}
+                        disabled={isOwnMessage}
+                        className={`text-2xl ${isOwnMessage ? "cursor-not-allowed opacity-40" : "cursor-pointer"} ${hasUserReaction ? "opacity-100" : "opacity-60"}`}
                       >
                         {reaction.emoji}
                       </button>
@@ -633,9 +649,13 @@ export function ReactionListModal({
                     </div>
                     <button
                       onClick={() => handleReactionClick(reaction.emoji)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${hasUserReaction
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                      disabled={isOwnMessage}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${isOwnMessage
+                        ? "cursor-not-allowed opacity-40 bg-zinc-100 text-zinc-400"
+                        : "cursor-pointer"
+                        } ${hasUserReaction
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
                         }`}
                     >
                       {hasUserReaction ? "削除" : "追加"}
@@ -690,7 +710,11 @@ export function ReactionListModal({
             ) : (
               <button
                 onClick={() => setShowEmojiPicker(true)}
-                className="w-full py-3 px-4 border-2 border-dashed border-zinc-300 rounded-lg text-zinc-600 hover:border-zinc-400 hover:bg-zinc-50 transition-colors flex items-center justify-center gap-2"
+                disabled={isOwnMessage}
+                className={`w-full py-3 px-4 border-2 border-dashed rounded-lg transition-colors flex items-center justify-center gap-2 ${isOwnMessage
+                  ? "cursor-not-allowed opacity-40 border-zinc-200 text-zinc-400"
+                  : "cursor-pointer border-zinc-300 text-zinc-600 hover:border-zinc-400 hover:bg-zinc-50"
+                  }`}
               >
                 <AddReactionIcon className="w-5 h-5" />
                 <span className="text-sm font-medium">絵文字を選択</span>
