@@ -384,12 +384,13 @@ export default function GroupDetailPage({
   }, [activeTab, messages, id]);
 
   const handleSendMessage = async (imageFile: File | null) => {
-    const textContent = messageContent.trim();
+    // 改行を保持するため、先頭と末尾の空白のみ削除（途中の改行は保持）
+    const textContent = messageContent.replace(/^\s+|\s+$/g, "");
 
     // テキストも画像もない場合はエラー
     if (!textContent && !imageFile) {
       showSnackbar("メッセージを入力するか、画像を選択してください", "error");
-      return;
+      throw new Error("メッセージを入力するか、画像を選択してください");
     }
 
     // テキストがある場合、全角文字換算で1000文字を超える場合はエラー
@@ -397,7 +398,7 @@ export default function GroupDetailPage({
       const charCount = Array.from(textContent).length;
       if (charCount > 1000) {
         showSnackbar("メッセージは全角1000文字以内で入力してください", "error");
-        return;
+        throw new Error("メッセージは全角1000文字以内で入力してください");
       }
     }
 
@@ -489,6 +490,8 @@ export default function GroupDetailPage({
     } catch (error) {
       console.error("Failed to send message:", error);
       showSnackbar(`メッセージの送信に失敗しました: ${error instanceof Error ? error.message : "Unknown error"}`, "error");
+      // エラーを再throwして、呼び出し元で適切に処理できるようにする
+      throw error;
     } finally {
       setSending(false);
     }
@@ -729,7 +732,7 @@ export default function GroupDetailPage({
   } else {
     return (
       <main className="flex-1">
-        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 py-6 min-h-[100vh] max-h-[100vh]">
+        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 py-6 min-h-[calc(100vh-64px)] max-h-[calc(100vh-64px)]">
           <>
             <header className="space-y-2">
               <div className="flex items-start justify-between gap-4">

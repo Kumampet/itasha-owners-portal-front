@@ -23,7 +23,12 @@ export function EmailRequiredBanner() {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[51] bg-red-50 border-t border-red-200 shadow-lg">
+    <div
+      className="fixed bottom-0 left-0 right-0 z-[51] bg-red-50 border-t border-red-200 shadow-lg safe-bottom"
+      style={{
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      }}
+    >
       <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1">

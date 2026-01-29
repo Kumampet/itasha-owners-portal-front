@@ -3,15 +3,14 @@
 import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { DisplayNameModal } from "@/components/display-name-modal";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 import { EmailRequiredBanner } from "@/components/email-required-banner";
-import { MenuController } from "@/components/menu-controller";
-import { Button } from "@/components/button";
-import { LoadingSpinner } from "@/components/loading-spinner";
+import { MobileHeader } from "@/components/mobile-header";
+import { SideNav } from "@/components/side-nav";
+import { SideNavUserSection } from "@/components/side-nav-user-section";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -57,10 +56,10 @@ function resolveActiveKey(pathname: string) {
   return segments[0];
 }
 
-function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+function AppSideNavContent({ onClose }: { onClose: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const activeKey = resolveActiveKey(pathname);
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -86,125 +85,31 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
     }
   };
 
-  const displayName = session?.user?.name || session?.user?.email || "ゲスト";
-  const isLoading = status === "loading";
-
   return (
-    <>
-      {/* オーバーレイ（SP版のみ） */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 sm:hidden"
-          onClick={onClose}
-        />
-      )}
-      {/* サイドメニュー */}
-      <aside
-        className={`fixed top-0 left-0 z-50 flex h-screen w-56 flex-col border-r border-zinc-100 bg-white px-4 py-6 transition-transform duration-300 ease-in-out sm:sticky sm:translate-x-0 overflow-y-auto ${isOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-      >
-        {/* 閉じるボタン（SP版のみ） */}
-        <div className="mb-4 flex items-center justify-between sm:mb-6">
-          <Link href="/app/mypage" className="flex items-center">
-            <Image
-              src="/images/main_logo.png"
-              alt="いたなび！痛車オーナーズナビ"
-              width={200}
-              height={80}
-              className="h-auto w-full max-w-[180px]"
-              priority
-            />
-          </Link>
-          <MenuController
-            variant="close"
-            onClick={onClose}
-            className="sm:hidden"
-          />
-        </div>
-        {/* ユーザー情報表示領域（固定サイズでレイアウトシフトを防止） */}
-        <div className="mb-4 min-h-[80px] rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-2">
-              <LoadingSpinner size="sm" />
-            </div>
-          ) : session ? (
-            <>
-              <div className="flex items-center gap-2">
-                {session.user?.image && (
-                  <Image
-                    src={session.user.image}
-                    alt={displayName}
-                    width={32}
-                    height={32}
-                    className="h-8 w-8 rounded-full"
-                    referrerPolicy="no-referrer"
-                  />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-zinc-900 truncate">
-                    {session.user?.name || "ユーザー"}
-                  </p>
-                  {session.user?.email && session.user.email.trim() !== "" && (
-                    <p className="text-[10px] text-zinc-600 truncate">
-                      {session.user.email}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <Button
-                as="action"
-                onClick={async () => {
-                  onClose();
-                  // ログアウト後は一般アプリのログインページにリダイレクト
-                  const redirectUrl = "/app/auth";
-
-                  // ログアウト処理
-                  await signOut({ redirect: false });
-
-                  // 完全なページリロードを行い、サーバーサイドのミドルウェアが確実に実行されるようにする
-                  // これにより、セッションがクリアされた状態でログインページにアクセスできる
-                  window.location.href = redirectUrl;
-                }}
-                className="mt-2 text-[10px] rounded-md border border-zinc-300 bg-white px-2 py-1 text-zinc-700 hover:bg-zinc-100"
-              >
-                ログアウト
-              </Button>
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-2">
-              <p className="text-xs text-zinc-600 mb-2">ログインしてください</p>
-              <Link
-                href="/app/auth"
-                onClick={onClose}
-                className="w-full rounded-md bg-zinc-900 px-2 py-1.5 text-center text-[10px] font-medium text-white transition hover:bg-zinc-800"
-              >
-                ログイン
-              </Link>
-            </div>
-          )}
-        </div>
-        <nav className="space-y-1 text-sm flex-1">
-          {tabs.map((tab) => {
-            // ログインが必要なメニュー項目は、ログインしていない場合は非表示
-            if (tab.requiresAuth && !session) {
-              return null;
-            }
-            const isActive = tab.key === activeKey;
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                onClick={(e) => handleNavClick(e, tab.href)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 ${isActive
-                  ? "bg-zinc-900 text-white"
-                  : "text-zinc-700 hover:bg-zinc-50"
-                  }`}
-              >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
-              </Link>
-            );
-          })}
+    <div className="flex h-full flex-col p-0 sm:px-4 sm:py-6">
+      <SideNavUserSection onClose={onClose} />
+      <nav className="space-y-1 text-sm flex-1">
+        {tabs.map((tab) => {
+          // ログインが必要なメニュー項目は、ログインしていない場合は非表示
+          if (tab.requiresAuth && !session) {
+            return null;
+          }
+          const isActive = tab.key === activeKey;
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              onClick={(e) => handleNavClick(e, tab.href)}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 ${isActive
+                ? "bg-zinc-900 text-white"
+                : "text-zinc-700 hover:bg-zinc-50"
+                }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+            </Link>
+          );
+        })}
         {(session?.user?.role === "ADMIN" || session?.user?.role === "ORGANIZER") && (
           <div className="mt-4 border-t border-zinc-200 pt-4">
             <Link
@@ -220,63 +125,8 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
             </Link>
           </div>
         )}
-        </nav>
-      </aside>
-    </>
-  );
-}
-
-function MobileHeader({
-  onMenuClick,
-}: {
-  onMenuClick: () => void;
-}) {
-  const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      const scrollThreshold = 10; // トップから10px以内は常に表示
-
-      if (currentScrollY < scrollThreshold) {
-        setIsVisible(true);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 50) {
-        // 下にスクロール（50px以上スクロールしたら非表示）
-        setIsVisible(false);
-      } else if (currentScrollY < lastScrollY) {
-        // 上にスクロール
-        setIsVisible(true);
-      }
-
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
-
-  return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-30 flex h-14 items-center justify-between border-b border-zinc-200 bg-white/90 px-4 backdrop-blur transition-transform duration-300 ease-in-out sm:hidden ${isVisible ? "translate-y-0" : "-translate-y-full"
-        }`}
-    >
-      <MenuController
-        variant="open"
-        onClick={onMenuClick}
-        className="h-10 w-10 border border-zinc-200 bg-white shadow-sm"
-      />
-      <Link href="/app/mypage" className="flex items-center">
-        <Image
-          src="/images/main_logo.png"
-          alt="いたなび！痛車オーナーズナビ"
-          width={150}
-          height={60}
-          className="h-8 w-auto"
-          priority
-        />
-      </Link>
-    </header>
+      </nav>
+    </div>
   );
 }
 
@@ -286,6 +136,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { data: session, status } = useSession();
   const [showDisplayNameModal, setShowDisplayNameModal] = useState(false);
   const [hasCheckedDisplayName, setHasCheckedDisplayName] = useState(false);
+  const [isPC, setIsPC] = useState(false);
+
+  // PC判定
+  useEffect(() => {
+    const checkIsPC = () => {
+      setIsPC(window.innerWidth >= 640); // sm breakpoint
+    };
+
+    checkIsPC();
+    window.addEventListener("resize", checkIsPC);
+    return () => window.removeEventListener("resize", checkIsPC);
+  }, []);
 
   // /app配下のページを検索エンジンから除外
   useEffect(() => {
@@ -429,8 +291,23 @@ export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <>
       <div className="flex min-h-screen">
-        <MobileHeader onMenuClick={() => setIsMenuOpen(true)} />
-        <SideNav isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+        <MobileHeader
+          onMenuClick={() => setIsMenuOpen(true)}
+          logoHref="/app/mypage"
+          enableAutoHide={true}
+        />
+        <SideNav
+          isOpen={isMenuOpen}
+          onClose={() => setIsMenuOpen(false)}
+          showPCLogo={isPC}
+          logoHref="/app/mypage"
+          breakpoint="sm"
+          width="56"
+        >
+          <AppSideNavContent
+            onClose={() => setIsMenuOpen(false)}
+          />
+        </SideNav>
         <div className="flex min-h-screen flex-1 flex-col pt-14 sm:pt-0">
           {children}
         </div>

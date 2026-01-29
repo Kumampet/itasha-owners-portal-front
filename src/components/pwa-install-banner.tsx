@@ -127,7 +127,12 @@ export function PWAInstallBanner() {
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-zinc-200 shadow-lg sm:hidden">
+      <div
+        className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-zinc-200 shadow-lg sm:hidden safe-bottom"
+        style={{
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        }}
+      >
         <div className="flex items-center gap-3 px-4 py-3">
           <div className="flex-1">
             <p className="text-sm font-medium text-zinc-900">

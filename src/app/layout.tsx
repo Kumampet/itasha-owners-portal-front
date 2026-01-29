@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -50,6 +50,13 @@ export const metadata: Metadata = {
   other: {
     "google-adsense-account": "ca-pub-5239358801885177",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover", // SafeArea対応のため
 };
 
 export default function RootLayout({

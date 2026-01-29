@@ -68,6 +68,14 @@ export async function POST(
       );
     }
 
+    // 自分のメッセージにはリアクションを付けられない
+    if (message.sender_id === session.user.id) {
+      return NextResponse.json(
+        { error: "You cannot react to your own message" },
+        { status: 403 }
+      );
+    }
+
     // 既存のリアクションを確認（同じユーザーが同じ絵文字を既に付けている場合は削除）
     const existingReaction = await prisma.groupMessageReaction.findUnique({
       where: {
@@ -162,6 +170,14 @@ export async function DELETE(
       return NextResponse.json(
         { error: "Message not found" },
         { status: 404 }
+      );
+    }
+
+    // 自分のメッセージにはリアクションを削除できない（そもそも付けられないが、念のため）
+    if (message.sender_id === session.user.id) {
+      return NextResponse.json(
+        { error: "You cannot delete reactions from your own message" },
+        { status: 403 }
       );
     }
 

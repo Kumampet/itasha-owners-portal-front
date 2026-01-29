@@ -27,11 +27,10 @@ export function Tab({ children, isActive, onClick, className = "", badge = false
   return (
     <div
       onClick={onClick}
-      className={`relative px-4 py-2 text-sm font-medium transition cursor-pointer ${
-        isActive
+      className={`relative whitespace-nowrap px-2 py-2 text-xs font-medium transition cursor-pointer sm:px-4 sm:text-sm ${isActive
           ? "border-b-2 border-zinc-900 text-zinc-900"
           : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50"
-      } ${className}`}
+        } ${className}`}
     >
       {children}
       {badge && (

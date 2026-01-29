@@ -46,8 +46,8 @@ export function SafeMessageContent({
           );
         } else {
           // テキストの場合はそのまま表示（Reactが自動的にエスケープする）
-          // 改行を保持するためにwhitespace-pre-wrapが必要
-          return <span key={index}>{part.text}</span>;
+          // 改行を保持するためにwhitespace-pre-wrapが必要（親要素に設定されているが、念のため）
+          return <span key={index} className="whitespace-pre-wrap">{part.text}</span>;
         }
       })}
     </span>

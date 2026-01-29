@@ -151,8 +151,9 @@ export function GroupMessage({
   }, [imagePreviewUrl]);
 
   // テキストエリアに表示する内容（HTMLタグを除外）- useMemoでメモ化
+  // 改行を保持するため、.trim()は使用しない（先頭と末尾の空白のみ削除）
   const displayTextContent = useMemo(
-    () => messageContent.replace(/<img[^>]*>/g, "").trim(),
+    () => messageContent.replace(/<img[^>]*>/g, ""),
     [messageContent]
   );
 
@@ -282,21 +283,6 @@ export function GroupMessage({
                   placeholder="メッセージを入力してください..."
                   rows={2}
                   className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 resize-none"
-                  onKeyDown={async (e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      if ((displayTextContent.trim() || selectedImageFile) && !sending) {
-                        try {
-                          await onSendMessage(selectedImageFile);
-                          // 送信成功後に画像プレビューをクリア
-                          handleRemoveImagePreview();
-                        } catch (error) {
-                          // 送信失敗時は画像プレビューを保持
-                          console.error("Failed to send message:", error);
-                        }
-                      }
-                    }
-                  }}
                 />
                 {/* 画像添付ボタン */}
                 <div className="flex items-center gap-2">
