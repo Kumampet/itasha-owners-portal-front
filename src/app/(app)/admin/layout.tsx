@@ -218,8 +218,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* サイドバー（モバイル版 - lg未満でハンバーガーメニュー） */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen w-64 border-r border-zinc-200 bg-white transition-transform duration-300 ease-in-out lg:hidden overflow-y-auto ${isMenuOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 left-0 z-50 w-64 border-r border-zinc-200 bg-white transition-transform duration-300 ease-in-out lg:hidden overflow-y-auto ${isMenuOpen ? "translate-x-0" : "-translate-x-full"
           }`}
+        style={{
+          height: "100vh",
+          paddingTop: "env(safe-area-inset-top, 0px)",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        }}
       >
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-zinc-200 p-4">
@@ -249,7 +254,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* メインコンテンツ */}
       <div className="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden lg:w-auto w-screen">
         {/* ヘッダー（lg未満のみ） */}
-        <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white lg:hidden">
+        <header
+          className="sticky top-0 z-10 border-b border-zinc-200 bg-white lg:hidden safe-top"
+          style={{
+            paddingTop: "env(safe-area-inset-top, 0px)",
+          }}
+        >
           <div className="flex h-14 items-center justify-between px-4">
             <MenuController
               variant="open"

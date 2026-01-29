@@ -100,8 +100,13 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
       )}
       {/* サイドメニュー */}
       <aside
-        className={`fixed top-0 left-0 z-50 flex h-screen w-56 flex-col border-r border-zinc-100 bg-white px-4 py-6 transition-transform duration-300 ease-in-out sm:sticky sm:translate-x-0 overflow-y-auto ${isOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 left-0 z-50 flex w-56 flex-col border-r border-zinc-100 bg-white px-4 py-6 transition-transform duration-300 ease-in-out sm:sticky sm:h-screen sm:translate-x-0 overflow-y-auto ${isOpen ? "translate-x-0" : "-translate-x-full"
           }`}
+        style={{
+          height: "100vh",
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)",
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)",
+        }}
       >
         {/* 閉じるボタン（SP版のみ） */}
         <div className="mb-4 flex items-center justify-between sm:mb-6">
@@ -205,21 +210,21 @@ function SideNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
               </Link>
             );
           })}
-        {(session?.user?.role === "ADMIN" || session?.user?.role === "ORGANIZER") && (
-          <div className="mt-4 border-t border-zinc-200 pt-4">
-            <Link
-              href="/admin/dashboard"
-              onClick={(e) => handleNavClick(e, "/admin/dashboard")}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${pathname?.startsWith("/admin")
-                ? "bg-zinc-900 text-white"
-                : "text-zinc-700 hover:bg-zinc-50"
-                }`}
-            >
-              <span>📊</span>
-              <span>オーガナイザー機能</span>
-            </Link>
-          </div>
-        )}
+          {(session?.user?.role === "ADMIN" || session?.user?.role === "ORGANIZER") && (
+            <div className="mt-4 border-t border-zinc-200 pt-4">
+              <Link
+                href="/admin/dashboard"
+                onClick={(e) => handleNavClick(e, "/admin/dashboard")}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${pathname?.startsWith("/admin")
+                  ? "bg-zinc-900 text-white"
+                  : "text-zinc-700 hover:bg-zinc-50"
+                  }`}
+              >
+                <span>📊</span>
+                <span>オーガナイザー機能</span>
+              </Link>
+            </div>
+          )}
         </nav>
       </aside>
     </>
@@ -258,8 +263,13 @@ function MobileHeader({
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-30 flex h-14 items-center justify-between border-b border-zinc-200 bg-white/90 px-4 backdrop-blur transition-transform duration-300 ease-in-out sm:hidden ${isVisible ? "translate-y-0" : "-translate-y-full"
+      className={`fixed top-0 left-0 right-0 z-30 flex items-center justify-between border-b border-zinc-200 bg-white/90 px-4 backdrop-blur transition-transform duration-300 ease-in-out sm:hidden safe-top ${isVisible ? "translate-y-0" : "-translate-y-full"
         }`}
+      style={{
+        paddingTop: `env(safe-area-inset-top, 0px)`,
+        height: `calc(3.5rem + env(safe-area-inset-top, 0px))`,
+        minHeight: `calc(3.5rem + env(safe-area-inset-top, 0px))`,
+      }}
     >
       <MenuController
         variant="open"
@@ -431,7 +441,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <div className="flex min-h-screen">
         <MobileHeader onMenuClick={() => setIsMenuOpen(true)} />
         <SideNav isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-        <div className="flex min-h-screen flex-1 flex-col pt-14 sm:pt-0">
+        <div
+          className="flex min-h-screen flex-1 flex-col sm:pt-0"
+          style={{
+            paddingTop: "calc(3.5rem + env(safe-area-inset-top, 0px))",
+          }}
+        >
           {children}
         </div>
       </div>
