@@ -60,7 +60,7 @@ function resolveActiveKey(pathname: string) {
   return segments[0];
 }
 
-function AppSideNavContent({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+function AppSideNavContent({ onClose }: { onClose: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
@@ -309,7 +309,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
           width="56"
         >
           <AppSideNavContent
-            isOpen={isMenuOpen}
             onClose={() => setIsMenuOpen(false)}
           />
         </SideNav>

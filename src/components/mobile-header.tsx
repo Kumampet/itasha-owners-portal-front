@@ -23,7 +23,6 @@ export function MobileHeader({
 
   useEffect(() => {
     if (!enableAutoHide) {
-      setIsVisible(true);
       return;
     }
 
