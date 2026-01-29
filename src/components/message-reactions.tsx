@@ -421,8 +421,12 @@ export function MessageReactions({
           return (
             <div key={reaction.emoji} className="relative group">
               <button
-                onClick={() => handleReactionClick(reaction.emoji)}
-                disabled={isOwnMessage}
+                onClick={() => {
+                  // 自分のメッセージの場合はクリックを無効化
+                  if (!isOwnMessage) {
+                    handleReactionClick(reaction.emoji);
+                  }
+                }}
                 onMouseEnter={() => {
                   if (!isMobile) {
                     setShowReactionDetails(reaction.emoji);
@@ -441,16 +445,13 @@ export function MessageReactions({
                     );
                   }
                 }}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-colors ${isOwnMessage
-                  ? "cursor-not-allowed opacity-60"
-                  : "cursor-pointer"
-                  } ${hasUserReaction
-                    ? isOwnMessage
-                      ? "bg-white/20 text-white border border-white/30"
-                      : "bg-blue-100 text-blue-700 border border-blue-200"
-                    : isOwnMessage
-                      ? "bg-white/10 text-white border border-white/20"
-                      : "bg-zinc-100 text-zinc-700 border border-zinc-200 hover:bg-zinc-200"
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-colors cursor-pointer ${hasUserReaction
+                  ? isOwnMessage
+                    ? "bg-white/20 text-white border border-white/30"
+                    : "bg-blue-100 text-blue-700 border border-blue-200"
+                  : isOwnMessage
+                    ? "bg-white/10 text-white border border-white/20"
+                    : "bg-zinc-100 text-zinc-700 border border-zinc-200 hover:bg-zinc-200"
                   }`}
               >
                 <span>{reaction.emoji}</span>
@@ -460,7 +461,7 @@ export function MessageReactions({
               {showReactionDetails === reaction.emoji && (
                 <div
                   ref={detailsRef}
-                  className="absolute bottom-full left-0 mb-1 z-50 bg-white border border-zinc-200 rounded-lg shadow-lg p-3 min-w-[200px] max-w-[300px]"
+                  className={`absolute bottom-full ${isOwnMessage ? "right-0" : "left-0"} mb-1 z-50 bg-white border border-zinc-200 rounded-lg shadow-lg p-3 w-max`}
                   onMouseEnter={() => setShowReactionDetails(reaction.emoji)}
                   onMouseLeave={() => setShowReactionDetails(null)}
                 >
