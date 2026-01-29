@@ -3,15 +3,11 @@
 import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { DisplayNameModal } from "@/components/display-name-modal";
 import { PWAInstallBanner } from "@/components/pwa-install-banner";
 import { EmailRequiredBanner } from "@/components/email-required-banner";
-import { MenuController } from "@/components/menu-controller";
-import { Button } from "@/components/button";
-import { LoadingSpinner } from "@/components/loading-spinner";
 import { MobileHeader } from "@/components/mobile-header";
 import { SideNav } from "@/components/side-nav";
 import { SideNavUserSection } from "@/components/side-nav-user-section";
