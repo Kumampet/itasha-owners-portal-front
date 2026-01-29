@@ -36,7 +36,7 @@ type SidebarContentProps = {
 function AdminSidebarContent({ onLinkClick, pathname, session }: SidebarContentProps) {
   return (
     <div className="flex h-full flex-col">
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 sm:p-4">
         {/* 新規イベントを作成ボタン */}
         <Link
           href="/admin/events/new"

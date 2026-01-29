@@ -86,7 +86,7 @@ function AppSideNavContent({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="flex h-full flex-col px-4 py-6">
+    <div className="flex h-full flex-col p-0 sm:px-4 sm:py-6">
       <SideNavUserSection onClose={onClose} />
       <nav className="space-y-1 text-sm flex-1">
         {tabs.map((tab) => {
