@@ -8,6 +8,8 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { MenuController } from "@/components/menu-controller";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { MobileHeader } from "@/components/mobile-header";
+import { SideNav } from "@/components/side-nav";
 
 type AdminLayoutProps = {
   children: ReactNode;
@@ -33,26 +35,9 @@ type SidebarContentProps = {
   session: { user: { role: string; email: string } };
 };
 
-function SidebarContent({ onLinkClick, pathname, session }: SidebarContentProps) {
+function AdminSidebarContent({ onLinkClick, pathname, session }: SidebarContentProps) {
   return (
     <div className="flex h-full flex-col">
-      {/* PC版のみタイトルを表示（モバイル版はヘッダーに表示されるため非表示） */}
-      <div className="hidden border-b border-zinc-200 p-4 lg:block">
-        <Link
-          href="/admin/dashboard"
-          className="flex items-center justify-center"
-          onClick={onLinkClick}
-        >
-          <Image
-            src="/images/main_logo.png"
-            alt="いたなび！痛車オーナーズナビ"
-            width={200}
-            height={80}
-            className="h-auto w-full max-w-[180px]"
-            priority
-          />
-        </Link>
-      </div>
       <nav className="flex-1 p-4">
         {/* 新規イベントを作成ボタン */}
         <Link
@@ -203,82 +188,31 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="flex min-h-screen">
-      {/* オーバーレイ（lg未満のみ） */}
-      {isMenuOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={() => setIsMenuOpen(false)}
-        />
-      )}
-
-      {/* サイドバー（PC版 - lg以上で表示） */}
-      <aside className="hidden w-64 flex-shrink-0 border-r border-zinc-200 bg-white lg:block lg:h-screen lg:sticky lg:top-0">
-        <SidebarContent pathname={pathname} session={session} />
-      </aside>
-
-      {/* サイドバー（モバイル版 - lg未満でハンバーガーメニュー） */}
-      <aside
-        className={`fixed top-0 left-0 z-50 w-64 border-r border-zinc-200 bg-white transition-transform duration-300 ease-in-out lg:hidden overflow-y-auto ${isMenuOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-        style={{
-          height: "100vh",
-          paddingTop: "env(safe-area-inset-top, 0px)",
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        }}
+      <SideNav
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        logoHref="/admin/dashboard"
+        breakpoint="lg"
+        width="64"
+        showPCLogo={true}
       >
-        <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between border-b border-zinc-200 p-4">
-            <Link
-              href="/admin/dashboard"
-              className="flex items-center justify-center flex-1"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <Image
-                src="/images/main_logo.png"
-                alt="いたなび！痛車オーナーズナビ"
-                width={200}
-                height={80}
-                className="h-auto w-full max-w-[180px]"
-                priority
-              />
-            </Link>
-            <MenuController
-              variant="close"
-              onClick={() => setIsMenuOpen(false)}
-            />
-          </div>
-          <SidebarContent onLinkClick={() => setIsMenuOpen(false)} pathname={pathname} session={session} />
-        </div>
-      </aside>
+        <AdminSidebarContent
+          onLinkClick={() => setIsMenuOpen(false)}
+          pathname={pathname}
+          session={session}
+        />
+      </SideNav>
 
       {/* メインコンテンツ */}
       <div className="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden lg:w-auto w-screen">
         {/* ヘッダー（lg未満のみ） */}
-        <header
-          className="sticky top-0 z-10 border-b border-zinc-200 bg-white lg:hidden safe-top"
-          style={{
-            paddingTop: "env(safe-area-inset-top, 0px)",
-          }}
-        >
-          <div className="flex h-14 items-center justify-between px-4">
-            <MenuController
-              variant="open"
-              onClick={() => setIsMenuOpen(true)}
-            />
-            <Link href="/admin/dashboard" className="flex items-center">
-              <Image
-                src="/images/main_logo.png"
-                alt="いたなび！痛車オーナーズナビ"
-                width={150}
-                height={60}
-                className="h-8 w-auto"
-                priority
-              />
-            </Link>
-            <span className="text-sm text-zinc-600">{session.user.email}</span>
-          </div>
-        </header>
-        <main className="min-w-0 flex-1">{children}</main>
+        <MobileHeader
+          onMenuClick={() => setIsMenuOpen(true)}
+          logoHref="/admin/dashboard"
+          rightContent={<span className="text-sm text-zinc-600">{session.user.email}</span>}
+          enableAutoHide={true}
+        />
+        <main className="min-w-0 flex-1 pt-14 lg:pt-0">{children}</main>
       </div>
     </div>
   );
