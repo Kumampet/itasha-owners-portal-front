@@ -14,14 +14,22 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// metadataBaseを環境変数から取得（OGP画像の絶対URL生成に必要）
+const getMetadataBase = (): URL => {
+  const authUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL;
+  if (authUrl) {
+    return new URL(authUrl);
+  }
+  // 環境変数が設定されていない場合はデフォルト値を使用
+  // 本番環境では必ず環境変数を設定すること
+  return new URL("https://example.com");
+};
+
 export const metadata: Metadata = {
   title: "痛車オーナーズナビ | いたなび！",
   description:
     "痛車イベントの予定管理・団体参加（併せ）管理に特化した、モバイルファーストの情報プラットフォーム",
-  metadataBase:
-    typeof window === "undefined"
-      ? new URL("https://example.com")
-      : new URL(window.location.origin),
+  metadataBase: getMetadataBase(),
   robots: {
     index: false,
     follow: false,
@@ -33,8 +41,30 @@ export const metadata: Metadata = {
   openGraph: {
     title: "痛車オーナーズナビ | いたなび！",
     description:
-      "痛車イベントのエントリー開始・支払期限・併せ連絡をまとめて管理できるPWA",
+      "痛車イベントの予定管理・団体参加（併せ）管理に特化した、モバイルファーストの情報プラットフォーム",
     type: "website",
+    images: [
+      {
+        url: "/images/main_logo_square.png",
+        width: 1200,
+        height: 1200,
+        alt: "いたなび",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: "痛車オーナーズナビ | いたなび！",
+    description:
+      "痛車イベントの予定管理・団体参加（併せ）管理に特化した、モバイルファーストの情報プラットフォーム",
+    images: [
+      {
+        url: "/images/main_logo_square.png",
+        width: 1200,
+        height: 1200,
+        alt: "いたなび",
+      },
+    ],
   },
   manifest: "/manifest.json",
   themeColor: "#18181b",
