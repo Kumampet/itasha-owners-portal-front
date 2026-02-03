@@ -104,11 +104,11 @@ export default function MyPage() {
         if (refreshParam) {
             // セッションを強制的に再取得（キャッシュを無視）
             update().then(() => {
-                // ページ全体のデータも再取得（Next.jsのキャッシュをクリア）
-                router.refresh();
                 // URLパラメータを削除（履歴に残さない）
                 const newUrl = window.location.pathname;
                 window.history.replaceState({}, "", newUrl);
+            }).catch((error) => {
+                console.error("[MyPage] Error updating session:", error);
             });
         }
     }, [update, router]);

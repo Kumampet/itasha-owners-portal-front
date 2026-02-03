@@ -6,7 +6,7 @@ import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
 
 export default function ProfileEditPage() {
-    const { data: session, status, update } = useSession();
+    const { data: session, status } = useSession();
     const isLoading = status === "loading";
     const [displayName, setDisplayName] = useState("");
     const [email, setEmail] = useState("");
@@ -98,12 +98,10 @@ export default function ProfileEditPage() {
                 throw new Error(data.error || "表示名の保存に失敗しました");
             }
 
-            // セッションを更新（キャッシュを無視して再取得）
-            await update();
-            
-            // 即座にマイページへリダイレクト（キャッシュ回避用のタイムスタンプを追加）
-            const timestamp = Date.now();
-            window.location.href = `/app/mypage?_refresh=${timestamp}`;
+            // メールアドレス更新後は、セッションを完全に再読み込みするためページをリロード
+            // NextAuth v5ではupdate()を呼んでもtriggerが"update"として渡されないため、
+            // ページを完全にリロードしてセッションを再生成する
+            window.location.href = "/app/mypage";
         } catch (error) {
             console.error("Failed to save profile:", error);
             setError(

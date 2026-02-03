@@ -228,7 +228,48 @@ const configBase: NextAuthConfig = {
       }
       return session;
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger }) {
+      // DBから最新情報を取得してトークンを更新する関数
+      const updateTokenFromDB = async () => {
+        if (!hasDatabaseUrl || !token.id) return false;
+        
+        try {
+          const { prisma } = await import("@/lib/prisma");
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: {
+              id: true,
+              role: true,
+              is_banned: true,
+              email: true,
+            },
+          });
+          if (dbUser) {
+            token.email = dbUser.email || undefined;
+            token.role = dbUser.role;
+            token.isBanned = dbUser.is_banned;
+            return true;
+          }
+        } catch (error) {
+          console.error("[JWT] Error updating token from DB:", error);
+        }
+        return false;
+      };
+
+      // userがnullの場合（セッション更新時）、DBから最新情報を取得
+      // NextAuth v5では、update()を呼んでもtriggerが"update"として渡されないため、
+      // userがnullの場合にDBから最新情報を取得する
+      if (!user) {
+        const updated = await updateTokenFromDB();
+        if (updated) return token;
+      }
+      
+      // trigger === "update" の場合もDBから最新情報を取得（念のため）
+      if (trigger === "update") {
+        const updated = await updateTokenFromDB();
+        if (updated) return token;
+      }
+      
       // 初回ログイン時のみDBからユーザー情報を取得
       // それ以降はトークンに保存された情報を使用（DBアクセスを削減）
       if (user) {
