@@ -5,21 +5,17 @@ import { useSession } from "next-auth/react";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
 
-// マイページへのリダイレクトタイムアウト時間（ミリ秒）
-const REDIRECT_TIMEOUT_MS = 2000;
-const REDIRECT_TIMEOUT_SECONDS = REDIRECT_TIMEOUT_MS / 1000;
-
 export default function ProfileEditPage() {
-    const { data: session, status, update } = useSession();
+    const { data: session, status } = useSession();
     const isLoading = status === "loading";
     const [displayName, setDisplayName] = useState("");
     const [email, setEmail] = useState("");
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
-    const [success, setSuccess] = useState(false);
     
     // メールアドレスが未設定（nullまたは空文字列）かどうかを判定
-    const isEmailRequired = !session?.user?.email || session.user.email.trim() === "";
+    const sessionEmail = session?.user?.email?.trim() ?? "";
+    const isEmailRequired = sessionEmail === "";
 
     useEffect(() => {
         document.title = "プロフィール編集 | 痛車オーナーズナビ | いたなび！";
@@ -42,7 +38,6 @@ export default function ProfileEditPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
-        setSuccess(false);
 
         // メールアドレスが必須の場合、バリデーション
         if (isEmailRequired && !email.trim()) {
@@ -103,18 +98,10 @@ export default function ProfileEditPage() {
                 throw new Error(data.error || "表示名の保存に失敗しました");
             }
 
-            // セッションを更新（キャッシュを無視して再取得）
-            // NextAuthのupdate()は内部的にキャッシュを無視するが、確実にするためURLパラメータを追加
-            await update();
-            
-            setSuccess(true);
-            
-            // タイムアウト後にマイページに戻る（キャッシュ回避用のタイムスタンプを追加）
-            setTimeout(() => {
-                // キャッシュを無視するため、タイムスタンプをURLパラメータに追加
-                const timestamp = Date.now();
-                window.location.href = `/app/mypage?_refresh=${timestamp}`;
-            }, REDIRECT_TIMEOUT_MS);
+            // メールアドレス更新後は、セッションを完全に再読み込みするためページをリロード
+            // NextAuth v5ではupdate()を呼んでもtriggerが"update"として渡されないため、
+            // ページを完全にリロードしてセッションを再生成する
+            window.location.href = "/app/mypage";
         } catch (error) {
             console.error("Failed to save profile:", error);
             setError(
@@ -149,12 +136,6 @@ export default function ProfileEditPage() {
                                 {error && (
                                     <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
                                         {error}
-                                    </div>
-                                )}
-
-                                {success && (
-                                    <div className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">
-                                        保存しました。{REDIRECT_TIMEOUT_SECONDS}秒後にマイページに戻ります...
                                     </div>
                                 )}
 
