@@ -85,13 +85,46 @@ type Reminder = {
     created_at: Date;
 };
 
+// ユーザー情報表示コンポーネント
+function UserInfoDisplay({
+    session,
+    isEmailRequired
+}: {
+    session: {
+        user?: {
+            displayName?: string | null;
+            name?: string | null;
+            email?: string | null;
+        } | null;
+    } | null;
+    isEmailRequired: boolean;
+}) {
+    const userName = session?.user?.displayName || session?.user?.name;
+    const userEmail = session?.user?.email?.trim() || "";
+
+    return (
+        <>
+            {userName && (
+                <span className="font-medium">{userName}</span>
+            )}
+            <span className="text-zinc-500"> / </span>
+            {userEmail && (
+                <span className="text-zinc-500">{userEmail}</span>
+            )}
+            {isEmailRequired && (
+                <span className="text-red-600">（メールアドレス未設定）</span>
+            )}
+        </>
+    );
+}
+
 export default function MyPage() {
     const { data: session, status, update } = useSession();
     const router = useRouter();
     const isLoading = status === "loading";
     const [upcomingReminders, setUpcomingReminders] = useState<Reminder[]>([]);
     const [isLoadingReminders, setIsLoadingReminders] = useState(true);
-    
+
     // メールアドレスが未設定（nullまたは空文字列）かどうかを判定
     const sessionEmail = session?.user?.email?.trim() ?? "";
     const isEmailRequired = sessionEmail === "";
@@ -100,7 +133,7 @@ export default function MyPage() {
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const refreshParam = params.get("_refresh");
-        
+
         if (refreshParam) {
             // セッションを強制的に再取得（キャッシュを無視）
             update().then(() => {
@@ -196,7 +229,7 @@ export default function MyPage() {
                     </div>
                 </div>
             )}
-            
+
             <section className="mx-auto flex max-w-4xl flex-col gap-6 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
                 <header>
                     <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
@@ -211,16 +244,7 @@ export default function MyPage() {
                             </div>
                         ) : session ? (
                             <p className="text-xs text-zinc-600 sm:text-sm">
-                                {session.user?.name && (
-                                    <span className="font-medium">{session.user.name}</span>
-                                )}
-                                {session.user?.name && session.user?.email && session.user.email.trim() !== "" && " / "}
-                                {session.user?.email && session.user.email.trim() !== "" && (
-                                    <span className="text-zinc-500">{session.user.email}</span>
-                                )}
-                                {isEmailRequired && (
-                                    <span className="text-red-600">（メールアドレス未設定）</span>
-                                )}
+                                <UserInfoDisplay session={session} isEmailRequired={isEmailRequired} />
                             </p>
                         ) : null}
                     </div>

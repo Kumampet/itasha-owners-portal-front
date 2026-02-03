@@ -30,6 +30,7 @@ declare module "next-auth/jwt" {
     role: string; // "USER" | "ADMIN" | "ORGANIZER"
     isBanned: boolean;
     email?: string; // 既存ユーザー検索用
+    displayName?: string | null; // 表示名
   }
 }
 

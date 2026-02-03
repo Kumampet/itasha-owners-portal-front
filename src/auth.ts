@@ -225,6 +225,9 @@ const configBase: NextAuthConfig = {
 
         // メールアドレスをセッションに設定（nullの場合は空文字列）
         session.user.email = token.email || "";
+        
+        // 表示名をセッションに設定
+        session.user.displayName = token.displayName || null;
       }
       return session;
     },
@@ -242,12 +245,14 @@ const configBase: NextAuthConfig = {
               role: true,
               is_banned: true,
               email: true,
+              display_name: true,
             },
           });
           if (dbUser) {
             token.email = dbUser.email || undefined;
             token.role = dbUser.role;
             token.isBanned = dbUser.is_banned;
+            token.displayName = dbUser.display_name || undefined;
             return true;
           }
         } catch (error) {
@@ -294,6 +299,7 @@ const configBase: NextAuthConfig = {
                   role: true,
                   is_banned: true,
                   email: true,
+                  display_name: true,
                 },
               });
             }
@@ -317,6 +323,7 @@ const configBase: NextAuthConfig = {
                         role: true,
                         is_banned: true,
                         email: true,
+                        display_name: true,
                       },
                     },
                   },
@@ -353,6 +360,10 @@ const configBase: NextAuthConfig = {
                   if (dbUser) {
                     token.id = dbUser.id;
                     token.email = dbUser.email || undefined; // トークンにもメールアドレスを保存
+                    // display_nameが存在する場合のみ設定（型安全性のため）
+                    if ('display_name' in dbUser) {
+                      token.displayName = (dbUser as { display_name: string | null }).display_name || undefined;
+                    }
                     user.id = dbUser.id;
                   }
                 }
@@ -380,11 +391,13 @@ const configBase: NextAuthConfig = {
                     role: true,
                     is_banned: true,
                     email: true,
+                    display_name: true,
                   },
                 });
                 dbUser = newUser;
                 token.id = newUser.id;
                 token.email = newUser.email || undefined; // メールアドレスがnullの場合もトークンに保存
+                token.displayName = newUser.display_name || undefined; // 表示名もトークンに保存
                 user.id = newUser.id;
                 console.log(`[JWT] Created user in DB: ${newUser.id} (${newUser.email || "no email"})`);
 
@@ -422,6 +435,11 @@ const configBase: NextAuthConfig = {
             if (dbUser) {
               token.role = dbUser.role;
               token.isBanned = dbUser.is_banned;
+              // display_nameが存在する場合のみ設定（型安全性のため）
+              if ('display_name' in dbUser) {
+                const dbUserWithDisplayName = dbUser as { display_name: string | null };
+                token.displayName = dbUserWithDisplayName.display_name || undefined;
+              }
             } else {
               // DBから取得できなかった場合は、userオブジェクトから取得
               token.role = (user.role as string) || "USER";
