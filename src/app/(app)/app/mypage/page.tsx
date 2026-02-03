@@ -93,7 +93,8 @@ export default function MyPage() {
     const [isLoadingReminders, setIsLoadingReminders] = useState(true);
     
     // メールアドレスが未設定（nullまたは空文字列）かどうかを判定
-    const isEmailRequired = !session?.user?.email || session.user.email.trim() === "";
+    const sessionEmail = session?.user?.email?.trim() ?? "";
+    const isEmailRequired = sessionEmail === "";
 
     // URLパラメータに_refreshがある場合、セッションを強制的に再取得（キャッシュを無視）
     useEffect(() => {
@@ -103,12 +104,14 @@ export default function MyPage() {
         if (refreshParam) {
             // セッションを強制的に再取得（キャッシュを無視）
             update().then(() => {
+                // ページ全体のデータも再取得（Next.jsのキャッシュをクリア）
+                router.refresh();
                 // URLパラメータを削除（履歴に残さない）
                 const newUrl = window.location.pathname;
                 window.history.replaceState({}, "", newUrl);
             });
         }
-    }, [update]);
+    }, [update, router]);
 
     // TODO: 通知設定機能を削除しました。将来的に再実装する場合は、初回ログイン時に通知設定をチェックするロジックを追加してください。
 
