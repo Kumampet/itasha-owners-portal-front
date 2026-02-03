@@ -12,7 +12,8 @@ type SideNavUserSectionProps = {
 
 export function SideNavUserSection({ onClose }: SideNavUserSectionProps) {
   const { data: session, status } = useSession();
-  const displayName = session?.user?.name || session?.user?.email || "ゲスト";
+  // 表示名を優先、なければ名前、それもなければメールアドレス、それもなければ「ゲスト」
+  const displayName = session?.user?.displayName || session?.user?.name || session?.user?.email || "ゲスト";
   const isLoading = status === "loading";
 
   return (
@@ -36,7 +37,7 @@ export function SideNavUserSection({ onClose }: SideNavUserSectionProps) {
             )}
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-zinc-900 truncate">
-                {session.user?.name || "ユーザー"}
+                {session.user?.displayName || session.user?.name || "ユーザー"}
               </p>
               {session.user?.email && session.user.email.trim() !== "" && (
                 <p className="text-[10px] text-zinc-600 truncate">
