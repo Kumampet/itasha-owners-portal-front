@@ -5,23 +5,37 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { Pagination } from "@/components/pagination";
 import { formatDate, formatDateTime } from "@/lib/date-utils";
 
 type Event = {
   id: string;
   name: string;
-  theme: string | null;
   description: string | null;
   event_date: string;
-  entry_start_at: string | null;
-  payment_due_at: string | null;
   approval_status: string;
   created_at: string;
+  entries: Array<{
+    entry_number: number;
+    entry_start_at: string;
+    entry_deadline_at: string | null;
+    payment_due_at: string | null;
+  }>;
 };
 
 type FilterStatus = "ALL" | "DRAFT" | "PENDING" | "APPROVED" | "REJECTED";
 type SortBy = "created_at" | "event_date" | "name";
 type SortOrder = "asc" | "desc";
+
+type PaginationData = {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  limit: number;
+};
+
+// 1ページあたりの表示件数（最大20件）
+const ITEMS_PER_PAGE = 20;
 
 export default function AdminEventsPage() {
   const router = useRouter();
@@ -31,6 +45,8 @@ export default function AdminEventsPage() {
   const [sortBy, setSortBy] = useState<SortBy>("created_at");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationData | null>(null);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -44,17 +60,20 @@ export default function AdminEventsPage() {
       if (searchQuery) {
         params.append("search", searchQuery);
       }
+      params.append("page", currentPage.toString());
+      params.append("limit", ITEMS_PER_PAGE.toString());
 
       const res = await fetch(`/api/admin/events?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to fetch events");
       const data = await res.json();
-      setEvents(data);
+      setEvents(data.events || []);
+      setPagination(data.pagination || null);
     } catch (error) {
       console.error("Failed to fetch events:", error);
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, sortBy, sortOrder, searchQuery]);
+  }, [filterStatus, sortBy, sortOrder, searchQuery, currentPage]);
 
   useEffect(() => {
     fetchEvents();
@@ -121,13 +140,20 @@ export default function AdminEventsPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           {/* 検索 */}
           <div className="flex-1 min-w-0">
-            <input
-              type="text"
-              placeholder="イベント名で検索..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-            />
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setCurrentPage(1); // 検索時は1ページ目に戻る
+              }}
+            >
+              <input
+                type="text"
+                placeholder="イベント名で検索..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              />
+            </form>
           </div>
 
           {/* ステータスフィルター */}
@@ -139,7 +165,10 @@ export default function AdminEventsPage() {
                   variant={filterStatus === status ? "primary" : "secondary"}
                   size="sm"
                   rounded="md"
-                  onClick={() => setFilterStatus(status)}
+                  onClick={() => {
+                    setFilterStatus(status);
+                    setCurrentPage(1); // フィルター変更時は1ページ目に戻る
+                  }}
                   className={filterStatus === status ? "whitespace-nowrap" : "bg-zinc-100 hover:bg-zinc-200 whitespace-nowrap"}
                 >
                   {status === "ALL"
@@ -163,7 +192,10 @@ export default function AdminEventsPage() {
             <label className="text-xs font-medium text-zinc-700">並び替え:</label>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortBy)}
+              onChange={(e) => {
+                setSortBy(e.target.value as SortBy);
+                setCurrentPage(1); // ソート変更時は1ページ目に戻る
+              }}
               className="rounded-md border border-zinc-300 px-2 py-1 text-xs focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
             >
               <option value="created_at">作成日</option>
@@ -174,9 +206,10 @@ export default function AdminEventsPage() {
               variant="secondary"
               size="sm"
               rounded="md"
-              onClick={() =>
-                setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-              }
+              onClick={() => {
+                setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                setCurrentPage(1); // ソート順変更時は1ページ目に戻る
+              }}
             >
               {sortOrder === "asc" ? "↑" : "↓"}
             </Button>
@@ -194,81 +227,110 @@ export default function AdminEventsPage() {
           <p className="text-sm text-zinc-600">イベントがありません</p>
         </div>
       ) : (
-        <div className="w-full overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-          <table className="min-w-[1200px] divide-y divide-zinc-200">
-            <thead className="bg-zinc-50">
-              <tr>
-                <th className="w-24 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
-                  ステータス
-                </th>
-                <th className="min-w-[200px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
-                  イベント名
-                </th>
-                <th className="min-w-[250px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
-                  イベント詳細
-                </th>
-                <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
-                  開催日
-                </th>
-                <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
-                  エントリー開始
-                </th>
-                <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
-                  支払期限
-                </th>
-                <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
-                  作成日
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-200 bg-white">
-              {events.map((event) => (
-                <tr
-                  key={event.id}
-                  onClick={() => router.push(`/admin/events/${event.id}`)}
-                  className="cursor-pointer transition hover:bg-zinc-50"
-                >
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadgeClass(
-                        event.approval_status
-                      )}`}
-                    >
-                      {getStatusLabel(event.approval_status)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-zinc-900">
-                      {event.name}
-                    </div>
-                    {event.theme && (
-                      <div className="mt-1 text-xs text-zinc-500">
-                        {event.theme}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-sm text-zinc-600 line-clamp-2">
-                      {event.description || "-"}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
-                    {formatDate(event.event_date)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
-                    {event.entry_start_at ? formatDateTime(event.entry_start_at) : "-"}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
-                    {event.payment_due_at ? formatDateTime(event.payment_due_at) : "-"}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600">
-                    {formatDate(event.created_at)}
-                  </td>
+        <>
+          {/* 件数表示とページネーション（上部） */}
+          {pagination && (
+            <div className="mb-4 flex items-center justify-between">
+              <div className="text-sm text-zinc-600">
+                {pagination.totalCount}件中 {((pagination.currentPage - 1) * pagination.limit) + 1}〜{Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)}件を表示
+              </div>
+              {pagination.totalPages > 1 && (
+                <Pagination
+                  currentPage={pagination.currentPage}
+                  totalPages={pagination.totalPages}
+                  onPageChange={setCurrentPage}
+                  className="justify-end"
+                />
+              )}
+            </div>
+          )}
+          
+          <div className="w-full overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+            <table className="min-w-[1200px] divide-y divide-zinc-200">
+              <thead className="bg-zinc-50">
+                <tr>
+                  <th className="w-24 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                    ステータス
+                  </th>
+                  <th className="min-w-[200px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                    イベント名
+                  </th>
+                  <th className="min-w-[250px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                    イベント詳細
+                  </th>
+                  <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                    開催日
+                  </th>
+                  <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                    エントリー開始
+                  </th>
+                  <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                    支払期限
+                  </th>
+                  <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                    作成日
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-zinc-200 bg-white">
+                {events.map((event) => (
+                  <tr
+                    key={event.id}
+                    onClick={() => router.push(`/admin/events/${event.id}`)}
+                    className="cursor-pointer transition hover:bg-zinc-50"
+                  >
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadgeClass(
+                          event.approval_status
+                        )}`}
+                      >
+                        {getStatusLabel(event.approval_status)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm font-medium text-zinc-900">
+                        {event.name}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm text-zinc-600 line-clamp-2">
+                        {event.description || "-"}
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
+                      {formatDate(event.event_date)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
+                      {event.entries && event.entries.length > 0 && event.entries[0].entry_start_at
+                        ? formatDateTime(event.entries[0].entry_start_at)
+                        : "-"}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
+                      {event.entries && event.entries.length > 0 && event.entries[0].payment_due_at
+                        ? formatDateTime(event.entries[0].payment_due_at)
+                        : "-"}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600">
+                      {formatDate(event.created_at)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ページネーション */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="mt-6">
+              <Pagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );
