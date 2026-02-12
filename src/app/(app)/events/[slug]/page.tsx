@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { createMetadataWithOGP } from "@/lib/metadata";
 import { EventDetailActions } from "@/components/event-detail-actions";
 
 type EventDetailPageProps = {
@@ -15,18 +16,24 @@ export async function generateMetadata({
   const { slug } = await params;
   const event = await prisma.event.findUnique({
     where: { id: slug },
-    select: { name: true },
+    select: { 
+      name: true,
+      description: true,
+      image_url: true,
+    },
   });
 
   if (!event) {
-    return {
-      title: "イベント詳細 | 痛車オーナーズナビ | いたなび！",
-    };
+    return createMetadataWithOGP({
+      title: "イベント詳細",
+    });
   }
 
-  return {
-    title: `${event.name} | 痛車オーナーズナビ | いたなび！`,
-  };
+  return createMetadataWithOGP({
+    title: event.name,
+    description: event.description || undefined,
+    imageUrl: event.image_url || undefined,
+  });
 }
 
 function formatDateRange(
