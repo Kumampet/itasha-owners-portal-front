@@ -59,7 +59,7 @@ export function Pagination({
 
   return (
     <nav
-      className={`flex items-center justify-center gap-2 ${className}`}
+      className={`flex items-center gap-2 ${className || "justify-center"}`}
       aria-label="ページネーション"
     >
       <Button

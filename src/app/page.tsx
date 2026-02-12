@@ -1,5 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
+import { createMetadataWithOGP } from "@/lib/metadata";
+
+export const metadata = createMetadataWithOGP({
+  title: "痛車オーナーズナビ | いたなび！",
+  description: "痛車イベントの予定管理・団体参加（併せ）管理に特化した、モバイルファーストの情報プラットフォーム。エントリー開始・締切・支払期限を自動でリマインドし、併せのメンバー募集と一斉連絡機能を提供します。",
+});
 
 export default function Home() {
   return (

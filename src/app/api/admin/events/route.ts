@@ -21,6 +21,10 @@ export async function GET(request: Request) {
     const sortBy = searchParams.get("sortBy") || "created_at";
     const sortOrder = searchParams.get("sortOrder") || "desc";
     const search = searchParams.get("search");
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const requestedLimit = parseInt(searchParams.get("limit") || "20", 10);
+    // 管理画面では最大20件まで
+    const limit = Math.min(requestedLimit, 20);
 
     const now = new Date();
 
@@ -73,9 +77,16 @@ export async function GET(request: Request) {
     const orderBy: Record<string, string> = {};
     orderBy[sortBy] = sortOrder;
 
+    // 総件数を取得
+    const totalCount = await prisma.event.count({ where });
+
+    // ページネーションでイベントを取得
+    const skip = (page - 1) * limit;
     const events = await prisma.event.findMany({
       where,
       orderBy,
+      skip,
+      take: limit,
       select: {
         id: true,
         name: true,
@@ -101,9 +112,19 @@ export async function GET(request: Request) {
       } as any,
     });
 
+    const totalPages = Math.ceil(totalCount / limit);
+
     // 管理画面用のため、privateディレクティブを使用して10秒間キャッシュ
     return NextResponse.json(
-      events,
+      {
+        events,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalCount,
+          limit,
+        },
+      },
       {
         headers: {
           "Cache-Control": "private, s-maxage=10, stale-while-revalidate=30",
