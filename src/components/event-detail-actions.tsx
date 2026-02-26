@@ -1,7 +1,5 @@
 "use client";
 
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { Tooltip } from "@/components/tooltip";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { Button } from "@/components/button";
@@ -12,8 +10,6 @@ type EventDetailActionsProps = {
 };
 
 export function EventDetailActions({ eventId, officialUrls }: EventDetailActionsProps) {
-  const { data: session } = useSession();
-  const router = useRouter();
 
   // 公式サイトURLの最初のものを取得
   const firstOfficialUrl = officialUrls && Array.isArray(officialUrls) && officialUrls.length > 0
