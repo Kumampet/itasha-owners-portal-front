@@ -21,7 +21,8 @@ const tabs = [
   { href: "/events", label: "イベント一覧", key: "events", icon: "📅" },
   { href: "/app/watchlist", label: "ウォッチリスト", key: "watchlist", requiresAuth: true, icon: "⭐" },
   { href: "/app/reminder", label: "リマインダー管理", key: "reminder", requiresAuth: true, icon: "⏰" },
-  { href: "/app/groups", label: "団体管理", key: "groups", requiresAuth: true, icon: "👥" },
+  // 一時的に団体機能を無効化
+  // { href: "/app/groups", label: "団体管理", key: "groups", requiresAuth: true, icon: "👥" },
   { href: "/app/event-submission", label: "イベント掲載依頼", key: "event-submission", icon: "📝" },
   { href: "/app/organizer-application", label: "オーガナイザー登録申請", key: "organizer-application", icon: "📋" },
   { href: "/app/contact", label: "お問い合わせ", key: "contact", icon: "💬" },
@@ -74,7 +75,8 @@ function AppSideNavContent({ onClose }: { onClose: () => void }) {
       "/app/mypage",
       "/app/watchlist",
       "/app/reminder",
-      "/app/groups",
+      // 一時的に団体機能を無効化
+      // "/app/groups",
     ];
     if (!session && protectedPaths.includes(href)) {
       e.preventDefault();
