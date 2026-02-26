@@ -64,36 +64,25 @@ export function EventDetailActions({ eventId, officialUrls }: EventDetailActions
             className="flex-1 rounded-full border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
           />
         </div>
-        {session ? (
+        {/* 一時的に団体機能を無効化 */}
+        <Tooltip
+          content="この機能は現在ご利用いただけません。"
+          disabled={false}
+          arrowPosition="right"
+        >
           <Button
             variant="emerald"
             size="md"
             rounded="full"
             fullWidth
-            onClick={() => router.push("/app/groups")}
+            disabled
+            onClick={(e) => {
+              e.preventDefault();
+            }}
           >
             団体を組む
           </Button>
-        ) : (
-          <Tooltip
-            content="この機能はログインすることでご利用いただけます。"
-            disabled={false}
-            arrowPosition="right"
-          >
-            <Button
-              variant="emerald"
-              size="md"
-              rounded="full"
-              fullWidth
-              disabled
-              onClick={(e) => {
-                e.preventDefault();
-              }}
-            >
-              団体を組む
-            </Button>
-          </Tooltip>
-        )}
+        </Tooltip>
       </div>
     </>
   );

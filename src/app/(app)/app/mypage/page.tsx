@@ -368,7 +368,8 @@ export default function MyPage() {
                         </div>
                     </LinkCard>
 
-                    <GroupManagementLinkCard />
+                    {/* 一時的に団体機能を無効化 */}
+                    {/* <GroupManagementLinkCard /> */}
 
                     <LinkCard href="/app/reminder" className="hover:-translate-y-0.5 hover:shadow-md">
                         <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
