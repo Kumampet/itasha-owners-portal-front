@@ -62,7 +62,7 @@ export function EventDetailActions({ eventId, officialUrls }: EventDetailActions
         </div>
         {/* 一時的に団体機能を無効化 */}
         <Tooltip
-          content="この機能は現在ご利用いただけません。"
+          content="この機能は現在メンテナンス中です。"
           disabled={false}
           arrowPosition="right"
         >
