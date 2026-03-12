@@ -9,7 +9,7 @@ import ConfirmModal from "@/components/confirm-modal";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { EventShareModal } from "@/components/event-share-modal";
-import { formatDate, formatDateTime } from "@/lib/date-utils";
+import { formatDate, formatDateTime, toDateTimeLocal, toDateLocal } from "@/lib/date-utils";
 
 type Event = {
   id: string;
@@ -109,38 +109,24 @@ export default function AdminEventDetailPage({
       const data = await res.json();
       setEvent({ ...data, created_by_user_id: data.created_by_user_id || null });
 
-      // エントリー情報をフォーマット
+      // エントリー情報をフォーマット（UTCからJSTに変換してdatetime-local形式に）
       const formattedEntries = (data.entries || []).map((entry: Event["entries"][number]) => ({
         entry_number: entry.entry_number,
-        entry_start_at: entry.entry_start_at
-          ? new Date(entry.entry_start_at).toISOString().slice(0, 16)
-          : "",
-        entry_start_public_at: entry.entry_start_public_at
-          ? new Date(entry.entry_start_public_at).toISOString().slice(0, 16)
-          : "",
-        entry_deadline_at: entry.entry_deadline_at
-          ? new Date(entry.entry_deadline_at).toISOString().slice(0, 16)
-          : "",
+        entry_start_at: toDateTimeLocal(entry.entry_start_at),
+        entry_start_public_at: toDateTimeLocal(entry.entry_start_public_at),
+        entry_deadline_at: toDateTimeLocal(entry.entry_deadline_at),
         payment_due_type: entry.payment_due_type || "ABSOLUTE",
-        payment_due_at: entry.payment_due_at
-          ? new Date(entry.payment_due_at).toISOString().slice(0, 16)
-          : "",
+        payment_due_at: toDateTimeLocal(entry.payment_due_at),
         payment_due_days_after_entry: entry.payment_due_days_after_entry || null,
-        payment_due_public_at: entry.payment_due_public_at
-          ? new Date(entry.payment_due_public_at).toISOString().slice(0, 16)
-          : "",
+        payment_due_public_at: toDateTimeLocal(entry.payment_due_public_at),
       }));
 
       setFormData({
         name: data.name || "",
         description: data.description || "",
-        event_date: data.event_date
-          ? new Date(data.event_date).toISOString().split("T")[0]
-          : "",
+        event_date: toDateLocal(data.event_date),
         is_multi_day: data.is_multi_day || false,
-        event_end_date: data.event_end_date
-          ? new Date(data.event_end_date).toISOString().split("T")[0]
-          : "",
+        event_end_date: toDateLocal(data.event_end_date),
         postal_code: data.postal_code || "",
         prefecture: data.prefecture || "",
         city: data.city || "",

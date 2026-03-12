@@ -7,6 +7,7 @@ import ConfirmModal from "@/components/confirm-modal";
 import EventForm, { EventFormData } from "@/components/event-form";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { toDateTimeLocal, toDateLocal } from "@/lib/date-utils";
 
 function AdminNewEventPageContent() {
   const router = useRouter();
@@ -65,16 +66,16 @@ function AdminNewEventPageContent() {
         ...prev,
         name,
         description,
-        event_date: event_date ? new Date(event_date).toISOString().slice(0, 10) : "",
+        event_date: event_date ? toDateLocal(event_date) : "",
         official_urls: original_url ? [original_url] : [""],
         entries: [
           {
             entry_number: 1,
-            entry_start_at: entry_start_at ? new Date(entry_start_at).toISOString().slice(0, 16) : "",
+            entry_start_at: entry_start_at ? toDateTimeLocal(entry_start_at) : "",
             entry_start_public_at: "",
             entry_deadline_at: "",
             payment_due_type: "ABSOLUTE",
-            payment_due_at: payment_due_at ? new Date(payment_due_at).toISOString().slice(0, 16) : "",
+            payment_due_at: payment_due_at ? toDateTimeLocal(payment_due_at) : "",
             payment_due_days_after_entry: null,
             payment_due_public_at: "",
           },
