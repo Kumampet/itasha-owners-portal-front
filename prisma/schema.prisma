@@ -124,7 +124,7 @@ model EventEntry {
   id                           String    @id @default(uuid()) @db.VarChar(36)
   event_id                     String    @db.VarChar(36)
   entry_number                 Int
-  entry_start_at               DateTime
+  entry_start_at               DateTime?
   entry_start_public_at        DateTime?
   entry_deadline_at            DateTime?
   payment_due_at               DateTime?
