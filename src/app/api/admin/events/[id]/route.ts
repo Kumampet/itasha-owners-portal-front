@@ -162,6 +162,15 @@ export async function PATCH(
     const tags: string[] = body.tags || [];
     const approvalStatus = body.approval_status || existingEvent.approval_status;
 
+    // event_dateを変換（必須項目のためnullチェック）
+    const eventDate = fromDateLocal(body.event_date);
+    if (!eventDate) {
+      return NextResponse.json(
+        { error: "開催日が無効です" },
+        { status: 400 }
+      );
+    }
+
     // 下書き状態から申請に変更する場合はバリデーションを適用
     if (existingEvent.approval_status === "DRAFT" && approvalStatus === "PENDING") {
       // 必須項目のバリデーション
@@ -215,7 +224,7 @@ export async function PATCH(
         data: {
           name: body.name,
           description: body.description || null,
-          event_date: fromDateLocal(body.event_date),
+          event_date: eventDate,
           event_end_date: body.event_end_date ? fromDateLocal(body.event_end_date) : null,
           is_multi_day: body.is_multi_day || false,
           postal_code: body.postal_code || null,
