@@ -21,6 +21,7 @@ export async function GET(request: Request) {
     const sortBy = searchParams.get("sortBy") || "created_at";
     const sortOrder = searchParams.get("sortOrder") || "desc";
     const search = searchParams.get("search");
+    const noEntryStart = searchParams.get("noEntryStart") === "true";
     const page = parseInt(searchParams.get("page") || "1", 10);
     const requestedLimit = parseInt(searchParams.get("limit") || "20", 10);
     // 管理画面では最大20件まで
@@ -48,19 +49,19 @@ export async function GET(request: Request) {
 
     // フィルター条件を構築
     const where: Record<string, unknown> = {};
-    
+
     // AND条件の配列を構築
     const andConditions: unknown[] = [dateFilter];
-    
+
     // オーガナイザーの場合、自分が登録したイベントのみを表示
     if (session.user?.role === "ORGANIZER" && session.user?.id) {
       andConditions.push({ created_by_user_id: session.user.id });
     }
-    
+
     if (status && status !== "ALL") {
       andConditions.push({ approval_status: status });
     }
-    
+
     if (search) {
       andConditions.push({
         OR: [
@@ -69,7 +70,30 @@ export async function GET(request: Request) {
         ],
       });
     }
-    
+
+    // エントリー開始日時未登録フィルター
+    if (noEntryStart) {
+      andConditions.push({
+        OR: [
+          { entries: { none: {} } },
+          {
+            entries: {
+              some: {
+                entry_start_at: null,
+              },
+            },
+            NOT: {
+              entries: {
+                some: {
+                  entry_start_at: { not: null },
+                },
+              },
+            },
+          },
+        ],
+      });
+    }
+
     // すべての条件をANDで結合
     where.AND = andConditions;
 
@@ -190,15 +214,7 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
-      // エントリー情報の必須項目チェック
-      for (const entry of entries) {
-        if (!entry.entry_start_at) {
-          return NextResponse.json(
-            { error: `エントリー${entry.entry_number}の開始日時が必要です` },
-            { status: 400 }
-          );
-        }
-      }
+      // エントリー開始日時は必須項目から除外
       if (body.is_multi_day && !body.event_end_date) {
         return NextResponse.json(
           { error: "複数日開催の場合、終了日が必要です" },
@@ -253,27 +269,21 @@ export async function POST(request: Request) {
       });
 
       // エントリー情報を作成
-      // 下書き保存時は、entry_start_atが空の場合はスキップ
+      // entry_start_atは必須項目から除外されたため、nullを許可
       for (const entry of entries) {
-        // entry_start_atが必須項目なので、空の場合はスキップ（下書き保存時のみ）
-        if (approvalStatus === "DRAFT" && (!entry.entry_start_at || typeof entry.entry_start_at !== "string" || entry.entry_start_at.trim() === "")) {
-          continue;
-        }
-
-        // entry_start_atが有効な値かチェック
+        // entry_start_atが有効な値かチェック（空文字列の場合はnullとして扱う）
         const entryStartAt = entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== ""
           ? new Date(entry.entry_start_at)
           : null;
 
-        if (!entryStartAt || isNaN(entryStartAt.getTime())) {
-          // 下書き保存時はスキップ、申請時はエラー（バリデーションで既にチェック済み）
-          if (approvalStatus === "DRAFT") {
-            continue;
+        // entry_start_atが指定されている場合は有効性をチェック
+        if (entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== "") {
+          if (!entryStartAt || isNaN(entryStartAt.getTime())) {
+            return NextResponse.json(
+              { error: `エントリー${entry.entry_number}の開始日時が無効です` },
+              { status: 400 }
+            );
           }
-          return NextResponse.json(
-            { error: `エントリー${entry.entry_number}の開始日時が無効です` },
-            { status: 400 }
-          );
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

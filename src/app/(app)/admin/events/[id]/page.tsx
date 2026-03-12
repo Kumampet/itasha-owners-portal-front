@@ -97,9 +97,11 @@ export default function AdminEventDetailPage({
         session?.user?.role === "ORGANIZER" &&
         event.created_by_user_id === session.user.id));
 
-  const fetchEvent = useCallback(async () => {
+  const fetchEvent = useCallback(async (skipCache = false) => {
     try {
-      const res = await fetch(`/api/admin/events/${id}`);
+      const res = await fetch(`/api/admin/events/${id}`, {
+        cache: skipCache ? "no-store" : "default",
+      });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.message || `Failed to fetch event: ${res.status}`);
@@ -207,13 +209,7 @@ export default function AdminEventDetailPage({
         alert("エントリー決定方法を選択してください");
         return;
       }
-      // エントリー情報の必須項目チェック
-      for (const entry of formData.entries) {
-        if (!entry.entry_start_at) {
-          alert(`エントリー${entry.entry_number}の開始日時を入力してください`);
-          return;
-        }
-      }
+      // エントリー開始日時は必須項目から除外
     }
 
     setSaving(true);
@@ -283,11 +279,13 @@ export default function AdminEventDetailPage({
     try {
       const res = await fetch(`/api/admin/events/${id}/approve`, {
         method: "POST",
+        cache: "no-store",
       });
 
       if (!res.ok) throw new Error("Failed to approve event");
 
-      await fetchEvent();
+      // 承認後にイベント情報を再取得（キャッシュを無視）
+      await fetchEvent(true);
       setShowApproveModal(false);
       // 承認成功時にシェアモーダルを表示
       setShowShareModal(true);
@@ -609,7 +607,7 @@ export default function AdminEventDetailPage({
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block text-sm text-blue-600 hover:underline"
+                      className="block text-sm text-blue-600 hover:underline break-all"
                     >
                       {url}
                     </a>
@@ -633,7 +631,7 @@ export default function AdminEventDetailPage({
                       <div className="space-y-2 text-xs text-zinc-600">
                         <div>
                           <span className="font-medium">エントリー開始日時:</span>{" "}
-                          {formatDateTime(entry.entry_start_at)}
+                          {entry.entry_start_at ? formatDateTime(entry.entry_start_at) || "未設定" : "未設定"}
                         </div>
                         <div>
                           <span className="font-medium">エントリー開始日時公開日時:</span>{" "}

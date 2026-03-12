@@ -108,13 +108,7 @@ function AdminNewEventPageContent() {
         alert("エントリー決定方法を選択してください");
         return;
       }
-      // エントリー情報の必須項目チェック
-      for (const entry of formData.entries) {
-        if (!entry.entry_start_at) {
-          alert(`エントリー${entry.entry_number}の開始日時を入力してください`);
-          return;
-        }
-      }
+      // エントリー開始日時は必須項目から除外
     }
 
     setSaving(true);

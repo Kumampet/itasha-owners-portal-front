@@ -191,15 +191,7 @@ export async function PATCH(
           { status: 400 }
         );
       }
-      // エントリー情報の必須項目チェック
-      for (const entry of body.entries) {
-        if (!entry.entry_start_at) {
-          return NextResponse.json(
-            { error: `エントリー${entry.entry_number}の開始日時が必要です` },
-            { status: 400 }
-          );
-        }
-      }
+      // エントリー開始日時は必須項目から除外
       if (body.is_multi_day && !body.event_end_date) {
         return NextResponse.json(
           { error: "複数日開催の場合、終了日が必要です" },
@@ -222,8 +214,8 @@ export async function PATCH(
         data: {
           name: body.name,
           description: body.description || null,
-          event_date: new Date(body.event_date),
-          event_end_date: body.event_end_date ? new Date(body.event_end_date) : null,
+          event_date: fromDateLocal(body.event_date) || new Date(body.event_date),
+          event_end_date: body.event_end_date ? (fromDateLocal(body.event_end_date) || new Date(body.event_end_date)) : null,
           is_multi_day: body.is_multi_day || false,
           postal_code: body.postal_code || null,
           prefecture: body.prefecture || null,
@@ -247,27 +239,22 @@ export async function PATCH(
       });
 
       // 新しいエントリー情報を作成
+      // entry_start_atは必須項目から除外されたため、nullを許可
       if (body.entries && Array.isArray(body.entries)) {
         for (const entry of body.entries) {
-          // entry_start_atが必須項目なので、空の場合はスキップ（下書き保存時のみ）
-          if (approvalStatus === "DRAFT" && (!entry.entry_start_at || typeof entry.entry_start_at !== "string" || entry.entry_start_at.trim() === "")) {
-            continue;
-          }
-          
-          // entry_start_atが有効な値かチェック
+          // entry_start_atが有効な値かチェック（空文字列の場合はnullとして扱う）
           const entryStartAt = entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== ""
             ? new Date(entry.entry_start_at)
             : null;
           
-          if (!entryStartAt || isNaN(entryStartAt.getTime())) {
-            // 下書き保存時はスキップ、申請時はエラー（バリデーションで既にチェック済み）
-            if (approvalStatus === "DRAFT") {
-              continue;
+          // entry_start_atが指定されている場合は有効性をチェック
+          if (entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== "") {
+            if (!entryStartAt || isNaN(entryStartAt.getTime())) {
+              return NextResponse.json(
+                { error: `エントリー${entry.entry_number}の開始日時が無効です` },
+                { status: 400 }
+              );
             }
-            return NextResponse.json(
-              { error: `エントリー${entry.entry_number}の開始日時が無効です` },
-              { status: 400 }
-            );
           }
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any

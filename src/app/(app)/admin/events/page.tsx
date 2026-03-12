@@ -47,6 +47,7 @@ export default function AdminEventsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
+  const [filterNoEntryStart, setFilterNoEntryStart] = useState(false);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -59,6 +60,9 @@ export default function AdminEventsPage() {
       params.append("sortOrder", sortOrder);
       if (searchQuery) {
         params.append("search", searchQuery);
+      }
+      if (filterNoEntryStart) {
+        params.append("noEntryStart", "true");
       }
       params.append("page", currentPage.toString());
       params.append("limit", ITEMS_PER_PAGE.toString());
@@ -73,7 +77,7 @@ export default function AdminEventsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, sortBy, sortOrder, searchQuery, currentPage]);
+  }, [filterStatus, sortBy, sortOrder, searchQuery, currentPage, filterNoEntryStart]);
 
   useEffect(() => {
     fetchEvents();
@@ -214,6 +218,21 @@ export default function AdminEventsPage() {
               {sortOrder === "asc" ? "↑" : "↓"}
             </Button>
           </div>
+          {/* エントリー開始日時未登録フィルター */}
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filterNoEntryStart}
+                onChange={(e) => {
+                  setFilterNoEntryStart(e.target.checked);
+                  setCurrentPage(1); // フィルター変更時は1ページ目に戻る
+                }}
+                className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <span className="text-xs font-medium text-zinc-700">エントリー開始日時未登録</span>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -303,7 +322,7 @@ export default function AdminEventsPage() {
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
                       {event.entries && event.entries.length > 0 && event.entries[0].entry_start_at
-                        ? formatDateTime(event.entries[0].entry_start_at)
+                        ? formatDateTime(event.entries[0].entry_start_at) || "-"
                         : "-"}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
