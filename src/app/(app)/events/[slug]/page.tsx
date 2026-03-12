@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { createMetadataWithOGP } from "@/lib/metadata";
 import { EventDetailActions } from "@/components/event-detail-actions";
+import { formatShortDateTime } from "@/lib/date-utils";
 
 type EventDetailPageProps = {
   params: Promise<{ slug: string }>;
@@ -93,28 +94,13 @@ function formatEntryInfo(entries: Array<{
 
   return {
     entryStart: entryStartAt
-      ? new Intl.DateTimeFormat("ja-JP", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(entryStartAt)
+      ? formatShortDateTime(entryStartAt)
       : "未定",
     deadline: firstEntry.entry_deadline_at
-      ? new Intl.DateTimeFormat("ja-JP", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(firstEntry.entry_deadline_at)
+      ? formatShortDateTime(firstEntry.entry_deadline_at)
       : "未定",
     paymentDue: paymentDueAt
-      ? new Intl.DateTimeFormat("ja-JP", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(paymentDueAt)
+      ? formatShortDateTime(paymentDueAt)
       : "未定",
   };
 }
