@@ -214,8 +214,8 @@ export async function PATCH(
         data: {
           name: body.name,
           description: body.description || null,
-          event_date: fromDateLocal(body.event_date) || new Date(body.event_date),
-          event_end_date: body.event_end_date ? (fromDateLocal(body.event_end_date) || new Date(body.event_end_date)) : null,
+          event_date: new Date(body.event_date),
+          event_end_date: body.event_end_date ? new Date(body.event_end_date) : null,
           is_multi_day: body.is_multi_day || false,
           postal_code: body.postal_code || null,
           prefecture: body.prefecture || null,
