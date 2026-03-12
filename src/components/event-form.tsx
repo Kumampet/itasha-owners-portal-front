@@ -663,7 +663,7 @@ export default function EventForm({
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-medium text-zinc-700">
-                    エントリー開始日時 *
+                    エントリー開始日時
                   </label>
                   <div className="mt-1">
                     <DateTimeInput
@@ -676,7 +676,6 @@ export default function EventForm({
                           value
                         )
                       }
-                      required
                     />
                   </div>
                 </div>

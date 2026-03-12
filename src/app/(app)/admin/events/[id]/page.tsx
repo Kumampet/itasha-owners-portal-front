@@ -9,7 +9,7 @@ import ConfirmModal from "@/components/confirm-modal";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { EventShareModal } from "@/components/event-share-modal";
-import { formatDate, formatDateTime } from "@/lib/date-utils";
+import { formatDate, formatDateTime, toDateTimeLocal, toDateLocal } from "@/lib/date-utils";
 
 type Event = {
   id: string;
@@ -97,9 +97,11 @@ export default function AdminEventDetailPage({
         session?.user?.role === "ORGANIZER" &&
         event.created_by_user_id === session.user.id));
 
-  const fetchEvent = useCallback(async () => {
+  const fetchEvent = useCallback(async (skipCache = false) => {
     try {
-      const res = await fetch(`/api/admin/events/${id}`);
+      const res = await fetch(`/api/admin/events/${id}`, {
+        cache: skipCache ? "no-store" : "default",
+      });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.message || `Failed to fetch event: ${res.status}`);
@@ -107,38 +109,24 @@ export default function AdminEventDetailPage({
       const data = await res.json();
       setEvent({ ...data, created_by_user_id: data.created_by_user_id || null });
 
-      // エントリー情報をフォーマット
+      // エントリー情報をフォーマット（UTCからJSTに変換してdatetime-local形式に）
       const formattedEntries = (data.entries || []).map((entry: Event["entries"][number]) => ({
         entry_number: entry.entry_number,
-        entry_start_at: entry.entry_start_at
-          ? new Date(entry.entry_start_at).toISOString().slice(0, 16)
-          : "",
-        entry_start_public_at: entry.entry_start_public_at
-          ? new Date(entry.entry_start_public_at).toISOString().slice(0, 16)
-          : "",
-        entry_deadline_at: entry.entry_deadline_at
-          ? new Date(entry.entry_deadline_at).toISOString().slice(0, 16)
-          : "",
+        entry_start_at: toDateTimeLocal(entry.entry_start_at),
+        entry_start_public_at: toDateTimeLocal(entry.entry_start_public_at),
+        entry_deadline_at: toDateTimeLocal(entry.entry_deadline_at),
         payment_due_type: entry.payment_due_type || "ABSOLUTE",
-        payment_due_at: entry.payment_due_at
-          ? new Date(entry.payment_due_at).toISOString().slice(0, 16)
-          : "",
+        payment_due_at: toDateTimeLocal(entry.payment_due_at),
         payment_due_days_after_entry: entry.payment_due_days_after_entry || null,
-        payment_due_public_at: entry.payment_due_public_at
-          ? new Date(entry.payment_due_public_at).toISOString().slice(0, 16)
-          : "",
+        payment_due_public_at: toDateTimeLocal(entry.payment_due_public_at),
       }));
 
       setFormData({
         name: data.name || "",
         description: data.description || "",
-        event_date: data.event_date
-          ? new Date(data.event_date).toISOString().split("T")[0]
-          : "",
+        event_date: toDateLocal(data.event_date),
         is_multi_day: data.is_multi_day || false,
-        event_end_date: data.event_end_date
-          ? new Date(data.event_end_date).toISOString().split("T")[0]
-          : "",
+        event_end_date: toDateLocal(data.event_end_date),
         postal_code: data.postal_code || "",
         prefecture: data.prefecture || "",
         city: data.city || "",
@@ -207,13 +195,7 @@ export default function AdminEventDetailPage({
         alert("エントリー決定方法を選択してください");
         return;
       }
-      // エントリー情報の必須項目チェック
-      for (const entry of formData.entries) {
-        if (!entry.entry_start_at) {
-          alert(`エントリー${entry.entry_number}の開始日時を入力してください`);
-          return;
-        }
-      }
+      // エントリー開始日時は必須項目から除外
     }
 
     setSaving(true);
@@ -283,11 +265,13 @@ export default function AdminEventDetailPage({
     try {
       const res = await fetch(`/api/admin/events/${id}/approve`, {
         method: "POST",
+        cache: "no-store",
       });
 
       if (!res.ok) throw new Error("Failed to approve event");
 
-      await fetchEvent();
+      // 承認後にイベント情報を再取得（キャッシュを無視）
+      await fetchEvent(true);
       setShowApproveModal(false);
       // 承認成功時にシェアモーダルを表示
       setShowShareModal(true);
@@ -609,7 +593,7 @@ export default function AdminEventDetailPage({
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block text-sm text-blue-600 hover:underline"
+                      className="block text-sm text-blue-600 hover:underline break-all"
                     >
                       {url}
                     </a>
@@ -633,7 +617,7 @@ export default function AdminEventDetailPage({
                       <div className="space-y-2 text-xs text-zinc-600">
                         <div>
                           <span className="font-medium">エントリー開始日時:</span>{" "}
-                          {formatDateTime(entry.entry_start_at)}
+                          {entry.entry_start_at ? formatDateTime(entry.entry_start_at) || "未設定" : "未設定"}
                         </div>
                         <div>
                           <span className="font-medium">エントリー開始日時公開日時:</span>{" "}
