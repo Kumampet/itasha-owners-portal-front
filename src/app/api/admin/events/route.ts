@@ -72,24 +72,12 @@ export async function GET(request: Request) {
     }
 
     // エントリー開始日時未登録フィルター
+    // エントリーが存在しない、またはすべてのエントリーのentry_start_atがnullのイベントを取得
     if (noEntryStart) {
       andConditions.push({
         OR: [
           { entries: { none: {} } },
-          {
-            entries: {
-              some: {
-                entry_start_at: null,
-              },
-            },
-            NOT: {
-              entries: {
-                some: {
-                  entry_start_at: { not: null },
-                },
-              },
-            },
-          },
+          { entries: { every: { entry_start_at: null } } },
         ],
       });
     }
