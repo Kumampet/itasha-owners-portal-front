@@ -224,6 +224,15 @@ export async function POST(request: Request) {
       }
     }
 
+    // event_dateを変換（必須項目のためnullチェック）
+    const eventDate = fromDateLocal(body.event_date);
+    if (!eventDate) {
+      return NextResponse.json(
+        { error: "開催日が無効です" },
+        { status: 400 }
+      );
+    }
+
     // トランザクションでイベント、エントリー情報、キーワードを同時に作成
     const event = await prisma.$transaction(async (tx) => {
       // イベントを作成
@@ -231,7 +240,7 @@ export async function POST(request: Request) {
       const eventData: any = {
         name: body.name,
         description: body.description,
-        event_date: fromDateLocal(body.event_date),
+        event_date: eventDate,
         is_multi_day: body.is_multi_day || false,
         event_end_date: body.event_end_date ? fromDateLocal(body.event_end_date) : null,
         postal_code: body.postal_code || null,
