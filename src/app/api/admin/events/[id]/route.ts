@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { fromDateTimeLocal, fromDateLocal } from "@/lib/date-utils";
 
 // GET /api/admin/events/[id]
 // 管理画面用のイベント詳細取得API
@@ -214,8 +215,8 @@ export async function PATCH(
         data: {
           name: body.name,
           description: body.description || null,
-          event_date: new Date(body.event_date),
-          event_end_date: body.event_end_date ? new Date(body.event_end_date) : null,
+          event_date: fromDateLocal(body.event_date),
+          event_end_date: body.event_end_date ? fromDateLocal(body.event_end_date) : null,
           is_multi_day: body.is_multi_day || false,
           postal_code: body.postal_code || null,
           prefecture: body.prefecture || null,
@@ -243,13 +244,11 @@ export async function PATCH(
       if (body.entries && Array.isArray(body.entries)) {
         for (const entry of body.entries) {
           // entry_start_atが有効な値かチェック（空文字列の場合はnullとして扱う）
-          const entryStartAt = entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== ""
-            ? new Date(entry.entry_start_at)
-            : null;
+          const entryStartAt = fromDateTimeLocal(entry.entry_start_at);
           
           // entry_start_atが指定されている場合は有効性をチェック
           if (entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== "") {
-            if (!entryStartAt || isNaN(entryStartAt.getTime())) {
+            if (!entryStartAt) {
               return NextResponse.json(
                 { error: `エントリー${entry.entry_number}の開始日時が無効です` },
                 { status: 400 }
@@ -263,22 +262,16 @@ export async function PATCH(
               event_id: id,
               entry_number: entry.entry_number,
               entry_start_at: entryStartAt,
-              entry_start_public_at: entry.entry_start_public_at && typeof entry.entry_start_public_at === "string" && entry.entry_start_public_at.trim() !== ""
-                ? new Date(entry.entry_start_public_at)
-                : null,
-              entry_deadline_at: entry.entry_deadline_at && typeof entry.entry_deadline_at === "string" && entry.entry_deadline_at.trim() !== ""
-                ? new Date(entry.entry_deadline_at)
-                : null,
+              entry_start_public_at: fromDateTimeLocal(entry.entry_start_public_at),
+              entry_deadline_at: fromDateTimeLocal(entry.entry_deadline_at),
               payment_due_type: entry.payment_due_type || "ABSOLUTE",
-              payment_due_at: entry.payment_due_type === "ABSOLUTE" && entry.payment_due_at && typeof entry.payment_due_at === "string" && entry.payment_due_at.trim() !== ""
-                ? new Date(entry.payment_due_at)
+              payment_due_at: entry.payment_due_type === "ABSOLUTE"
+                ? fromDateTimeLocal(entry.payment_due_at)
                 : null,
               payment_due_days_after_entry: entry.payment_due_type === "RELATIVE" && entry.payment_due_days_after_entry
                 ? entry.payment_due_days_after_entry
                 : null,
-              payment_due_public_at: entry.payment_due_public_at && typeof entry.payment_due_public_at === "string" && entry.payment_due_public_at.trim() !== ""
-                ? new Date(entry.payment_due_public_at)
-                : null,
+              payment_due_public_at: fromDateTimeLocal(entry.payment_due_public_at),
             },
           });
         }

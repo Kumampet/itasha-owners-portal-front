@@ -67,6 +67,22 @@ function getDateTimeFormat(locale: DateLocale = "ja-JP"): string {
 }
 
 /**
+ * ロケールに応じた短い日時フォーマットを取得（年月を省略）
+ * @param locale ロケール（デフォルト: "ja-JP"）
+ * @returns 日時フォーマット文字列
+ */
+function getShortDateTimeFormat(locale: DateLocale = "ja-JP"): string {
+  switch (locale) {
+    case "ja-JP":
+      return "M月D日 HH:mm";
+    case "en-US":
+      return "MMM DD HH:mm";
+    default:
+      return "M月D日 HH:mm";
+  }
+}
+
+/**
  * 日付のみをフォーマット（年月日のみ）
  * @param date 日付（文字列、Dateオブジェクト、またはdayjsオブジェクト）
  * @param locale ロケール（デフォルト: "ja-JP"）
@@ -114,6 +130,32 @@ export function formatDateTime(
     return jstDate.format(getDateTimeFormat(locale));
   } catch (error) {
     console.error("Error formatting datetime:", error);
+    return "";
+  }
+}
+
+/**
+ * 日時を短い形式でフォーマット（年月を省略、時間のみ）
+ * @param date 日時（文字列、Dateオブジェクト、またはdayjsオブジェクト）
+ * @param locale ロケール（デフォルト: "ja-JP"）
+ * @returns フォーマットされた日時文字列
+ */
+export function formatShortDateTime(
+  date: string | Date | dayjs.Dayjs | null | undefined,
+  locale: DateLocale = "ja-JP"
+): string {
+  if (!date) {
+    return "";
+  }
+
+  try {
+    const jstDate = toJST(date);
+    if (!jstDate.isValid()) {
+      return "";
+    }
+    return jstDate.format(getShortDateTimeFormat(locale));
+  } catch (error) {
+    console.error("Error formatting short datetime:", error);
     return "";
   }
 }
@@ -192,5 +234,61 @@ export function toDateLocal(
   } catch (error) {
     console.error("Error converting to date-local:", error);
     return "";
+  }
+}
+
+/**
+ * datetime-local入力フィールドから取得した値（JST）をUTCのDateオブジェクトに変換
+ * datetime-local入力フィールドはローカルタイムゾーン（JST）の値を返すため、
+ * これをJSTとして解釈してからUTCに変換してデータベースに保存する
+ * @param dateTimeLocal datetime-local入力フィールドから取得した値（YYYY-MM-DDTHH:mm形式）
+ * @returns UTCのDateオブジェクト、またはnull（無効な値の場合）
+ */
+export function fromDateTimeLocal(
+  dateTimeLocal: string | null | undefined
+): Date | null {
+  if (!dateTimeLocal || typeof dateTimeLocal !== "string" || dateTimeLocal.trim() === "") {
+    return null;
+  }
+
+  try {
+    // datetime-local形式（YYYY-MM-DDTHH:mm）をJSTとして解釈
+    const jstDate = dayjs.tz(dateTimeLocal, DEFAULT_TIMEZONE);
+    if (!jstDate.isValid()) {
+      return null;
+    }
+    // UTCのDateオブジェクトに変換
+    return jstDate.utc().toDate();
+  } catch (error) {
+    console.error("Error converting from datetime-local:", error);
+    return null;
+  }
+}
+
+/**
+ * date入力フィールドから取得した値（JST）をUTCのDateオブジェクトに変換
+ * date入力フィールドはローカルタイムゾーン（JST）の値を返すため、
+ * これをJSTとして解釈してからUTCに変換してデータベースに保存する
+ * @param dateLocal date入力フィールドから取得した値（YYYY-MM-DD形式）
+ * @returns UTCのDateオブジェクト、またはnull（無効な値の場合）
+ */
+export function fromDateLocal(
+  dateLocal: string | null | undefined
+): Date | null {
+  if (!dateLocal || typeof dateLocal !== "string" || dateLocal.trim() === "") {
+    return null;
+  }
+
+  try {
+    // date形式（YYYY-MM-DD）をJSTの00:00として解釈
+    const jstDate = dayjs.tz(`${dateLocal}T00:00`, DEFAULT_TIMEZONE);
+    if (!jstDate.isValid()) {
+      return null;
+    }
+    // UTCのDateオブジェクトに変換
+    return jstDate.utc().toDate();
+  } catch (error) {
+    console.error("Error converting from date-local:", error);
+    return null;
   }
 }
