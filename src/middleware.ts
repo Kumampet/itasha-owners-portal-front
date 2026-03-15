@@ -30,17 +30,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 一時的に団体機能を無効化 - 団体機能へのアクセスをマイページにリダイレクト
-  if (pathname.startsWith("/app/groups")) {
-    return NextResponse.redirect(new URL("/app/mypage", request.url));
-  }
-
   // 団体詳細ページ（/app/groups/[id]）は認証不要（未ログインでも閲覧可能）
   // ただし、メッセージ機能はログインが必要
-  // 一時的に無効化のためコメントアウト
-  // if (pathname.match(/^\/app\/groups\/[^/]+$/)) {
-  //   return NextResponse.next();
-  // }
+  if (pathname.match(/^\/app\/groups\/[^/]+$/)) {
+    return NextResponse.next();
+  }
 
   // 認証が必要なパスでのみauth()を呼び出す
   let session = null;
@@ -62,8 +56,7 @@ export async function middleware(request: NextRequest) {
   const protectedPaths = [
     "/app/mypage",
     "/app/reminder",
-    // 一時的に団体機能を無効化
-    // "/app/groups",
+    "/app/groups",
   ];
 
   // 管理画面のパス（管理者またはオーガナイザー権限が必要）
@@ -131,10 +124,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/app/mypage", request.url));
   }
 
-  // ログインページ（/app/auth）、イベント掲載依頼フォーム（/app/event-submission）、お問い合わせフォーム（/app/contact）は認証が必要なパスではない
-  // 一時的に団体機能を無効化のため、isPublicGroupDetailPageのチェックを削除
-  // const isPublicGroupDetailPage = pathname.match(/^\/app\/groups\/[^/]+$/);
-  const isDashboard = pathname.startsWith("/app/") && pathname !== "/app/auth" && pathname !== "/app/event-submission" && pathname !== "/app/contact";
+  // ログインページ（/app/auth）、イベント掲載依頼フォーム（/app/event-submission）、お問い合わせフォーム（/app/contact）、団体詳細ページ（/app/groups/[id]）は認証が必要なパスではない
+  const isPublicGroupDetailPage = pathname.match(/^\/app\/groups\/[^/]+$/);
+  const isDashboard = pathname.startsWith("/app/") && pathname !== "/app/auth" && pathname !== "/app/event-submission" && pathname !== "/app/contact" && !isPublicGroupDetailPage;
 
   // 認証が必要なパスにアクセスしている場合
   const isProtectedPath = protectedPaths.some((path) =>
