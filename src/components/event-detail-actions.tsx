@@ -1,5 +1,7 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Tooltip } from "@/components/tooltip";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { Button } from "@/components/button";
@@ -10,6 +12,8 @@ type EventDetailActionsProps = {
 };
 
 export function EventDetailActions({ eventId, officialUrls }: EventDetailActionsProps) {
+  const { data: session } = useSession();
+  const router = useRouter();
 
   // 公式サイトURLの最初のものを取得
   const firstOfficialUrl = officialUrls && Array.isArray(officialUrls) && officialUrls.length > 0
@@ -60,25 +64,36 @@ export function EventDetailActions({ eventId, officialUrls }: EventDetailActions
             className="flex-1 rounded-full border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
           />
         </div>
-        {/* 一時的に団体機能を無効化 */}
-        <Tooltip
-          content="この機能は現在メンテナンス中です。"
-          disabled={false}
-          arrowPosition="right"
-        >
+        {session ? (
           <Button
             variant="emerald"
             size="md"
             rounded="full"
             fullWidth
-            disabled
-            onClick={(e) => {
-              e.preventDefault();
-            }}
+            onClick={() => router.push("/app/groups")}
           >
             団体を組む
           </Button>
-        </Tooltip>
+        ) : (
+          <Tooltip
+            content="この機能はログインすることでご利用いただけます。"
+            disabled={false}
+            arrowPosition="right"
+          >
+            <Button
+              variant="emerald"
+              size="md"
+              rounded="full"
+              fullWidth
+              disabled
+              onClick={(e) => {
+                e.preventDefault();
+              }}
+            >
+              団体を組む
+            </Button>
+          </Tooltip>
+        )}
       </div>
     </>
   );
