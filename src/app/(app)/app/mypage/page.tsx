@@ -9,40 +9,16 @@ import { Card, CardTitle, CardContent } from "@/components/card";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Button } from "@/components/button";
 
-// 団体管理リンクカード（通知バッジ付き）
+// 一時的に団体機能を無効化（メンテナンス中）
+// 団体管理リンクカード（Disable状態）
 function GroupManagementLinkCard() {
-    const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
-
-    useEffect(() => {
-        const fetchUnreadCounts = async () => {
-            try {
-                const res = await fetch("/api/groups/unread-count");
-                if (!res.ok) return;
-                const data = await res.json();
-                // いずれかの団体に未読メッセージがあるかチェック
-                const hasUnread = Object.values(data).some((hasUnread: unknown) => hasUnread === true);
-                setHasUnreadMessages(hasUnread);
-            } catch (error) {
-                console.error("Failed to fetch unread counts:", error);
-            }
-        };
-
-        fetchUnreadCounts();
-        // 定期的に未読数をチェック（10秒ごと）
-        const interval = setInterval(fetchUnreadCounts, 10000);
-        return () => clearInterval(interval);
-    }, []);
-
     return (
-        <LinkCard href="/app/groups" className="hover:-translate-y-0.5 hover:shadow-md relative">
-            {hasUnreadMessages && (
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" title="新着メッセージあり"></span>
-            )}
+        <Card className="opacity-60 cursor-not-allowed">
             <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
                 {/* 団体管理アイコン */}
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-purple-100 sm:mb-3 sm:h-14 sm:w-14">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-zinc-100 sm:mb-3 sm:h-14 sm:w-14">
                     <svg
-                        className="h-6 w-6 text-purple-600 sm:h-7 sm:w-7"
+                        className="h-6 w-6 text-zinc-400 sm:h-7 sm:w-7"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -56,15 +32,18 @@ function GroupManagementLinkCard() {
                     </svg>
                 </div>
                 <div className="flex-1 min-w-0 sm:flex-none">
-                    <CardTitle className="mb-1 sm:mb-2">団体管理</CardTitle>
+                    <CardTitle className="mb-1 sm:mb-2 text-zinc-400">団体管理</CardTitle>
                     <CardContent>
-                        <p className="text-xs text-zinc-600 sm:text-sm">
+                        <p className="text-xs text-zinc-500 sm:text-sm">
                             併せメンバーの募集状況や一斉連絡ポリシーを確認・運用できます。
+                        </p>
+                        <p className="mt-2 text-xs text-zinc-500 sm:text-sm font-medium">
+                            （メンテナンス中）
                         </p>
                     </CardContent>
                 </div>
             </div>
-        </LinkCard>
+        </Card>
     );
 }
 
@@ -368,6 +347,7 @@ export default function MyPage() {
                         </div>
                     </LinkCard>
 
+                    {/* 一時的に団体機能を無効化（メンテナンス中） */}
                     <GroupManagementLinkCard />
 
                     <LinkCard href="/app/reminder" className="hover:-translate-y-0.5 hover:shadow-md">

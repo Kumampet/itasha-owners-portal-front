@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { fromDateTimeLocal, fromDateLocal } from "@/lib/date-utils";
 
 // GET /api/admin/events
 // 管理画面用のイベント一覧取得API（全ステータス、ソート・絞り込み対応）
@@ -21,6 +22,11 @@ export async function GET(request: Request) {
     const sortBy = searchParams.get("sortBy") || "created_at";
     const sortOrder = searchParams.get("sortOrder") || "desc";
     const search = searchParams.get("search");
+    const noEntryStart = searchParams.get("noEntryStart") === "true";
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const requestedLimit = parseInt(searchParams.get("limit") || "20", 10);
+    // 管理画面では最大20件まで
+    const limit = Math.min(requestedLimit, 20);
 
     const now = new Date();
 
@@ -44,19 +50,19 @@ export async function GET(request: Request) {
 
     // フィルター条件を構築
     const where: Record<string, unknown> = {};
-    
+
     // AND条件の配列を構築
     const andConditions: unknown[] = [dateFilter];
-    
+
     // オーガナイザーの場合、自分が登録したイベントのみを表示
     if (session.user?.role === "ORGANIZER" && session.user?.id) {
       andConditions.push({ created_by_user_id: session.user.id });
     }
-    
+
     if (status && status !== "ALL") {
       andConditions.push({ approval_status: status });
     }
-    
+
     if (search) {
       andConditions.push({
         OR: [
@@ -65,7 +71,18 @@ export async function GET(request: Request) {
         ],
       });
     }
-    
+
+    // エントリー開始日時未登録フィルター
+    // エントリーが存在しない、またはすべてのエントリーのentry_start_atがnullのイベントを取得
+    if (noEntryStart) {
+      andConditions.push({
+        OR: [
+          { entries: { none: {} } },
+          { entries: { every: { entry_start_at: null } } },
+        ],
+      });
+    }
+
     // すべての条件をANDで結合
     where.AND = andConditions;
 
@@ -73,9 +90,16 @@ export async function GET(request: Request) {
     const orderBy: Record<string, string> = {};
     orderBy[sortBy] = sortOrder;
 
+    // 総件数を取得
+    const totalCount = await prisma.event.count({ where });
+
+    // ページネーションでイベントを取得
+    const skip = (page - 1) * limit;
     const events = await prisma.event.findMany({
       where,
       orderBy,
+      skip,
+      take: limit,
       select: {
         id: true,
         name: true,
@@ -101,9 +125,19 @@ export async function GET(request: Request) {
       } as any,
     });
 
+    const totalPages = Math.ceil(totalCount / limit);
+
     // 管理画面用のため、privateディレクティブを使用して10秒間キャッシュ
     return NextResponse.json(
-      events,
+      {
+        events,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalCount,
+          limit,
+        },
+      },
       {
         headers: {
           "Cache-Control": "private, s-maxage=10, stale-while-revalidate=30",
@@ -169,15 +203,7 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
-      // エントリー情報の必須項目チェック
-      for (const entry of entries) {
-        if (!entry.entry_start_at) {
-          return NextResponse.json(
-            { error: `エントリー${entry.entry_number}の開始日時が必要です` },
-            { status: 400 }
-          );
-        }
-      }
+      // エントリー開始日時は必須項目から除外
       if (body.is_multi_day && !body.event_end_date) {
         return NextResponse.json(
           { error: "複数日開催の場合、終了日が必要です" },
@@ -198,6 +224,15 @@ export async function POST(request: Request) {
       }
     }
 
+    // event_dateを変換（必須項目のためnullチェック）
+    const eventDate = fromDateLocal(body.event_date);
+    if (!eventDate) {
+      return NextResponse.json(
+        { error: "開催日が無効です" },
+        { status: 400 }
+      );
+    }
+
     // トランザクションでイベント、エントリー情報、キーワードを同時に作成
     const event = await prisma.$transaction(async (tx) => {
       // イベントを作成
@@ -205,9 +240,9 @@ export async function POST(request: Request) {
       const eventData: any = {
         name: body.name,
         description: body.description,
-        event_date: new Date(body.event_date),
+        event_date: eventDate,
         is_multi_day: body.is_multi_day || false,
-        event_end_date: body.event_end_date ? new Date(body.event_end_date) : null,
+        event_end_date: body.event_end_date ? fromDateLocal(body.event_end_date) : null,
         postal_code: body.postal_code || null,
         prefecture: body.prefecture || null,
         city: body.city || null,
@@ -232,27 +267,19 @@ export async function POST(request: Request) {
       });
 
       // エントリー情報を作成
-      // 下書き保存時は、entry_start_atが空の場合はスキップ
+      // entry_start_atは必須項目から除外されたため、nullを許可
       for (const entry of entries) {
-        // entry_start_atが必須項目なので、空の場合はスキップ（下書き保存時のみ）
-        if (approvalStatus === "DRAFT" && (!entry.entry_start_at || typeof entry.entry_start_at !== "string" || entry.entry_start_at.trim() === "")) {
-          continue;
-        }
+        // entry_start_atが有効な値かチェック（空文字列の場合はnullとして扱う）
+        const entryStartAt = fromDateTimeLocal(entry.entry_start_at);
 
-        // entry_start_atが有効な値かチェック
-        const entryStartAt = entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== ""
-          ? new Date(entry.entry_start_at)
-          : null;
-
-        if (!entryStartAt || isNaN(entryStartAt.getTime())) {
-          // 下書き保存時はスキップ、申請時はエラー（バリデーションで既にチェック済み）
-          if (approvalStatus === "DRAFT") {
-            continue;
+        // entry_start_atが指定されている場合は有効性をチェック
+        if (entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== "") {
+          if (!entryStartAt) {
+            return NextResponse.json(
+              { error: `エントリー${entry.entry_number}の開始日時が無効です` },
+              { status: 400 }
+            );
           }
-          return NextResponse.json(
-            { error: `エントリー${entry.entry_number}の開始日時が無効です` },
-            { status: 400 }
-          );
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -261,22 +288,16 @@ export async function POST(request: Request) {
             event_id: createdEvent.id,
             entry_number: entry.entry_number,
             entry_start_at: entryStartAt,
-            entry_start_public_at: entry.entry_start_public_at && typeof entry.entry_start_public_at === "string" && entry.entry_start_public_at.trim() !== ""
-              ? new Date(entry.entry_start_public_at)
-              : null,
-            entry_deadline_at: entry.entry_deadline_at && typeof entry.entry_deadline_at === "string" && entry.entry_deadline_at.trim() !== ""
-              ? new Date(entry.entry_deadline_at)
-              : null,
+            entry_start_public_at: fromDateTimeLocal(entry.entry_start_public_at),
+            entry_deadline_at: fromDateTimeLocal(entry.entry_deadline_at),
             payment_due_type: entry.payment_due_type || "ABSOLUTE",
-            payment_due_at: entry.payment_due_type === "ABSOLUTE" && entry.payment_due_at && typeof entry.payment_due_at === "string" && entry.payment_due_at.trim() !== ""
-              ? new Date(entry.payment_due_at)
+            payment_due_at: entry.payment_due_type === "ABSOLUTE"
+              ? fromDateTimeLocal(entry.payment_due_at)
               : null,
             payment_due_days_after_entry: entry.payment_due_type === "RELATIVE" && entry.payment_due_days_after_entry
               ? entry.payment_due_days_after_entry
               : null,
-            payment_due_public_at: entry.payment_due_public_at && typeof entry.payment_due_public_at === "string" && entry.payment_due_public_at.trim() !== ""
-              ? new Date(entry.payment_due_public_at)
-              : null,
+            payment_due_public_at: fromDateTimeLocal(entry.payment_due_public_at),
           },
         });
       }

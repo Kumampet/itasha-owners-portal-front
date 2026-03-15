@@ -3,7 +3,9 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { createMetadataWithOGP } from "@/lib/metadata";
 import { EventDetailActions } from "@/components/event-detail-actions";
+import { formatShortDateTime } from "@/lib/date-utils";
 
 type EventDetailPageProps = {
   params: Promise<{ slug: string }>;
@@ -15,18 +17,24 @@ export async function generateMetadata({
   const { slug } = await params;
   const event = await prisma.event.findUnique({
     where: { id: slug },
-    select: { name: true },
+    select: { 
+      name: true,
+      description: true,
+      image_url: true,
+    },
   });
 
   if (!event) {
-    return {
-      title: "イベント詳細 | 痛車オーナーズナビ | いたなび！",
-    };
+    return createMetadataWithOGP({
+      title: "イベント詳細",
+    });
   }
 
-  return {
-    title: `${event.name} | 痛車オーナーズナビ | いたなび！`,
-  };
+  return createMetadataWithOGP({
+    title: event.name,
+    description: event.description || undefined,
+    imageUrl: event.image_url || undefined,
+  });
 }
 
 function formatDateRange(
@@ -58,7 +66,7 @@ function formatDateRange(
 
 function formatEntryInfo(entries: Array<{
   entry_number: number;
-  entry_start_at: Date;
+  entry_start_at: Date | null;
   entry_start_public_at: Date | null;
   entry_deadline_at: Date | null;
   payment_due_at: Date | null;
@@ -86,28 +94,13 @@ function formatEntryInfo(entries: Array<{
 
   return {
     entryStart: entryStartAt
-      ? new Intl.DateTimeFormat("ja-JP", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(entryStartAt)
+      ? formatShortDateTime(entryStartAt)
       : "未定",
     deadline: firstEntry.entry_deadline_at
-      ? new Intl.DateTimeFormat("ja-JP", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(firstEntry.entry_deadline_at)
+      ? formatShortDateTime(firstEntry.entry_deadline_at)
       : "未定",
     paymentDue: paymentDueAt
-      ? new Intl.DateTimeFormat("ja-JP", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(paymentDueAt)
+      ? formatShortDateTime(paymentDueAt)
       : "未定",
   };
 }

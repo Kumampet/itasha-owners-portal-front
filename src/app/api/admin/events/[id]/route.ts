@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { fromDateTimeLocal, fromDateLocal } from "@/lib/date-utils";
 
 // GET /api/admin/events/[id]
 // 管理画面用のイベント詳細取得API
@@ -161,6 +162,15 @@ export async function PATCH(
     const tags: string[] = body.tags || [];
     const approvalStatus = body.approval_status || existingEvent.approval_status;
 
+    // event_dateを変換（必須項目のためnullチェック）
+    const eventDate = fromDateLocal(body.event_date);
+    if (!eventDate) {
+      return NextResponse.json(
+        { error: "開催日が無効です" },
+        { status: 400 }
+      );
+    }
+
     // 下書き状態から申請に変更する場合はバリデーションを適用
     if (existingEvent.approval_status === "DRAFT" && approvalStatus === "PENDING") {
       // 必須項目のバリデーション
@@ -191,15 +201,7 @@ export async function PATCH(
           { status: 400 }
         );
       }
-      // エントリー情報の必須項目チェック
-      for (const entry of body.entries) {
-        if (!entry.entry_start_at) {
-          return NextResponse.json(
-            { error: `エントリー${entry.entry_number}の開始日時が必要です` },
-            { status: 400 }
-          );
-        }
-      }
+      // エントリー開始日時は必須項目から除外
       if (body.is_multi_day && !body.event_end_date) {
         return NextResponse.json(
           { error: "複数日開催の場合、終了日が必要です" },
@@ -222,8 +224,8 @@ export async function PATCH(
         data: {
           name: body.name,
           description: body.description || null,
-          event_date: new Date(body.event_date),
-          event_end_date: body.event_end_date ? new Date(body.event_end_date) : null,
+          event_date: eventDate,
+          event_end_date: body.event_end_date ? fromDateLocal(body.event_end_date) : null,
           is_multi_day: body.is_multi_day || false,
           postal_code: body.postal_code || null,
           prefecture: body.prefecture || null,
@@ -247,27 +249,20 @@ export async function PATCH(
       });
 
       // 新しいエントリー情報を作成
+      // entry_start_atは必須項目から除外されたため、nullを許可
       if (body.entries && Array.isArray(body.entries)) {
         for (const entry of body.entries) {
-          // entry_start_atが必須項目なので、空の場合はスキップ（下書き保存時のみ）
-          if (approvalStatus === "DRAFT" && (!entry.entry_start_at || typeof entry.entry_start_at !== "string" || entry.entry_start_at.trim() === "")) {
-            continue;
-          }
+          // entry_start_atが有効な値かチェック（空文字列の場合はnullとして扱う）
+          const entryStartAt = fromDateTimeLocal(entry.entry_start_at);
           
-          // entry_start_atが有効な値かチェック
-          const entryStartAt = entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== ""
-            ? new Date(entry.entry_start_at)
-            : null;
-          
-          if (!entryStartAt || isNaN(entryStartAt.getTime())) {
-            // 下書き保存時はスキップ、申請時はエラー（バリデーションで既にチェック済み）
-            if (approvalStatus === "DRAFT") {
-              continue;
+          // entry_start_atが指定されている場合は有効性をチェック
+          if (entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== "") {
+            if (!entryStartAt) {
+              return NextResponse.json(
+                { error: `エントリー${entry.entry_number}の開始日時が無効です` },
+                { status: 400 }
+              );
             }
-            return NextResponse.json(
-              { error: `エントリー${entry.entry_number}の開始日時が無効です` },
-              { status: 400 }
-            );
           }
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -276,22 +271,16 @@ export async function PATCH(
               event_id: id,
               entry_number: entry.entry_number,
               entry_start_at: entryStartAt,
-              entry_start_public_at: entry.entry_start_public_at && typeof entry.entry_start_public_at === "string" && entry.entry_start_public_at.trim() !== ""
-                ? new Date(entry.entry_start_public_at)
-                : null,
-              entry_deadline_at: entry.entry_deadline_at && typeof entry.entry_deadline_at === "string" && entry.entry_deadline_at.trim() !== ""
-                ? new Date(entry.entry_deadline_at)
-                : null,
+              entry_start_public_at: fromDateTimeLocal(entry.entry_start_public_at),
+              entry_deadline_at: fromDateTimeLocal(entry.entry_deadline_at),
               payment_due_type: entry.payment_due_type || "ABSOLUTE",
-              payment_due_at: entry.payment_due_type === "ABSOLUTE" && entry.payment_due_at && typeof entry.payment_due_at === "string" && entry.payment_due_at.trim() !== ""
-                ? new Date(entry.payment_due_at)
+              payment_due_at: entry.payment_due_type === "ABSOLUTE"
+                ? fromDateTimeLocal(entry.payment_due_at)
                 : null,
               payment_due_days_after_entry: entry.payment_due_type === "RELATIVE" && entry.payment_due_days_after_entry
                 ? entry.payment_due_days_after_entry
                 : null,
-              payment_due_public_at: entry.payment_due_public_at && typeof entry.payment_due_public_at === "string" && entry.payment_due_public_at.trim() !== ""
-                ? new Date(entry.payment_due_public_at)
-                : null,
+              payment_due_public_at: fromDateTimeLocal(entry.payment_due_public_at),
             },
           });
         }
