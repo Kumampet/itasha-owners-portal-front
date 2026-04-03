@@ -1,0 +1,7 @@
+# Code owners（PR のレビュー依頼先）
+# https://docs.github.com/ja/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# 末尾の @ は GitHub のユーザー名、または Organization の場合は @組織名/チーム名 を指定します。
+# 組織リポジトリでチームを使う場合の例: @Kumampet/frontend
+
+* @Kumampet
