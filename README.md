@@ -1,5 +1,81 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## 開発環境の前提条件（Node.js / npm）
+
+依存関係のインストールや開発サーバーは **Node.js** と **npm**（Node に同梱）で行います。このリポジトリは **Next.js 16** 向けのため、**Node.js 20 以上の LTS** の利用を推奨します（[Next.js の要件](https://nextjs.org/docs/app/getting-started/installation)に沿ってください）。
+
+### インストール済みかの確認
+
+ターミナル（macOS）または PowerShell / コマンドプロンプト（Windows）で次を実行し、バージョンが表示されれば準備できています。
+
+```bash
+node -v
+npm -v
+```
+
+`node` は動くが `command not found: npm` になる場合は、Node のインストールが不完全か、**npm が入っているディレクトリが PATH に含まれていません**。下記のいずれかの方法で入れ直すか、シェル／環境変数の設定を見直してください。
+
+### macOS でのセットアップ
+
+#### 公式インストーラー（手軽）
+
+1. [Node.js ダウンロードページ](https://nodejs.org/)から **LTS** の macOS 用インストーラー（`.pkg`）を取得する  
+2. ウィザードに従いインストールする  
+3. **新しいターミナル**を開き、`node -v` と `npm -v` で確認する  
+
+#### Homebrew
+
+Homebrew が使える場合は次で Node.js（npm 同梱）を入れられます。
+
+```bash
+brew install node
+```
+
+インストール後に `node -v` / `npm -v` で確認します。
+
+複数ユーザーで Homebrew を共有しており、`Cellar is not writable` や権限エラーが出る場合は、管理者に所有者の修正を依頼するか、後述の **nvm** のようにホームディレクトリ配下にツールチェーンを置く方法を選んでください。
+
+#### nvm（バージョン切り替え・管理者権限が不要になりやすい）
+
+1. [nvm のインストール手順](https://github.com/nvm-sh/nvm#installing-and-updating)に従いセットアップする（`~/.zshrc` などに `NVM_DIR` の読み込みが追記されます）  
+2. ターミナルを開き直すか `source ~/.zshrc` を実行する  
+3. 例として LTS を入れる場合:
+
+```bash
+nvm install --lts
+nvm use --lts
+```
+
+このリポジトリで `npm install` が成功すれば問題ありません。
+
+### Windows でのセットアップ
+
+#### 公式インストーラー（手軽）
+
+1. [Node.js ダウンロードページ](https://nodejs.org/)から **LTS** の Windows 用インストーラー（`.msi`）を取得する  
+2. ウィザードに従いインストールする（**PATH に追加**のオプションが有効であることを確認する）  
+3. **新しい** PowerShell またはコマンドプロンプトを開き、`node -v` と `npm -v` で確認する  
+
+#### winget
+
+```powershell
+winget install OpenJS.NodeJS.LTS
+```
+
+インストール後はターミナルを開き直し、バージョンを確認します。
+
+#### nvm-windows（複数バージョンの切り替え）
+
+1. [nvm-windows の Releases](https://github.com/coreybutler/nvm-windows/releases) から **nvm-setup** を入手しインストールする  
+2. 管理者権限の PowerShell などで、例:
+
+```powershell
+nvm install lts
+nvm use <インストールされたバージョン>
+```
+
+---
+
 ## Getting Started
 
 First, install dependencies:
