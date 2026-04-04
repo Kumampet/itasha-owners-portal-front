@@ -1,8 +1,18 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  type FormEvent,
+} from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { LinkCard } from "@/components/link-card";
+import {
+  EventsFilterPanel,
+  type PageSize,
+} from "@/components/events-filter-panel";
 import { EventsCardContent } from "@/components/events-card-content";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { Pagination } from "@/components/pagination";
@@ -57,6 +67,7 @@ export default function EventsPage() {
   const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [pageSize, setPageSize] = useState<PageSize>(10);
 
   const navigateToPage = useCallback(
     (page: number, mode: "push" | "replace" = "push") => {
@@ -90,7 +101,7 @@ export default function EventsPage() {
     try {
       const params = new URLSearchParams();
       params.append("page", pageFromUrl.toString());
-      params.append("limit", "10");
+      params.append("limit", String(pageSize));
       if (searchQuery) {
         params.append("search", searchQuery);
       }
@@ -119,6 +130,7 @@ export default function EventsPage() {
     }
   }, [
     pageFromUrl,
+    pageSize,
     searchQuery,
     sortOrder,
     navigateToPage,
@@ -133,13 +145,8 @@ export default function EventsPage() {
     document.title = "イベント一覧 | 痛車オーナーズナビ | いたなび！";
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    resetPageInUrl();
-  };
-
-  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSortOrder(e.target.value as "asc" | "desc");
     resetPageInUrl();
   };
 
@@ -158,44 +165,21 @@ export default function EventsPage() {
           </p>
         </header>
 
-        {/* 検索とフィルター */}
-        <div className="space-y-4 rounded-lg border border-zinc-200 bg-white p-4">
-          <form onSubmit={handleSearch} className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="flex-1">
-              <label htmlFor="search" className="block text-sm font-medium text-zinc-700 mb-1">
-                検索
-              </label>
-              <input
-                type="text"
-                id="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="イベント名、説明、開催地などで検索"
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-              />
-            </div>
-            <div className="sm:w-48">
-              <label htmlFor="sortOrder" className="block text-sm font-medium text-zinc-700 mb-1">
-                表示順
-              </label>
-              <select
-                id="sortOrder"
-                value={sortOrder}
-                onChange={handleSortChange}
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-              >
-                <option value="asc">開催日が近い順</option>
-                <option value="desc">開催日が遠い順</option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2"
-            >
-              検索
-            </button>
-          </form>
-        </div>
+        <EventsFilterPanel
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          sortOrder={sortOrder}
+          onSortOrderChange={(v) => {
+            setSortOrder(v);
+            resetPageInUrl();
+          }}
+          pageSize={pageSize}
+          onPageSizeChange={(v) => {
+            setPageSize(v);
+            resetPageInUrl();
+          }}
+          onSubmit={handleSearch}
+        />
 
         {loading ? (
           <div className="flex items-center justify-center py-12">

@@ -135,6 +135,7 @@ describe('EventsPage', () => {
     })
 
     expect(screen.getByLabelText('表示順')).toBeInTheDocument()
+    expect(screen.getByLabelText('表示件数')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '検索' })).toBeInTheDocument()
   })
 
@@ -203,6 +204,39 @@ describe('EventsPage', () => {
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('sortOrder=desc')
+      )
+    })
+  })
+
+  it('表示件数を変更すると、limitでAPIを呼び出す', async () => {
+    ;(global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          events: mockEvents,
+          pagination: mockPagination,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          events: mockEvents,
+          pagination: mockPagination,
+        }),
+      })
+
+    const user = userEvent.setup()
+    render(<EventsPage />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('表示件数')).toBeInTheDocument()
+    })
+
+    await user.selectOptions(screen.getByLabelText('表示件数'), '20')
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringMatching(/[?&]limit=20(?:&|$)/)
       )
     })
   })
