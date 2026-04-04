@@ -467,22 +467,25 @@ const configBase: NextAuthConfig = {
   },
 };
 
-// NEXTAUTH_SECRETは開発環境・本番環境問わず必須
-// 実際のGoogleアカウントを使用するため、ダミー値ではなく正規の値を設定すること
-const authSecret = process.env.NEXTAUTH_SECRET;
+// NEXTAUTH_SECRET: 本番は必須。開発（next dev）のみ未設定時はフォールバックで起動可能にする
+const nextAuthSecretErrorMessage =
+  "NEXTAUTH_SECRET environment variable is required. " +
+  "Please generate a secret key using: openssl rand -base64 32";
 
-if (!authSecret) {
-  const errorMessage =
-    "NEXTAUTH_SECRET environment variable is required. " +
-    "Please generate a secret key using: openssl rand -base64 32";
-  console.error(errorMessage);
-  if (process.env.NODE_ENV === "production") {
-    throw new Error(errorMessage);
-  } else {
-    // 開発環境でもエラーを投げる（実際のGoogleアカウントを使用するため）
-    throw new Error(errorMessage);
-  }
-}
+const trimmedSecret = process.env.NEXTAUTH_SECRET?.trim();
+const authSecret =
+  trimmedSecret ||
+  (process.env.NODE_ENV !== "production"
+    ? (() => {
+        console.warn(
+          "[NextAuth] NEXTAUTH_SECRET が未設定です。開発用の仮シークレットで起動します。OAuth やセッション用に `.env` へ設定してください: openssl rand -base64 32"
+        );
+        return "local-dev-only-unsafe-nextauth-secret-do-not-use-in-production";
+      })()
+    : (() => {
+        console.error(nextAuthSecretErrorMessage);
+        throw new Error(nextAuthSecretErrorMessage);
+      })());
 
 // NextAuth v5では、AUTH_URLを優先的に使用（NEXTAUTH_URLは後方互換性のためにサポート）
 const authUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL;
