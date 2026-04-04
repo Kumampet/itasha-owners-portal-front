@@ -33,7 +33,6 @@ export const metadata: Metadata = {
     },
   },
   manifest: "/manifest.json",
-  themeColor: "#18181b",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -53,6 +52,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: "cover", // SafeArea対応のため
+  themeColor: "#18181b",
 };
 
 export default function RootLayout({
