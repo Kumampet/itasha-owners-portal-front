@@ -37,25 +37,26 @@ export async function generateMetadata({
   });
 }
 
+/** DB は UTC 保存のため、表示は JST にそろえる */
+const DISPLAY_TZ = "Asia/Tokyo";
+
 function formatDateRange(
   date: Date,
   endDate: Date | null,
   isMultiDay: boolean
 ) {
-  const main = new Intl.DateTimeFormat("ja-JP", {
+  const dateOptions: Intl.DateTimeFormatOptions = {
+    timeZone: DISPLAY_TZ,
     year: "numeric",
     month: "long",
     day: "numeric",
     weekday: "long",
-  }).format(date);
+  };
+
+  const main = new Intl.DateTimeFormat("ja-JP", dateOptions).format(date);
 
   const end = endDate && isMultiDay
-    ? new Intl.DateTimeFormat("ja-JP", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      weekday: "long",
-    }).format(endDate)
+    ? new Intl.DateTimeFormat("ja-JP", dateOptions).format(endDate)
     : null;
 
   return {
@@ -229,7 +230,7 @@ export default async function EventDetailPage({
               開催情報
             </p>
             <p className="text-lg font-semibold text-zinc-900">
-              {formatted.main}
+              開催日時: {formatted.main}
             </p>
             {event.prefecture && (
               <p className="text-sm text-zinc-600">
