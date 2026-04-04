@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { LinkCard } from "@/components/link-card";
 import { EventsCardContent } from "@/components/events-card-content";
 import { LoadingSpinner } from "@/components/loading-spinner";
@@ -40,18 +41,55 @@ type PaginationData = {
 };
 
 export default function EventsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const pageFromUrl = useMemo(() => {
+    const raw = searchParams.get("page");
+    const n = parseInt(raw ?? "1", 10);
+    if (!Number.isFinite(n) || n < 1) return 1;
+    return n;
+  }, [searchParams]);
+
   const [events, setEvents] = useState<DbEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const navigateToPage = useCallback(
+    (page: number, mode: "push" | "replace" = "push") => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (page <= 1) {
+        params.delete("page");
+      } else {
+        params.set("page", String(page));
+      }
+      const qs = params.toString();
+      const url = qs ? `${pathname}?${qs}` : pathname;
+      if (mode === "replace") {
+        router.replace(url, { scroll: false });
+      } else {
+        router.push(url, { scroll: true });
+      }
+    },
+    [router, pathname, searchParams]
+  );
+
+  const resetPageInUrl = useCallback(() => {
+    if (!searchParams.has("page")) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [router, pathname, searchParams]);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      params.append("page", currentPage.toString());
+      params.append("page", pageFromUrl.toString());
       params.append("limit", "10");
       if (searchQuery) {
         params.append("search", searchQuery);
@@ -61,14 +99,31 @@ export default function EventsPage() {
       const res = await fetch(`/api/events?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to fetch events");
       const data = await res.json();
+      const pag = data.pagination as PaginationData | null | undefined;
+
+      if (pag && pag.totalPages > 0 && pageFromUrl > pag.totalPages) {
+        navigateToPage(pag.totalPages, "replace");
+        return;
+      }
+      if (pag && pag.totalCount === 0 && pageFromUrl > 1) {
+        resetPageInUrl();
+        return;
+      }
+
       setEvents(data.events || []);
-      setPagination(data.pagination || null);
+      setPagination(pag ?? null);
     } catch (err) {
       console.error("Failed to fetch events:", err);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchQuery, sortOrder]);
+  }, [
+    pageFromUrl,
+    searchQuery,
+    sortOrder,
+    navigateToPage,
+    resetPageInUrl,
+  ]);
 
   useEffect(() => {
     fetchEvents();
@@ -80,12 +135,12 @@ export default function EventsPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setCurrentPage(1); // 検索時は1ページ目に戻る
+    resetPageInUrl();
   };
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSortOrder(e.target.value as "asc" | "desc");
-    setCurrentPage(1); // ソート変更時は1ページ目に戻る
+    resetPageInUrl();
   };
 
   return (
@@ -172,7 +227,7 @@ export default function EventsPage() {
               <Pagination
                 currentPage={pagination.currentPage}
                 totalPages={pagination.totalPages}
-                onPageChange={setCurrentPage}
+                onPageChange={(p) => navigateToPage(p, "push")}
               />
             )}
           </>
