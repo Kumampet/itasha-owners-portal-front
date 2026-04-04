@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import EventsPage from '../page'
+import EventsPageClient from '../events-page-client'
 
 const mockPush = jest.fn()
 const mockReplace = jest.fn()
@@ -20,7 +20,7 @@ jest.mock('next/navigation', () => ({
 // グローバルfetchのモック
 global.fetch = jest.fn()
 
-describe('EventsPage', () => {
+describe('EventsPageClient', () => {
   const mockEvents = [
     {
       id: 'event-1',
@@ -81,7 +81,7 @@ describe('EventsPage', () => {
       new Promise(() => {}) // 解決しないPromiseでローディング状態を維持
     )
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
     expect(screen.getByLabelText('読み込み中')).toBeInTheDocument()
   })
 
@@ -94,7 +94,7 @@ describe('EventsPage', () => {
       }),
     })
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByText('テストイベント1')).toBeInTheDocument()
@@ -112,7 +112,7 @@ describe('EventsPage', () => {
       }),
     })
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByText('イベントが登録されていません。')).toBeInTheDocument()
@@ -128,7 +128,7 @@ describe('EventsPage', () => {
       }),
     })
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByLabelText('検索')).toBeInTheDocument()
@@ -157,7 +157,7 @@ describe('EventsPage', () => {
       })
 
     const user = userEvent.setup()
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByLabelText('検索')).toBeInTheDocument()
@@ -192,7 +192,7 @@ describe('EventsPage', () => {
       })
 
     const user = userEvent.setup()
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByLabelText('表示順')).toBeInTheDocument()
@@ -226,7 +226,7 @@ describe('EventsPage', () => {
       })
 
     const user = userEvent.setup()
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByLabelText('表示件数')).toBeInTheDocument()
@@ -257,7 +257,7 @@ describe('EventsPage', () => {
       }),
     })
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByLabelText('ページ 1')).toBeInTheDocument()
@@ -280,7 +280,7 @@ describe('EventsPage', () => {
       }),
     })
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
@@ -305,7 +305,7 @@ describe('EventsPage', () => {
       }),
     })
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'ページ 2' })).toBeInTheDocument()
@@ -329,7 +329,7 @@ describe('EventsPage', () => {
       }),
     })
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByText('テストイベント1')).toBeInTheDocument()
@@ -367,7 +367,7 @@ describe('EventsPage', () => {
     })
 
     const user = userEvent.setup()
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByLabelText('検索')).toBeInTheDocument()
@@ -389,7 +389,7 @@ describe('EventsPage', () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
     ;(global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'))
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -410,7 +410,7 @@ describe('EventsPage', () => {
       }),
     })
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       const eventCard = screen.getByText('テストイベント1').closest('a')
