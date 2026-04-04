@@ -104,6 +104,20 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+### NextAuth（開発サーバー）
+
+ミドルウェアが認証設定を読み込むため、**本番ビルド（`next build` / `next start`）では `NEXTAUTH_SECRET` が必須**です。`next dev` では未設定時に開発用の仮シークレットで起動しますが、セッションや OAuth を正しく試すには **`.env` に自分用の値を書くことを推奨**します。
+
+```bash
+# 例（出力を .env の NEXTAUTH_SECRET= に貼り付け）
+openssl rand -base64 32
+
+# 例
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+Google / X でのログインを行う場合は、README の「認証設定」セクションの環境変数も合わせて設定してください。
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
@@ -116,6 +130,63 @@ To learn more about Next.js, take a look at the following resources:
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## ローカル MySQL（Docker）と MySQL Workbench
+
+開発用 MySQL は `docker-compose.mysql.yml` で起動します（Docker Desktop が必要です）。
+
+```bash
+docker compose -f docker-compose.mysql.yml up -d
+```
+
+アプリや Prisma 用の接続文字列（`.env` / `.env.local` の `DATABASE_URL`）の例:
+
+```bash
+DATABASE_URL="mysql://itasha:itasha_local_dev@127.0.0.1:3306/itasha_local"
+```
+
+`localhost` より **`127.0.0.1`** を推奨します。OS によっては `localhost` が IPv6 (`::1`) になり、Docker 公開の 3306 に届かず `pool timeout` になることがあります。接続待ちを長くしたい場合は `.env` に `DATABASE_CONNECT_TIMEOUT_MS=30000`（既定は 10000）を追加できます。
+
+### データの永続化
+
+MySQL のデータファイルは Docker の**名前付きボリューム** `itasha_mysql_data` に保存されます。コンテナを止めるだけなら **`docker compose -f docker-compose.mysql.yml down`** でよく、この場合 **DB の中身は消えません**。初めから作り直したいときだけ **`down -v`**（ボリューム削除）を使ってください。
+
+### サンプルデータの投入（Prisma シード）
+
+マイグレーションを適用したうえで、スキーマに沿ったサンプル（イベント・エントリー枠・タグ・フォロー・参加・団体・メッセージ・リマインダー等）を流し込みます。`prisma/seed.ts` は実行時に **`.env` と `.env.local` を読み込み**（`.env.local` があればそちらで上書き）するため、次のように **`export` しなくても** 接続文字列が取れます。
+
+```bash
+npx prisma migrate deploy
+npm run db:seed
+```
+
+（接続文字列は `.env` または `.env.local` の `DATABASE_URL` に記載してください。未設定のときはシードが分かりやすいエラーで終了します。）
+
+作成されるユーザー例: `organizer@itasha-portal.com`（ADMIN）、`local.driver.a@example.com`、`local.driver.b@example.com`、`local.group.leader@example.com`。イベント件数は環境変数 `SEED_EVENT_COUNT`（既定 `30`、最大 `500`）で変更できます。
+
+シード実行前に、イベント関連の既存行は削除されます（**他テーブルにだけあるデータは消しません**）。
+
+### MySQL Workbench で接続・モニタリング
+
+ホスト上の MySQL Workbench から、コンテナ内の MySQL に **Standard (TCP/IP)** で接続します。`ports` で `3306` が公開されているため、追加のプロキシ設定は不要です。
+
+1. Workbench で **Database** → **Manage Connections…**（またはホームの接続一覧）を開く  
+2. **＋** で新規接続を追加し、次を設定する  
+
+| 項目 | アプリ用（テーブル閲覧・クエリ） | 管理用（Server Status など） |
+|------|----------------------------------|------------------------------|
+| Connection Method | Standard (TCP/IP) | 同左 |
+| Hostname | `127.0.0.1` | `127.0.0.1` |
+| Port | `3306` | `3306` |
+| Username | `itasha` | `root` |
+| Password | `itasha_local_dev` | `root` |
+| Default Schema | `itasha_local` | 任意 |
+
+3. **Test Connection** で成功を確認して保存する  
+4. 接続を開くと **Navigator** でスキーマやテーブルを確認でき、**SQL エディタ**でクエリを実行できる  
+5. **Management** パネルの **Server Status** や **Client Connections** などは、権限の広い **`root` 接続**のほうが表示されやすい（いずれもローカル専用のため本番では使わないこと）
+
+既にホストで別の MySQL が `3306` を使っている場合は、`docker-compose.mysql.yml` の `ports` を `3307:3306` のように変更し、Workbench の Port も合わせる。
 
 ## 認証設定
 
@@ -169,6 +240,8 @@ Amplifyコンソールで以下の環境変数を設定してください：
 #### データベース関連
 - `DATABASE_URL` - RDSデータベースへの接続文字列
 - `DATABASE_POOL_SIZE` - データベース接続プールサイズ（オプション、デフォルト: 10）
+- `DATABASE_CONNECT_TIMEOUT_MS` - 初回 TCP 接続のタイムアウト（ミリ秒、オプション、デフォルト: 10000）
+- `DATABASE_ACQUIRE_TIMEOUT_MS` - プールから接続を取得する待ち（ミリ秒、オプション、デフォルト: 10000）
 - `DATABASE_DEBUG` - データベースデバッグモード（オプション、デフォルト: false）
 
 #### 認証関連

@@ -1,0 +1,41 @@
+# ローカル開発・テスト用 MySQL（Prisma / mysql2 と同じ mysql:// 接続文字列で利用）
+# データ永続化: 名前付きボリューム itasha_mysql_data にデータディレクトリを保存するため、
+#   「docker compose -f docker-compose.mysql.yml down」でコンテナを止めても DB 内容は残る。
+#   ボリュームごと消す場合のみ「docker compose -f docker-compose.mysql.yml down -v」を使う。
+# 起動: docker compose -f docker-compose.mysql.yml up -d
+# 停止: docker compose -f docker-compose.mysql.yml down
+# データ削除付き停止: docker compose -f docker-compose.mysql.yml down -v
+#
+# MySQL Workbench（ホストマシンから監視・SQL 実行）
+#   Connection Method: Standard (TCP/IP)
+#   Hostname: 127.0.0.1  Port: 3306
+#   アプリ用ユーザー: Username itasha / Password itasha_local_dev / Default Schema itasha_local
+#   管理・Server Status 等: Username root / Password root（※ローカル専用の弱いパスワード）
+#   先にコンテナを起動し、Workbench で Test Connection が成功することを確認する。
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: itasha-mysql-local
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: itasha_local
+      MYSQL_USER: itasha
+      MYSQL_PASSWORD: itasha_local_dev
+    ports:
+      - "3306:3306"
+    volumes:
+      - itasha_mysql_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 25s
+
+volumes:
+  itasha_mysql_data:
