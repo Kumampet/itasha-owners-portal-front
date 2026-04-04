@@ -2,6 +2,7 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require("dotenv/config");
 
+// IDE で「PrismaClient が export されていない」と出る場合は `npx prisma generate`（npm install 後の postinstall でも実行）
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
@@ -61,22 +62,39 @@ function createPrismaClient() {
     // コネクションプールサイズを増やす（デフォルト: 10）
     // 環境変数で接続プールサイズを制御可能にする
     const connectionLimit = parseInt(process.env.DATABASE_POOL_SIZE || "10", 10);
-    
+    const isDev = process.env.NODE_ENV === "development";
+    const defaultConnectMs = isDev ? 30000 : 10000;
+    const defaultAcquireMs = isDev ? 30000 : 10000;
+    const connectTimeout = parseInt(
+      process.env.DATABASE_CONNECT_TIMEOUT_MS || String(defaultConnectMs),
+      10,
+    );
+    const acquireTimeout = parseInt(
+      process.env.DATABASE_ACQUIRE_TIMEOUT_MS || String(defaultAcquireMs),
+      10,
+    );
+
+    const host = dbUrl.hostname;
+    const useLocalSslOff =
+      host === "localhost" || host === "127.0.0.1" || host === "::1";
+
     const poolConfig = {
-      host: dbUrl.hostname,
+      host,
       port: parseInt(dbUrl.port || "3306"),
       user: dbUrl.username,
       password: password,
       database: dbUrl.pathname.slice(1), // 先頭の/を削除
       connectionLimit, // 環境変数で制御可能（デフォルト: 10）
-      connectTimeout: 10000, // 10秒（Amplifyのサーバーレス関数のタイムアウトに合わせて短縮）
-      acquireTimeout: 10000, // 10秒
+      connectTimeout, // 初回接続待ち（ローカルで Docker 起動直後は長めに: DATABASE_CONNECT_TIMEOUT_MS）
+      acquireTimeout, // プール取得待ち（DATABASE_ACQUIRE_TIMEOUT_MS）
       idleTimeout: 30000, // 30秒（アイドル接続を早めに解放して接続数を削減）
       queueLimit: 0, // 接続待ちキューを無制限（タイムアウトで制御）
       // 接続の再利用を最適化
       reuseConnection: true,
       // 接続の最大生存時間（1時間）
       maxLifetime: 3600000,
+      // ローカル Docker MySQL 等で TLS 協議がタイムアウトする環境向け（RDS 等は URL / プロキシ側で SSL を使う）
+      ...(useLocalSslOff ? { ssl: false as const } : {}),
     };
 
     const adapter = new PrismaMariaDb(poolConfig);
