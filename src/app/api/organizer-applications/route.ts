@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyDiscordOrganizerApplication } from "@/lib/discord-admin-notify";
 
 // POST /api/organizer-applications
 // オーガナイザー登録申請API
@@ -66,6 +67,11 @@ export async function POST(request: Request) {
         status: true,
         created_at: true,
       },
+    });
+
+    notifyDiscordOrganizerApplication({
+      id: application.id,
+      displayName: application.display_name,
     });
 
     return NextResponse.json(application, { status: 201 });

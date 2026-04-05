@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyDiscordEventApproved } from "@/lib/discord-admin-notify";
 
 // POST /api/admin/events/[id]/approve
 // イベント承認API
@@ -24,6 +25,14 @@ export async function POST(
     const event = await prisma.event.update({
       where: { id },
       data: { approval_status: "APPROVED" },
+    });
+
+    notifyDiscordEventApproved({
+      eventId: event.id,
+      eventName: event.name,
+      eventDateLabel: event.event_date.toLocaleDateString("ja-JP", {
+        timeZone: "Asia/Tokyo",
+      }),
     });
 
     // キャッシュを無効化（一覧と個別イベントの両方）
