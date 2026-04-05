@@ -72,13 +72,7 @@ export async function POST(request: Request) {
       },
     });
 
-    notifyDiscordContactReceived({
-      id: submission.id,
-      title: submission.title,
-      name: submission.name,
-      email: submission.email,
-      content: submission.content,
-    });
+    notifyDiscordContactReceived({ id: submission.id });
 
     return NextResponse.json(submission, { status: 201 });
   } catch (error) {

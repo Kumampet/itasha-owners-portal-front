@@ -36,7 +36,6 @@ export async function POST(request: Request) {
     notifyDiscordEventListingRequest({
       id: submission.id,
       name: submission.name,
-      submitterEmail: submission.submitter_email,
       originalUrl: submission.original_url,
     });
 

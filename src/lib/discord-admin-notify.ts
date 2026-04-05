@@ -4,7 +4,8 @@
  * 種別ごとの URL（優先）:
  * - DISCORD_WEBHOOK_EVENT_APPROVAL … イベント承認依頼（PENDING）・承認済み（APPROVED）
  * - DISCORD_WEBHOOK_CONTACT … お問い合わせ
- * - DISCORD_WEBHOOK_COMMON_NOTIFY … イベント掲載依頼
+ * - DISCORD_WEBHOOK_EVENT_LISTING_REQUEST … イベント掲載依頼
+ * - DISCORD_WEBHOOK_COMMON_NOTIFY … 後方互換（EVENT_LISTING_REQUEST 未設定時のフォールバック）
  * - DISCORD_WEBHOOK_ORGANIZER_APPLICATION … オーガナイザー申請
  *
  * 上記が未設定のときのみ DISCORD_ADMIN_WEBHOOK_URL をフォールバックとして使用。
@@ -168,26 +169,18 @@ export function notifyDiscordEventApproved(payload: {
   );
 }
 
-/** お問い合わせフォーム送信 */
-export function notifyDiscordContactReceived(payload: {
-  id: string;
-  title: string;
-  name: string;
-  email: string;
-  content: string;
-}): void {
-  const { id, title, name, email, content } = payload;
+/** お問い合わせフォーム送信（ID と管理画面 URL のみ。個人情報は送らない） */
+export function notifyDiscordContactReceived(payload: { id: string }): void {
+  const { id } = payload;
   const listUrl = adminPath("/admin/contacts");
   void sendAdminEmbed(
     {
       title: "お問い合わせ",
+      description: "新規のお問い合わせがあります！",
+      url: getPublicBaseUrl() ? listUrl : undefined,
       fields: [
         { name: "お問い合わせID", value: truncateField(id, 256), inline: true },
-        { name: "件名", value: truncateField(title), inline: false },
-        { name: "お名前", value: truncateField(name, 256), inline: true },
-        { name: "メール", value: truncateField(email, 256), inline: true },
-        { name: "内容", value: truncateField(content), inline: false },
-        { name: "一覧", value: truncateField(listUrl) },
+        { name: "管理画面", value: truncateField(listUrl, 1024) },
       ],
     },
     webhookUrl("DISCORD_WEBHOOK_CONTACT", "DISCORD_ADMIN_WEBHOOK_URL")
@@ -198,10 +191,9 @@ export function notifyDiscordContactReceived(payload: {
 export function notifyDiscordEventListingRequest(payload: {
   id: string;
   name: string;
-  submitterEmail: string | null;
   originalUrl: string | null;
 }): void {
-  const { id, name, submitterEmail, originalUrl } = payload;
+  const { id, name, originalUrl } = payload;
   const listUrl = adminPath("/admin/submissions");
   void sendAdminEmbed(
     {
@@ -209,16 +201,17 @@ export function notifyDiscordEventListingRequest(payload: {
       fields: [
         { name: "イベント名", value: truncateField(name), inline: false },
         { name: "依頼ID", value: truncateField(id, 256), inline: true },
-        ...(submitterEmail
-          ? [{ name: "送信者メール", value: truncateField(submitterEmail, 256), inline: true }]
-          : []),
         ...(originalUrl
           ? [{ name: "公式URL", value: truncateField(originalUrl, 1024), inline: false }]
           : []),
         { name: "管理画面", value: truncateField(listUrl) },
       ],
     },
-    webhookUrl("DISCORD_WEBHOOK_COMMON_NOTIFY", "DISCORD_ADMIN_WEBHOOK_URL")
+    webhookUrl(
+      "DISCORD_WEBHOOK_EVENT_LISTING_REQUEST",
+      "DISCORD_WEBHOOK_COMMON_NOTIFY",
+      "DISCORD_ADMIN_WEBHOOK_URL"
+    )
   );
 }
 
@@ -226,16 +219,14 @@ export function notifyDiscordEventListingRequest(payload: {
 export function notifyDiscordOrganizerApplication(payload: {
   id: string;
   displayName: string;
-  email: string;
 }): void {
-  const { id, displayName, email } = payload;
+  const { id, displayName } = payload;
   const listUrl = adminPath("/admin/organizer-applications");
   void sendAdminEmbed(
     {
       title: "オーガナイザー申請",
       fields: [
         { name: "表示名", value: truncateField(displayName, 256), inline: true },
-        { name: "メール", value: truncateField(email, 256), inline: true },
         { name: "申請ID", value: truncateField(id, 256), inline: true },
         { name: "管理画面", value: truncateField(listUrl) },
       ],

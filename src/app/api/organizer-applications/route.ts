@@ -72,7 +72,6 @@ export async function POST(request: Request) {
     notifyDiscordOrganizerApplication({
       id: application.id,
       displayName: application.display_name,
-      email: application.email,
     });
 
     return NextResponse.json(application, { status: 201 });
