@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyDiscordContactReceived } from "@/lib/discord-admin-notify";
 
 // POST /api/contact
 // お問い合わせフォームを送信
@@ -69,6 +70,14 @@ export async function POST(request: Request) {
         submitter_id: submitterId,
         status: "PENDING",
       },
+    });
+
+    notifyDiscordContactReceived({
+      id: submission.id,
+      title: submission.title,
+      name: submission.name,
+      email: submission.email,
+      content: submission.content,
     });
 
     return NextResponse.json(submission, { status: 201 });

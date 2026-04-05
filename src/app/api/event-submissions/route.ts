@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyDiscordEventListingRequest } from "@/lib/discord-admin-notify";
 
 // POST /api/event-submissions
 // イベント掲載依頼フォームを送信
@@ -30,6 +31,13 @@ export async function POST(request: Request) {
         submitter_email: session?.user?.email || null,
         status: "PENDING",
       },
+    });
+
+    notifyDiscordEventListingRequest({
+      id: submission.id,
+      name: submission.name,
+      submitterEmail: submission.submitter_email,
+      originalUrl: submission.original_url,
     });
 
     return NextResponse.json(submission, { status: 201 });

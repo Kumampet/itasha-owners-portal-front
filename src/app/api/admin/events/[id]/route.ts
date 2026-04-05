@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { fromDateTimeLocal, fromDateLocal } from "@/lib/date-utils";
+import { notifyDiscordEventApprovalRequested } from "@/lib/discord-admin-notify";
 
 // GET /api/admin/events/[id]
 // 管理画面用のイベント詳細取得API
@@ -161,6 +162,8 @@ export async function PATCH(
     const body = await request.json();
     const tags: string[] = body.tags || [];
     const approvalStatus = body.approval_status || existingEvent.approval_status;
+    const notifyApprovalRequested =
+      existingEvent.approval_status === "DRAFT" && approvalStatus === "PENDING";
 
     // event_dateを変換（必須項目のためnullチェック）
     const eventDate = fromDateLocal(body.event_date);
@@ -365,6 +368,25 @@ export async function PATCH(
     const { revalidateTag } = await import("next/cache");
     revalidateTag("events", {});
     revalidateTag(`event-${id}`, {});
+
+    if (
+      notifyApprovalRequested &&
+      event &&
+      typeof event === "object" &&
+      "approval_status" in event &&
+      event.approval_status === "PENDING" &&
+      "id" in event &&
+      "name" in event &&
+      "event_date" in event
+    ) {
+      notifyDiscordEventApprovalRequested({
+        eventId: event.id as string,
+        eventName: event.name as string,
+        eventDateLabel: (event.event_date as Date).toLocaleDateString("ja-JP", {
+          timeZone: "Asia/Tokyo",
+        }),
+      });
+    }
 
     return NextResponse.json(event);
   } catch (error) {
