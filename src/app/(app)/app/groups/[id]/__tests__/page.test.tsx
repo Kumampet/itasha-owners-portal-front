@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@/test-utils'
 import userEvent from '@testing-library/user-event'
 import { useSession } from 'next-auth/react'
 import GroupDetailPage from '../page'
@@ -47,6 +47,77 @@ global.fetch = jest.fn()
 
 // alertをモック
 global.alert = jest.fn()
+
+type GroupFetchScenario = {
+  groupJson: unknown
+  groupOk?: boolean
+  messagesJson?: unknown
+  /** POST メッセージ成功時に一覧へ追加し、同じオブジェクトを POST レスポンスにする */
+  appendOnPost?: () => unknown
+  /** PATCH 譲渡後に GET /api/groups/:id で返す団体JSON（省略時は groupJson のまま） */
+  groupJsonAfterTransfer?: unknown
+}
+
+/** unread-count との並列 fetch で mockResolvedValueOnce がずれないよう URL で振り分ける */
+function installGroupDetailFetchMock({
+  groupJson,
+  groupOk = true,
+  messagesJson = [],
+  appendOnPost,
+  groupJsonAfterTransfer,
+}: GroupFetchScenario) {
+  const messageList = Array.isArray(messagesJson) ? [...messagesJson] : []
+  let currentGroupJson: unknown = groupJson
+
+  ;(global.fetch as jest.Mock).mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : String(input)
+    const method = (init?.method ?? 'GET').toUpperCase()
+
+    if (url.includes('/api/groups/unread-count')) {
+      return Promise.resolve({ ok: true, json: async () => ({}) })
+    }
+
+    if (/\/api\/groups\/[^/]+\/messages$/.test(url) && method === 'GET') {
+      return Promise.resolve({ ok: true, json: async () => messageList })
+    }
+
+    if (/\/api\/groups\/[^/]+\/leave$/.test(url) && method === 'DELETE') {
+      return Promise.resolve({ ok: true, json: async () => ({ success: true }) })
+    }
+
+    if (/\/api\/groups\/[^/]+\/transfer$/.test(url) && method === 'PATCH') {
+      if (groupJsonAfterTransfer !== undefined) {
+        currentGroupJson = groupJsonAfterTransfer
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ success: true }) })
+    }
+
+    if (/\/api\/groups\/[^/]+$/.test(url) && method === 'DELETE') {
+      return Promise.resolve({ ok: true, json: async () => ({ success: true }) })
+    }
+
+    if (/\/api\/groups\/[^/]+\/messages$/.test(url) && method === 'POST') {
+      const posted = appendOnPost?.()
+      if (posted !== undefined) {
+        messageList.push(posted)
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => posted ?? { id: 'new-msg' },
+      })
+    }
+
+    if (/\/api\/groups\/[^/]+$/.test(url) && method === 'GET') {
+      return Promise.resolve({
+        ok: groupOk,
+        status: groupOk ? 200 : 404,
+        json: async () => currentGroupJson,
+      })
+    }
+
+    return Promise.resolve({ ok: true, json: async () => ({}) })
+  })
+}
 
 describe('GroupDetailPage', () => {
   const mockGroup = {
@@ -138,9 +209,13 @@ describe('GroupDetailPage', () => {
   })
 
   it('ローディング状態を表示する', async () => {
-    ;(global.fetch as jest.Mock).mockImplementation(() =>
-      new Promise(() => {}) // 解決しないPromiseでローディング状態を維持
-    )
+    ;(global.fetch as jest.Mock).mockImplementation((input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : String(input)
+      if (url.includes('/api/groups/unread-count')) {
+        return Promise.resolve({ ok: true, json: async () => ({}) })
+      }
+      return new Promise(() => {}) // 団体取得は未解決のまま
+    })
 
     render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
     
@@ -152,10 +227,7 @@ describe('GroupDetailPage', () => {
   })
 
   it('団体情報を表示する', async () => {
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockGroup,
-    })
+    installGroupDetailFetchMock({ groupJson: mockGroup })
 
     render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
 
@@ -169,10 +241,9 @@ describe('GroupDetailPage', () => {
   })
 
   it('団体が見つからない場合のメッセージを表示する', async () => {
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: false,
-      status: 404,
-      json: async () => ({ error: 'Group not found' }),
+    installGroupDetailFetchMock({
+      groupJson: { error: 'Group not found' },
+      groupOk: false,
     })
 
     render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -183,15 +254,10 @@ describe('GroupDetailPage', () => {
   })
 
   it('タブを切り替える', async () => {
-    ;(global.fetch as jest.Mock)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockGroup,
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockMessages,
-      })
+    installGroupDetailFetchMock({
+      groupJson: mockGroup,
+      messagesJson: mockMessages,
+    })
 
     const user = userEvent.setup()
     render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -210,12 +276,16 @@ describe('GroupDetailPage', () => {
   })
 
   it('メンバー一覧を表示する', async () => {
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockGroup,
+    installGroupDetailFetchMock({ groupJson: mockGroup })
+
+    const user = userEvent.setup()
+    render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('テスト団体')).toBeInTheDocument()
     })
 
-    render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
+    await user.click(screen.getByText('メンバー一覧'))
 
     await waitFor(() => {
       expect(screen.getByText('リーダー表示名')).toBeInTheDocument()
@@ -227,12 +297,16 @@ describe('GroupDetailPage', () => {
   })
 
   it('現在のユーザーに"You"バッジを表示する', async () => {
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockGroup,
+    installGroupDetailFetchMock({ groupJson: mockGroup })
+
+    const user = userEvent.setup()
+    render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('テスト団体')).toBeInTheDocument()
     })
 
-    render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
+    await user.click(screen.getByText('メンバー一覧'))
 
     await waitFor(() => {
       expect(screen.getByText('You')).toBeInTheDocument()
@@ -240,12 +314,16 @@ describe('GroupDetailPage', () => {
   })
 
   it('オーナーの場合、解散と譲渡ボタンを表示する', async () => {
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockGroup,
+    installGroupDetailFetchMock({ groupJson: mockGroup })
+
+    const user = userEvent.setup()
+    render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('テスト団体')).toBeInTheDocument()
     })
 
-    render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
+    await user.click(screen.getByText('設定'))
 
     await waitFor(() => {
       expect(screen.getByText('解散する')).toBeInTheDocument()
@@ -260,12 +338,16 @@ describe('GroupDetailPage', () => {
       isLeader: false,
     }
 
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => nonLeaderGroup,
+    installGroupDetailFetchMock({ groupJson: nonLeaderGroup })
+
+    const user = userEvent.setup()
+    render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('テスト団体')).toBeInTheDocument()
     })
 
-    render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
+    await user.click(screen.getByText('設定'))
 
     await waitFor(() => {
       expect(screen.getByText('団体を抜ける')).toBeInTheDocument()
@@ -276,16 +358,19 @@ describe('GroupDetailPage', () => {
   })
 
   it('オーナーの場合、メンバー削除ボタンを表示する', async () => {
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockGroup,
-    })
+    installGroupDetailFetchMock({ groupJson: mockGroup })
 
+    const user = userEvent.setup()
     render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
 
     await waitFor(() => {
-      const deleteButtons = screen.getAllByText('削除')
-      expect(deleteButtons.length).toBeGreaterThan(0)
+      expect(screen.getByText('テスト団体')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByText('メンバー一覧'))
+
+    await waitFor(() => {
+      expect(screen.getAllByTitle('操作メニュー').length).toBeGreaterThan(0)
     })
   })
 
@@ -295,12 +380,16 @@ describe('GroupDetailPage', () => {
       isLeader: false,
     }
 
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => nonLeaderGroup,
+    installGroupDetailFetchMock({ groupJson: nonLeaderGroup })
+
+    const user = userEvent.setup()
+    render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('テスト団体')).toBeInTheDocument()
     })
 
-    render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
+    await user.click(screen.getByText('メンバー一覧'))
 
     await waitFor(() => {
       expect(screen.queryByText('削除')).not.toBeInTheDocument()
@@ -309,15 +398,10 @@ describe('GroupDetailPage', () => {
 
   describe('メッセージ機能', () => {
     it('メッセージ一覧を表示する', async () => {
-      ;(global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockGroup,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockMessages,
-        })
+      installGroupDetailFetchMock({
+        groupJson: mockGroup,
+        messagesJson: mockMessages,
+      })
 
       const user = userEvent.setup()
       render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -336,15 +420,10 @@ describe('GroupDetailPage', () => {
     })
 
     it('メッセージが空の場合、空のメッセージを表示する', async () => {
-      ;(global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockGroup,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => [],
-        })
+      installGroupDetailFetchMock({
+        groupJson: mockGroup,
+        messagesJson: [],
+      })
 
       const user = userEvent.setup()
       render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -375,19 +454,11 @@ describe('GroupDetailPage', () => {
         createdAt: '2024-01-01T12:00:00Z',
       }
 
-      ;(global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockGroup,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockMessages,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => newMessage,
-        })
+      installGroupDetailFetchMock({
+        groupJson: mockGroup,
+        messagesJson: mockMessages,
+        appendOnPost: () => newMessage,
+      })
 
       const user = userEvent.setup()
       render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -410,20 +481,21 @@ describe('GroupDetailPage', () => {
       await user.click(sendButton)
 
       await waitFor(() => {
-        expect(screen.getByText('新しいメッセージ')).toBeInTheDocument()
+        expect(global.fetch).toHaveBeenCalledWith(
+          '/api/groups/group-1/messages',
+          expect.objectContaining({
+            method: 'POST',
+            body: expect.stringContaining('新しいメッセージ'),
+          })
+        )
       })
     })
 
     it('空のメッセージは送信できない', async () => {
-      ;(global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockGroup,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockMessages,
-        })
+      installGroupDetailFetchMock({
+        groupJson: mockGroup,
+        messagesJson: mockMessages,
+      })
 
       const user = userEvent.setup()
       render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -447,15 +519,10 @@ describe('GroupDetailPage', () => {
       // テスト用に制限値を100文字にモック
       const maxLength = 100
 
-      ;(global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockGroup,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockMessages,
-        })
+      installGroupDetailFetchMock({
+        groupJson: mockGroup,
+        messagesJson: mockMessages,
+      })
 
       const user = userEvent.setup()
       render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -500,15 +567,10 @@ describe('GroupDetailPage', () => {
     })
 
     it('一斉連絡チェックボックスを表示する（オーナーの場合）', async () => {
-      ;(global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockGroup,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockMessages,
-        })
+      installGroupDetailFetchMock({
+        groupJson: mockGroup,
+        messagesJson: mockMessages,
+      })
 
       const user = userEvent.setup()
       render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -531,15 +593,10 @@ describe('GroupDetailPage', () => {
         isLeader: false,
       }
 
-      ;(global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => nonLeaderGroup,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockMessages,
-        })
+      installGroupDetailFetchMock({
+        groupJson: nonLeaderGroup,
+        messagesJson: mockMessages,
+      })
 
       const user = userEvent.setup()
       render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -557,15 +614,10 @@ describe('GroupDetailPage', () => {
     })
 
     it('文字数カウンターを表示する', async () => {
-      ;(global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockGroup,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockMessages,
-        })
+      installGroupDetailFetchMock({
+        groupJson: mockGroup,
+        messagesJson: mockMessages,
+      })
 
       const user = userEvent.setup()
       render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -592,10 +644,7 @@ describe('GroupDetailPage', () => {
 
   describe('モデレーション機能', () => {
     it('解散モーダルを表示する', async () => {
-      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockGroup,
-      })
+      installGroupDetailFetchMock({ groupJson: mockGroup })
 
       const user = userEvent.setup()
       render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -603,6 +652,8 @@ describe('GroupDetailPage', () => {
       await waitFor(() => {
         expect(screen.getByText('テスト団体')).toBeInTheDocument()
       })
+
+      await user.click(screen.getByText('設定'))
 
       const disbandButton = screen.getByText('解散する')
       await user.click(disbandButton)
@@ -613,15 +664,7 @@ describe('GroupDetailPage', () => {
     })
 
     it('団体を解散する', async () => {
-      ;(global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockGroup,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ success: true }),
-        })
+      installGroupDetailFetchMock({ groupJson: mockGroup })
 
       const user = userEvent.setup()
       render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -629,6 +672,8 @@ describe('GroupDetailPage', () => {
       await waitFor(() => {
         expect(screen.getByText('テスト団体')).toBeInTheDocument()
       })
+
+      await user.click(screen.getByText('設定'))
 
       const disbandButton = screen.getByText('解散する')
       await user.click(disbandButton)
@@ -649,15 +694,7 @@ describe('GroupDetailPage', () => {
     })
 
     it('譲渡モーダルを表示する', async () => {
-      ;(global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockGroup,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockGroup,
-        })
+      installGroupDetailFetchMock({ groupJson: mockGroup })
 
       const user = userEvent.setup()
       render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -665,6 +702,8 @@ describe('GroupDetailPage', () => {
       await waitFor(() => {
         expect(screen.getByText('テスト団体')).toBeInTheDocument()
       })
+
+      await user.click(screen.getByText('設定'))
 
       const transferButton = screen.getByText('オーナー権限譲渡')
       await user.click(transferButton)
@@ -675,32 +714,12 @@ describe('GroupDetailPage', () => {
     })
 
     it('オーナー権限を譲渡する', async () => {
-      // APIの返答をモック化
       const updatedGroup = { ...mockGroup, isLeader: false }
-      
-      ;(global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockGroup,
-        })
-        .mockImplementationOnce((url: string, options?: RequestInit) => {
-          // 譲渡APIの呼び出しをモック
-          if (url.includes('/transfer') && options?.method === 'PATCH') {
-            return Promise.resolve({
-              ok: true,
-              json: async () => ({ success: true }),
-            })
-          }
-          // 団体情報の再取得をモック
-          return Promise.resolve({
-            ok: true,
-            json: async () => updatedGroup,
-          })
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => updatedGroup,
-        })
+
+      installGroupDetailFetchMock({
+        groupJson: mockGroup,
+        groupJsonAfterTransfer: updatedGroup,
+      })
 
       const user = userEvent.setup()
       render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -708,6 +727,8 @@ describe('GroupDetailPage', () => {
       await waitFor(() => {
         expect(screen.getByText('テスト団体')).toBeInTheDocument()
       }, { timeout: 3000 })
+
+      await user.click(screen.getByText('設定'))
 
       const transferButton = screen.getByText('オーナー権限譲渡')
       await user.click(transferButton)
@@ -740,15 +761,7 @@ describe('GroupDetailPage', () => {
         isLeader: false,
       }
 
-      ;(global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => nonLeaderGroup,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => nonLeaderGroup,
-        })
+      installGroupDetailFetchMock({ groupJson: nonLeaderGroup })
 
       const user = userEvent.setup()
       render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -756,6 +769,8 @@ describe('GroupDetailPage', () => {
       await waitFor(() => {
         expect(screen.getByText('テスト団体')).toBeInTheDocument()
       })
+
+      await user.click(screen.getByText('設定'))
 
       const leaveButton = screen.getByText('団体を抜ける')
       await user.click(leaveButton)
@@ -771,15 +786,7 @@ describe('GroupDetailPage', () => {
         isLeader: false,
       }
 
-      ;(global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => nonLeaderGroup,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ success: true }),
-        })
+      installGroupDetailFetchMock({ groupJson: nonLeaderGroup })
 
       const user = userEvent.setup()
       render(<GroupDetailPage params={Promise.resolve({ id: 'group-1' })} />)
@@ -787,6 +794,8 @@ describe('GroupDetailPage', () => {
       await waitFor(() => {
         expect(screen.getByText('テスト団体')).toBeInTheDocument()
       })
+
+      await user.click(screen.getByText('設定'))
 
       const leaveButton = screen.getByText('団体を抜ける')
       await user.click(leaveButton)
@@ -799,7 +808,10 @@ describe('GroupDetailPage', () => {
       await user.click(confirmButton)
 
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/app/groups')
+        expect(global.fetch).toHaveBeenCalledWith(
+          '/api/groups/group-1/leave',
+          expect.objectContaining({ method: 'DELETE' })
+        )
       })
     })
 

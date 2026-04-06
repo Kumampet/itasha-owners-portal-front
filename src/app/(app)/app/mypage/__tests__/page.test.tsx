@@ -24,6 +24,19 @@ const mockUseSession = useSession as jest.MockedFunction<typeof useSession>
 // グローバルfetchのモック
 global.fetch = jest.fn()
 
+function stubFetchForMyPage(remindersPayload: unknown[] = []) {
+  ;(global.fetch as jest.Mock).mockImplementation((input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : String(input)
+    if (url.includes('/api/groups/unread-count')) {
+      return Promise.resolve({ ok: true, json: async () => ({}) })
+    }
+    if (url.includes('/api/reminders')) {
+      return Promise.resolve({ ok: true, json: async () => remindersPayload })
+    }
+    return Promise.resolve({ ok: true, json: async () => ({}) })
+  })
+}
+
 describe('MyPage', () => {
   const mockReminders = [
     {
@@ -92,10 +105,7 @@ describe('MyPage', () => {
       update: jest.fn(),
     } as ReturnType<typeof useSession>)
 
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    })
+    stubFetchForMyPage([])
 
     render(<MyPage />)
 
@@ -122,10 +132,7 @@ describe('MyPage', () => {
       update: jest.fn(),
     } as ReturnType<typeof useSession>)
 
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    })
+    stubFetchForMyPage([])
 
     render(<MyPage />)
 
@@ -165,10 +172,7 @@ describe('MyPage', () => {
       update: jest.fn(),
     } as ReturnType<typeof useSession>)
 
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    })
+    stubFetchForMyPage([])
 
     render(<MyPage />)
 
@@ -195,10 +199,7 @@ describe('MyPage', () => {
       update: jest.fn(),
     } as ReturnType<typeof useSession>)
 
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockReminders,
-    })
+    stubFetchForMyPage(mockReminders)
 
     render(<MyPage />)
 
@@ -227,10 +228,7 @@ describe('MyPage', () => {
       update: jest.fn(),
     } as ReturnType<typeof useSession>)
 
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockReminders,
-    })
+    stubFetchForMyPage(mockReminders)
 
     render(<MyPage />)
 
@@ -259,10 +257,7 @@ describe('MyPage', () => {
       update: jest.fn(),
     } as ReturnType<typeof useSession>)
 
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    })
+    stubFetchForMyPage([])
 
     render(<MyPage />)
 
@@ -292,10 +287,7 @@ describe('MyPage', () => {
       update: jest.fn(),
     } as ReturnType<typeof useSession>)
 
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    })
+    stubFetchForMyPage([])
 
     render(<MyPage />)
 
@@ -323,10 +315,7 @@ describe('MyPage', () => {
       update: jest.fn(),
     } as ReturnType<typeof useSession>)
 
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    })
+    stubFetchForMyPage([])
 
     render(<MyPage />)
 
@@ -354,10 +343,7 @@ describe('MyPage', () => {
       update: jest.fn(),
     } as ReturnType<typeof useSession>)
 
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    })
+    stubFetchForMyPage([])
 
     render(<MyPage />)
 
@@ -365,12 +351,12 @@ describe('MyPage', () => {
       expect(screen.getByText('オーガナイザー機能')).toBeInTheDocument()
     })
 
-    // リンクではなく、説明のみ
-    const organizerCard = screen.getByText('オーガナイザー機能').closest('div')
-    expect(organizerCard?.querySelector('a')).not.toBeInTheDocument()
-    expect(
-      screen.getByText(/ご希望のイベント主催者はお問い合わせフォームから/)
-    ).toBeInTheDocument()
+    const organizerTitle = screen.getByRole('heading', { name: 'オーガナイザー機能' })
+    expect(organizerTitle.closest('a')).toBeNull()
+    expect(screen.getByRole('link', { name: 'オーガナイザー登録申請' })).toHaveAttribute(
+      'href',
+      '/app/organizer-application'
+    )
   })
 
   it('リマインダー取得エラーが発生した場合、エラーログを出力する', async () => {
@@ -390,7 +376,16 @@ describe('MyPage', () => {
       update: jest.fn(),
     } as ReturnType<typeof useSession>)
 
-    ;(global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'))
+    ;(global.fetch as jest.Mock).mockImplementation((input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : String(input)
+      if (url.includes('/api/groups/unread-count')) {
+        return Promise.resolve({ ok: true, json: async () => ({}) })
+      }
+      if (url.includes('/api/reminders')) {
+        return Promise.reject(new Error('Network error'))
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) })
+    })
 
     render(<MyPage />)
 
@@ -440,10 +435,7 @@ describe('MyPage', () => {
       update: jest.fn(),
     } as ReturnType<typeof useSession>)
 
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => allReminders,
-    })
+    stubFetchForMyPage(allReminders)
 
     render(<MyPage />)
 

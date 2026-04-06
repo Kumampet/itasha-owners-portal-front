@@ -165,7 +165,7 @@ describe('ProfileEditPage', () => {
     expect(displayNameInput).toHaveValue('あ'.repeat(50))
   })
 
-  it('表示名が空の場合、エラーメッセージを表示する', async () => {
+  it('表示名が空でもnullとして表示名APIに保存する', async () => {
     mockUseSession.mockReturnValue({
       data: {
         user: {
@@ -182,24 +182,29 @@ describe('ProfileEditPage', () => {
       update: mockUpdate,
     })
 
+    ;(global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    })
+
     const user = userEvent.setup()
     render(<ProfileEditPage />)
 
     const displayNameInput = screen.getByLabelText(/表示名/)
     await user.clear(displayNameInput)
-    await user.type(displayNameInput, '   ') // 空白のみ
-    await user.clear(displayNameInput)
 
-    // disabled属性を無視してクリックするため、直接フォームを送信
-    const form = displayNameInput.closest('form')
-    if (form) {
-      const submitEvent = new Event('submit', { bubbles: true, cancelable: true })
-      form.dispatchEvent(submitEvent)
-    }
+    const submitButton = screen.getByRole('button', { name: /保存/i })
+    await user.click(submitButton)
 
     await waitFor(() => {
-      expect(screen.getByText('表示名を入力してください')).toBeInTheDocument()
-    }, { timeout: 3000 })
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/user/display-name',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({ displayName: null }),
+        })
+      )
+    })
   })
 
   it('全角50文字を超える場合、エラーメッセージを表示する', () => {
@@ -250,42 +255,6 @@ describe('ProfileEditPage', () => {
           headers: { 'Content-Type': 'application/json' },
         })
       )
-    })
-  })
-
-  it('保存成功後、成功メッセージを表示する', async () => {
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ success: true }),
-    })
-
-    mockUseSession.mockReturnValue({
-      data: {
-        user: {
-          id: 'user-1',
-          name: 'テストユーザー',
-          email: 'test@example.com',
-          displayName: null,
-          role: 'USER',
-          isBanned: false,
-        },
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      },
-      status: 'authenticated',
-      update: mockUpdate,
-    })
-
-    const user = userEvent.setup()
-    render(<ProfileEditPage />)
-
-    const displayNameInput = screen.getByLabelText(/表示名/)
-    await user.type(displayNameInput, '新しい表示名')
-
-    const submitButton = screen.getByRole('button', { name: /保存/i })
-    await user.click(submitButton)
-
-    await waitFor(() => {
-      expect(screen.getByText(/表示名を保存しました/)).toBeInTheDocument()
     })
   })
 
@@ -368,7 +337,7 @@ describe('ProfileEditPage', () => {
     }, { timeout: 3000 })
   })
 
-  it('表示名が空の場合、保存ボタンが無効化される', () => {
+  it('メールが設定済みなら表示名が空でも保存ボタンは有効', () => {
     mockUseSession.mockReturnValue({
       data: {
         user: {
@@ -388,7 +357,7 @@ describe('ProfileEditPage', () => {
     render(<ProfileEditPage />)
 
     const submitButton = screen.getByRole('button', { name: /保存/i })
-    expect(submitButton).toBeDisabled()
+    expect(submitButton).not.toBeDisabled()
   })
 
   it('キャンセルボタンがマイページへのリンクになっている', () => {
