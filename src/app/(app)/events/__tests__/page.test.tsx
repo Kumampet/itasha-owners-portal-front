@@ -1,26 +1,26 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import EventsPage from '../page'
+import EventsPageClient from '../events-page-client'
 
-// モック設定
+const mockPush = jest.fn()
+const mockReplace = jest.fn()
+let mockSearchParams = new URLSearchParams()
+
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
+    push: mockPush,
+    replace: mockReplace,
     prefetch: jest.fn(),
     back: jest.fn(),
-    pathname: '/events',
-    query: {},
-    asPath: '/events',
   }),
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => mockSearchParams,
   usePathname: () => '/events',
 }))
 
 // グローバルfetchのモック
 global.fetch = jest.fn()
 
-describe('EventsPage', () => {
+describe('EventsPageClient', () => {
   const mockEvents = [
     {
       id: 'event-1',
@@ -72,7 +72,8 @@ describe('EventsPage', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    ;(global.fetch as jest.Mock).mockClear()
+    mockSearchParams = new URLSearchParams()
+    ;(global.fetch as jest.Mock).mockReset()
   })
 
   it('ローディング状態を表示する', () => {
@@ -80,7 +81,7 @@ describe('EventsPage', () => {
       new Promise(() => {}) // 解決しないPromiseでローディング状態を維持
     )
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
     expect(screen.getByLabelText('読み込み中')).toBeInTheDocument()
   })
 
@@ -93,7 +94,7 @@ describe('EventsPage', () => {
       }),
     })
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByText('テストイベント1')).toBeInTheDocument()
@@ -111,7 +112,7 @@ describe('EventsPage', () => {
       }),
     })
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByText('イベントが登録されていません。')).toBeInTheDocument()
@@ -127,13 +128,14 @@ describe('EventsPage', () => {
       }),
     })
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByLabelText('検索')).toBeInTheDocument()
     })
 
     expect(screen.getByLabelText('表示順')).toBeInTheDocument()
+    expect(screen.getByLabelText('表示件数')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '検索' })).toBeInTheDocument()
   })
 
@@ -155,7 +157,7 @@ describe('EventsPage', () => {
       })
 
     const user = userEvent.setup()
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByLabelText('検索')).toBeInTheDocument()
@@ -190,7 +192,7 @@ describe('EventsPage', () => {
       })
 
     const user = userEvent.setup()
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByLabelText('表示順')).toBeInTheDocument()
@@ -202,6 +204,39 @@ describe('EventsPage', () => {
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('sortOrder=desc')
+      )
+    })
+  })
+
+  it('表示件数を変更すると、limitでAPIを呼び出す', async () => {
+    ;(global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          events: mockEvents,
+          pagination: mockPagination,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          events: mockEvents,
+          pagination: mockPagination,
+        }),
+      })
+
+    const user = userEvent.setup()
+    render(<EventsPageClient />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('表示件数')).toBeInTheDocument()
+    })
+
+    await user.selectOptions(screen.getByLabelText('表示件数'), '20')
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringMatching(/[?&]limit=20(?:&|$)/)
       )
     })
   })
@@ -222,11 +257,67 @@ describe('EventsPage', () => {
       }),
     })
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
-      expect(screen.getByText('1')).toBeInTheDocument()
+      expect(screen.getByLabelText('ページ 1')).toBeInTheDocument()
     })
+  })
+
+  it('URLのpageクエリがAPIリクエストに反映される', async () => {
+    mockSearchParams = new URLSearchParams('page=2')
+
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        events: mockEvents,
+        pagination: {
+          currentPage: 2,
+          totalPages: 3,
+          totalCount: 25,
+          limit: 10,
+        },
+      }),
+    })
+
+    render(<EventsPageClient />)
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringMatching(/[?&]page=2(?:&|$)/)
+      )
+    })
+  })
+
+  it('ページネーション操作でrouter.pushが呼ばれる', async () => {
+    const multiPagePagination = {
+      currentPage: 1,
+      totalPages: 3,
+      totalCount: 25,
+      limit: 10,
+    }
+
+    ;(global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        events: mockEvents,
+        pagination: multiPagePagination,
+      }),
+    })
+
+    render(<EventsPageClient />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'ページ 2' })).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'ページ 2' }))
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalled()
+    })
+    expect(mockPush.mock.calls[0][0]).toBe('/events?page=2')
+    expect(mockPush.mock.calls[0][1]).toEqual({ scroll: true })
   })
 
   it('ページネーションを表示しない（1ページのみの場合）', async () => {
@@ -238,40 +329,45 @@ describe('EventsPage', () => {
       }),
     })
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByText('テストイベント1')).toBeInTheDocument()
     })
 
-    // ページネーションは表示されない
-    expect(screen.queryByText('1')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('ページネーション')).not.toBeInTheDocument()
   })
 
   it('検索結果が空の場合、検索結果なしメッセージを表示する', async () => {
-    ;(global.fetch as jest.Mock)
-      .mockResolvedValueOnce({
+    ;(global.fetch as jest.Mock).mockImplementation((input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      const params = new URLSearchParams(url.split('?')[1] ?? '')
+      const search = params.get('search') ?? ''
+      if (search === '存在しないイベント') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            events: [],
+            pagination: {
+              currentPage: 1,
+              totalPages: 0,
+              totalCount: 0,
+              limit: 10,
+            },
+          }),
+        })
+      }
+      return Promise.resolve({
         ok: true,
         json: async () => ({
           events: mockEvents,
           pagination: mockPagination,
         }),
       })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          events: [],
-          pagination: {
-            currentPage: 1,
-            totalPages: 0,
-            totalCount: 0,
-            limit: 10,
-          },
-        }),
-      })
+    })
 
     const user = userEvent.setup()
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(screen.getByLabelText('検索')).toBeInTheDocument()
@@ -293,7 +389,7 @@ describe('EventsPage', () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
     ;(global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'))
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -314,7 +410,7 @@ describe('EventsPage', () => {
       }),
     })
 
-    render(<EventsPage />)
+    render(<EventsPageClient />)
 
     await waitFor(() => {
       const eventCard = screen.getByText('テストイベント1').closest('a')
