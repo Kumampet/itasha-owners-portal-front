@@ -273,7 +273,7 @@ describe('GroupsPage', () => {
     consoleErrorSpy.mockRestore()
   })
 
-  it('一斉連絡ポリシーを表示する', async () => {
+  it('説明文に一斉連絡の案内が含まれる', async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockGroups,
@@ -282,11 +282,11 @@ describe('GroupsPage', () => {
     render(<GroupsPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('一斉連絡ポリシー')).toBeInTheDocument()
+      expect(screen.getByText('団体管理')).toBeInTheDocument()
     })
 
     expect(
-      screen.getByText(/一斉連絡.*として投稿すると/)
+      screen.getByText(/メンバー募集・参加状況・一斉連絡を/)
     ).toBeInTheDocument()
   })
 })

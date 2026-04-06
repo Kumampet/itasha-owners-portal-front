@@ -16,6 +16,9 @@ loadEnv({ path: resolve(process.cwd(), ".env.local"), override: true });
 
 const DESCRIPTION_MAX = 200;
 
+/** ローカル／シードで常に ADMIN にする Google アカウント（ログイン用メールと一致させる） */
+const SEED_DEFAULT_ADMIN_EMAIL = "itashaownersnavi@gmail.com";
+
 const prefectures = [
   "北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県",
   "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県",
@@ -119,6 +122,17 @@ async function main(db: PrismaClient) {
     },
   });
 
+  const defaultAdminGoogle = await db.user.upsert({
+    where: { email: SEED_DEFAULT_ADMIN_EMAIL },
+    update: { role: "ADMIN" },
+    create: {
+      email: SEED_DEFAULT_ADMIN_EMAIL,
+      role: "ADMIN",
+      custom_profile_url: "itashaownersnavi-admin",
+      display_name: "管理者（Google）",
+    },
+  });
+
   const driverA = await db.user.upsert({
     where: { email: "local.driver.a@example.com" },
     update: { display_name: "サンプルドライバーA" },
@@ -152,7 +166,7 @@ async function main(db: PrismaClient) {
     },
   });
 
-  for (const u of [organizer, driverA, driverB, leader]) {
+  for (const u of [organizer, defaultAdminGoogle, driverA, driverB, leader]) {
     await db.userNotificationSettings.upsert({
       where: { user_id: u.id },
       update: {},
@@ -384,7 +398,9 @@ async function main(db: PrismaClient) {
 
   console.info("✅ シード完了");
   console.info(`   イベント: ${eventTotal} / タグ: ${tagTotal} / 団体: ${groupTotal}`);
-  console.info("   ユーザー（upsert）: organizer@itasha-portal.com, local.driver.a@example.com, local.driver.b@example.com, local.group.leader@example.com");
+  console.info(
+    `   ユーザー（upsert）: organizer@itasha-portal.com, ${SEED_DEFAULT_ADMIN_EMAIL}（ADMIN）, local.driver.a@example.com, local.driver.b@example.com, local.group.leader@example.com`
+  );
 }
 
 function printDbConnectionHints(err: unknown) {
