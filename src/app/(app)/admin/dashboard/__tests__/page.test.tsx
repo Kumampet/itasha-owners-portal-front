@@ -106,7 +106,7 @@ describe('AdminDashboard', () => {
     expect(screen.getByText('イベント掲載依頼フォーム')).toBeInTheDocument()
     expect(screen.getByText('お問い合わせ管理')).toBeInTheDocument()
     expect(screen.getByText('団体モデレーション')).toBeInTheDocument()
-    expect(screen.getByText('オーガナイザーアカウント作成')).toBeInTheDocument()
+    expect(screen.getByText('オーガナイザー申請一覧')).toBeInTheDocument()
   })
 
   it('ORGANIZER権限の場合、管理者専用メニュー項目を表示しない', () => {

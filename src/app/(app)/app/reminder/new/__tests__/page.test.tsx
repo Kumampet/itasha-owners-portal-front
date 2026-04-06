@@ -64,7 +64,7 @@ describe('NewReminderPage', () => {
   it('フォームを表示する', async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => mockEvents,
+      json: async () => ({ events: mockEvents }),
     })
 
     render(<NewReminderPage />)
@@ -81,7 +81,7 @@ describe('NewReminderPage', () => {
   it('イベント一覧を表示する', async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => mockEvents,
+      json: async () => ({ events: mockEvents }),
     })
 
     render(<NewReminderPage />)
@@ -89,8 +89,12 @@ describe('NewReminderPage', () => {
     await waitFor(() => {
       const select = screen.getByRole('combobox')
       expect(select).toBeInTheDocument()
-      expect(select.querySelector('option[value="event-1"]')).toHaveTextContent('テストイベント1')
-      expect(select.querySelector('option[value="event-2"]')).toHaveTextContent('テストイベント2')
+      expect(select.querySelector('option[value="event-1"]')).toHaveTextContent(
+        /テストイベント1/
+      )
+      expect(select.querySelector('option[value="event-2"]')).toHaveTextContent(
+        /テストイベント2/
+      )
     })
   })
 
@@ -98,7 +102,7 @@ describe('NewReminderPage', () => {
     ;(global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => mockEvents,
+        json: async () => ({ events: mockEvents }),
       })
       .mockResolvedValueOnce({
         ok: true,
@@ -138,7 +142,7 @@ describe('NewReminderPage', () => {
   it('必須項目が未入力の場合、送信できない', async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => mockEvents,
+      json: async () => ({ events: mockEvents }),
     })
 
     const user = userEvent.setup()
@@ -165,7 +169,7 @@ describe('NewReminderPage', () => {
     ;(global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => mockEvents,
+        json: async () => ({ events: mockEvents }),
       })
       .mockResolvedValueOnce({
         ok: true,
@@ -200,7 +204,7 @@ describe('NewReminderPage', () => {
     ;(global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => mockEvents,
+        json: async () => ({ events: mockEvents }),
       })
       .mockImplementationOnce(() =>
         new Promise((resolve) => {
@@ -241,7 +245,7 @@ describe('NewReminderPage', () => {
     ;(global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => mockEvents,
+        json: async () => ({ events: mockEvents }),
       })
       .mockResolvedValueOnce({
         ok: false,
@@ -275,7 +279,7 @@ describe('NewReminderPage', () => {
   it('リマインダー一覧への戻るリンクを表示する', async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => mockEvents,
+      json: async () => ({ events: mockEvents }),
     })
 
     render(<NewReminderPage />)

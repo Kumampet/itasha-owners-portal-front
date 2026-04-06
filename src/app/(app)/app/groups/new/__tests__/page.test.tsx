@@ -25,6 +25,14 @@ jest.mock('next/navigation', () => ({
 global.fetch = jest.fn()
 
 describe('NewGroupPage', () => {
+  /** /api/events/:id のレスポンス形（theme は keywords[0] から取得） */
+  const mockEventDetailResponse = {
+    id: 'event-1',
+    name: 'テストイベント1',
+    keywords: ['テストテーマ1'],
+    event_date: '2024-12-31',
+  }
+
   const mockEvents = [
     {
       id: 'event-1',
@@ -118,7 +126,7 @@ describe('NewGroupPage', () => {
     it('選択されたイベント情報を表示する', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ events: mockEvents }),
+        json: async () => mockEventDetailResponse,
       })
 
       render(<NewGroupPage />)
@@ -133,7 +141,7 @@ describe('NewGroupPage', () => {
     it('フォームフィールドを表示する', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ events: mockEvents }),
+        json: async () => mockEventDetailResponse,
       })
 
       render(<NewGroupPage />)
@@ -149,7 +157,7 @@ describe('NewGroupPage', () => {
     it('団体名が必須であることを表示する', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ events: mockEvents }),
+        json: async () => mockEventDetailResponse,
       })
 
       render(<NewGroupPage />)
@@ -163,7 +171,7 @@ describe('NewGroupPage', () => {
     it('フォーム送信時にバリデーションエラーを表示する（団体名が空）', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ events: mockEvents }),
+        json: async () => mockEventDetailResponse,
       })
 
       const user = userEvent.setup()
@@ -196,7 +204,7 @@ describe('NewGroupPage', () => {
       ;(global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ events: mockEvents }),
+          json: async () => mockEventDetailResponse,
         })
         .mockResolvedValueOnce({
           ok: true,
@@ -225,7 +233,7 @@ describe('NewGroupPage', () => {
       ;(global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ events: mockEvents }),
+          json: async () => mockEventDetailResponse,
         })
         .mockResolvedValueOnce({
           ok: false,
@@ -254,7 +262,7 @@ describe('NewGroupPage', () => {
       ;(global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ events: mockEvents }),
+          json: async () => mockEventDetailResponse,
         })
         .mockImplementationOnce(() =>
           new Promise((resolve) => {
@@ -292,7 +300,7 @@ describe('NewGroupPage', () => {
     it('キャンセルボタンがリンクになっている', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ events: mockEvents }),
+        json: async () => mockEventDetailResponse,
       })
 
       render(<NewGroupPage />)

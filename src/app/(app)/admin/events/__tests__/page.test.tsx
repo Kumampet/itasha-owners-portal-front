@@ -69,7 +69,7 @@ describe('AdminEventsPage', () => {
   it('イベント一覧を表示する', async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => mockEvents,
+      json: async () => ({ events: mockEvents }),
     })
 
     render(<AdminEventsPage />)
@@ -84,7 +84,7 @@ describe('AdminEventsPage', () => {
   it('イベントが空の場合、空のメッセージを表示する', async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => [],
+      json: async () => ({ events: [] }),
     })
 
     render(<AdminEventsPage />)
@@ -97,7 +97,7 @@ describe('AdminEventsPage', () => {
   it('ステータスバッジを表示する', async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => mockEvents,
+      json: async () => ({ events: mockEvents }),
     })
 
     render(<AdminEventsPage />)
@@ -112,7 +112,7 @@ describe('AdminEventsPage', () => {
   it('ステータスフィルターボタンを表示する', async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => mockEvents,
+      json: async () => ({ events: mockEvents }),
     })
 
     render(<AdminEventsPage />)
@@ -131,11 +131,11 @@ describe('AdminEventsPage', () => {
     ;(global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => mockEvents,
+        json: async () => ({ events: mockEvents }),
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => [mockEvents[1]], // PENDINGのみ
+        json: async () => ({ events: [mockEvents[1]] }), // PENDINGのみ
       })
 
     const user = userEvent.setup()
@@ -163,11 +163,11 @@ describe('AdminEventsPage', () => {
     ;(global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => mockEvents,
+        json: async () => ({ events: mockEvents }),
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => mockEvents,
+        json: async () => ({ events: mockEvents }),
       })
 
     const user = userEvent.setup()
@@ -192,11 +192,11 @@ describe('AdminEventsPage', () => {
     ;(global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => mockEvents,
+        json: async () => ({ events: mockEvents }),
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => mockEvents,
+        json: async () => ({ events: mockEvents }),
       })
 
     const user = userEvent.setup()
@@ -220,11 +220,11 @@ describe('AdminEventsPage', () => {
     ;(global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => mockEvents,
+        json: async () => ({ events: mockEvents }),
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => mockEvents,
+        json: async () => ({ events: mockEvents }),
       })
 
     const user = userEvent.setup()
@@ -245,7 +245,7 @@ describe('AdminEventsPage', () => {
   it('イベント行をクリックすると、詳細ページに遷移する', async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => mockEvents,
+      json: async () => ({ events: mockEvents }),
     })
 
     const user = userEvent.setup()
@@ -268,7 +268,7 @@ describe('AdminEventsPage', () => {
   it('新規イベント作成ボタンを表示する', async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => mockEvents,
+      json: async () => ({ events: mockEvents }),
     })
 
     render(<AdminEventsPage />)
@@ -281,7 +281,7 @@ describe('AdminEventsPage', () => {
   it('新規イベント作成ボタンがリンクになっている', async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => mockEvents,
+      json: async () => ({ events: mockEvents }),
     })
 
     render(<AdminEventsPage />)
@@ -308,19 +308,19 @@ describe('AdminEventsPage', () => {
     consoleErrorSpy.mockRestore()
   })
 
-  it('主催者情報を表示する', async () => {
+  it('イベント詳細列に説明またはプレースホルダを表示する', async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => mockEvents,
+      json: async () => ({ events: mockEvents }),
     })
 
     render(<AdminEventsPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('organizer1@example.com')).toBeInTheDocument()
+      expect(screen.getByText('テストイベント1')).toBeInTheDocument()
     })
 
-    // 主催者がnullの場合は"-"が表示される
+    expect(screen.getByText('テスト説明1')).toBeInTheDocument()
     expect(screen.getAllByText('-').length).toBeGreaterThan(0)
   })
 })
