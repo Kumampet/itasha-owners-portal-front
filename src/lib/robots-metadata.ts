@@ -2,6 +2,15 @@ import type { Metadata } from "next";
 
 const ADSENSE_PUBLISHER_ID = "ca-pub-5239358801885177";
 
+/** `/admin` 管理画面は常に検索インデックス対象外 */
+export function getAdminRobotsMetadata(): Metadata["robots"] {
+  return {
+    index: false,
+    follow: false,
+    googleBot: { index: false, follow: false },
+  };
+}
+
 /**
  * 本番で検索・広告クローラに公開ページを評価させるための robots 設定。
  * プレビュー／ステージングでインデックスを避ける場合は
