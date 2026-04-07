@@ -104,8 +104,29 @@ export default function PrivacyPolicyPage() {
           <p className="mb-4 text-zinc-700 leading-relaxed">
             Cookieにより収集される情報には、氏名、住所、電話番号、メールアドレスなどの特定の個人を識別する情報は含まれません。
           </p>
-          <p className="mb-6 text-zinc-700 leading-relaxed">
+          <p className="mb-4 text-zinc-700 leading-relaxed">
             ユーザーは、ご自身のブラウザ設定を変更することにより、Cookieの利用を停止することができます。
+          </p>
+          <p className="mb-4 text-zinc-700 leading-relaxed">
+            Googleによるパーソナライズ広告に関する説明は、
+            <a
+              href="https://policies.google.com/technologies/ads"
+              className="text-zinc-900 underline underline-offset-2 hover:text-zinc-700"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Googleの広告に関するポリシー
+            </a>
+            をご参照ください。パーソナライズ広告の表示を無効にする場合は、
+            <a
+              href="https://adssettings.google.com"
+              className="text-zinc-900 underline underline-offset-2 hover:text-zinc-700"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Googleの広告設定
+            </a>
+            から設定を変更できます。
           </p>
 
           <h2 className="text-2xl font-semibold text-zinc-900 mt-8 mb-4">
