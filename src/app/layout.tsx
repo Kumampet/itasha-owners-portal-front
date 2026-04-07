@@ -1,9 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers";
 import { EnvironmentRibbon } from "@/components/environment-ribbon";
 import { createMetadataWithOGP } from "@/lib/metadata";
+import {
+  getAdsenseClientId,
+  getDefaultRobotsMetadata,
+  isAdsenseScriptEnabled,
+} from "@/lib/robots-metadata";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,14 +30,7 @@ const ogpMetadata = createMetadataWithOGP({
 
 export const metadata: Metadata = {
   ...ogpMetadata,
-  robots: {
-    index: false,
-    follow: false,
-    googleBot: {
-      index: false,
-      follow: false,
-    },
-  },
+  robots: getDefaultRobotsMetadata(),
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -43,7 +42,7 @@ export const metadata: Metadata = {
     icon: "/images/main_logo_square.png",
   },
   other: {
-    "google-adsense-account": "ca-pub-5239358801885177",
+    "google-adsense-account": getAdsenseClientId(),
   },
 };
 
@@ -75,6 +74,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen`}
       >
+        {isAdsenseScriptEnabled() ? (
+          <Script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${getAdsenseClientId()}`}
+            crossOrigin="anonymous"
+            strategy="afterInteractive"
+          />
+        ) : null}
         <Providers>
           <div className="min-h-screen flex flex-col">
             {children}

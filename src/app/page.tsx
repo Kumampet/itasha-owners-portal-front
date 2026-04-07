@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { PublicSiteFooter } from "@/components/public-site-footer";
 import { createMetadataWithOGP } from "@/lib/metadata";
 
 export const metadata = createMetadataWithOGP({
@@ -129,6 +130,7 @@ export default function Home() {
           </div>
         </section>
       </section>
+      <PublicSiteFooter />
     </main>
   );
 }

@@ -28,6 +28,12 @@ export default function TermPage() {
           <p className="mb-4 text-zinc-700 leading-relaxed">
             本規約は、本サービスの利用に関する運営者とユーザーとの一切の関係に適用されます。
           </p>
+          <p className="mb-4 text-zinc-700 leading-relaxed">
+            ユーザーは、本規約に同意しない限り、本サービスを利用できません。本サービスの利用を開始した時点で、ユーザーは本規約の全条項（第4条に定める運営者による団体メッセージの閲覧に関する事項を含みます）に同意したものとみなされます。
+          </p>
+          <p className="mb-4 text-zinc-700 leading-relaxed">
+            現時点において、本サービスの基本的な利用に際し、ユーザーから運営者に対する利用料金の支払義務は発生しません。運営者が将来、有償の役務を提供する場合には、その提供条件および料金は、当該役務に関して別途定めるとおりとします。
+          </p>
           <p className="mb-6 text-zinc-700 leading-relaxed">
             運営者が本サービス上で別途定めるガイドライン、ルール、注意事項などは、本規約の一部を構成するものとします。
           </p>
@@ -37,30 +43,30 @@ export default function TermPage() {
           </h2>
           <ul className="list-disc list-inside space-y-2 mb-6">
             <li className="text-zinc-700">
-              <strong className="font-semibold text-zinc-900">「本サービス」</strong>：運営者が提供する痛車イベント情報の一元管理、団体管理を主目的とする「痛車オーナーズナビ（いたなび！）」という名称のサービス（ウェブサイトおよび関連するアプリケーションを含みます）。
+              <strong className="font-semibold text-zinc-900">「本サービス」</strong>：運営者が提供する痛車イベント情報の一元管理、団体管理を主目的とする「痛車オーナーズナビ（いたなび！）」という名称のサービス（ウェブサイトおよび関連するアプリケーションを含みます）。本サービスは、電気通信番号（いわゆる電話番号）を用いた電気通信役務の提供を行うものではありません。
             </li>
             <li className="text-zinc-700">
-              <strong className="font-semibold text-zinc-900">「ユーザー」</strong>：本規約に同意し、本サービスを利用するためにアカウント登録を行った個人をいいます。
+              <strong className="font-semibold text-zinc-900">「ユーザー」</strong>：本規約に同意し、X（旧Twitter）アカウントまたはGoogleアカウントを用いて本サービスにログインした個人をいいます。
             </li>
             <li className="text-zinc-700">
               <strong className="font-semibold text-zinc-900">「団体」</strong>：「併せ」など、ユーザー間で形成されるグループ管理機能を通じて作成されたコミュニティをいいます。
             </li>
             <li className="text-zinc-700">
-              <strong className="font-semibold text-zinc-900">「オーガナイザー」</strong>：本サービスにイベント情報を登録・公開し、または団体を管理するユーザーをいいます。
+              <strong className="font-semibold text-zinc-900">「オーガナイザー」</strong>：運営者の承認を経てオーガナイザー権限（イベント主催者としての登録等）が付与されたユーザーであって、当該権限に基づき本サービス上でイベント情報を登録・公開し、又は団体を管理する者をいいます。
             </li>
           </ul>
 
           <h2 className="text-2xl font-semibold text-zinc-900 mt-8 mb-4">
-            第3条（アカウント登録）
+            第3条（ログイン・アカウント）
           </h2>
           <p className="mb-4 text-zinc-700 leading-relaxed">
-            本サービスの利用を希望する者は、本規約に同意した上で、運営者の定める方法によりアカウント登録を申請し、運営者の承認をもって登録が完了します。
+            本サービスの利用を希望する者は、本規約（第4条に定める運営者による団体メッセージの閲覧を含みます）に同意した上で、運営者の定める方法によりX（旧Twitter）アカウントまたはGoogleアカウントを用いてログインし、本サービスを利用します。一般のユーザーについて、運営者による個別の承認手続を経ることなく、当該ログインが完了した時点から本アプリケーションを利用できます。
           </p>
           <p className="mb-4 text-zinc-700 leading-relaxed">
-            登録申請者が過去に本規約に違反した者である場合、その他運営者が不適切と判断した場合は、運営者は登録を拒否することができます。
+            イベント主催者として本サービス上で一定の機能（イベント情報の登録・公開等）を利用するための<strong className="font-semibold text-zinc-900">オーガナイザー権限</strong>を付与されたいユーザーは、運営者の定める手続により申請を行い、運営者の承認があった場合に限り、当該権限に基づく機能を利用できます。
           </p>
           <p className="mb-6 text-zinc-700 leading-relaxed">
-            登録にあたり、ユーザーはX（旧Twitter）アカウントまたはGoogleアカウントを利用します。
+            ユーザーが過去に本規約に違反した場合、その他運営者が不適切と判断した場合は、運営者は当該ユーザーの本サービスの利用の拒否、ログインの制限、アカウントの停止又は削除その他必要な措置を講じることができます。
           </p>
 
           <h2 className="text-2xl font-semibold text-zinc-900 mt-8 mb-4">
@@ -72,6 +78,9 @@ export default function TermPage() {
           </h3>
           <p className="mb-4 text-zinc-700 leading-relaxed">
             ユーザーが団体機能を利用する際、団体チャットやメンバー一覧においては、ユーザーが設定した表示名、または設定がない場合はGoogleアカウント名もしくはXのユーザー名が表示され、団体メンバー全員に公開されます。
+          </p>
+          <p className="mb-4 text-zinc-700 leading-relaxed">
+            ユーザーは、本サービスに登録した時点において表示名を別途設定していない場合であっても、前項のとおりGoogleアカウント名もしくはXのユーザー名が団体メンバーに表示されることに同意したものとみなします。
           </p>
 
           <h3 className="text-xl font-semibold text-zinc-800 mt-6 mb-3">
@@ -85,7 +94,20 @@ export default function TermPage() {
             団体情報の共有
           </h3>
           <p className="mb-4 text-zinc-700 leading-relaxed">
-            団体機能を通じてユーザーが作成・入力した情報（参加者リスト、チャット内容等）は、当該団体の管理者および団体に属する全メンバーが閲覧・共有可能とします。
+            団体機能を通じてユーザーが作成・入力した情報（参加者リスト、チャット内容等）は、当該団体の作成者および団体に属する全メンバーが閲覧・共有可能とします。
+          </p>
+
+          <h3 className="text-xl font-semibold text-zinc-800 mt-6 mb-3">
+            運営者による団体メッセージの閲覧（モデレーション）
+          </h3>
+          <p className="mb-4 text-zinc-700 leading-relaxed">
+            団体メッセージ（グループチャット）機能において、運営者は、違法・有害情報への対応、利用規約違反の確認、サービス上の紛争・安全上の調査、その他本サービスを安全かつ適正に運営するために必要な範囲で、<strong className="font-semibold text-zinc-900">必要最小限の権限を付与された運営者側の管理者（いたなび！管理者）のみ</strong>が、当該団体のやり取りの内容を閲覧・確認できる場合があります。当該閲覧は、一般利用者向けに公開される機能ではなく、モデレーションおよび法令遵守のためのものに限られます。
+          </p>
+          <p className="mb-4 text-zinc-700 leading-relaxed">
+            運営者は、上記の目的の範囲を超えて当該情報を利用し、又は第三者に開示しないよう努めます（法令に基づく開示・提供、裁判所・行政機関の命令、権利侵害の調査その他正当な理由がある場合を除きます）。
+          </p>
+          <p className="mb-4 text-zinc-700 leading-relaxed">
+            ユーザーは、本サービスの利用を開始した時点で、本条に定める運営者による閲覧・確認に同意したものとみなします。
           </p>
 
           <h3 className="text-xl font-semibold text-zinc-800 mt-6 mb-3">
@@ -182,7 +204,7 @@ export default function TermPage() {
           </p>
           <ul className="list-disc list-inside space-y-2 mb-6">
             <li className="text-zinc-700">
-              <strong className="font-semibold text-zinc-900">運営者</strong>：痛車オーナーズナビ
+              <strong className="font-semibold text-zinc-900">運営者</strong>：痛車オーナーズナビ（個人）
             </li>
             <li className="text-zinc-700">
               <strong className="font-semibold text-zinc-900">連絡先メールアドレス</strong>：itashaownersnavi@gmail.com
@@ -191,8 +213,11 @@ export default function TermPage() {
 
           <hr className="my-8 border-zinc-200" />
           
-          <p className="text-zinc-700">
+          <p className="mb-2 text-zinc-700">
             <strong className="font-semibold text-zinc-900">制定日</strong>：2025年12月2日
+          </p>
+          <p className="text-zinc-700">
+            <strong className="font-semibold text-zinc-900">最終改定日</strong>：2026年4月7日
           </p>
         </div>
         
