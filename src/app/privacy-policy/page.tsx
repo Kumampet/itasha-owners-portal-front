@@ -79,6 +79,7 @@ export default function PrivacyPolicyPage() {
             <li className="text-zinc-700">ユーザーの本人確認、認証、アカウント管理のため。</li>
             <li className="text-zinc-700">本サービスに関する重要な通知（締切リマインダー、規約変更等）を行うため。</li>
             <li className="text-zinc-700">本サービスの改善、新機能の開発、および統計データの作成のため。</li>
+            <li className="text-zinc-700">違法・不適切な利用の防止、利用者の安全の確保、およびモデレーションのため（団体メッセージの内容を必要最小限の運営者が閲覧する場合があります。詳細は<a href="/term" className="text-zinc-900 underline underline-offset-2 hover:text-zinc-700">利用規約</a>第4条）。</li>
             <li className="text-zinc-700">広告配信および広告効果の測定のため（第4項に詳述）。</li>
           </ol>
 
@@ -153,8 +154,11 @@ export default function PrivacyPolicyPage() {
 
           <hr className="my-8 border-zinc-200" />
           
-          <p className="text-zinc-700">
+          <p className="mb-2 text-zinc-700">
             <strong className="font-semibold text-zinc-900">制定日</strong>：2025年12月2日
+          </p>
+          <p className="text-zinc-700">
+            <strong className="font-semibold text-zinc-900">最終改定日</strong>：2026年4月7日
           </p>
         </div>
         
