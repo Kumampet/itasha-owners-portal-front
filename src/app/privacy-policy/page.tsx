@@ -79,6 +79,7 @@ export default function PrivacyPolicyPage() {
             <li className="text-zinc-700">ユーザーの本人確認、認証、アカウント管理のため。</li>
             <li className="text-zinc-700">本サービスに関する重要な通知（締切リマインダー、規約変更等）を行うため。</li>
             <li className="text-zinc-700">本サービスの改善、新機能の開発、および統計データの作成のため。</li>
+            <li className="text-zinc-700">違法・不適切な利用の防止、利用者の安全の確保、およびモデレーションのため（団体メッセージの内容を必要最小限の運営者が閲覧する場合があります。詳細は<a href="/term" className="text-zinc-900 underline underline-offset-2 hover:text-zinc-700">利用規約</a>第4条）。</li>
             <li className="text-zinc-700">広告配信および広告効果の測定のため（第4項に詳述）。</li>
           </ol>
 
@@ -104,8 +105,29 @@ export default function PrivacyPolicyPage() {
           <p className="mb-4 text-zinc-700 leading-relaxed">
             Cookieにより収集される情報には、氏名、住所、電話番号、メールアドレスなどの特定の個人を識別する情報は含まれません。
           </p>
-          <p className="mb-6 text-zinc-700 leading-relaxed">
+          <p className="mb-4 text-zinc-700 leading-relaxed">
             ユーザーは、ご自身のブラウザ設定を変更することにより、Cookieの利用を停止することができます。
+          </p>
+          <p className="mb-4 text-zinc-700 leading-relaxed">
+            Googleによるパーソナライズ広告に関する説明は、
+            <a
+              href="https://policies.google.com/technologies/ads"
+              className="text-zinc-900 underline underline-offset-2 hover:text-zinc-700"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Googleの広告に関するポリシー
+            </a>
+            をご参照ください。パーソナライズ広告の表示を無効にする場合は、
+            <a
+              href="https://adssettings.google.com"
+              className="text-zinc-900 underline underline-offset-2 hover:text-zinc-700"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Googleの広告設定
+            </a>
+            から設定を変更できます。
           </p>
 
           <h2 className="text-2xl font-semibold text-zinc-900 mt-8 mb-4">
@@ -132,8 +154,11 @@ export default function PrivacyPolicyPage() {
 
           <hr className="my-8 border-zinc-200" />
           
-          <p className="text-zinc-700">
+          <p className="mb-2 text-zinc-700">
             <strong className="font-semibold text-zinc-900">制定日</strong>：2025年12月2日
+          </p>
+          <p className="text-zinc-700">
+            <strong className="font-semibold text-zinc-900">最終改定日</strong>：2026年4月7日
           </p>
         </div>
         

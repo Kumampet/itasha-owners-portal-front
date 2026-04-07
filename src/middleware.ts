@@ -9,7 +9,9 @@ export async function middleware(request: NextRequest) {
   if (
     pathname === "/manifest.json" ||
     pathname.startsWith("/icon-") ||
-    pathname === "/favicon.ico"
+    pathname === "/favicon.ico" ||
+    pathname === "/ads.txt" ||
+    pathname === "/robots.txt"
   ) {
     return NextResponse.next();
   }
