@@ -39,7 +39,7 @@
     "@types/web-push": "^3.6.4",
     "bcryptjs": "^3.0.3",
     "dayjs": "^1.11.19",
-    "dompurify": "^3.3.3",
+    "dompurify": "^3.4.1",
     "draft-js": "^0.11.7",
     "draft-js-export-html": "^1.4.1",
     "emoji-picker-react": "^4.16.1",
