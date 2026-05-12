@@ -1,6 +1,68 @@
 "use client";
 
 import { Button } from "@/components/button";
+import { useSnackbar } from "@/contexts/snackbar-context";
+
+/** Instagram は Web からキャプション付き投稿できないため、共有用テキストを組み立てる */
+function buildInstagramCaption(eventTitle: string, eventUrl: string): string {
+  const t = eventTitle.trim();
+  return t ? `${t}\n\n${eventUrl}` : eventUrl;
+}
+
+async function writeClipboardReliable(text: string): Promise<boolean> {
+  try {
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // execCommand にフォールバック
+  }
+  if (typeof document === "undefined") return false;
+  try {
+    const el = document.createElement("textarea");
+    el.value = text;
+    el.setAttribute("readonly", "true");
+    el.style.position = "fixed";
+    el.style.opacity = "0";
+    el.style.left = "-9999px";
+    document.body.appendChild(el);
+    el.focus();
+    el.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(el);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+type NativeShareResult = "shared" | "aborted" | "unavailable";
+
+/** モバイル等で共有シートが使える場合は優先（Instagram を含むアプリを選べることがある） */
+async function shareCaptionWithNavigatorShare(
+  title: string,
+  caption: string,
+): Promise<NativeShareResult> {
+  if (typeof navigator === "undefined" || !navigator.share) {
+    return "unavailable";
+  }
+  const data: ShareData = { title, text: caption };
+  try {
+    if (typeof navigator.canShare === "function" && !navigator.canShare(data)) {
+      return "unavailable";
+    }
+  } catch {
+    return "unavailable";
+  }
+  try {
+    await navigator.share(data);
+    return "shared";
+  } catch (e) {
+    if (e instanceof Error && e.name === "AbortError") return "aborted";
+    return "unavailable";
+  }
+}
 
 type EventPageShareButtonsProps = {
   eventTitle: string;
@@ -11,6 +73,7 @@ export function EventPageShareButtons({
   eventTitle,
   eventUrl,
 }: EventPageShareButtonsProps) {
+  const { showSnackbar } = useSnackbar();
   const encodedUrl = encodeURIComponent(eventUrl);
 
   const handleCopyLink = async () => {
@@ -32,14 +95,29 @@ export function EventPageShareButtons({
   };
 
   const handleShareInstagram = async () => {
-    const shareText = `${eventTitle}\n${eventUrl}`;
-    try {
-      await navigator.clipboard.writeText(shareText);
-      alert(
-        "イベント情報をクリップボードにコピーしました。Instagramに貼り付けてシェアしてください。",
+    const caption = buildInstagramCaption(eventTitle, eventUrl);
+
+    const native = await shareCaptionWithNavigatorShare(eventTitle, caption);
+    if (native === "shared") {
+      showSnackbar("共有しました", "success");
+      return;
+    }
+    if (native === "aborted") {
+      return;
+    }
+
+    const copied = await writeClipboardReliable(caption);
+    if (copied) {
+      showSnackbar(
+        "投稿用テキストをコピーしました。Instagramアプリで新規投稿を作成し、キャプションに貼り付けてください。（ブラウザからInstagramへ直接投稿はできません）",
+        "success",
+        6500,
       );
-    } catch {
-      alert("コピーに失敗しました");
+    } else {
+      showSnackbar(
+        "クリップボードにコピーできませんでした。URLのみ必要な場合は「リンクをコピー」をご利用ください。",
+        "error",
+      );
     }
   };
 
@@ -111,7 +189,7 @@ export function EventPageShareButtons({
         rounded="full"
         onClick={handleShareInstagram}
         className={iconBtnClass}
-        aria-label="Instagram用にコピー"
+        aria-label="Instagram（共有またはキャプションをコピー）"
       >
         <svg
           className="h-[1.125rem] w-[1.125rem] shrink-0"
