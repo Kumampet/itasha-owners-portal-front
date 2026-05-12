@@ -140,14 +140,19 @@ function NewGroupForm() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "団体の作成に失敗しました");
+        throw new Error(
+          data.error ||
+            "団体の作成に失敗しました。お手数ですが一度ログアウトしてから再度ログインし、団体作成をやり直してください。"
+        );
       }
 
       const data = await res.json();
       router.push(`/app/groups/${data.groupId}`);
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : "団体の作成に失敗しました"
+        error instanceof Error
+          ? error.message
+          : "団体の作成に失敗しました。お手数ですが一度ログアウトしてから再度ログインし、団体作成をやり直してください。"
       );
     } finally {
       setSaving(false);
