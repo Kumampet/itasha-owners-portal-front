@@ -215,7 +215,7 @@ export default function AdminUsersPage() {
   };
 
   const getStatusColor = (user: User): string => {
-    if (user.deleted_at) return "text-zinc-500";
+    if (user.deleted_at) return "text-muted";
     if (user.is_banned) return "text-red-600";
     return "text-green-600";
   };
@@ -238,16 +238,16 @@ export default function AdminUsersPage() {
   return (
     <div className="w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
+        <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">
           ユーザー管理
         </h1>
-        <p className="mt-2 text-sm text-zinc-600 sm:text-base">
+        <p className="mt-2 text-sm text-muted-foreground sm:text-base">
           ユーザー一覧、権限管理、BAN管理を行います
         </p>
       </div>
 
       {/* フィルター・ソート・検索 */}
-      <div className="mb-6 space-y-4 rounded-lg border border-zinc-200 bg-white p-4">
+      <div className="mb-6 space-y-4 rounded-lg border border-border bg-card p-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           {/* 検索 */}
           <div className="flex-1">
@@ -256,7 +256,7 @@ export default function AdminUsersPage() {
               placeholder="メールアドレスまたは名前で検索..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
             />
           </div>
 
@@ -269,7 +269,7 @@ export default function AdminUsersPage() {
                 size="sm"
                 rounded="md"
                 onClick={() => setFilterRole(role)}
-                className={filterRole === role ? "" : "bg-zinc-100 hover:bg-zinc-200"}
+                className={filterRole === role ? "" : "bg-card-elevated hover:bg-card"}
               >
                 {role === "ALL" ? "すべて" : role === "USER" ? "ユーザー" : role === "ADMIN" ? "管理者" : "主催者"}
               </Button>
@@ -280,11 +280,11 @@ export default function AdminUsersPage() {
         {/* ソート */}
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-zinc-700">並び替え:</label>
+            <label className="text-xs font-medium text-muted-foreground">並び替え:</label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortBy)}
-              className="rounded-md border border-zinc-300 px-2 py-1 text-xs focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="rounded-md border border-border px-2 py-1 text-xs focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
             >
               <option value="created_at">登録日</option>
               <option value="email">メールアドレス</option>
@@ -310,44 +310,44 @@ export default function AdminUsersPage() {
           <LoadingSpinner size="lg" />
         </div>
       ) : users.length === 0 ? (
-        <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center">
-          <p className="text-sm text-zinc-600">ユーザーがありません</p>
+        <div className="rounded-lg border border-border bg-card p-8 text-center">
+          <p className="text-sm text-muted-foreground">ユーザーがありません</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-          <table className="min-w-full divide-y divide-zinc-200">
-            <thead className="bg-zinc-50">
+        <div className="overflow-x-auto rounded-lg border border-border bg-card">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-card-elevated">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-700">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                   メールアドレス
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-700">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                   ユーザー名
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-700">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                   表示名
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-700">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                   ステータス
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-700">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                   権限
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-700">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                   操作
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-200 bg-white">
+            <tbody className="divide-y divide-border bg-card">
               {users.map((user) => (
                 <tr key={user.id}>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-900">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-foreground">
                     {user.email}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
                     {user.name || "-"}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
                     {user.display_name || "-"}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
@@ -355,7 +355,7 @@ export default function AdminUsersPage() {
                       {getStatusText(user)}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
                     {getRoleText(user.role)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">

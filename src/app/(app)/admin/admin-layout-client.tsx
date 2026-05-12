@@ -40,16 +40,16 @@ function AdminSidebarContent({ onLinkClick, pathname, session }: SidebarContentP
         {/* 新規イベントを作成ボタン */}
         <Link
           href="/admin/events/new"
-          className={`mb-4 flex items-center gap-3 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium transition ${pathname === "/admin/events/new"
-            ? "bg-zinc-900 text-white border-zinc-900"
-            : "bg-white text-zinc-900 hover:bg-zinc-50 hover:border-zinc-900"
+          className={`mb-4 flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm font-medium transition ${pathname === "/admin/events/new"
+            ? "bg-zinc-900 text-white border-border-strong"
+            : "bg-card text-foreground hover:bg-card-elevated hover:border-accent-mint/50"
             }`}
           onClick={onLinkClick}
         >
           <span>➕</span>
           <span>新規イベントを作成</span>
         </Link>
-        <div className="mb-4 border-t border-zinc-200"></div>
+        <div className="mb-4 border-t border-border"></div>
         {/* 通常のメニュー項目 */}
         <div className="space-y-1">
           {menuItems.map((item) => {
@@ -60,7 +60,7 @@ function AdminSidebarContent({ onLinkClick, pathname, session }: SidebarContentP
                 href={item.href}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${isActive
                   ? "bg-zinc-900 text-white"
-                  : "text-zinc-700 hover:bg-zinc-50"
+                  : "text-muted-foreground hover:bg-card-elevated"
                   }`}
                 onClick={onLinkClick}
               >
@@ -79,7 +79,7 @@ function AdminSidebarContent({ onLinkClick, pathname, session }: SidebarContentP
                   href={item.href}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${isActive
                     ? "bg-zinc-900 text-white"
-                    : "text-zinc-700 hover:bg-zinc-50"
+                    : "text-muted-foreground hover:bg-card-elevated"
                     }`}
                   onClick={onLinkClick}
                 >
@@ -89,11 +89,11 @@ function AdminSidebarContent({ onLinkClick, pathname, session }: SidebarContentP
               );
             })}
         </div>
-        <div className="mt-4 border-t border-zinc-200 pt-4">
-          <div className="mb-2 text-xs text-zinc-600">{session.user.email}</div>
+        <div className="mt-4 border-t border-border pt-4">
+          <div className="mb-2 text-xs text-muted-foreground">{session.user.email}</div>
           <Link
             href="/app/mypage"
-            className="flex items-center gap-2 text-xs text-zinc-600 hover:text-zinc-900"
+            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
             onClick={onLinkClick}
           >
             <span>🔙</span>
@@ -186,7 +186,7 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
         <MobileHeader
           onMenuClick={() => setIsMenuOpen(true)}
           logoHref="/admin/dashboard"
-          rightContent={<span className="text-sm text-zinc-600">{session.user.email}</span>}
+          rightContent={<span className="text-sm text-muted-foreground">{session.user.email}</span>}
           enableAutoHide={true}
         />
         <main className="min-w-0 flex-1 pt-14 lg:pt-0">{children}</main>

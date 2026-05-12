@@ -17,7 +17,7 @@ export function SideNavUserSection({ onClose }: SideNavUserSectionProps) {
   const isLoading = status === "loading";
 
   return (
-    <div className="mb-4 min-h-[80px] rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+    <div className="mb-4 min-h-[80px] rounded-lg border border-border bg-card-elevated p-3">
       {isLoading ? (
         <div className="flex items-center justify-center py-2">
           <LoadingSpinner size="sm" />
@@ -36,11 +36,11 @@ export function SideNavUserSection({ onClose }: SideNavUserSectionProps) {
               />
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-zinc-900 truncate">
+              <p className="text-xs font-medium text-foreground truncate">
                 {session.user?.displayName || session.user?.name || "ユーザー"}
               </p>
               {session.user?.email && session.user.email.trim() !== "" && (
-                <p className="text-[10px] text-zinc-600 truncate">
+                <p className="text-[10px] text-muted-foreground truncate">
                   {session.user.email}
                 </p>
               )}
@@ -60,14 +60,14 @@ export function SideNavUserSection({ onClose }: SideNavUserSectionProps) {
               // これにより、セッションがクリアされた状態でログインページにアクセスできる
               window.location.href = redirectUrl;
             }}
-            className="mt-2 text-[10px] rounded-md border border-zinc-300 bg-white px-2 py-1 text-zinc-700 hover:bg-zinc-100"
+            className="mt-2 text-[10px] rounded-md border border-border bg-card px-2 py-1 text-muted-foreground hover:bg-card-elevated"
           >
             ログアウト
           </Button>
         </>
       ) : (
         <div className="flex flex-col items-center justify-center py-2">
-          <p className="text-xs text-zinc-600 mb-2">ログインしてください</p>
+          <p className="text-xs text-muted-foreground mb-2">ログインしてください</p>
           <Link
             href="/app/auth"
             onClick={onClose}

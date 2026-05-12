@@ -46,24 +46,24 @@ export function EventsFilterPanel({
     .join(" · ");
 
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
       <button
         type="button"
         onClick={() => setPanelOpen((o) => !o)}
         aria-expanded={panelOpen}
         aria-controls="events-filters-form-panel"
-        className="flex w-full cursor-pointer items-center justify-between gap-3 border-b border-zinc-200 bg-zinc-50/80 px-4 py-3 text-left transition hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-400 sm:hidden"
+        className="flex w-full cursor-pointer items-center justify-between gap-3 border-b border-border bg-card-elevated/80 px-4 py-3 text-left transition hover:bg-card-elevated focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-400 sm:hidden"
       >
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="text-sm font-medium text-zinc-800">検索・表示条件</span>
+          <span className="text-sm font-medium text-foreground">検索・表示条件</span>
           {!panelOpen ? (
-            <span className="truncate text-xs text-zinc-500" title={summaryLine}>
+            <span className="truncate text-xs text-muted" title={summaryLine}>
               {summaryLine}
             </span>
           ) : null}
         </span>
         <svg
-          className={`h-5 w-5 shrink-0 text-zinc-500 transition-transform ${panelOpen ? "rotate-180" : ""}`}
+          className={`h-5 w-5 shrink-0 text-muted transition-transform ${panelOpen ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -88,7 +88,7 @@ export function EventsFilterPanel({
         >
           <div className="flex flex-1 flex-col gap-3 min-w-0 sm:flex-row sm:items-end sm:gap-4">
             <div className="w-full min-w-0 flex-1">
-              <label htmlFor="search" className="mb-1 block text-sm font-medium text-zinc-700">
+              <label htmlFor="search" className="mb-1 block text-sm font-medium text-muted-foreground">
                 検索
               </label>
               <input
@@ -97,7 +97,7 @@ export function EventsFilterPanel({
                 value={searchQuery}
                 onChange={(e) => onSearchQueryChange(e.target.value)}
                 placeholder="イベント名、説明、開催地などで検索"
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               />
             </div>
             <button
@@ -115,28 +115,28 @@ export function EventsFilterPanel({
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-4">
             <div className="sm:w-48">
-              <label htmlFor="sortOrder" className="mb-1 block text-sm font-medium text-zinc-700">
+              <label htmlFor="sortOrder" className="mb-1 block text-sm font-medium text-muted-foreground">
                 表示順
               </label>
               <select
                 id="sortOrder"
                 value={sortOrder}
                 onChange={(e) => onSortOrderChange(e.target.value as "asc" | "desc")}
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               >
                 <option value="asc">{SORT_LABELS.asc}</option>
                 <option value="desc">{SORT_LABELS.desc}</option>
               </select>
             </div>
             <div className="sm:w-36">
-              <label htmlFor="pageSize" className="mb-1 block text-sm font-medium text-zinc-700">
+              <label htmlFor="pageSize" className="mb-1 block text-sm font-medium text-muted-foreground">
                 表示件数
               </label>
               <select
                 id="pageSize"
                 value={pageSize}
                 onChange={(e) => onPageSizeChange(Number(e.target.value) as PageSize)}
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               >
                 {PAGE_SIZE_OPTIONS.map((n) => (
                   <option key={n} value={n}>

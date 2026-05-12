@@ -144,10 +144,10 @@ function NotificationSettingsPageContent() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-zinc-900">
+                  <h3 className="text-sm font-semibold text-foreground">
                     メール通知の許可
                   </h3>
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <p className="mt-1 text-xs text-muted">
                     メール通知を有効にするかどうかを設定します。OFFの場合は、すべてのメール通知が無効になります。
                   </p>
                 </div>
@@ -161,19 +161,19 @@ function NotificationSettingsPageContent() {
                     disabled={saving}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-zinc-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-zinc-900"></div>
+                  <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-accent-mint rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-mint"></div>
                 </label>
               </div>
             </div>
 
             {/* 団体メッセージ未読通知 */}
-            <div className="space-y-2 border-t border-zinc-200 pt-6">
+            <div className="space-y-2 border-t border-border pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-zinc-900">
+                  <h3 className="text-sm font-semibold text-foreground">
                     団体メッセージ未読通知
                   </h3>
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <p className="mt-1 text-xs text-muted">
                     団体の未読メッセージがある場合にメール通知を送信します。
                     {!settings.email_notification_enabled && (
                       <span className="block mt-1 text-zinc-400">
@@ -197,7 +197,7 @@ function NotificationSettingsPageContent() {
                     disabled={saving || !settings.email_notification_enabled}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-zinc-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-zinc-900 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                  <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-accent-mint rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-mint peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
                 </label>
               </div>
             </div>

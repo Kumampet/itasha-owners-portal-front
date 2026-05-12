@@ -128,12 +128,12 @@ export function WatchlistButton({ eventId, className, onToggle }: WatchlistButto
   const baseClasses = className || "";
   const buttonClassName = displayWatching
     ? baseClasses
-      .replace(/border-zinc-\d+|bg-white|bg-zinc-\d+|hover:bg-zinc-\d+/g, "")
-      .trim() + " bg-emerald-50 border-emerald-200 hover:bg-emerald-100"
+      .replace(/border-zinc-\d+|bg-card|bg-zinc-\d+|hover:bg-zinc-\d+/g, "")
+      .trim() + " bg-accent-mint/10 border-accent-mint/25 hover:bg-accent-mint/15"
     : baseClasses;
 
   // テキストの色を決定（表示状態に基づく）
-  const textColor = displayWatching ? "text-emerald-700" : "text-zinc-700";
+  const textColor = displayWatching ? "text-accent-mint" : "text-muted-foreground";
 
   return (
     <Button
@@ -166,7 +166,7 @@ export function WatchlistButton({ eventId, className, onToggle }: WatchlistButto
               : isAnimating
                 ? "rotate-0 scale-100 opacity-100"
                 : "rotate-0 scale-100 opacity-100"
-              } text-emerald-600`}
+              } text-accent-mint`}
           >
             −
           </span>

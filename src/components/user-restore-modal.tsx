@@ -42,7 +42,7 @@ export function UserRestoreModal({
         </>
       }
     >
-      <p className="text-sm text-zinc-700">
+      <p className="text-sm text-muted-foreground">
         {userName}を復帰させますか？
       </p>
     </ModalBase>

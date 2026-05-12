@@ -253,11 +253,11 @@ export default function EventForm({
   return (
     <form
       onSubmit={(e) => e.preventDefault()}
-      className="space-y-6 rounded-lg border border-zinc-200 bg-white p-6"
+      className="space-y-6 rounded-lg border border-border bg-card p-6"
     >
       {/* イベント名 */}
       <div>
-        <label className="block text-sm font-medium text-zinc-700">
+        <label className="block text-sm font-medium text-muted-foreground">
           イベント名 *
         </label>
         <input
@@ -266,7 +266,7 @@ export default function EventForm({
           onChange={(e) =>
             onFormDataChange({ ...formData, name: e.target.value })
           }
-          className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+          className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
           required
         />
       </div>
@@ -274,7 +274,7 @@ export default function EventForm({
       {/* 開催日 */}
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-zinc-700">
+          <label className="block text-sm font-medium text-muted-foreground">
             開催日 *
           </label>
           <div className="mt-1">
@@ -302,9 +302,9 @@ export default function EventForm({
                 event_end_date: e.target.checked ? formData.event_end_date : "",
               })
             }
-            className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+            className="h-4 w-4 rounded border-border text-accent-mint focus:ring-accent-mint"
           />
-          <label htmlFor="is_multi_day" className="ml-2 text-sm text-zinc-700">
+          <label htmlFor="is_multi_day" className="ml-2 text-sm text-muted-foreground">
             複数日開催
           </label>
         </div>
@@ -312,7 +312,7 @@ export default function EventForm({
         {/* 終了日（複数日開催の場合） */}
         {formData.is_multi_day && (
           <div>
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-muted-foreground">
               終了日 *
             </label>
             <div className="mt-1">
@@ -335,8 +335,8 @@ export default function EventForm({
 
       {/* イベント概要文 */}
       <div>
-        <label className="block text-sm font-medium text-zinc-700">
-          イベント概要文 * <span className="text-xs text-zinc-500">（最大200文字）</span>
+        <label className="block text-sm font-medium text-muted-foreground">
+          イベント概要文 * <span className="text-xs text-muted">（最大200文字）</span>
         </label>
         <textarea
           value={formData.description}
@@ -348,17 +348,17 @@ export default function EventForm({
           }}
           rows={4}
           maxLength={200}
-          className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+          className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
           required
         />
-        <p className="mt-1 text-xs text-zinc-500">
+        <p className="mt-1 text-xs text-muted">
           {formData.description.length} / 200文字
         </p>
       </div>
 
       {/* キーワードタグ */}
       <div>
-        <label className="block text-sm font-medium text-zinc-700">
+        <label className="block text-sm font-medium text-muted-foreground">
           キーワードタグ
         </label>
         <div className="mt-1">
@@ -368,14 +368,14 @@ export default function EventForm({
             onChange={(e) => setKeywordInput(e.target.value)}
             onKeyDown={handleAddKeyword}
             placeholder="キーワードを入力してEnterで確定"
-            className="block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+            className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
           />
           {keywords.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
               {keywords.map((keyword) => (
                 <span
                   key={keyword}
-                  className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700"
+                  className="inline-flex items-center gap-1 rounded-full bg-card-elevated px-3 py-1 text-sm text-muted-foreground"
                 >
                   {keyword}
                   <Button
@@ -383,7 +383,7 @@ export default function EventForm({
                     size="sm"
                     rounded="md"
                     onClick={() => handleRemoveKeyword(keyword)}
-                    className="ml-1 h-auto p-0 border-0 bg-transparent text-zinc-500 hover:text-zinc-900"
+                    className="ml-1 h-auto p-0 border-0 bg-transparent text-muted hover:text-foreground"
                   >
                     ×
                   </Button>
@@ -397,8 +397,8 @@ export default function EventForm({
       {/* 公式サイトURL */}
       <div>
         <div className="flex items-center justify-between">
-          <label className="block text-sm font-medium text-zinc-700">
-            公式サイトURL * <span className="text-xs text-zinc-500">（1個以上必須）</span>
+          <label className="block text-sm font-medium text-muted-foreground">
+            公式サイトURL * <span className="text-xs text-muted">（1個以上必須）</span>
           </label>
           {formData.official_urls.length < 10 && (
             <Button
@@ -419,7 +419,7 @@ export default function EventForm({
                 value={url}
                 onChange={(e) => handleUrlChange(index, e.target.value)}
                 placeholder="https://example.com"
-                className="block flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                className="block flex-1 rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
                 required={index === 0}
               />
               {formData.official_urls.length > 1 && (
@@ -457,7 +457,7 @@ export default function EventForm({
 
       {/* エントリー決定方法 */}
       <div>
-        <label className="block text-sm font-medium text-zinc-700 mb-2">
+        <label className="block text-sm font-medium text-muted-foreground mb-2">
           エントリー決定方法 *
         </label>
         <div className="space-y-2">
@@ -473,10 +473,10 @@ export default function EventForm({
                   entry_selection_method: e.target.value as "FIRST_COME" | "LOTTERY" | "SELECTION",
                 })
               }
-              className="h-4 w-4 border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+              className="h-4 w-4 border-border text-accent-mint focus:ring-accent-mint"
               required
             />
-            <span className="ml-2 text-sm text-zinc-700">先着</span>
+            <span className="ml-2 text-sm text-muted-foreground">先着</span>
           </label>
           <label className="flex items-center">
             <input
@@ -490,10 +490,10 @@ export default function EventForm({
                   entry_selection_method: e.target.value as "FIRST_COME" | "LOTTERY" | "SELECTION",
                 })
               }
-              className="h-4 w-4 border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+              className="h-4 w-4 border-border text-accent-mint focus:ring-accent-mint"
               required
             />
-            <span className="ml-2 text-sm text-zinc-700">抽選</span>
+            <span className="ml-2 text-sm text-muted-foreground">抽選</span>
           </label>
           <label className="flex items-center">
             <input
@@ -507,18 +507,18 @@ export default function EventForm({
                   entry_selection_method: e.target.value as "FIRST_COME" | "LOTTERY" | "SELECTION",
                 })
               }
-              className="h-4 w-4 border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+              className="h-4 w-4 border-border text-accent-mint focus:ring-accent-mint"
               required
             />
-            <span className="ml-2 text-sm text-zinc-700">選考</span>
+            <span className="ml-2 text-sm text-muted-foreground">選考</span>
           </label>
         </div>
       </div>
 
       {/* 参加可能台数 */}
       <div>
-        <label className="block text-sm font-medium text-zinc-700">
-          参加可能台数 <span className="text-xs text-zinc-500">（任意）</span>
+        <label className="block text-sm font-medium text-muted-foreground">
+          参加可能台数 <span className="text-xs text-muted">（任意）</span>
         </label>
         <input
           type="number"
@@ -530,15 +530,15 @@ export default function EventForm({
               max_participants: e.target.value === "" ? null : parseInt(e.target.value, 10),
             })
           }
-          className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+          className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
           placeholder="例: 100"
         />
       </div>
 
       {/* イメージ画像 */}
       <div>
-        <label className="block text-sm font-medium text-zinc-700">
-          イメージ画像 <span className="text-xs text-zinc-500">（16:9推奨）</span>
+        <label className="block text-sm font-medium text-muted-foreground">
+          イメージ画像 <span className="text-xs text-muted">（16:9推奨）</span>
         </label>
         <div className="mt-1 space-y-2">
           <Tooltip
@@ -552,11 +552,11 @@ export default function EventForm({
               accept="image/*"
               onChange={handleImageFileSelect}
               disabled={true}
-              className="block w-full text-sm text-zinc-700 file:mr-4 file:rounded-md file:border-0 file:bg-zinc-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-zinc-700 hover:file:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-card-elevated file:px-4 file:py-2 file:text-sm file:font-medium file:text-muted-foreground hover:file:bg-card disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </Tooltip>
           {uploadingImage && (
-            <p className="text-xs text-zinc-500">アップロード中...</p>
+            <p className="text-xs text-muted">アップロード中...</p>
           )}
         </div>
         {formData.image_url && (
@@ -598,9 +598,9 @@ export default function EventForm({
       </div>
 
       {/* エントリー情報 */}
-      <div className="space-y-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+      <div className="space-y-4 rounded-lg border border-border bg-card-elevated p-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-zinc-900">エントリー情報</h3>
+          <h3 className="text-sm font-semibold text-foreground">エントリー情報</h3>
           {formData.entries.length < 5 && (
             <Button
               variant="secondary"
@@ -614,8 +614,8 @@ export default function EventForm({
         </div>
 
         {/* 公開仕様の説明 */}
-        <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
-          <p className="text-xs text-zinc-700 leading-relaxed">
+        <div className="rounded-md border border-border bg-card-elevated p-3">
+          <p className="text-xs text-muted-foreground leading-relaxed">
             エントリー開始日時公開日時はエントリー開始日時情報をこの設定日時にこのページで公開されるように設定されます。
             <br />
             エントリー終了日時はエントリー公開日時の公開日時と同時に公開されます。
@@ -627,10 +627,10 @@ export default function EventForm({
         {formData.entries.map((entry) => (
           <div
             key={entry.entry_number}
-            className="space-y-3 rounded-md border border-zinc-200 bg-white p-4"
+            className="space-y-3 rounded-md border border-border bg-card p-4"
           >
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-zinc-700">
+              <h4 className="text-sm font-medium text-muted-foreground">
                 {entry.entry_number}次エントリー
               </h4>
               {formData.entries.length > 1 && (
@@ -662,7 +662,7 @@ export default function EventForm({
               {/* エントリー開始日時とエントリー開始日公開日時、エントリー締切日時 */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700">
+                  <label className="block text-xs font-medium text-muted-foreground">
                     エントリー開始日時
                   </label>
                   <div className="mt-1">
@@ -681,7 +681,7 @@ export default function EventForm({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700">
+                  <label className="block text-xs font-medium text-muted-foreground">
                     エントリー開始日公開日時
                   </label>
                   <div className="mt-1">
@@ -701,7 +701,7 @@ export default function EventForm({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700">
+                  <label className="block text-xs font-medium text-muted-foreground">
                     エントリー終了日時
                   </label>
                   <div className="mt-1">
@@ -722,7 +722,7 @@ export default function EventForm({
 
               {/* 支払期限タイプ選択 */}
               <div>
-                <label className="block text-xs font-medium text-zinc-700 mb-2">
+                <label className="block text-xs font-medium text-muted-foreground mb-2">
                   支払期限の設定方法
                 </label>
                 <div className="flex gap-4">
@@ -739,9 +739,9 @@ export default function EventForm({
                           e.target.value
                         )
                       }
-                      className="h-4 w-4 border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+                      className="h-4 w-4 border-border text-accent-mint focus:ring-accent-mint"
                     />
-                    <span className="ml-2 text-xs text-zinc-700">日付の絶対値</span>
+                    <span className="ml-2 text-xs text-muted-foreground">日付の絶対値</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -756,9 +756,9 @@ export default function EventForm({
                           e.target.value
                         )
                       }
-                      className="h-4 w-4 border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+                      className="h-4 w-4 border-border text-accent-mint focus:ring-accent-mint"
                     />
-                    <span className="ml-2 text-xs text-zinc-700">エントリー申し込みからn日以内</span>
+                    <span className="ml-2 text-xs text-muted-foreground">エントリー申し込みからn日以内</span>
                   </label>
                 </div>
               </div>
@@ -767,7 +767,7 @@ export default function EventForm({
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {entry.payment_due_type === "ABSOLUTE" ? (
                   <div>
-                    <label className="block text-xs font-medium text-zinc-700">
+                    <label className="block text-xs font-medium text-muted-foreground">
                       支払期限日時
                     </label>
                     <div className="mt-1">
@@ -786,7 +786,7 @@ export default function EventForm({
                   </div>
                 ) : (
                   <div>
-                    <label className="block text-xs font-medium text-zinc-700">
+                    <label className="block text-xs font-medium text-muted-foreground">
                       エントリー申し込みから何日以内
                     </label>
                     <div className="mt-1">
@@ -802,9 +802,9 @@ export default function EventForm({
                           )
                         }
                         placeholder="例: 7"
-                        className="block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                        className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
                       />
-                      <p className="mt-1 text-xs text-zinc-500">
+                      <p className="mt-1 text-xs text-muted">
                         エントリー申し込み日から指定した日数以内に支払いが必要です
                       </p>
                     </div>
@@ -812,7 +812,7 @@ export default function EventForm({
                 )}
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700">
+                  <label className="block text-xs font-medium text-muted-foreground">
                     支払期限日時公開日時
                   </label>
                   <div className="mt-1">
@@ -837,8 +837,8 @@ export default function EventForm({
       </div>
 
       {/* 支払方法 */}
-      <div className="space-y-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-        <h3 className="text-sm font-semibold text-zinc-900">支払方法</h3>
+      <div className="space-y-4 rounded-lg border border-border bg-card-elevated p-4">
+        <h3 className="text-sm font-semibold text-foreground">支払方法</h3>
         <div className="space-y-3">
           <div className="flex items-center">
             <input
@@ -858,9 +858,9 @@ export default function EventForm({
                   },
                 })
               }
-              className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+              className="h-4 w-4 rounded border-border text-accent-mint focus:ring-accent-mint"
             />
-            <label htmlFor="payment_method_bank_transfer" className="ml-2 text-sm text-zinc-700">
+            <label htmlFor="payment_method_bank_transfer" className="ml-2 text-sm text-muted-foreground">
               銀行振込
             </label>
           </div>
@@ -882,9 +882,9 @@ export default function EventForm({
                   },
                 })
               }
-              className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+              className="h-4 w-4 rounded border-border text-accent-mint focus:ring-accent-mint"
             />
-            <label htmlFor="payment_method_credit_card" className="ml-2 text-sm text-zinc-700">
+            <label htmlFor="payment_method_credit_card" className="ml-2 text-sm text-muted-foreground">
               クレジットカード
             </label>
           </div>
@@ -906,9 +906,9 @@ export default function EventForm({
                   },
                 })
               }
-              className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+              className="h-4 w-4 rounded border-border text-accent-mint focus:ring-accent-mint"
             />
-            <label htmlFor="payment_method_cash_on_day" className="ml-2 text-sm text-zinc-700">
+            <label htmlFor="payment_method_cash_on_day" className="ml-2 text-sm text-muted-foreground">
               当日現金支払
             </label>
           </div>
@@ -931,9 +931,9 @@ export default function EventForm({
                     },
                   })
                 }
-                className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+                className="h-4 w-4 rounded border-border text-accent-mint focus:ring-accent-mint"
               />
-              <label htmlFor="payment_method_other_cashless" className="ml-2 text-sm text-zinc-700">
+              <label htmlFor="payment_method_other_cashless" className="ml-2 text-sm text-muted-foreground">
                 その他キャッシュレス決済
               </label>
             </div>
@@ -956,7 +956,7 @@ export default function EventForm({
                     })
                   }
                   placeholder="例: PayPay、LINE Payなど"
-                  className="block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  className="block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
                 />
               </div>
             )}
@@ -965,11 +965,11 @@ export default function EventForm({
       </div>
 
       {/* 開催地（住所） */}
-      <div className="space-y-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-        <h3 className="text-sm font-semibold text-zinc-900">開催地（住所）</h3>
+      <div className="space-y-4 rounded-lg border border-border bg-card-elevated p-4">
+        <h3 className="text-sm font-semibold text-foreground">開催地（住所）</h3>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-700">
+          <label className="block text-sm font-medium text-muted-foreground">
             郵便番号
           </label>
           <div className="mt-1 flex gap-2">
@@ -986,7 +986,7 @@ export default function EventForm({
               }}
               placeholder="1234567"
               maxLength={7}
-              className="block w-32 rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="block w-32 rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
             />
             <Button
               variant="primary"
@@ -1001,7 +1001,7 @@ export default function EventForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-700">
+          <label className="block text-sm font-medium text-muted-foreground">
             都道府県 *
           </label>
           <select
@@ -1009,7 +1009,7 @@ export default function EventForm({
             onChange={(e) =>
               onFormDataChange({ ...formData, prefecture: e.target.value })
             }
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
             required
           >
             <option value="">選択してください</option>
@@ -1064,7 +1064,7 @@ export default function EventForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-700">
+          <label className="block text-sm font-medium text-muted-foreground">
             市区町村 *
           </label>
           <input
@@ -1073,13 +1073,13 @@ export default function EventForm({
             onChange={(e) =>
               onFormDataChange({ ...formData, city: e.target.value })
             }
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-700">
+          <label className="block text-sm font-medium text-muted-foreground">
             番地 *
           </label>
           <input
@@ -1091,13 +1091,13 @@ export default function EventForm({
                 street_address: e.target.value,
               })
             }
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-700">
+          <label className="block text-sm font-medium text-muted-foreground">
             会場名 *
           </label>
           <input
@@ -1107,7 +1107,7 @@ export default function EventForm({
               onFormDataChange({ ...formData, venue_name: e.target.value })
             }
             placeholder="例: 東京ドーム"
-            className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
             required
           />
         </div>

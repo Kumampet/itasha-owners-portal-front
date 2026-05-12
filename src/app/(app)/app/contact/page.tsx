@@ -65,7 +65,7 @@ export default function ContactPage() {
         <header className="space-y-2">
           <Link
             href={session ? "/app/mypage" : "/"}
-            className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+            className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
           >
             ← {session ? "マイページへ戻る" : "トップページへ戻る"}
           </Link>
@@ -73,7 +73,7 @@ export default function ContactPage() {
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
               お問い合わせフォーム
             </h1>
-            <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
               ご質問やご要望がございましたら、お気軽にお問い合わせください。
             </p>
           </div>
@@ -81,10 +81,10 @@ export default function ContactPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-6 rounded-lg border border-zinc-200 bg-white p-6"
+          className="space-y-6 rounded-lg border border-border bg-card p-6"
         >
           <div>
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-muted-foreground">
               タイトル <span className="text-red-500">*</span>
             </label>
             <input
@@ -93,14 +93,14 @@ export default function ContactPage() {
               onChange={(e) =>
                 setFormData({ ...formData, title: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               placeholder="例: イベント主催について"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-muted-foreground">
               お名前（ニックネーム可） <span className="text-red-500">*</span>
             </label>
             <input
@@ -109,14 +109,14 @@ export default function ContactPage() {
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               placeholder="お名前またはニックネーム"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-muted-foreground">
               メールアドレス <span className="text-red-500">*</span>
             </label>
             <input
@@ -125,19 +125,19 @@ export default function ContactPage() {
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               placeholder="example@email.com"
               required
             />
             {session?.user?.email && (
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="mt-1 text-xs text-muted">
                 ログイン中のアカウント: {session.user.email}
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-muted-foreground">
               お問い合わせ内容 <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -146,7 +146,7 @@ export default function ContactPage() {
                 setFormData({ ...formData, content: e.target.value })
               }
               rows={10}
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               placeholder="お問い合わせ内容をご記入ください"
               required
             />
@@ -199,7 +199,7 @@ export default function ContactPage() {
           </Button>
         }
       >
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-muted-foreground">
           お問い合わせを送信しました。ありがとうございます。
         </p>
       </ModalBase>
@@ -220,7 +220,7 @@ export default function ContactPage() {
           </Button>
         }
       >
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-muted-foreground">
           {errorMessage}
         </p>
       </ModalBase>

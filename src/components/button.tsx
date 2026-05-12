@@ -33,9 +33,12 @@ interface ButtonAsActionProps extends BaseButtonProps, Omit<ButtonHTMLAttributes
 type ButtonProps = ButtonAsButtonProps | ButtonAsLinkProps | ButtonAsActionProps;
 
 const variantClasses: Record<ButtonVariant, string> = {
-    primary: "bg-zinc-900 text-white hover:bg-zinc-800 disabled:bg-zinc-400 disabled:hover:bg-zinc-400",
-    secondary: "border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 disabled:border-zinc-200 disabled:bg-zinc-50 disabled:text-zinc-300",
-    emerald: "border-2 border-emerald-600 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:border-emerald-300 disabled:bg-emerald-50 disabled:text-emerald-300",
+    primary:
+        "bg-accent-mint text-zinc-950 shadow-sm hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100",
+    secondary:
+        "border border-border bg-card-elevated text-foreground hover:bg-card disabled:opacity-40 disabled:hover:bg-card-elevated",
+    emerald:
+        "border-2 border-accent-mint/50 bg-accent-mint/10 text-accent-mint hover:bg-accent-mint/18 disabled:border-accent-mint/25 disabled:bg-accent-mint/5 disabled:text-muted",
     success: "bg-green-600 text-white hover:bg-green-700 disabled:bg-green-400 disabled:hover:bg-green-400",
     danger: "bg-red-600 text-white hover:bg-red-700 disabled:bg-red-400 disabled:hover:bg-red-400",
 };
@@ -65,8 +68,8 @@ export function Button(props: ButtonProps) {
 
     const isAction = as === "action";
     const baseClasses = isAction
-        ? "flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-medium transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2"
-        : "inline-flex items-center justify-center font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2";
+        ? "flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-medium transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-mint focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        : "inline-flex items-center justify-center font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-mint focus-visible:ring-offset-2 focus-visible:ring-offset-background";
     const widthClass = fullWidth ? "w-full" : "";
 
     const combinedClassName = [

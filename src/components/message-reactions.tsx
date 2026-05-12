@@ -134,7 +134,7 @@ const QuickEmojiPicker = ({
   onShowFullPicker: _onShowFullPicker,
   className = "",
   gridClassName = "grid grid-cols-7 gap-1.5",
-  buttonClassName = "text-xl hover:bg-zinc-100 rounded p-.5 transition-colors flex items-center justify-center",
+  buttonClassName = "text-xl hover:bg-card-elevated rounded p-.5 transition-colors flex items-center justify-center",
   activeButtonClassName = "bg-blue-50",
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   ellipsisButtonClassName: _ellipsisButtonClassName,
@@ -189,7 +189,7 @@ const FullEmojiPicker = ({
     <div
       ref={innerRef}
       data-emoji-picker
-      className={`bg-white rounded-lg shadow-xl border border-zinc-200 overflow-hidden ${className}`}
+      className={`bg-card rounded-lg shadow-xl border border-border overflow-hidden ${className}`}
       onClick={(e) => e.stopPropagation()}
       style={typeof width === "number" ? { maxWidth: `${width}px` } : {}}
       aria-label="フル絵文字ピッカー"
@@ -271,7 +271,7 @@ const EmojiPickerContainer = ({
     <div
       ref={emojiPickerRef}
       data-emoji-picker
-      className={`absolute top-full right-0 z-[9999] bg-white border border-zinc-200 rounded-lg shadow-lg p-1 mt-1 w-max`}
+      className={`absolute top-full right-0 z-[9999] bg-card border border-border rounded-lg shadow-lg p-1 mt-1 w-max`}
       aria-label="よく使う絵文字ピッカー"
       style={positionStyle}
     >
@@ -402,8 +402,8 @@ export function MessageReactions({
         }
       }}
       className={`flex items-center justify-center w-7 h-7 rounded-full border transition-colors ${isOwnMessage
-        ? "bg-white/10 text-white border-white/20 hover:bg-white/20"
-        : "bg-white text-zinc-400 border-zinc-200 hover:bg-zinc-50 hover:text-zinc-600 shadow-sm"
+        ? "bg-card/10 text-white border-white/20 hover:bg-card/20"
+        : "bg-card text-zinc-400 border-border hover:bg-card-elevated hover:text-muted-foreground shadow-sm"
         } ${className || ""}`}
       aria-label="リアクションを追加"
     >
@@ -447,11 +447,11 @@ export function MessageReactions({
                 }}
                 className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-colors cursor-pointer ${hasUserReaction
                   ? isOwnMessage
-                    ? "bg-white/20 text-white border border-white/30"
+                    ? "bg-card/20 text-white border border-white/30"
                     : "bg-blue-100 text-blue-700 border border-blue-200"
                   : isOwnMessage
-                    ? "bg-white/10 text-white border border-white/20"
-                    : "bg-zinc-100 text-zinc-700 border border-zinc-200 hover:bg-zinc-200"
+                    ? "bg-card/10 text-white border border-white/20"
+                    : "bg-card-elevated text-muted-foreground border border-border hover:bg-card"
                   }`}
               >
                 <span>{reaction.emoji}</span>
@@ -461,18 +461,18 @@ export function MessageReactions({
               {showReactionDetails === reaction.emoji && (
                 <div
                   ref={detailsRef}
-                  className={`absolute bottom-full ${isOwnMessage ? "right-0" : "left-0"} mb-1 z-50 bg-white border border-zinc-200 rounded-lg shadow-lg p-3 w-max`}
+                  className={`absolute bottom-full ${isOwnMessage ? "right-0" : "left-0"} mb-1 z-50 bg-card border border-border rounded-lg shadow-lg p-3 w-max`}
                   onMouseEnter={() => setShowReactionDetails(reaction.emoji)}
                   onMouseLeave={() => setShowReactionDetails(null)}
                 >
-                  <div className="text-xs font-semibold text-zinc-700 mb-2">
+                  <div className="text-xs font-semibold text-muted-foreground mb-2">
                     {reaction.emoji} {reaction.count}
                   </div>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto">
                     {reaction.users.map((user) => (
                       <div
                         key={user.id}
-                        className="text-xs text-zinc-600 truncate"
+                        className="text-xs text-muted-foreground truncate"
                       >
                         {user.displayName || user.name || "名前未設定"}
                       </div>
@@ -601,12 +601,12 @@ export function ReactionListModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-zinc-200">
-          <h3 className="text-lg font-semibold text-zinc-900">リアクション</h3>
+      <div className="bg-card rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h3 className="text-lg font-semibold text-foreground">リアクション</h3>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-600 transition-colors"
+            className="text-zinc-400 hover:text-muted-foreground transition-colors"
             aria-label="閉じる"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -624,7 +624,7 @@ export function ReactionListModal({
                 return (
                   <div
                     key={reaction.emoji}
-                    className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 hover:bg-zinc-50 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-card-elevated transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <button
@@ -635,10 +635,10 @@ export function ReactionListModal({
                         {reaction.emoji}
                       </button>
                       <div>
-                        <div className="text-sm font-medium text-zinc-900">
+                        <div className="text-sm font-medium text-foreground">
                           {reaction.emoji} {reaction.count}人
                         </div>
-                        <div className="text-xs text-zinc-500 mt-1">
+                        <div className="text-xs text-muted mt-1">
                           {reaction.users
                             .slice(0, 3)
                             .map((u) => u.displayName || u.name || "名前未設定")
@@ -651,11 +651,11 @@ export function ReactionListModal({
                       onClick={() => handleReactionClick(reaction.emoji)}
                       disabled={isOwnMessage}
                       className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${isOwnMessage
-                        ? "cursor-not-allowed opacity-40 bg-zinc-100 text-zinc-400"
+                        ? "cursor-not-allowed opacity-40 bg-card-elevated text-zinc-400"
                         : "cursor-pointer"
                         } ${hasUserReaction
                           ? "bg-blue-100 text-blue-700"
-                          : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                          : "bg-card-elevated text-muted-foreground hover:bg-card"
                         }`}
                     >
                       {hasUserReaction ? "削除" : "追加"}
@@ -667,13 +667,13 @@ export function ReactionListModal({
           )}
 
           {/* 絵文字ピッカー */}
-          <div className="border-t border-zinc-200 pt-4">
+          <div className="border-t border-border pt-4">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-semibold text-zinc-900">絵文字を追加</h4>
+              <h4 className="text-sm font-semibold text-foreground">絵文字を追加</h4>
               {showEmojiPicker && (
                 <button
                   onClick={() => setShowEmojiPicker(false)}
-                  className="text-xs text-zinc-400 hover:text-zinc-600"
+                  className="text-xs text-zinc-400 hover:text-muted-foreground"
                 >
                   閉じる
                 </button>
@@ -681,7 +681,7 @@ export function ReactionListModal({
             </div>
             {showEmojiPicker ? (
               <div className="space-y-3">
-                <div ref={emojiPickerRef} className="p-2 bg-zinc-50 rounded-lg">
+                <div ref={emojiPickerRef} className="p-2 bg-card-elevated rounded-lg">
                   <QuickEmojiPicker
                     reactions={reactions}
                     currentUserId={session?.user?.id}
@@ -691,9 +691,9 @@ export function ReactionListModal({
                       setShowFullEmojiPicker(true);
                     }}
                     gridClassName="grid grid-cols-7 gap-2"
-                    buttonClassName="text-xl hover:bg-white rounded p-2 transition-colors flex items-center justify-center"
+                    buttonClassName="text-xl hover:bg-card rounded p-2 transition-colors flex items-center justify-center"
                     activeButtonClassName="bg-blue-100"
-                    ellipsisButtonClassName="text-lg hover:bg-white rounded p-2 transition-colors flex items-center justify-center text-zinc-500"
+                    ellipsisButtonClassName="text-lg hover:bg-card rounded p-2 transition-colors flex items-center justify-center text-muted"
                   />
                 </div>
                 {/* フル絵文字ピッカー */}
@@ -712,8 +712,8 @@ export function ReactionListModal({
                 onClick={() => setShowEmojiPicker(true)}
                 disabled={isOwnMessage}
                 className={`w-full py-3 px-4 border-2 border-dashed rounded-lg transition-colors flex items-center justify-center gap-2 ${isOwnMessage
-                  ? "cursor-not-allowed opacity-40 border-zinc-200 text-zinc-400"
-                  : "cursor-pointer border-zinc-300 text-zinc-600 hover:border-zinc-400 hover:bg-zinc-50"
+                  ? "cursor-not-allowed opacity-40 border-border text-zinc-400"
+                  : "cursor-pointer border-border text-muted-foreground hover:border-zinc-400 hover:bg-card-elevated"
                   }`}
               >
                 <AddReactionIcon className="w-5 h-5" />

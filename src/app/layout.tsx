@@ -52,7 +52,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: "cover", // SafeArea対応のため
-  themeColor: "#18181b",
+  themeColor: "#09090b",
 };
 
 export default function RootLayout({

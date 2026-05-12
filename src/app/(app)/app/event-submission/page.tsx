@@ -71,7 +71,7 @@ export default function EventSubmissionPage() {
         <header className="space-y-2">
           <Link
             href="/app/mypage"
-            className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+            className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
           >
             ← マイページへ戻る
           </Link>
@@ -79,7 +79,7 @@ export default function EventSubmissionPage() {
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
               イベント掲載依頼フォーム
             </h1>
-            <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
               イベント情報をご提供いただくことで、より多くの参加者にイベントを知っていただくことができます。
             </p>
           </div>
@@ -87,10 +87,10 @@ export default function EventSubmissionPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-6 rounded-lg border border-zinc-200 bg-white p-6"
+          className="space-y-6 rounded-lg border border-border bg-card p-6"
         >
           <div>
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-muted-foreground">
               イベント名 <span className="text-red-500">*</span>
             </label>
             <input
@@ -99,16 +99,16 @@ export default function EventSubmissionPage() {
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               placeholder="例: 痛車ヘブン夏"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-muted-foreground">
               イベント情報URL（HPやSNS等）
-              <span className="ml-1 text-xs text-zinc-500">（推奨・任意）</span>
+              <span className="ml-1 text-xs text-muted">（推奨・任意）</span>
             </label>
             <input
               type="url"
@@ -116,17 +116,17 @@ export default function EventSubmissionPage() {
               onChange={(e) =>
                 setFormData({ ...formData, original_url: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               placeholder="https://example.com/event"
             />
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-muted">
               イベントの公式サイト、SNS、告知ページなどのURL
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700">
-              開催日 <span className="ml-1 text-xs text-zinc-500">（任意）</span>
+            <label className="block text-sm font-medium text-muted-foreground">
+              開催日 <span className="ml-1 text-xs text-muted">（任意）</span>
             </label>
             <input
               type="date"
@@ -134,13 +134,13 @@ export default function EventSubmissionPage() {
               onChange={(e) =>
                 setFormData({ ...formData, event_date: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700">
-              その他備考欄 <span className="ml-1 text-xs text-zinc-500">（任意）</span>
+            <label className="block text-sm font-medium text-muted-foreground">
+              その他備考欄 <span className="ml-1 text-xs text-muted">（任意）</span>
             </label>
             <textarea
               value={formData.description}
@@ -148,7 +148,7 @@ export default function EventSubmissionPage() {
                 setFormData({ ...formData, description: e.target.value })
               }
               rows={6}
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               placeholder="イベントの詳細情報、特記事項などをご記入ください"
             />
           </div>
@@ -158,14 +158,14 @@ export default function EventSubmissionPage() {
             <AccordionItem
               value="details"
               title={
-                <span className="text-sm font-medium text-zinc-700">
-                  詳細情報 <span className="ml-1 text-xs text-zinc-500">（任意）</span>
+                <span className="text-sm font-medium text-muted-foreground">
+                  詳細情報 <span className="ml-1 text-xs text-muted">（任意）</span>
                 </span>
               }
               contentClassName="space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium text-zinc-700">
+                <label className="block text-sm font-medium text-muted-foreground">
                   副題
                 </label>
                 <input
@@ -174,13 +174,13 @@ export default function EventSubmissionPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, theme: e.target.value })
                   }
-                  className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
                   placeholder="副題（任意）"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700">
+                <label className="block text-sm font-medium text-muted-foreground">
                   エントリー開始日時
                 </label>
                 <input
@@ -189,12 +189,12 @@ export default function EventSubmissionPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, entry_start_at: e.target.value })
                   }
-                  className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700">
+                <label className="block text-sm font-medium text-muted-foreground">
                   支払期限
                 </label>
                 <input
@@ -203,7 +203,7 @@ export default function EventSubmissionPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, payment_due_at: e.target.value })
                   }
-                  className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
                 />
               </div>
             </AccordionItem>
@@ -212,7 +212,7 @@ export default function EventSubmissionPage() {
           <div className="flex gap-2 justify-end">
             <Link
               href="/app/mypage"
-              className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+              className="rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-card-elevated"
             >
               キャンセル
             </Link>

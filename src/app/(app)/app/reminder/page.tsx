@@ -99,7 +99,7 @@ export default function ReminderPage() {
             <header className="space-y-2">
               <Link
                 href="/app/mypage"
-                className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+                className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
               >
                 ← マイページへ戻る
               </Link>
@@ -107,7 +107,7 @@ export default function ReminderPage() {
                 <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
                   リマインダー
                 </h1>
-                <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+                <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                   エントリー開始日・締切・支払期限・集合時間など、イベントごとの重要な
                   タイミングをまとめて管理する画面です。
                 </p>
@@ -118,13 +118,13 @@ export default function ReminderPage() {
             <div className="flex items-center justify-between gap-2">
               {reminders.length > 0 ? (
                 <div className="flex items-center gap-2">
-                  <label className="text-xs font-medium text-zinc-700 sm:text-sm">
+                  <label className="text-xs font-medium text-muted-foreground sm:text-sm">
                     ソート:
                   </label>
                   <select
                     value={sortOrder}
                     onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
-                    className="rounded-md border border-zinc-300 px-3 py-1 text-xs sm:text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                    className="rounded-md border border-border px-3 py-1 text-xs sm:text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
                   >
                     <option value="asc">期日が近い順（昇順）</option>
                     <option value="desc">期日が遠い順（降順）</option>
@@ -175,8 +175,8 @@ export default function ReminderPage() {
             </div>
 
             {reminders.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-4 sm:p-6">
-                <p className="text-xs text-zinc-700 sm:text-sm">
+              <div className="rounded-2xl border border-dashed border-border bg-card p-4 sm:p-6">
+                <p className="text-xs text-muted-foreground sm:text-sm">
                   リマインダーが登録されていません。
                   ウォッチリストにイベントを追加すると、自動的にリマインダーが設定されます。
                 </p>
@@ -185,7 +185,7 @@ export default function ReminderPage() {
               <div className="space-y-6">
                 {upcomingReminders.length > 0 && (
                   <div>
-                    <h2 className="mb-3 text-sm font-semibold text-zinc-900 sm:text-base">
+                    <h2 className="mb-3 text-sm font-semibold text-foreground sm:text-base">
                       今後のリマインダー
                     </h2>
                     <div className="space-y-3">
@@ -204,7 +204,7 @@ export default function ReminderPage() {
 
                 {pastReminders.length > 0 && (
                   <div>
-                    <h2 className="mb-3 text-sm font-semibold text-zinc-900 sm:text-base">
+                    <h2 className="mb-3 text-sm font-semibold text-foreground sm:text-base">
                       過去のリマインダー
                     </h2>
                     <div className="space-y-3">

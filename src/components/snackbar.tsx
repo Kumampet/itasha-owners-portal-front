@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useSnackbar, SnackbarMessage } from "@/contexts/snackbar-context";
 
 const severityStyles = {
-  success: "bg-emerald-500 text-white",
+  success: "bg-accent-mint text-zinc-950 shadow-lg shadow-black/30",
   error: "bg-red-500 text-white",
   warning: "bg-amber-500 text-white",
   info: "bg-blue-500 text-white",

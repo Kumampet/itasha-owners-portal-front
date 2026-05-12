@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useState, Suspense } from "react";
 import { Button } from "@/components/button";
+import { PublicSiteFooter } from "@/components/public-site-footer";
 
 function AuthForm() {
   const searchParams = useSearchParams();
@@ -45,15 +46,16 @@ function AuthForm() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-8 rounded-3xl border border-zinc-200 bg-white p-8 shadow-lg">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold text-zinc-900">
+    <div className="flex min-h-screen flex-col bg-background">
+      <main className="flex flex-1 flex-col items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md space-y-8 rounded-3xl border border-border bg-card p-8 shadow-lg">
+          <div className="text-center">
+          <h1 className="text-2xl font-semibold text-foreground">
             ログイン / 新規登録
           </h1>
           {isFromInviteLink && (
-            <div className="mt-4 rounded-lg bg-emerald-50 border border-emerald-200 p-4">
-              <p className="text-sm text-emerald-800">
+            <div className="mt-4 rounded-lg bg-accent-mint/10 border border-accent-mint/25 p-4">
+              <p className="text-sm text-foreground">
                 団体への招待リンクからアクセスされました。<br />
                 ログインを行っていただくと、団体への加入が可能になります。
               </p>
@@ -84,14 +86,14 @@ function AuthForm() {
           </Button>
         </div>
 
-        <div className="text-center text-xs text-zinc-500">
+        <div className="text-center text-xs text-muted">
           <p>
             ログインすることで、
-            <Link href="/term" className="underline hover:text-zinc-700">
+            <Link href="/term" className="underline hover:text-muted-foreground">
               利用規約
             </Link>
             および
-            <Link href="/privacy" className="underline hover:text-zinc-700">
+            <Link href="/privacy" className="underline hover:text-muted-foreground">
               プライバシーポリシー
             </Link>
             に同意したものとみなされます。
@@ -101,31 +103,36 @@ function AuthForm() {
         <div className="pt-4 text-center">
           <Link
             href="/"
-            className="text-sm text-zinc-600 underline hover:text-zinc-900"
+            className="text-sm text-muted-foreground underline hover:text-foreground"
           >
             トップページに戻る
           </Link>
         </div>
-      </div>
-    </main>
+        </div>
+      </main>
+      <PublicSiteFooter />
+    </div>
   );
 }
 
 export default function AuthPage() {
   return (
     <Suspense fallback={
-      <main className="flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-md space-y-8 rounded-3xl border border-zinc-200 bg-white p-8 shadow-lg">
-          <div className="text-center">
-            <h1 className="text-2xl font-semibold text-zinc-900">
-              ログイン / 新規登録
-            </h1>
-            <p className="mt-2 text-sm text-zinc-600">
-              読み込み中...
-            </p>
+      <div className="flex min-h-screen flex-col bg-background">
+        <main className="flex flex-1 flex-col items-center justify-center px-4 py-10">
+          <div className="w-full max-w-md space-y-8 rounded-3xl border border-border bg-card p-8 shadow-lg">
+            <div className="text-center">
+              <h1 className="text-2xl font-semibold text-foreground">
+                ログイン / 新規登録
+              </h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                読み込み中...
+              </p>
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+        <PublicSiteFooter />
+      </div>
     }>
       <AuthForm />
     </Suspense>

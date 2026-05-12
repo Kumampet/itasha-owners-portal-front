@@ -327,11 +327,11 @@ export default function AdminEventDetailPage({
 
   if (!event) {
     return (
-      <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center">
-        <p className="text-sm text-zinc-600">イベントが見つかりません</p>
+      <div className="rounded-lg border border-border bg-card p-8 text-center">
+        <p className="text-sm text-muted-foreground">イベントが見つかりません</p>
         <Link
           href="/admin/events"
-          className="mt-4 inline-block text-sm text-zinc-900 hover:underline"
+          className="mt-4 inline-block text-sm text-foreground hover:underline"
         >
           ← イベント一覧に戻る
         </Link>
@@ -344,14 +344,14 @@ export default function AdminEventDetailPage({
       <div className="mb-6">
         <Link
           href="/admin/events"
-          className="text-sm text-zinc-600 hover:text-zinc-900"
+          className="text-sm text-muted-foreground hover:text-foreground"
         >
           ← イベント一覧に戻る
         </Link>
       </div>
 
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
+        <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">
           {isEditing ? "イベントを編集" : "イベント詳細"}
         </h1>
         {!isEditing && (
@@ -520,12 +520,12 @@ export default function AdminEventDetailPage({
           )}
         </EventForm>
       ) : (
-        <div className="space-y-6 rounded-lg border border-zinc-200 bg-white p-6">
+        <div className="space-y-6 rounded-lg border border-border bg-card p-6">
           <div>
             <div className="mb-2 flex items-center gap-2">
               <span
                 className={`rounded-full px-2 py-0.5 text-xs font-medium ${event.approval_status === "DRAFT"
-                  ? "bg-zinc-100 text-zinc-700"
+                  ? "bg-card-elevated text-muted-foreground"
                   : event.approval_status === "PENDING"
                     ? "bg-yellow-100 text-yellow-700"
                     : event.approval_status === "APPROVED"
@@ -542,7 +542,7 @@ export default function AdminEventDetailPage({
                       : "却下"}
               </span>
             </div>
-            <h2 className="text-xl font-semibold text-zinc-900">
+            <h2 className="text-xl font-semibold text-foreground">
               {event.name}
             </h2>
           </div>
@@ -563,8 +563,8 @@ export default function AdminEventDetailPage({
 
           {event.description && (
             <div>
-              <h3 className="text-sm font-medium text-zinc-700">イベント概要</h3>
-              <p className="mt-1 text-sm text-zinc-600 whitespace-pre-wrap">
+              <h3 className="text-sm font-medium text-muted-foreground">イベント概要</h3>
+              <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
                 {event.description}
               </p>
             </div>
@@ -572,8 +572,8 @@ export default function AdminEventDetailPage({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <h3 className="text-sm font-medium text-zinc-700">開催日</h3>
-              <p className="mt-1 text-sm text-zinc-600">
+              <h3 className="text-sm font-medium text-muted-foreground">開催日</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {formatDate(event.event_date)}
                 {event.is_multi_day && event.event_end_date && (
                   <span className="ml-2">
@@ -585,7 +585,7 @@ export default function AdminEventDetailPage({
 
             {event.official_urls && event.official_urls.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium text-zinc-700">公式URL</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">公式URL</h3>
                 <div className="mt-1 space-y-1">
                   {event.official_urls.map((url, index) => (
                     <a
@@ -604,17 +604,17 @@ export default function AdminEventDetailPage({
 
             {event.entries && event.entries.length > 0 && (
               <div className="col-span-1 sm:col-span-2">
-                <h3 className="text-sm font-medium text-zinc-700">エントリー情報</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">エントリー情報</h3>
                 <div className="mt-2 space-y-3">
                   {event.entries.map((entry) => (
                     <div
                       key={entry.id}
-                      className="rounded-md border border-zinc-200 bg-zinc-50 p-3"
+                      className="rounded-md border border-border bg-card-elevated p-3"
                     >
-                      <h4 className="text-xs font-medium text-zinc-700 mb-2">
+                      <h4 className="text-xs font-medium text-muted-foreground mb-2">
                         {entry.entry_number}次エントリー
                       </h4>
-                      <div className="space-y-2 text-xs text-zinc-600">
+                      <div className="space-y-2 text-xs text-muted-foreground">
                         <div>
                           <span className="font-medium">エントリー開始日時:</span>{" "}
                           {entry.entry_start_at ? formatDateTime(entry.entry_start_at) || "未設定" : "未設定"}
@@ -624,7 +624,7 @@ export default function AdminEventDetailPage({
                           {entry.entry_start_public_at ? (
                             <span>{formatDateTime(entry.entry_start_public_at)}</span>
                           ) : (
-                            <span className="text-zinc-500">未設定（即時公開）</span>
+                            <span className="text-muted">未設定（即時公開）</span>
                           )}
                         </div>
                         <div>
@@ -632,7 +632,7 @@ export default function AdminEventDetailPage({
                           {entry.entry_deadline_at ? (
                             <span>{formatDateTime(entry.entry_deadline_at)}</span>
                           ) : (
-                            <span className="text-zinc-500">未設定</span>
+                            <span className="text-muted">未設定</span>
                           )}
                         </div>
                         <div>
@@ -648,7 +648,7 @@ export default function AdminEventDetailPage({
                           {entry.payment_due_public_at ? (
                             <span>{formatDateTime(entry.payment_due_public_at)}</span>
                           ) : (
-                            <span className="text-zinc-500">未設定（即時公開）</span>
+                            <span className="text-muted">未設定（即時公開）</span>
                           )}
                         </div>
                       </div>
@@ -661,8 +661,8 @@ export default function AdminEventDetailPage({
 
             {event.prefecture && (
               <div>
-                <h3 className="text-sm font-medium text-zinc-700">開催地</h3>
-                <p className="mt-1 text-sm text-zinc-600">
+                <h3 className="text-sm font-medium text-muted-foreground">開催地</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
                   {event.prefecture}
                   {event.city && ` ${event.city}`}
                   {event.street_address && ` ${event.street_address}`}
@@ -674,12 +674,12 @@ export default function AdminEventDetailPage({
 
           {event.keywords && event.keywords.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-zinc-700">キーワード</h3>
+              <h3 className="text-sm font-medium text-muted-foreground">キーワード</h3>
               <div className="mt-1 flex flex-wrap gap-2">
                 {event.keywords.map((keyword, index) => (
                   <span
                     key={index}
-                    className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700"
+                    className="rounded-full bg-card-elevated px-3 py-1 text-xs font-medium text-muted-foreground"
                   >
                     {keyword}
                   </span>
@@ -690,12 +690,12 @@ export default function AdminEventDetailPage({
 
           {event.tags.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-zinc-700">タグ</h3>
+              <h3 className="text-sm font-medium text-muted-foreground">タグ</h3>
               <div className="mt-1 flex flex-wrap gap-2">
                 {event.tags.map((eventTag) => (
                   <span
                     key={eventTag.tag.id}
-                    className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700"
+                    className="rounded-full bg-card-elevated px-3 py-1 text-xs font-medium text-muted-foreground"
                   >
                     {eventTag.tag.name}
                   </span>

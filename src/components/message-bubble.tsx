@@ -73,11 +73,11 @@ function MessageBubbleComponent({
         ref={messageBubbleRef}
         className={`max-w-[65vw] sm:max-w-[65%] rounded-2xl px-4 py-2 break-words relative ${isOwnMessage
           ? isAnnouncement
-            ? "bg-emerald-500 text-white"
+            ? "bg-accent-mint text-zinc-950"
             : "bg-zinc-900 text-white"
           : isAnnouncement
-            ? "bg-emerald-50 border border-emerald-200 text-zinc-900"
-            : "bg-zinc-100 text-zinc-900"
+            ? "bg-accent-mint/10 border border-accent-mint/25 text-foreground"
+            : "bg-card-elevated text-foreground"
           }`}
         onMouseEnter={() => {
           if (!isMobile && !isOwnMessage) {
@@ -155,13 +155,13 @@ function MessageBubbleComponent({
           {content.includes('<img') ? (
             <SafeHtmlContent
               html={content}
-              className={`text-sm break-words ${isOwnMessage ? "text-white" : "text-zinc-700"}`}
+              className={`text-sm break-words ${isOwnMessage ? "text-white" : "text-muted-foreground"}`}
               onImageClick={(imageUrl) => setSelectedImageUrl(imageUrl)}
             />
           ) : (
             <SafeMessageContent
               content={content}
-              className={`text-sm whitespace-pre-wrap break-words ${isOwnMessage ? "text-white" : "text-zinc-700"
+              className={`text-sm whitespace-pre-wrap break-words ${isOwnMessage ? "text-white" : "text-muted-foreground"
                 }`}
               linkClassName={isOwnMessage ? "text-white" : "text-blue-600"}
             />
@@ -203,7 +203,7 @@ function MessageBubbleComponent({
       )}
       {/* 送信者名とタイムスタンプ */}
       <div className={`mt-1 px-1 ${isOwnMessage ? "text-right" : "text-left"}`}>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-muted">
           {truncateName(sender.displayName || sender.name)}{" "}
           {formatDateTime(createdAt)}
         </p>

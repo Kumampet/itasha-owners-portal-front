@@ -717,11 +717,11 @@ export default function GroupDetailPage({
     return (
       <main className="flex-1">
         <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center">
-            <p className="text-sm text-zinc-600">団体が見つかりません</p>
+          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+            <p className="text-sm text-muted-foreground">団体が見つかりません</p>
             <Link
               href="/app/groups"
-              className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+              className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
             >
               ← 団体一覧に戻る
             </Link>
@@ -739,7 +739,7 @@ export default function GroupDetailPage({
                 <div className="flex-1">
                   <Link
                     href="/app/groups"
-                    className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+                    className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
                   >
                     ← 団体一覧に戻る
                   </Link>
@@ -751,9 +751,9 @@ export default function GroupDetailPage({
                       {group.isLeader && <OwnerBadge />}
                     </div>
                     {group.theme && (
-                      <p className="mt-1 text-xs text-zinc-600 sm:text-sm">{group.theme}</p>
+                      <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{group.theme}</p>
                     )}
-                    <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+                    <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                       {group.event.name} / {formatDate(group.event.event_date)}
                     </p>
                   </div>

@@ -9,7 +9,7 @@ interface TabsProps {
 
 export function Tabs({ children, className = "" }: TabsProps) {
   return (
-    <div className={`flex gap-2 border-b border-zinc-200 ${className}`}>
+    <div className={`flex gap-2 border-b border-border ${className}`}>
       {children}
     </div>
   );
@@ -28,8 +28,8 @@ export function Tab({ children, isActive, onClick, className = "", badge = false
     <div
       onClick={onClick}
       className={`relative whitespace-nowrap px-2 py-2 text-xs font-medium transition cursor-pointer sm:px-4 sm:text-sm ${isActive
-          ? "border-b-2 border-zinc-900 text-zinc-900"
-          : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50"
+          ? "border-b-2 border-border-strong text-foreground"
+          : "text-muted-foreground hover:text-foreground hover:bg-card-elevated"
         } ${className}`}
     >
       {children}

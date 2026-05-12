@@ -86,7 +86,7 @@ export default function GroupsPage() {
         <header className="space-y-2">
           <Link
             href="/app/mypage"
-            className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+            className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
           >
             ← マイページへ戻る
           </Link>
@@ -94,7 +94,7 @@ export default function GroupsPage() {
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
               団体管理
             </h1>
-            <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
               イベントごとの団体参加（併せ）のメンバー募集・参加状況・一斉連絡を
               管理する画面です。
             </p>
@@ -107,8 +107,8 @@ export default function GroupsPage() {
             <CreateGroupButton />
             <JoinGroupButton />
           </div>
-          <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
-            <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
+          <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+            <h2 className="text-sm font-semibold text-foreground sm:text-base">
               参加団体一覧
             </h2>
             {loading ? (
@@ -116,7 +116,7 @@ export default function GroupsPage() {
                 <LoadingSpinner size="md" />
               </div>
             ) : groups.length === 0 ? (
-              <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
+              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                 まだ団体は登録されていません。イベント詳細ページから「団体を組む」ボタンで団体を作成または加入できます。
               </p>
             ) : (
@@ -132,11 +132,11 @@ export default function GroupsPage() {
             )}
           </section>
 
-          {/* <section className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-4 sm:p-5">
-            <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
+          {/* <section className="rounded-2xl border border-dashed border-border bg-card-elevated p-4 sm:p-5">
+            <h2 className="text-sm font-semibold text-foreground sm:text-base">
               一斉連絡ポリシー
             </h2>
-            <ul className="mt-2 space-y-1 text-xs text-zinc-700 sm:text-sm">
+            <ul className="mt-2 space-y-1 text-xs text-muted-foreground sm:text-sm">
               <li>・団体メッセージで「一斉連絡」として投稿すると、重要なメッセージとしてマークされます。</li>
             </ul>
           </section> */}

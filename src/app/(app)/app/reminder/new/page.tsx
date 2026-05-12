@@ -181,7 +181,7 @@ export default function NewReminderPage() {
         <header className="space-y-2">
           <Link
             href="/app/reminder"
-            className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+            className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
           >
             ← リマインダー一覧に戻る
           </Link>
@@ -189,7 +189,7 @@ export default function NewReminderPage() {
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
               リマインダーを新規作成
             </h1>
-            <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
               イベントの重要なタイミングをリマインダーとして登録します。
             </p>
           </div>
@@ -197,10 +197,10 @@ export default function NewReminderPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-6 rounded-lg border border-zinc-200 bg-white p-6"
+          className="space-y-6 rounded-lg border border-border bg-card p-6"
         >
           <div>
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-muted-foreground">
               タイトル *
             </label>
             <input
@@ -209,14 +209,14 @@ export default function NewReminderPage() {
               onChange={(e) =>
                 setFormData({ ...formData, label: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               placeholder="例: エントリー開始、支払期限、集合時間"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-muted-foreground">
               関連イベント
             </label>
             <select
@@ -224,7 +224,7 @@ export default function NewReminderPage() {
               onChange={(e) =>
                 setFormData({ ...formData, event_id: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
             >
               <option value="">選択してください（任意）</option>
               {events.map((event) => (
@@ -237,7 +237,7 @@ export default function NewReminderPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-muted-foreground">
               リマインド日時 *
             </label>
             <input
@@ -246,13 +246,13 @@ export default function NewReminderPage() {
               onChange={(e) =>
                 setFormData({ ...formData, datetime: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700">
+            <label className="block text-sm font-medium text-muted-foreground">
               備考
             </label>
             <textarea
@@ -261,7 +261,7 @@ export default function NewReminderPage() {
                 setFormData({ ...formData, note: e.target.value })
               }
               rows={4}
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               placeholder="リマインダーに関するメモや備考を入力してください（任意）"
             />
           </div>
@@ -308,7 +308,7 @@ export default function NewReminderPage() {
             }
           >
             <div className="space-y-2">
-              <p className="text-sm text-zinc-600">
+              <p className="text-sm text-muted-foreground">
                 リマインダーが作成されました。カレンダーアプリにも登録しますか？
               </p>
 

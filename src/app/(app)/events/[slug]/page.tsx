@@ -175,7 +175,7 @@ export default async function EventDetailPage({
         <header className="space-y-3">
           <Link
             href="/events"
-            className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+            className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
           >
             ← イベント一覧に戻る
           </Link>
@@ -196,14 +196,14 @@ export default async function EventDetailPage({
             </div>
           )}
           {event.description && (
-            <p className="text-sm text-zinc-600 sm:text-base">{event.description}</p>
+            <p className="text-sm text-muted-foreground sm:text-base">{event.description}</p>
           )}
           {event.keywords && Array.isArray(event.keywords) && event.keywords.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {(event.keywords as string[]).map((keyword: string, idx: number) => (
                 <span
                   key={idx}
-                  className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700"
+                  className="rounded-full bg-accent-mint/15 px-3 py-1 text-xs font-medium text-accent-mint"
                 >
                   {keyword}
                 </span>
@@ -215,7 +215,7 @@ export default async function EventDetailPage({
               {event.tags.map((eventTag: { tag: { name: string } }, idx: number) => (
                 <span
                   key={idx}
-                  className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700"
+                  className="rounded-full bg-card-elevated px-3 py-1 text-xs font-medium text-muted-foreground"
                 >
                   {eventTag.tag.name}
                 </span>
@@ -224,36 +224,36 @@ export default async function EventDetailPage({
           )}
         </header>
 
-        <section className="grid gap-4 rounded-3xl border border-zinc-200 bg-white p-5 sm:grid-cols-2 sm:p-7">
+        <section className="grid gap-4 rounded-3xl border border-border bg-card p-5 sm:grid-cols-2 sm:p-7">
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               開催情報
             </p>
-            <p className="text-lg font-semibold text-zinc-900">
+            <p className="text-lg font-semibold text-foreground">
               開催日時: {formatted.main}
             </p>
             {event.prefecture && (
-              <p className="text-sm text-zinc-600">
+              <p className="text-sm text-muted-foreground">
                 開催地: {event.prefecture}
                 {event.city && ` ${event.city}`}
                 {event.street_address && ` ${event.street_address}`}
               </p>
             )}
             {event.venue_name && (
-              <p className="text-sm text-zinc-600">
+              <p className="text-sm text-muted-foreground">
                 会場: {event.venue_name}
               </p>
             )}
           </div>
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               エントリー{event.entry_selection_method === "FIRST_COME" ? "（先着）" : event.entry_selection_method === "LOTTERY" ? "（抽選）" : event.entry_selection_method === "SELECTION" ? "（選考）" : ""}
             </p>
-            <p className="text-sm text-zinc-700">
+            <p className="text-sm text-muted-foreground">
               開始: {entryInfo.entryStart} / 締切: {entryInfo.deadline}
             </p>
             {entryInfo.paymentDue !== "未定" && (
-              <p className="text-sm text-zinc-700">
+              <p className="text-sm text-muted-foreground">
                 支払期限: {entryInfo.paymentDue}
               </p>
             )}
@@ -265,32 +265,32 @@ export default async function EventDetailPage({
         </section>
 
         {event.description && (
-          <section className="rounded-3xl border border-zinc-200 bg-white p-5 sm:p-7">
-            <h2 className="text-lg font-semibold text-zinc-900">イベント紹介</h2>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-700 whitespace-pre-wrap">
+          <section className="rounded-3xl border border-border bg-card p-5 sm:p-7">
+            <h2 className="text-lg font-semibold text-foreground">イベント紹介</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">
               {event.description}
             </p>
           </section>
         )}
 
-        <section className="rounded-3xl border border-zinc-200 bg-white p-5 sm:p-7">
+        <section className="rounded-3xl border border-border bg-card p-5 sm:p-7">
           <div className="grid gap-4 sm:grid-cols-2">
             {event.venue_name && (
-              <div className="rounded-2xl border border-zinc-200 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              <div className="rounded-2xl border border-border p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                   会場
                 </p>
-                <p className="mt-1 text-sm text-zinc-800">
+                <p className="mt-1 text-sm text-foreground">
                   {event.venue_name}
                 </p>
               </div>
             )}
             {event.prefecture && (
-              <div className="rounded-2xl border border-zinc-200 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              <div className="rounded-2xl border border-border p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                   開催地
                 </p>
-                <p className="mt-1 text-sm text-zinc-800">
+                <p className="mt-1 text-sm text-foreground">
                   {event.prefecture}
                   {event.city && ` ${event.city}`}
                   {event.street_address && ` ${event.street_address}`}
@@ -303,14 +303,14 @@ export default async function EventDetailPage({
                   <Link
                     key={idx}
                     href={url}
-                    className="block rounded-2xl border border-zinc-200 p-4 transition hover:border-zinc-900"
+                    className="block rounded-2xl border border-border p-4 transition hover:border-accent-mint/50"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                       公式サイト{(event.official_urls as string[]).length > 1 ? ` ${idx + 1}` : ""}
                     </p>
-                    <p className="mt-1 break-all text-sm text-zinc-800">
+                    <p className="mt-1 break-all text-sm text-foreground">
                       {url}
                     </p>
                   </Link>

@@ -37,11 +37,11 @@ export function SideNav({
       )}
       {/* サイドバー（PC版） */}
       <aside
-        className={`hidden sm:block ${widthClass} flex-shrink-0 border-r border-zinc-200 bg-white ${breakpointClass}h-screen ${breakpointClass}sticky ${breakpointClass}top-0`}
+        className={`hidden sm:block ${widthClass} flex-shrink-0 border-r border-border bg-card ${breakpointClass}h-screen ${breakpointClass}sticky ${breakpointClass}top-0`}
       >
         <div className="flex h-full flex-col">
           {showPCLogo && (
-            <div className="border-b border-zinc-200 p-4">
+            <div className="border-b border-border p-4">
               <Link
                 href={logoHref}
                 className="flex items-center justify-center"
@@ -63,7 +63,7 @@ export function SideNav({
       </aside>
       {/* サイドバー（モバイル版） */}
       <aside
-        className={`fixed top-0 left-0 z-50 flex ${widthClass} flex-col border-r border-zinc-100 bg-white px-4 py-6 transition-transform duration-300 ease-in-out ${breakpointClass}hidden overflow-y-auto ${isOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 right-0 z-50 flex ${widthClass} flex-col border-l border-zinc-100 bg-card px-4 py-6 transition-transform duration-300 ease-in-out ${breakpointClass}hidden overflow-y-auto ${isOpen ? "translate-x-0" : "translate-x-full pointer-events-none"
           }`}
         style={{
           height: "100vh",

@@ -34,15 +34,15 @@ function GroupManagementLinkCard() {
     }, []);
 
     return (
-        <LinkCard href="/app/groups" className="hover:-translate-y-0.5 hover:shadow-md relative">
+        <LinkCard href="/app/groups" className="hover:-translate-y-0.5 hover:shadow-md relative" heightFull>
             {hasUnreadMessages && (
                 <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" title="新着メッセージあり"></span>
             )}
             <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
                 {/* 団体管理アイコン */}
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-purple-100 sm:mb-3 sm:h-14 sm:w-14">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-500/12 ring-1 ring-border/60 sm:mb-3 sm:h-14 sm:w-14">
                     <svg
-                        className="h-6 w-6 text-purple-600 sm:h-7 sm:w-7"
+                        className="h-6 w-6 text-violet-400/90 sm:h-7 sm:w-7"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -58,7 +58,7 @@ function GroupManagementLinkCard() {
                 <div className="flex-1 min-w-0 sm:flex-none">
                     <CardTitle className="mb-1 sm:mb-2">団体管理</CardTitle>
                     <CardContent>
-                        <p className="text-xs text-zinc-600 sm:text-sm">
+                        <p className="text-xs text-muted-foreground sm:text-sm">
                             併せメンバーの募集状況や一斉連絡ポリシーを確認・運用できます。
                         </p>
                     </CardContent>
@@ -107,9 +107,9 @@ function UserInfoDisplay({
             {userName && (
                 <span className="font-medium">{userName}</span>
             )}
-            <span className="text-zinc-500"> / </span>
+            <span className="text-muted"> / </span>
             {userEmail && (
-                <span className="text-zinc-500">{userEmail}</span>
+                <span className="text-muted">{userEmail}</span>
             )}
             {isEmailRequired && (
                 <span className="text-red-600">（メールアドレス未設定）</span>
@@ -207,11 +207,11 @@ export default function MyPage() {
             {/* メールアドレス未設定の場合のモーダル */}
             {isEmailRequired && !isLoading && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg">
-                        <h2 className="text-lg font-semibold text-zinc-900 mb-2">
+                    <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+                        <h2 className="text-lg font-semibold text-foreground mb-2">
                             メールアドレスの登録が必要です
                         </h2>
-                        <p className="text-sm text-zinc-600 mb-4">
+                        <p className="text-sm text-muted-foreground mb-4">
                             メールアドレスの登録が必要です。
                             プロフィール編集画面でメールアドレスを設定してください。
                         </p>
@@ -240,15 +240,15 @@ export default function MyPage() {
                         {isLoading ? (
                             <div className="flex items-center gap-2">
                                 <LoadingSpinner size="xs" />
-                                <span className="text-xs text-zinc-500">読み込み中...</span>
+                                <span className="text-xs text-muted">読み込み中...</span>
                             </div>
                         ) : session ? (
-                            <p className="text-xs text-zinc-600 sm:text-sm">
+                            <p className="text-xs text-muted-foreground sm:text-sm">
                                 <UserInfoDisplay session={session} isEmailRequired={isEmailRequired} />
                             </p>
                         ) : null}
                     </div>
-                    <p className="mt-2 text-xs text-zinc-600 sm:text-sm">
+                    <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
                         自分専用のリマインダー一覧やフォロー中イベント、公開プロフィール設定を
                         行う画面です。
                     </p>
@@ -261,10 +261,10 @@ export default function MyPage() {
                         {isLoadingReminders ? (
                             <div className="mt-3 flex items-center gap-2">
                                 <LoadingSpinner size="sm" />
-                                <span className="text-xs text-zinc-500">読み込み中...</span>
+                                <span className="text-xs text-muted">読み込み中...</span>
                             </div>
                         ) : upcomingReminders.length === 0 ? (
-                            <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+                            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                                 直近3日間（72時間）以内のリマインダーはありません。イベントをフォローすると、ここに
                                 エントリー開始・締切・集合時間などが表示されます。
                             </p>
@@ -274,22 +274,22 @@ export default function MyPage() {
                                     <li key={reminder.id} className="border-b border-zinc-100 pb-3 last:border-b-0 last:pb-0">
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-medium text-zinc-900 sm:text-sm">
+                                                <p className="text-xs font-medium text-foreground sm:text-sm">
                                                     {reminder.label}
                                                 </p>
                                                 {reminder.event && (
-                                                    <p className="mt-0.5 text-xs text-zinc-600 sm:text-sm">
+                                                    <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
                                                         {reminder.event.name}
                                                     </p>
                                                 )}
-                                                <p className="mt-1 text-xs text-zinc-500">
+                                                <p className="mt-1 text-xs text-muted">
                                                     {formatDateTime(reminder.datetime)}
                                                 </p>
                                             </div>
                                             {reminder.event && (
                                                 <Link
                                                     href={`/events/${reminder.event.id}`}
-                                                    className="ml-2 text-xs font-semibold text-emerald-600 hover:text-emerald-700 whitespace-nowrap"
+                                                    className="ml-2 text-xs font-semibold text-accent-mint hover:text-accent-mint whitespace-nowrap"
                                                 >
                                                     詳細 →
                                                 </Link>
@@ -302,14 +302,14 @@ export default function MyPage() {
                     </CardContent>
                 </Card>
 
-                {/* 基本情報、リマインダー管理、団体管理、オーガナイザー機能（2列グリッド） */}
+                {/* メニューグリッド（2列）。イベント一覧は公開サービス共通のカレンダービューへ。 */}
                 <div className="grid gap-4 sm:grid-cols-2">
-                    <LinkCard href="/app/profile/edit" className="hover:-translate-y-0.5 hover:shadow-md">
+                    <LinkCard href="/app/profile/edit" className="hover:-translate-y-0.5 hover:shadow-md" heightFull>
                         <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
                             {/* 基本情報アイコン */}
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 sm:mb-3 sm:h-14 sm:w-14">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-mint/10 ring-1 ring-border/60 sm:mb-3 sm:h-14 sm:w-14">
                                 <svg
-                                    className="h-6 w-6 text-emerald-600 sm:h-7 sm:w-7"
+                                    className="h-6 w-6 text-accent-mint sm:h-7 sm:w-7 opacity-90"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -325,7 +325,7 @@ export default function MyPage() {
                             <div className="flex-1 min-w-0 sm:flex-none">
                                 <CardTitle className="mb-1 sm:mb-2">基本情報</CardTitle>
                                 <CardContent>
-                                    <p className="text-xs text-zinc-600 sm:text-sm">
+                                    <p className="text-xs text-muted-foreground sm:text-sm">
                                         プロフィールなどの情報を編集できます。
                                     </p>
                                 </CardContent>
@@ -333,12 +333,40 @@ export default function MyPage() {
                         </div>
                     </LinkCard>
 
-                    <LinkCard href="/app/watchlist" className="hover:-translate-y-0.5 hover:shadow-md">
+                    <LinkCard href="/events" className="hover:-translate-y-0.5 hover:shadow-md" heightFull>
+                        <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-500/10 ring-1 ring-border/60 sm:mb-3 sm:h-14 sm:w-14">
+                                <svg
+                                    className="h-6 w-6 text-blue-400/90 sm:h-7 sm:w-7"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                    />
+                                </svg>
+                            </div>
+                            <div className="flex-1 min-w-0 sm:flex-none">
+                                <CardTitle className="mb-1 sm:mb-2">イベント一覧</CardTitle>
+                                <CardContent>
+                                    <p className="text-xs text-muted-foreground sm:text-sm">
+                                        公開中の痛車イベントを日付順などで一覧・詳細確認できます。
+                                    </p>
+                                </CardContent>
+                            </div>
+                        </div>
+                    </LinkCard>
+
+                    <LinkCard href="/app/watchlist" className="hover:-translate-y-0.5 hover:shadow-md" heightFull>
                         <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
                             {/* ウォッチリストアイコン */}
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mb-3 sm:h-14 sm:w-14">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-sky-500/10 ring-1 ring-border/60 sm:mb-3 sm:h-14 sm:w-14">
                                 <svg
-                                    className="h-6 w-6 text-blue-600 sm:h-7 sm:w-7"
+                                    className="h-6 w-6 text-sky-400/90 sm:h-7 sm:w-7"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -360,7 +388,7 @@ export default function MyPage() {
                             <div className="flex-1 min-w-0 sm:flex-none">
                                 <CardTitle className="mb-1 sm:mb-2">ウォッチリスト</CardTitle>
                                 <CardContent>
-                                    <p className="text-xs text-zinc-600 sm:text-sm">
+                                    <p className="text-xs text-muted-foreground sm:text-sm">
                                         ウォッチリストに追加したイベントを管理できます。
                                     </p>
                                 </CardContent>
@@ -370,12 +398,12 @@ export default function MyPage() {
 
                     <GroupManagementLinkCard />
 
-                    <LinkCard href="/app/reminder" className="hover:-translate-y-0.5 hover:shadow-md">
+                    <LinkCard href="/app/reminder" className="hover:-translate-y-0.5 hover:shadow-md" heightFull>
                         <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
                             {/* リマインダー管理アイコン */}
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-100 sm:mb-3 sm:h-14 sm:w-14">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-500/10 ring-1 ring-border/60 sm:mb-3 sm:h-14 sm:w-14">
                                 <svg
-                                    className="h-6 w-6 text-orange-600 sm:h-7 sm:w-7"
+                                    className="h-6 w-6 text-orange-400/90 sm:h-7 sm:w-7"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -391,7 +419,7 @@ export default function MyPage() {
                             <div className="flex-1 min-w-0 sm:flex-none">
                                 <CardTitle className="mb-1 sm:mb-2">リマインダー管理</CardTitle>
                                 <CardContent>
-                                    <p className="text-xs text-zinc-600 sm:text-sm">
+                                    <p className="text-xs text-muted-foreground sm:text-sm">
                                         エントリー済みイベントの締切・集合時間・支払期日をまとめて確認。
                                     </p>
                                 </CardContent>
@@ -399,12 +427,12 @@ export default function MyPage() {
                         </div>
                     </LinkCard>
 
-                    <LinkCard href="/app/notification-settings" className="hover:-translate-y-0.5 hover:shadow-md">
+                    <LinkCard href="/app/notification-settings" className="hover:-translate-y-0.5 hover:shadow-md" heightFull>
                         <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
                             {/* 通知設定アイコン */}
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 sm:mb-3 sm:h-14 sm:w-14">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-500/10 ring-1 ring-border/60 sm:mb-3 sm:h-14 sm:w-14">
                                 <svg
-                                    className="h-6 w-6 text-amber-600 sm:h-7 sm:w-7"
+                                    className="h-6 w-6 text-amber-400/90 sm:h-7 sm:w-7"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -420,7 +448,7 @@ export default function MyPage() {
                             <div className="flex-1 min-w-0 sm:flex-none">
                                 <CardTitle className="mb-1 sm:mb-2">通知設定</CardTitle>
                                 <CardContent>
-                                    <p className="text-xs text-zinc-600 sm:text-sm">
+                                    <p className="text-xs text-muted-foreground sm:text-sm">
                                         各種通知の設定を行えます。
                                     </p>
                                 </CardContent>
@@ -428,12 +456,12 @@ export default function MyPage() {
                         </div>
                     </LinkCard>
 
-                    <LinkCard href="/app/event-submission" className="hover:-translate-y-0.5 hover:shadow-md">
+                    <LinkCard href="/app/event-submission" className="hover:-translate-y-0.5 hover:shadow-md" heightFull>
                         <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
                             {/* イベント掲載依頼アイコン */}
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-pink-100 sm:mb-3 sm:h-14 sm:w-14">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-rose/12 ring-1 ring-border/60 sm:mb-3 sm:h-14 sm:w-14">
                                 <svg
-                                    className="h-6 w-6 text-pink-600 sm:h-7 sm:w-7"
+                                    className="h-6 w-6 text-accent-rose opacity-90 sm:h-7 sm:w-7"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -449,7 +477,7 @@ export default function MyPage() {
                             <div className="flex-1 min-w-0 sm:flex-none">
                                 <CardTitle className="mb-1 sm:mb-2">イベント掲載依頼</CardTitle>
                                 <CardContent>
-                                    <p className="text-xs text-zinc-600 sm:text-sm">
+                                    <p className="text-xs text-muted-foreground sm:text-sm">
                                         イベント情報をご提供いただくことで、より多くの参加者に知っていただけます。
                                     </p>
                                 </CardContent>
@@ -459,12 +487,12 @@ export default function MyPage() {
 
                     {/* オーガナイザー機能（admin/organizerのみ） */}
                     {(session?.user?.role === "ADMIN" || session?.user?.role === "ORGANIZER") ? (
-                        <LinkCard href="/admin/dashboard" className="hover:-translate-y-0.5 hover:shadow-md">
+                        <LinkCard href="/admin/dashboard" className="hover:-translate-y-0.5 hover:shadow-md" heightFull>
                             <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
                                 {/* オーガナイザー機能アイコン */}
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-indigo-100 sm:mb-3 sm:h-14 sm:w-14">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-indigo-500/10 ring-1 ring-border/60 sm:mb-3 sm:h-14 sm:w-14">
                                     <svg
-                                        className="h-6 w-6 text-indigo-600 sm:h-7 sm:w-7"
+                                        className="h-6 w-6 text-indigo-400/90 sm:h-7 sm:w-7"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
@@ -486,7 +514,7 @@ export default function MyPage() {
                                 <div className="flex-1 min-w-0 sm:flex-none">
                                     <CardTitle className="mb-1 sm:mb-2">オーガナイザー機能</CardTitle>
                                     <CardContent>
-                                        <p className="text-xs text-zinc-600 sm:text-sm">
+                                        <p className="text-xs text-muted-foreground sm:text-sm">
                                             イベント管理やユーザー管理、情報提供フォームの処理などができます。
                                         </p>
                                     </CardContent>
@@ -497,9 +525,9 @@ export default function MyPage() {
                         <Card variant="muted">
                             <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
                                 {/* オーガナイザー機能アイコン（無効状態） */}
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-zinc-100 sm:mb-3 sm:h-14 sm:w-14">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-card-elevated ring-1 ring-border/60 sm:mb-3 sm:h-14 sm:w-14">
                                     <svg
-                                        className="h-6 w-6 text-zinc-400 sm:h-7 sm:w-7"
+                                        className="h-6 w-6 text-muted-foreground sm:h-7 sm:w-7"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
@@ -521,14 +549,14 @@ export default function MyPage() {
                                 <div className="flex-1 min-w-0 sm:flex-none">
                                     <CardTitle className="mb-1 sm:mb-2">オーガナイザー機能</CardTitle>
                                     <CardContent>
-                                        <p className="text-xs text-zinc-600 sm:text-sm">
+                                        <p className="text-xs text-muted-foreground sm:text-sm">
                                             イベントの作成・管理や参加者の管理など、イベント主催者向けの機能です。
                                         </p>
-                                        <p className="mt-2 text-xs text-zinc-500 sm:text-sm">
+                                        <p className="mt-2 text-xs text-muted sm:text-sm">
                                             ご希望のイベント主催者は
                                             <Link
                                                 href="/app/organizer-application"
-                                                className="font-semibold text-emerald-600 hover:text-emerald-700 underline"
+                                                className="font-semibold text-accent-mint hover:text-accent-mint underline"
                                             >
                                                 オーガナイザー登録申請
                                             </Link>

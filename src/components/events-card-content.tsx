@@ -49,16 +49,16 @@ export function EventsCardContent({ event, onToggle }: EventsCardContentProps) {
     return (
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="flex-1 space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
+                <p className="text-xs font-semibold uppercase tracking-wide text-accent-mint">
                     {eventDateText}
                 </p>
                 <div>
-                    <h2 className="text-lg font-semibold text-zinc-900">
+                    <h2 className="text-lg font-semibold text-foreground">
                         {event.name}
                     </h2>
                 </div>
                 {event.description && (
-                    <p className="text-sm text-zinc-700 line-clamp-2">{event.description}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
                 )}
                 {/* キーワードまたはタグを表示 */}
                 {event.keywords && event.keywords.length > 0 ? (
@@ -66,7 +66,7 @@ export function EventsCardContent({ event, onToggle }: EventsCardContentProps) {
                         {event.keywords.map((keyword, index) => (
                             <span
                                 key={index}
-                                className="inline-flex rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700"
+                                className="inline-flex rounded-full bg-card-elevated px-2 py-0.5 text-xs text-muted-foreground"
                             >
                                 {keyword}
                             </span>
@@ -76,18 +76,18 @@ export function EventsCardContent({ event, onToggle }: EventsCardContentProps) {
                     <TagList tags={event.tags} />
                 )}
             </div>
-            <div className="flex flex-col items-start gap-2 text-xs text-zinc-500 sm:w-48">
+            <div className="flex flex-col items-start gap-2 text-xs text-muted sm:w-48">
                 {firstEntry && (
                     <>
                         <div>
                             エントリー開始:{" "}
-                            <span className="font-semibold text-zinc-700">
+                            <span className="font-semibold text-muted-foreground">
                                 <DateTime date={firstEntry.entry_start_at} format="month-day-short" size="xs" />
                             </span>
                         </div>
                         <div>
                             支払期限:{" "}
-                            <span className="font-semibold text-zinc-700">
+                            <span className="font-semibold text-muted-foreground">
                                 <DateTime date={firstEntry.payment_due_at} format="month-day-short" size="xs" />
                             </span>
                         </div>
@@ -110,7 +110,7 @@ export function EventsCardContent({ event, onToggle }: EventsCardContentProps) {
                     </Button>
                     <WatchlistButton
                         eventId={event.id}
-                        className="w-full flex items-center justify-center rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                        className="w-full flex items-center justify-center rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-card-elevated"
                         onToggle={onToggle}
                     />
                 </div>

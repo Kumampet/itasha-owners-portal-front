@@ -166,7 +166,7 @@ function GroupJoinForm() {
         <header className="space-y-2">
           <Link
             href="/app/groups"
-            className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+            className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
           >
             ← 団体一覧に戻る
           </Link>
@@ -174,13 +174,13 @@ function GroupJoinForm() {
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
               既存の団体に加入する
             </h1>
-            <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
               団体オーナーから共有された8桁の団体コードを入力してください。団体コードは一意のため、これだけで特定の団体に加入できます。
             </p>
           </div>
         </header>
 
-        <div className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
+        <div className="space-y-6 rounded-2xl border border-border bg-card p-4 sm:p-5">
           <LabeledTextInput
             label="団体コード（8桁）"
             type="text"
@@ -208,7 +208,7 @@ function GroupJoinForm() {
             </Button>
             <Link
               href="/app/groups"
-              className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 whitespace-nowrap flex items-center"
+              className="rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-card-elevated whitespace-nowrap flex items-center"
             >
               キャンセル
             </Link>

@@ -23,19 +23,19 @@ export function LabeledTextInput({
   return (
     <div>
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-zinc-700">
+        <label htmlFor={inputId} className="block text-sm font-medium text-muted-foreground">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       <input
         id={inputId}
-        className={`mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 ${className}`}
+        className={`mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint ${className}`}
         required={required}
         {...inputProps}
       />
       {helpText && (
-        <p className="mt-1 text-xs text-zinc-500">
+        <p className="mt-1 text-xs text-muted">
           {helpText}
         </p>
       )}
