@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { scheduleMergeApprovedEventIntoSitemapOnS3 } from "@/lib/events-sitemap-s3";
 import { fromDateTimeLocal, fromDateLocal } from "@/lib/date-utils";
 import { notifyDiscordEventApprovalRequested } from "@/lib/discord-admin-notify";
 
@@ -323,6 +324,7 @@ export async function POST(request: Request) {
           official_urls: true,
           image_url: true,
           approval_status: true,
+          updated_at: true,
           entry_selection_method: true,
           max_participants: true,
           entries: {
@@ -367,6 +369,20 @@ export async function POST(request: Request) {
         eventName: event.name as string,
         eventDateLabel: d.toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" }),
       });
+    }
+
+    if (
+      event &&
+      typeof event === "object" &&
+      "approval_status" in event &&
+      event.approval_status === "APPROVED" &&
+      "id" in event &&
+      "updated_at" in event
+    ) {
+      scheduleMergeApprovedEventIntoSitemapOnS3(
+        event.id as string,
+        event.updated_at as Date,
+      );
     }
 
     return NextResponse.json(event);

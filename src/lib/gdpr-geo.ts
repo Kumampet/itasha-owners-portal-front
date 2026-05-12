@@ -52,14 +52,61 @@ export function isEuGeoBlockDisabled(): boolean {
 }
 
 /**
- * Vercel: `x-vercel-ip-country`
- * Cloudflare: `cf-ipcountry`（小文字の cf）
- * 国コードが取れない場合は `undefined`。デフォルトではブロックしません。
+ * Amplify Hosting / CloudFront がオリジンへ転送することがある視聴者の国コード（ISO 3166-1 alpha-2）。
+ * Vercel の x-vercel-ip-country に相当します。
+ *
+ * （Next の Request でヘッダー名は一律小文字化される実装があります）
  */
+function readViewerCountryHeaders(request: NextRequest): string | undefined {
+  return (
+    request.headers.get("cloudfront-viewer-country") ??
+    request.headers.get("x-vercel-ip-country") ??
+    request.headers.get("cf-ipcountry") ??
+    undefined
+  );
+}
+
+/**
+ * 本番でもローカルの `next start` は Host が localhost のため国コードヘッダーが付かず、
+ * `GEO_BLOCK_UNKNOWN_COUNTRY=true` だと全 API が拒否される。そのためループバックのみ GEO をかけない。
+ */
+export function shouldSkipGdprGeoBlock(request: NextRequest): boolean {
+  if (isEuGeoBlockDisabled()) {
+    return true;
+  }
+
+  const fromUrl = request.nextUrl.hostname?.trim().toLowerCase();
+  const fromForwarded =
+    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim()?.split(":")[0]?.toLowerCase() ??
+    "";
+  const fromHost =
+    request.headers.get("host")?.split(":")[0]?.trim().toLowerCase() ?? "";
+
+  const hostCandidates = [
+    fromUrl,
+    fromForwarded,
+    fromHost,
+  ].filter(Boolean);
+
+  const localHosts = new Set([
+    "localhost",
+    "127.0.0.1",
+    "::1",
+    "[::1]",
+  ]);
+
+  for (const h of hostCandidates) {
+    if (localHosts.has(h)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export function getRequestCountryCode(request: NextRequest): string | undefined {
   const header =
-    request.headers.get("x-vercel-ip-country") ??
-    request.headers.get("cf-ipcountry");
+    readViewerCountryHeaders(request);
 
   const code = header?.trim().toUpperCase();
   if (!code || code === "XX" || code === "ZZ" || code === "T1") {
@@ -70,6 +117,7 @@ export function getRequestCountryCode(request: NextRequest): string | undefined 
 
 /**
  * `GEO_BLOCK_UNKNOWN_COUNTRY=true` のとき、国コードが判定できないリクエストもブロックする（より厳格）。
+ * 運用するとローカルの `next start` では Host が localhost で困ることがあるので `shouldSkipGdprGeoBlock` と併用する。
  */
 function shouldBlockWhenCountryUnknown(): boolean {
   return process.env.GEO_BLOCK_UNKNOWN_COUNTRY === "true";

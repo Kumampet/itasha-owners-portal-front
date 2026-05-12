@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
 import {
   getRequestCountryCode,
-  isEuGeoBlockDisabled,
   shouldBlockGdprRegion,
+  shouldSkipGdprGeoBlock,
 } from "@/lib/gdpr-geo";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
@@ -21,9 +21,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // EU/EEA/英国ほか関連法域（GDPR_BLOCKED_COUNTRY_CODES）からのアクセスを拒否
-  // 国コードは Vercel の x-vercel-ip-country または Cloudflare の cf-ipcountry を利用
-  if (!isEuGeoBlockDisabled()) {
+  // EU/EEA/英国ほか関連法域（GDPR_BLOCKED_COUNTRY_CODES）からのアクセスを拒否（ローカルホストなどは別途スキップ）
+  // 国コードは CloudFront Viewer Country / x-vercel-ip-country / cf-ipcountry を利用
+  if (!shouldSkipGdprGeoBlock(request)) {
     const countryCode = getRequestCountryCode(request);
     if (shouldBlockGdprRegion(countryCode)) {
       const bodyJa =

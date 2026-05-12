@@ -110,6 +110,7 @@ export default function EventsPageClient() {
       const res = await fetch(`/api/events?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to fetch events");
       const data = await res.json();
+
       const pag = data.pagination as PaginationData | null | undefined;
 
       if (pag && pag.totalPages > 0 && pageFromUrl > pag.totalPages) {

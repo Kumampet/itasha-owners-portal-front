@@ -3,6 +3,10 @@ import { S3Client, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s
 import { Readable } from "stream";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  isGroupImageStorageLocal,
+  readLocalGroupImage,
+} from "@/lib/group-image-local-store";
 
 // S3エラーの型定義
 interface S3Error {
@@ -100,6 +104,48 @@ export async function GET(
         { error: "You are not a member of this group" },
         { status: 403 }
       );
+    }
+
+    if (isGroupImageStorageLocal()) {
+      const local = await readLocalGroupImage(s3Key);
+      if (!local) {
+        return NextResponse.json(
+          { error: "Image not found" },
+          { status: 404 }
+        );
+      }
+      const etag = `W/"${local.size}-${local.mtime.getTime()}"`;
+      const ifNoneMatch = request.headers.get("if-none-match");
+      if (ifNoneMatch) {
+        const normalizedReq = ifNoneMatch.replace(/"/g, "");
+        const normalizedEtag = etag.replace(/"/g, "");
+        if (normalizedReq === normalizedEtag || normalizedReq === etag) {
+          return new NextResponse(null, {
+            status: 304,
+            headers: {
+              ETag: etag,
+              "Cache-Control": "public, max-age=31536000, immutable",
+              Expires: new Date(Date.now() + 31536000 * 1000).toUTCString(),
+              "Last-Modified": local.mtime.toUTCString(),
+            },
+          });
+        }
+      }
+      let contentType = "image/jpeg";
+      const extension = s3Key.toLowerCase().substring(s3Key.lastIndexOf("."));
+      if (extension === ".png") {
+        contentType = "image/png";
+      }
+      return new NextResponse(new Uint8Array(local.buffer), {
+        headers: {
+          "Content-Type": contentType,
+          "Cache-Control": "public, max-age=31536000, immutable",
+          Expires: new Date(Date.now() + 31536000 * 1000).toUTCString(),
+          "Accept-Ranges": "bytes",
+          ETag: etag,
+          "Last-Modified": local.mtime.toUTCString(),
+        },
+      });
     }
 
     if (!process.env.IMAGE_S3_BUCKET_NAME) {

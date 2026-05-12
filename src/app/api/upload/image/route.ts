@@ -3,6 +3,10 @@ import { auth } from "@/auth";
 import sharp from "sharp";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "@/lib/prisma";
+import {
+  isGroupImageStorageLocal,
+  writeLocalGroupImage,
+} from "@/lib/group-image-local-store";
 
 // S3クライアントの初期化
 const s3Client = new S3Client({
@@ -206,25 +210,34 @@ export async function POST(request: NextRequest) {
     const extension = outputFormat === 'png' ? '.png' : '.jpg';
     const s3Key = `uploads/images/${groupId}/${timestamp}${extension}`;
 
-    // S3にアップロード
-    if (!process.env.IMAGE_S3_BUCKET_NAME) {
-      throw new Error("IMAGE_S3_BUCKET_NAME environment variable is not set");
+    if (isGroupImageStorageLocal()) {
+      await writeLocalGroupImage(s3Key, optimizedBuffer);
+    } else {
+      // S3にアップロード
+      if (!process.env.IMAGE_S3_BUCKET_NAME) {
+        throw new Error("IMAGE_S3_BUCKET_NAME environment variable is not set");
+      }
+
+      // 認証情報の確認
+      if (
+        !process.env.IMAGE_S3_AWS_ACCESS_KEY_ID ||
+        !process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY
+      ) {
+        throw new Error(
+          "IMAGE_S3_AWS_ACCESS_KEY_ID or IMAGE_S3_AWS_SECRET_ACCESS_KEY environment variable is not set",
+        );
+      }
+
+      const putCommand = new PutObjectCommand({
+        Bucket: process.env.IMAGE_S3_BUCKET_NAME,
+        Key: s3Key,
+        Body: optimizedBuffer,
+        ContentType: contentType, // 変換後の形式
+        ServerSideEncryption: "AES256", // IAMポリシーのConditionと一致させるため
+      });
+
+      await s3Client.send(putCommand);
     }
-
-    // 認証情報の確認
-    if (!process.env.IMAGE_S3_AWS_ACCESS_KEY_ID || !process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY) {
-      throw new Error("IMAGE_S3_AWS_ACCESS_KEY_ID or IMAGE_S3_AWS_SECRET_ACCESS_KEY environment variable is not set");
-    }
-
-    const putCommand = new PutObjectCommand({
-      Bucket: process.env.IMAGE_S3_BUCKET_NAME,
-      Key: s3Key,
-      Body: optimizedBuffer,
-      ContentType: contentType, // 変換後の形式
-      ServerSideEncryption: 'AES256', // IAMポリシーのConditionと一致させるため
-    });
-
-    await s3Client.send(putCommand);
 
     // アプリケーションのドメイン配下のURLを返却（S3の直接URLは返さない）
     const imageUrl = `/api/images/${s3Key}`;
