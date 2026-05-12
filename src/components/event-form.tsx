@@ -48,6 +48,8 @@ interface EventFormProps {
   onFormDataChange: (data: EventFormData) => void;
   keywords: string[];
   onKeywordsChange: (keywords: string[]) => void;
+  /** 指定時のみイベントサムネイルをアップロード可能（保存済みイベントの編集時など） */
+  eventIdForImageUpload?: string | null;
   children?: React.ReactNode; // ボタン部分を親から受け取る
 }
 
@@ -56,6 +58,7 @@ export default function EventForm({
   onFormDataChange,
   keywords,
   onKeywordsChange,
+  eventIdForImageUpload,
   children,
 }: EventFormProps) {
   const [keywordInput, setKeywordInput] = useState("");
@@ -201,16 +204,20 @@ export default function EventForm({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!eventIdForImageUpload) {
+      alert("イベント作成後、詳細画面の編集からサムネイルをアップロードできます");
+      return;
+    }
+
     // ファイルタイプの検証
     if (!file.type.startsWith("image/")) {
       alert("画像ファイルのみアップロード可能です");
       return;
     }
 
-    // ファイルサイズの検証（5MBまで）
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 20 * 1024 * 1024; // API と揃えて 20MB
     if (file.size > maxSize) {
-      alert("ファイルサイズは5MB以下にしてください");
+      alert("ファイルサイズは20MB以下にしてください");
       return;
     }
 
@@ -219,10 +226,13 @@ export default function EventForm({
       const uploadFormData = new FormData();
       uploadFormData.append("file", file);
 
-      const response = await fetch("/api/upload/image", {
-        method: "POST",
-        body: uploadFormData,
-      });
+      const response = await fetch(
+        `/api/upload/image?eventId=${encodeURIComponent(eventIdForImageUpload)}`,
+        {
+          method: "POST",
+          body: uploadFormData,
+        },
+      );
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
@@ -535,15 +545,21 @@ export default function EventForm({
         />
       </div>
 
-      {/* イメージ画像 */}
+      {/* イベントサムネイル（1枚のみ・差し替え可） */}
       <div>
         <label className="block text-sm font-medium text-muted-foreground">
-          イメージ画像 <span className="text-xs text-muted">（16:9推奨）</span>
+          イベントサムネイル{" "}
+          <span className="text-xs text-muted">
+            （横長16:9推奨・1枚のみ）
+          </span>
         </label>
+        <p className="mt-1 text-xs text-muted-foreground">
+          縦長画像は表示領域の高さに合わせて左右に余白が付く場合があります。
+        </p>
         <div className="mt-1 space-y-2">
           <Tooltip
-            content="この機能は将来実装予定です。"
-            disabled={false}
+            content="イベント作成後、詳細画面の編集からアップロードできます。"
+            disabled={Boolean(eventIdForImageUpload)}
             arrowPosition="center"
           >
             <input
@@ -551,7 +567,7 @@ export default function EventForm({
               type="file"
               accept="image/*"
               onChange={handleImageFileSelect}
-              disabled={true}
+              disabled={!eventIdForImageUpload}
               className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-card-elevated file:px-4 file:py-2 file:text-sm file:font-medium file:text-muted-foreground hover:file:bg-card disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </Tooltip>
@@ -560,13 +576,12 @@ export default function EventForm({
           )}
         </div>
         {formData.image_url && (
-          <div className="mt-2 relative">
+          <div className="relative mt-2 aspect-video w-full overflow-hidden rounded-md border border-border bg-muted">
             <Image
               src={formData.image_url}
               alt="プレビュー"
-              width={800}
-              height={192}
-              className="max-h-48 w-full rounded-md object-cover"
+              fill
+              className="object-contain"
               onError={(e) => {
                 e.currentTarget.style.display = "none";
               }}

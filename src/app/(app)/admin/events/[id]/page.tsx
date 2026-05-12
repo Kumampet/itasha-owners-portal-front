@@ -451,6 +451,7 @@ export default function AdminEventDetailPage({
           onFormDataChange={setFormData}
           keywords={keywords}
           onKeywordsChange={setKeywords}
+          eventIdForImageUpload={event?.id ?? null}
         >
           <Button
             variant="secondary"

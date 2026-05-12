@@ -54,3 +54,14 @@ export async function deleteLocalGroupImagesByGroupId(
   const dir = path.dirname(marker);
   await fs.rm(dir, { recursive: true, force: true });
 }
+
+/** uploads/images/events/${eventId}/ 配下を削除（イベントサムネは1枚のみのためディレクトリごと削除） */
+export async function deleteLocalEventImagesByEventId(
+  eventId: string,
+): Promise<void> {
+  const marker = resolveLocalBundledStoragePath(
+    `uploads/images/events/${eventId}/_.keep`,
+  );
+  const dir = path.dirname(marker);
+  await fs.rm(dir, { recursive: true, force: true });
+}
