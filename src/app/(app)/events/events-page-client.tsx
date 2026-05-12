@@ -152,71 +152,57 @@ export default function EventsPageClient() {
   };
 
   return (
-    <main className="flex-1 px-4 pb-16 pt-6 sm:pb-12 sm:pt-8">
-      <section className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-        <header className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent-mint">
-            イベントカレンダー
-          </p>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            痛車イベントをまとめてチェック
-          </h1>
-          <p className="text-sm text-muted-foreground sm:text-base">
-            気になるイベントを一気にチェック！<br />ウォッチリストに入れておくと最新情報を逃しません。
-          </p>
-        </header>
+    <>
+      <EventsFilterPanel
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        sortOrder={sortOrder}
+        onSortOrderChange={(v) => {
+          setSortOrder(v);
+          resetPageInUrl();
+        }}
+        pageSize={pageSize}
+        onPageSizeChange={(v) => {
+          setPageSize(v);
+          resetPageInUrl();
+        }}
+        onSubmit={handleSearch}
+      />
 
-        <EventsFilterPanel
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery}
-          sortOrder={sortOrder}
-          onSortOrderChange={(v) => {
-            setSortOrder(v);
-            resetPageInUrl();
-          }}
-          pageSize={pageSize}
-          onPageSizeChange={(v) => {
-            setPageSize(v);
-            resetPageInUrl();
-          }}
-          onSubmit={handleSearch}
-        />
-
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <LoadingSpinner size="lg" />
-          </div>
-        ) : (
-          <>
-            <div className="space-y-3">
-              {events.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {searchQuery ? "検索条件に一致するイベントが見つかりませんでした。" : "イベントが登録されていません。"}
-                </p>
-              ) : (
-                events.map((event) => (
-                  <LinkCard
-                    key={event.id}
-                    href={`/events/${event.id}`}
-                    className="hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-mint"
-                    cardClassName="rounded-3xl"
-                  >
-                    <EventsCardContent event={event} />
-                  </LinkCard>
-                ))
-              )}
-            </div>
-
-            {pagination && pagination.totalPages > 1 && (
-              <Pagination
-                currentPage={pagination.currentPage}
-                totalPages={pagination.totalPages}
-                onPageChange={(p) => navigateToPage(p, "push")}
-              />
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner size="lg" />
+        </div>
+      ) : (
+        <>
+          <div className="space-y-3">
+            {events.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {searchQuery ? "検索条件に一致するイベントが見つかりませんでした。" : "イベントが登録されていません。"}
+              </p>
+            ) : (
+              events.map((event) => (
+                <LinkCard
+                  key={event.id}
+                  href={`/events/${event.id}`}
+                  className="hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-mint"
+                  cardClassName="rounded-3xl"
+                >
+                  <EventsCardContent event={event} />
+                </LinkCard>
+              ))
             )}
-          </>
-        )}
-      </section>
-    </main>
+          </div>
+
+          {pagination && pagination.totalPages > 1 && (
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              onPageChange={(p) => navigateToPage(p, "push")}
+            />
+          )}
+        </>
+      )}
+    </>
   );
 }
