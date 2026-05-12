@@ -15,7 +15,7 @@ export function PublicSiteFooter() {
             利用規約
           </Link>
           <Link
-            href="/privacy-policy"
+            href="/privacy"
             className="underline-offset-2 hover:text-zinc-900 hover:underline"
           >
             プライバシーポリシー
@@ -31,7 +31,7 @@ export function PublicSiteFooter() {
           </Link>
         </nav>
         <p className="text-xs text-zinc-500 sm:text-right">
-          運営：痛車オーナーズナビ（いたなび！）
+          運営：Kumampet（いたなび！）
         </p>
       </div>
     </footer>

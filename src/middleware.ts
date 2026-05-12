@@ -1,4 +1,9 @@
 import { auth } from "@/auth";
+import {
+  getRequestCountryCode,
+  isEuGeoBlockDisabled,
+  shouldBlockGdprRegion,
+} from "@/lib/gdpr-geo";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -14,6 +19,25 @@ export async function middleware(request: NextRequest) {
     pathname === "/robots.txt"
   ) {
     return NextResponse.next();
+  }
+
+  // EU/EEA/英国ほか関連法域（GDPR_BLOCKED_COUNTRY_CODES）からのアクセスを拒否
+  // 国コードは Vercel の x-vercel-ip-country または Cloudflare の cf-ipcountry を利用
+  if (!isEuGeoBlockDisabled()) {
+    const countryCode = getRequestCountryCode(request);
+    if (shouldBlockGdprRegion(countryCode)) {
+      const bodyJa =
+        "このサービスは欧州経済領域（EEA）、英国および本ポリシーで対象とする関連法域からは提供していません。\n\n";
+      const bodyEn =
+        "This service is not offered from the European Economic Area (EEA), the United Kingdom, or other jurisdictions we restrict under our policies.\n";
+      return new NextResponse(bodyJa + bodyEn, {
+        status: 451,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "private, no-store",
+        },
+      });
+    }
   }
 
   // LP（/）は認証チェックをスキップ
@@ -177,15 +201,10 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - manifest.json (PWA manifest)
-     * - icon-*.png (PWA icons)
+     * API も地理ブロック対象に含める（GDPR 対象域からの API 利用を防ぐため）。
+     * 除外: _next 静的・画像最適化、PWA 用アイコン類、ファビコン。
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|manifest.json|icon-).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.json|icon-).*)",
   ],
 };
 

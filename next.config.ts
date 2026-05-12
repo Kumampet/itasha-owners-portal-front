@@ -13,6 +13,15 @@ const withPWA = require("next-pwa")({
 });
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/privacy-policy",
+        destination: "/privacy",
+        permanent: true,
+      },
+    ];
+  },
   // next-pwaはwebpackを使用するため、Turbopackを無効化
   turbopack: {},
   webpack: (config, { isServer }) => {

@@ -9,7 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/",
     "/events",
     "/term",
-    "/privacy-policy",
+    "/privacy",
     "/app/auth",
     "/app/contact",
     "/app/event-submission",

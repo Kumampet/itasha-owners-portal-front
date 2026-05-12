@@ -19,7 +19,7 @@ export default function TermPage() {
           </h1>
           
           <p className="mb-6 text-zinc-700 leading-relaxed">
-            本利用規約（以下「本規約」といいます）は、痛車オーナーズナビ（以下「本サービス」といいます）の提供条件および本サービスの利用に関する、本サービス運営者（以下「運営者」といいます）と登録ユーザー様（以下「ユーザー」といいます）との間の権利義務関係を定めるものです。本サービスをご利用になる前に、本規約の全文をお読みください。
+            本利用規約（以下「本規約」といいます）は、痛車オーナーズナビ（以下「本サービス」といいます）の提供条件および本サービスの利用に関する、本サービスの運営者である Kumampet（以下「運営者」といいます）と登録ユーザー様（以下「ユーザー」といいます）との間の権利義務関係を定めるものです。本サービスをご利用になる前に、本規約の全文をお読みください。
           </p>
 
           <h2 className="text-2xl font-semibold text-zinc-900 mt-8 mb-4">
@@ -29,7 +29,7 @@ export default function TermPage() {
             本規約は、本サービスの利用に関する運営者とユーザーとの一切の関係に適用されます。
           </p>
           <p className="mb-4 text-zinc-700 leading-relaxed">
-            ユーザーは、本規約に同意しない限り、本サービスを利用できません。本サービスの利用を開始した時点で、ユーザーは本規約の全条項（第4条に定める運営者による団体メッセージの閲覧に関する事項を含みます）に同意したものとみなされます。
+            ユーザーは、本規約に同意しない限り、本サービスを利用できません。本サービスの利用を開始した時点で、ユーザーは本規約の全条項（第5条に定める運営者による団体メッセージの閲覧に関する事項を含みます）に同意したものとみなされます。
           </p>
           <p className="mb-4 text-zinc-700 leading-relaxed">
             現時点において、本サービスの基本的な利用に際し、ユーザーから運営者に対する利用料金の支払義務は発生しません。運営者が将来、有償の役務を提供する場合には、その提供条件および料金は、当該役務に関して別途定めるとおりとします。
@@ -57,10 +57,20 @@ export default function TermPage() {
           </ul>
 
           <h2 className="text-2xl font-semibold text-zinc-900 mt-8 mb-4">
-            第3条（ログイン・アカウント）
+            第3条（本サービスの想定利用地域およびサポート）
           </h2>
           <p className="mb-4 text-zinc-700 leading-relaxed">
-            本サービスの利用を希望する者は、本規約（第4条に定める運営者による団体メッセージの閲覧を含みます）に同意した上で、運営者の定める方法によりX（旧Twitter）アカウントまたはGoogleアカウントを用いてログインし、本サービスを利用します。一般のユーザーについて、運営者による個別の承認手続を経ることなく、当該ログインが完了した時点から本アプリケーションを利用できます。
+            本サービスは、主に日本国内において居住し、または主たる利用場所として日本を想定しているユーザーを対象として設計・運営されます。
+          </p>
+          <p className="mb-6 text-zinc-700 leading-relaxed">
+            ユーザーが日本以外の地域から本サービスに接続または利用するとき（運営者が参照する接続情報により日本以外と判断される場合をいい、日本国内から VPN 等により海外にあるかのように接続表示されるときを含みます）においても、機能の可否にかかわらず、運営者は質問への回答、問い合わせへの対応、不具合の個別調査、利用方法の説明、その他ユーザーに対するいかなるサポートおよびこれに準ずる対応について、義務または責任を負いません。
+          </p>
+
+          <h2 className="text-2xl font-semibold text-zinc-900 mt-8 mb-4">
+            第4条（ログイン・アカウント）
+          </h2>
+          <p className="mb-4 text-zinc-700 leading-relaxed">
+            本サービスの利用を希望する者は、本規約（第5条に定める運営者による団体メッセージの閲覧を含みます）に同意した上で、運営者の定める方法によりX（旧Twitter）アカウントまたはGoogleアカウントを用いてログインし、本サービスを利用します。一般のユーザーについて、運営者による個別の承認手続を経ることなく、当該ログインが完了した時点から本アプリケーションを利用できます。
           </p>
           <p className="mb-4 text-zinc-700 leading-relaxed">
             イベント主催者として本サービス上で一定の機能（イベント情報の登録・公開等）を利用するための<strong className="font-semibold text-zinc-900">オーガナイザー権限</strong>を付与されたいユーザーは、運営者の定める手続により申請を行い、運営者の承認があった場合に限り、当該権限に基づく機能を利用できます。
@@ -70,7 +80,7 @@ export default function TermPage() {
           </p>
 
           <h2 className="text-2xl font-semibold text-zinc-900 mt-8 mb-4">
-            第4条（ユーザー情報の公開と利用）
+            第5条（ユーザー情報の公開と利用）
           </h2>
           
           <h3 className="text-xl font-semibold text-zinc-800 mt-6 mb-3">
@@ -118,7 +128,7 @@ export default function TermPage() {
           </p>
 
           <h2 className="text-2xl font-semibold text-zinc-900 mt-8 mb-4">
-            第5条（団体管理機能の利用）
+            第6条（団体管理機能の利用）
           </h2>
           <p className="mb-4 text-zinc-700 leading-relaxed">
             ユーザーは、団体機能を利用する際、その団体の目的および本規約を遵守するものとします。
@@ -128,7 +138,7 @@ export default function TermPage() {
           </p>
 
           <h2 className="text-2xl font-semibold text-zinc-900 mt-8 mb-4">
-            第6条（広告の表示と収益）
+            第7条（広告の表示と収益）
           </h2>
           
           <h3 className="text-xl font-semibold text-zinc-800 mt-6 mb-3">
@@ -146,7 +156,7 @@ export default function TermPage() {
           </p>
 
           <h2 className="text-2xl font-semibold text-zinc-900 mt-8 mb-4">
-            第7条（禁止事項）
+            第8条（禁止事項）
           </h2>
           <p className="mb-4 text-zinc-700 leading-relaxed">
             ユーザーは、本サービスの利用にあたり、以下の行為を行ってはなりません。
@@ -164,7 +174,7 @@ export default function TermPage() {
           </ol>
 
           <h2 className="text-2xl font-semibold text-zinc-900 mt-8 mb-4">
-            第8条（本サービスの停止等）
+            第9条（本サービスの停止等）
           </h2>
           <p className="mb-4 text-zinc-700 leading-relaxed">
             運営者は、以下のいずれかの事由があると判断した場合、ユーザーに事前に通知することなく本サービスの全部または一部の提供を停止または中断することができます。
@@ -177,7 +187,7 @@ export default function TermPage() {
           </ol>
 
           <h2 className="text-2xl font-semibold text-zinc-900 mt-8 mb-4">
-            第9条（免責事項）
+            第10条（免責事項）
           </h2>
           <p className="mb-4 text-zinc-700 leading-relaxed">
             運営者は、本サービスに掲載されている情報（イベント情報、主催者情報、広告情報等を含む）の正確性、完全性、有用性について、いかなる保証もするものではありません。ユーザーは、自己の責任において利用するものとします。
@@ -190,21 +200,32 @@ export default function TermPage() {
           </p>
 
           <h2 className="text-2xl font-semibold text-zinc-900 mt-8 mb-4">
-            第10条（規約の変更）
+            第11条（規約の変更）
           </h2>
           <p className="mb-6 text-zinc-700 leading-relaxed">
             運営者は、必要と判断した場合には、ユーザーに通知することなくいつでも本規約を変更することができます。本規約の変更後、ユーザーが本サービスを利用し続けることにより、当該変更後の規約に同意したものとみなします。
           </p>
 
           <h2 className="text-2xl font-semibold text-zinc-900 mt-8 mb-4">
-            第11条（連絡窓口）
+            第12条（連絡窓口）
           </h2>
           <p className="mb-4 text-zinc-700 leading-relaxed">
             本サービスに関するお問い合わせや連絡は、以下に示す連絡先を通じて行うものとします。
           </p>
           <ul className="list-disc list-inside space-y-2 mb-6">
             <li className="text-zinc-700">
-              <strong className="font-semibold text-zinc-900">運営者</strong>：痛車オーナーズナビ（個人）
+              <strong className="font-semibold text-zinc-900">運営者</strong>：Kumampet（本サービス「痛車オーナーズナビ（いたなび！）」の運営）
+            </li>
+            <li className="text-zinc-700">
+              <strong className="font-semibold text-zinc-900">X（旧 Twitter）</strong>：
+              <a
+                href="https://x.com/Kumampet_main"
+                className="ml-1 underline underline-offset-2 hover:text-zinc-900"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                @Kumampet_main
+              </a>
             </li>
             <li className="text-zinc-700">
               <strong className="font-semibold text-zinc-900">連絡先メールアドレス</strong>：itashaownersnavi@gmail.com
@@ -217,7 +238,7 @@ export default function TermPage() {
             <strong className="font-semibold text-zinc-900">制定日</strong>：2025年12月2日
           </p>
           <p className="text-zinc-700">
-            <strong className="font-semibold text-zinc-900">最終改定日</strong>：2026年4月7日
+            <strong className="font-semibold text-zinc-900">最終改定日</strong>：2026年5月12日
           </p>
         </div>
         

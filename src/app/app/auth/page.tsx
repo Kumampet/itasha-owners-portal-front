@@ -91,7 +91,7 @@ function AuthForm() {
               利用規約
             </Link>
             および
-            <Link href="/privacy-policy" className="underline hover:text-zinc-700">
+            <Link href="/privacy" className="underline hover:text-zinc-700">
               プライバシーポリシー
             </Link>
             に同意したものとみなされます。
