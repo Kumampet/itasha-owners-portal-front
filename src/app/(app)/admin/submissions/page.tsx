@@ -10,9 +10,10 @@ import { formatDate, formatDateTime } from "@/lib/date-utils";
 type Submission = {
   id: string;
   name: string;
+  venue_name: string | null;
   theme: string | null;
   description: string | null;
-  original_url: string;
+  original_url: string | null;
   event_date: string | null;
   entry_start_at: string | null;
   payment_due_at: string | null;
@@ -113,11 +114,9 @@ export default function AdminSubmissionsPage() {
     if (submission.name) params.append("name", submission.name);
     if (submission.original_url) params.append("original_url", submission.original_url);
     if (submission.event_date) params.append("event_date", submission.event_date);
+    if (submission.venue_name) params.append("venue_name", submission.venue_name);
     if (submission.description) params.append("description", submission.description);
-    if (submission.theme) params.append("theme", submission.theme);
-    if (submission.entry_start_at) params.append("entry_start_at", submission.entry_start_at);
-    if (submission.payment_due_at) params.append("payment_due_at", submission.payment_due_at);
-    
+
     router.push(`/admin/events/new?${params.toString()}`);
   };
 
@@ -269,8 +268,9 @@ export default function AdminSubmissionsPage() {
                   )}
                   <div className={`mt-2 flex flex-wrap gap-4 text-xs ${submission.status === "PROCESSED" ? "text-zinc-400" : "text-muted"}`}>
                     {submission.event_date && (
-                      <span>開催日: {formatDate(submission.event_date)}</span>
+                      <span>開催日時: {formatDateTime(submission.event_date)}</span>
                     )}
+                    {submission.venue_name && <span>会場・住所: {submission.venue_name}</span>}
                     {submission.entry_start_at && (
                       <span>
                         エントリー開始: {formatDateTime(submission.entry_start_at)}
@@ -353,53 +353,68 @@ export default function AdminSubmissionsPage() {
 
               {selectedSubmission.description && (
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">説明</h3>
-                  <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
+                  <h3 className="text-sm font-medium text-muted-foreground">備考</h3>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
                     {selectedSubmission.description}
                   </p>
                 </div>
               )}
 
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">公式URL</h3>
-                <a
-                  href={selectedSubmission.original_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 text-sm text-blue-600 hover:underline"
-                >
-                  {selectedSubmission.original_url}
-                </a>
-              </div>
+              {selectedSubmission.original_url ? (
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">イベント情報URL</h3>
+                  <a
+                    href={selectedSubmission.original_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 block break-all text-sm text-blue-600 hover:underline"
+                  >
+                    {selectedSubmission.original_url}
+                  </a>
+                </div>
+              ) : null}
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {selectedSubmission.event_date && (
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">開催日</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground">開催日時</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {formatDate(selectedSubmission.event_date)}
+                      {formatDateTime(selectedSubmission.event_date)}
                     </p>
                   </div>
                 )}
 
-                {selectedSubmission.entry_start_at && (
+                {selectedSubmission.venue_name && (
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">エントリー開始日時</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground">会場・住所</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {formatDateTime(selectedSubmission.entry_start_at)}
-                    </p>
-                  </div>
-                )}
-
-                {selectedSubmission.payment_due_at && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">支払期限日時</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {formatDateTime(selectedSubmission.payment_due_at)}
+                      {selectedSubmission.venue_name}
                     </p>
                   </div>
                 )}
               </div>
+
+              {(selectedSubmission.entry_start_at || selectedSubmission.payment_due_at) && (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {selectedSubmission.entry_start_at && (
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground">エントリー開始日時</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {formatDateTime(selectedSubmission.entry_start_at)}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedSubmission.payment_due_at && (
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground">支払期限日時</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {formatDateTime(selectedSubmission.payment_due_at)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">提供者</h3>

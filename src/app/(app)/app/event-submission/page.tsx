@@ -3,17 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/button";
-import { Accordion, AccordionItem } from "@/components/accordion";
 import ConfirmModal from "@/components/confirm-modal";
 
 const initialFormData = {
   name: "",
   original_url: "",
   event_date: "",
+  venue_name: "",
   description: "",
-  theme: "",
-  entry_start_at: "",
-  payment_due_at: "",
 };
 
 export default function EventSubmissionPage() {
@@ -37,12 +34,10 @@ export default function EventSubmissionPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
-          original_url: formData.original_url || null,
-          event_date: formData.event_date || null,
+          original_url: formData.original_url,
+          event_date: formData.event_date,
+          venue_name: formData.venue_name,
           description: formData.description || null,
-          theme: formData.theme || null,
-          entry_start_at: formData.entry_start_at || null,
-          payment_due_at: formData.payment_due_at || null,
         }),
       });
 
@@ -56,7 +51,8 @@ export default function EventSubmissionPage() {
       setShowSuccessModal(true);
     } catch (error) {
       console.error("Failed to submit event:", error);
-      const errorMsg = error instanceof Error ? error.message : "イベント掲載依頼の送信に失敗しました";
+      const errorMsg =
+        error instanceof Error ? error.message : "イベント掲載依頼の送信に失敗しました";
       setErrorMessage(errorMsg);
       setShowErrorModal(true);
       // エラー時は入力内容を保持したままフォーム画面にとどまる
@@ -82,6 +78,10 @@ export default function EventSubmissionPage() {
             <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
               イベント情報をご提供いただくことで、より多くの参加者にイベントを知っていただくことができます。
             </p>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
+              必須項目をすべてご記入いただけないイベントは、掲載のご案内ができません。
+              また、本サービスでの掲載は、<strong className="font-medium text-foreground">開催地が日本国内であるイベントに限ります</strong>。
+            </p>
           </div>
         </header>
 
@@ -90,15 +90,17 @@ export default function EventSubmissionPage() {
           className="space-y-6 rounded-lg border border-border bg-card p-6"
         >
           <div>
-            <label className="block text-sm font-medium text-muted-foreground">
+            <label
+              htmlFor="event-submission-name"
+              className="block text-sm font-medium text-muted-foreground"
+            >
               イベント名 <span className="text-red-500">*</span>
             </label>
             <input
+              id="event-submission-name"
               type="text"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               placeholder="例: 痛車ヘブン夏"
               required
@@ -106,123 +108,83 @@ export default function EventSubmissionPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground">
-              イベント情報URL（HPやSNS等）
-              <span className="ml-1 text-xs text-muted">（推奨・任意）</span>
+            <label
+              htmlFor="event-submission-datetime"
+              className="block text-sm font-medium text-muted-foreground"
+            >
+              開催日時 <span className="text-red-500">*</span>
             </label>
             <input
+              id="event-submission-datetime"
+              type="datetime-local"
+              value={formData.event_date}
+              onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              required
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="event-submission-venue-name"
+              className="block text-sm font-medium text-muted-foreground"
+            >
+              会場・住所 <span className="text-red-500">*</span>
+              <span className="mt-1 block text-xs font-normal text-muted">
+                掲載時に参加者へ示す住所・会場名を、まとめてご入力ください（管理画面での「会場名」入力欄へ引き継がれます）
+              </span>
+            </label>
+            <input
+              id="event-submission-venue-name"
+              type="text"
+              value={formData.venue_name}
+              onChange={(e) => setFormData({ ...formData, venue_name: e.target.value })}
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              placeholder="例: 愛知県名古屋市〇〇 〇〇イベントホール"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="event-submission-url" className="block text-sm font-medium text-muted-foreground">
+              イベント情報URL <span className="text-red-500">*</span>
+              <span className="block text-xs font-normal text-muted">
+                公式サイト、SNS、告知ページなどのURL
+              </span>
+            </label>
+            <input
+              id="event-submission-url"
               type="url"
               value={formData.original_url}
-              onChange={(e) =>
-                setFormData({ ...formData, original_url: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, original_url: e.target.value })}
               className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               placeholder="https://example.com/event"
-            />
-            <p className="mt-1 text-xs text-muted">
-              イベントの公式サイト、SNS、告知ページなどのURL
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground">
-              開催日 <span className="ml-1 text-xs text-muted">（任意）</span>
-            </label>
-            <input
-              type="date"
-              value={formData.event_date}
-              onChange={(e) =>
-                setFormData({ ...formData, event_date: e.target.value })
-              }
-              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground">
-              その他備考欄 <span className="ml-1 text-xs text-muted">（任意）</span>
+            <label htmlFor="event-submission-remarks" className="block text-sm font-medium text-muted-foreground">
+              備考 <span className="ml-1 text-xs text-muted">（任意）</span>
             </label>
             <textarea
+              id="event-submission-remarks"
               value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={6}
               className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
-              placeholder="イベントの詳細情報、特記事項などをご記入ください"
+              placeholder="補足や連絡事項などがありましたらご記入ください"
             />
           </div>
 
-          {/* 詳細情報アコーディオン */}
-          <Accordion>
-            <AccordionItem
-              value="details"
-              title={
-                <span className="text-sm font-medium text-muted-foreground">
-                  詳細情報 <span className="ml-1 text-xs text-muted">（任意）</span>
-                </span>
-              }
-              contentClassName="space-y-4"
-            >
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground">
-                  副題
-                </label>
-                <input
-                  type="text"
-                  value={formData.theme}
-                  onChange={(e) =>
-                    setFormData({ ...formData, theme: e.target.value })
-                  }
-                  className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
-                  placeholder="副題（任意）"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground">
-                  エントリー開始日時
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.entry_start_at}
-                  onChange={(e) =>
-                    setFormData({ ...formData, entry_start_at: e.target.value })
-                  }
-                  className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground">
-                  支払期限
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.payment_due_at}
-                  onChange={(e) =>
-                    setFormData({ ...formData, payment_due_at: e.target.value })
-                  }
-                  className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
-                />
-              </div>
-            </AccordionItem>
-          </Accordion>
-
-          <div className="flex gap-2 justify-end">
+          <div className="flex justify-end gap-2">
             <Link
               href="/app/mypage"
               className="rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-card-elevated"
             >
               キャンセル
             </Link>
-            <Button
-              type="submit"
-              variant="primary"
-              size="md"
-              rounded="md"
-              disabled={submitting}
-            >
+            <Button type="submit" variant="primary" size="md" rounded="md" disabled={submitting}>
               {submitting ? "送信中..." : "送信"}
             </Button>
           </div>
@@ -251,4 +213,3 @@ export default function EventSubmissionPage() {
     </main>
   );
 }
-

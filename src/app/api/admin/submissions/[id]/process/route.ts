@@ -35,6 +35,7 @@ export async function POST(
       select: {
         id: true,
         name: true,
+        venue_name: true,
         theme: true,
         description: true,
         original_url: true,

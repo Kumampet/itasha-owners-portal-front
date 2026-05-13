@@ -264,6 +264,7 @@ model EventSubmission {
   submitter_id    String?   @db.VarChar(36)
   submitter_email String?
   name            String
+  venue_name      String?   @db.VarChar(512)
   theme           String?
   description     String?   @db.Text
   original_url    String?
