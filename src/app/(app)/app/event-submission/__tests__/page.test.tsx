@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import EventSubmissionPage from '../page'
 
@@ -20,6 +20,18 @@ jest.mock('next/navigation', () => ({
 // グローバルfetchのモック
 global.fetch = jest.fn()
 
+async function fillRequiredFields(user: ReturnType<typeof userEvent.setup>) {
+  await user.type(screen.getByPlaceholderText(/痛車ヘブン夏/), 'テストイベント')
+  fireEvent.change(screen.getByLabelText(/開催日時/), {
+    target: { value: '2026-06-15T13:30' },
+  })
+  await user.type(screen.getByPlaceholderText(/愛知県名古屋市/), '東京都〇〇ホール')
+  await user.type(
+    screen.getByPlaceholderText(/^https:\/\/example\.com\/event$/),
+    'https://example.com/event'
+  )
+}
+
 describe('EventSubmissionPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -30,18 +42,24 @@ describe('EventSubmissionPage', () => {
     render(<EventSubmissionPage />)
     expect(screen.getByText('イベント掲載依頼フォーム')).toBeInTheDocument()
     expect(screen.getByPlaceholderText(/痛車ヘブン夏/)).toBeInTheDocument()
+    expect(screen.queryByText(/詳細情報/)).not.toBeInTheDocument()
   })
 
   it('必須項目を表示する', () => {
     render(<EventSubmissionPage />)
-    expect(screen.getByText(/イベント名/)).toBeInTheDocument()
     expect(screen.getByPlaceholderText(/痛車ヘブン夏/)).toHaveAttribute('required')
+    expect(screen.getByLabelText(/開催日時/)).toHaveAttribute('required')
+    expect(screen.getByPlaceholderText(/愛知県名古屋市/)).toHaveAttribute('required')
+    expect(screen.getByPlaceholderText(/^https:\/\/example\.com\/event$/)).toHaveAttribute(
+      'required'
+    )
   })
 
-  it('任意項目を表示する', () => {
+  it('備考・任意項目を表示する', () => {
     render(<EventSubmissionPage />)
-    expect(screen.getByText(/イベント情報URL/)).toBeInTheDocument()
-    expect(screen.getByText(/開催日/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^備考/)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/補足や連絡事項など/)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/補足や連絡事項など/)).not.toHaveAttribute('required')
   })
 
   it('フォーム送信でイベント掲載依頼を送信する', async () => {
@@ -53,8 +71,7 @@ describe('EventSubmissionPage', () => {
     const user = userEvent.setup()
     render(<EventSubmissionPage />)
 
-    const nameInput = screen.getByPlaceholderText(/痛車ヘブン夏/)
-    await user.type(nameInput, 'テストイベント')
+    await fillRequiredFields(user)
 
     const submitButton = screen.getByRole('button', { name: /送信/i })
     await user.click(submitButton)
@@ -68,6 +85,17 @@ describe('EventSubmissionPage', () => {
         })
       )
     })
+    const [, init] = (global.fetch as jest.Mock).mock.calls[0] as [
+      string,
+      { body?: string },
+    ]
+    expect(JSON.parse(init.body ?? '{}')).toMatchObject({
+      name: 'テストイベント',
+      venue_name: '東京都〇〇ホール',
+      original_url: 'https://example.com/event',
+      event_date: '2026-06-15T13:30',
+      description: null,
+    })
   })
 
   it('送信成功後、成功モーダルを表示する', async () => {
@@ -79,8 +107,7 @@ describe('EventSubmissionPage', () => {
     const user = userEvent.setup()
     render(<EventSubmissionPage />)
 
-    const nameInput = screen.getByPlaceholderText(/痛車ヘブン夏/)
-    await user.type(nameInput, 'テストイベント')
+    await fillRequiredFields(user)
 
     const submitButton = screen.getByRole('button', { name: /送信/i })
     await user.click(submitButton)
@@ -100,7 +127,7 @@ describe('EventSubmissionPage', () => {
     render(<EventSubmissionPage />)
 
     const nameInput = screen.getByPlaceholderText(/痛車ヘブン夏/)
-    await user.type(nameInput, 'テストイベント')
+    await fillRequiredFields(user)
 
     const submitButton = screen.getByRole('button', { name: /送信/i })
     await user.click(submitButton)
@@ -111,22 +138,22 @@ describe('EventSubmissionPage', () => {
   })
 
   it('送信中はボタンが無効化される', async () => {
-    ;(global.fetch as jest.Mock).mockImplementationOnce(() =>
-      new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({
-            ok: true,
-            json: async () => ({ id: 'submission-1' }),
-          })
-        }, 100)
-      })
+    ;(global.fetch as jest.Mock).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(() => {
+            resolve({
+              ok: true,
+              json: async () => ({ id: 'submission-1' }),
+            })
+          }, 100)
+        })
     )
 
     const user = userEvent.setup()
     render(<EventSubmissionPage />)
 
-    const nameInput = screen.getByPlaceholderText(/痛車ヘブン夏/)
-    await user.type(nameInput, 'テストイベント')
+    await fillRequiredFields(user)
 
     const submitButton = screen.getByRole('button', { name: /送信/i })
     await user.click(submitButton)
@@ -140,24 +167,15 @@ describe('EventSubmissionPage', () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
       status: 400,
-      json: async () => ({ error: 'イベント名は必須です' }),
+      json: async () => ({ error: 'イベント情報URLは必須です' }),
     })
 
     const user = userEvent.setup()
     render(<EventSubmissionPage />)
 
-    // イベント名を入力せずに送信
-    const submitButton = screen.getByRole('button', { name: /送信/i })
-    // HTML5のrequired属性により送信できないため、直接フォームを送信
-    const form = submitButton.closest('form')
-    if (form) {
-      const submitEvent = new Event('submit', { bubbles: true, cancelable: true })
-      form.dispatchEvent(submitEvent)
-    }
+    await fillRequiredFields(user)
 
-    // または、イベント名を入力してから送信
-    const nameInput = screen.getByPlaceholderText(/痛車ヘブン夏/)
-    await user.type(nameInput, 'テストイベント')
+    const submitButton = screen.getByRole('button', { name: /送信/i })
     await user.click(submitButton)
 
     await waitFor(() => {
@@ -176,7 +194,7 @@ describe('EventSubmissionPage', () => {
     render(<EventSubmissionPage />)
 
     const nameInput = screen.getByPlaceholderText(/痛車ヘブン夏/)
-    await user.type(nameInput, 'テストイベント')
+    await fillRequiredFields(user)
 
     const submitButton = screen.getByRole('button', { name: /送信/i })
     await user.click(submitButton)
@@ -185,7 +203,6 @@ describe('EventSubmissionPage', () => {
       expect(screen.getByText('送信失敗')).toBeInTheDocument()
     }, { timeout: 3000 })
 
-    // エラー後も入力内容が保持されている
     expect(nameInput).toHaveValue('テストイベント')
   })
 
@@ -201,4 +218,3 @@ describe('EventSubmissionPage', () => {
     expect(cancelButton).toHaveAttribute('href', '/app/mypage')
   })
 })
-

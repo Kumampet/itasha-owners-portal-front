@@ -32,6 +32,7 @@ export async function GET(request: Request) {
       where.OR = [
         { name: { contains: search } },
         { theme: { contains: search } },
+        { venue_name: { contains: search } },
         { description: { contains: search } },
       ];
     }
@@ -52,6 +53,7 @@ export async function GET(request: Request) {
       select: {
         id: true,
         name: true,
+        venue_name: true,
         theme: true,
         description: true,
         original_url: true,
