@@ -59,7 +59,7 @@ export function MobileHeader({
     >
       <Link href={logoHref} className="flex min-w-0 shrink-0 items-center">
         <Image
-          src="/images/main_logo.png"
+          src="/images/main_logo_v2.svg"
           alt="いたなび！痛車オーナーズナビ"
           width={150}
           height={60}

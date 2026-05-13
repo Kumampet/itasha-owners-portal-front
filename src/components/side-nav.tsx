@@ -48,7 +48,7 @@ export function SideNav({
                 onClick={onClose}
               >
                 <Image
-                  src="/images/main_logo.png"
+                  src="/images/itanavi_logo_small_bg_alpha.svg"
                   alt="いたなび！痛車オーナーズナビ"
                   width={200}
                   height={80}
@@ -75,7 +75,7 @@ export function SideNav({
         <div className={`mb-4 flex items-center justify-between ${breakpointClass}mb-6`}>
           <Link href={logoHref} className="flex items-center">
             <Image
-              src="/images/main_logo.png"
+              src="/images/itanavi_logo_small_bg_alpha.svg"
               alt="いたなび！痛車オーナーズナビ"
               width={200}
               height={80}

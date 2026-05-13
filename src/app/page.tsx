@@ -79,26 +79,15 @@ export default async function Home() {
     <>
       <SiteHeader />
       <main className="flex-1">
-        <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-accent-mint/10 via-background to-background">
-          <div className="mx-auto flex max-w-5xl flex-col items-center px-4 pb-10 pt-8 sm:pb-14 sm:pt-12">
-            <div className="relative aspect-[21/9] w-full max-w-3xl overflow-hidden rounded-[2rem] border border-accent-mint/25 bg-gradient-to-br from-zinc-950 via-zinc-900 to-accent-mint-subtle shadow-xl shadow-black/40">
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 py-12 text-center">
-                <div className="relative w-full max-w-md">
-                  <Image
-                    src="/images/main_logo.png"
-                    alt="いたなび！痛車オーナーズナビ"
-                    width={560}
-                    height={220}
-                    className="mx-auto h-auto w-full brightness-110 drop-shadow-lg"
-                    priority
-                  />
-                </div>
-                <p className="max-w-sm text-[11px] leading-relaxed text-accent-mint/80 sm:text-xs">
-                  痛車イベントの「併せ」と「締切」まで、ひとつの場所で。
-                </p>
-              </div>
-            </div>
-          </div>
+        <section className="relative h-[min(calc(100vw*9/16),calc(100dvh-env(safe-area-inset-top,0px)-3.5rem-1px))] w-full overflow-hidden border-b border-border bg-gradient-to-b from-accent-mint/10 via-background to-background">
+          <Image
+            src="/images/main_logo_v2.svg"
+            alt="いたなび！痛車オーナーズナビ"
+            fill
+            sizes="100vw"
+            className="object-cover object-center brightness-110 drop-shadow-lg"
+            priority
+          />
         </section>
 
         <div className="mx-auto flex max-w-5xl flex-col gap-12 px-4 pb-16 pt-10 sm:gap-14 sm:pt-14">

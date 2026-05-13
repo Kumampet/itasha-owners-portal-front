@@ -148,19 +148,14 @@ export function SiteHeader() {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75 safe-top">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 sm:h-14 sm:px-6 lg:gap-8">
-          <div className="flex min-w-0 flex-1 items-center gap-3 lg:flex-none lg:gap-6">
-            <Link href="/" className="flex min-w-0 shrink-0 items-center lg:mr-2">
-              <Image
-                src="/images/main_logo.png"
-                alt="いたなび！痛車オーナーズナビ"
-                width={160}
-                height={52}
-                className="h-8 w-auto sm:h-9"
-                priority
-              />
-            </Link>
-          </div>
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:h-14 sm:px-6 lg:gap-8">
+          <Link href="/" className="h-full min-w-0 shrink-0 lg:mr-2">
+            <img
+              src="/images/itanavi_logo_small_bg_alpha.svg"
+              alt="いたなび！痛車オーナーズナビ"
+              className="h-full"
+            />
+          </Link>
 
           <nav
             className="hidden lg:flex lg:flex-1 lg:flex-wrap lg:items-center lg:justify-center lg:gap-x-2 lg:gap-y-2 xl:gap-x-3"
@@ -172,9 +167,8 @@ export function SiteHeader() {
                 <Link
                   key={tab.href}
                   href={tab.href}
-                  className={`whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition xl:text-sm ${
-                    isActive ? navActive : navInactive
-                  }`}
+                  className={`whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition xl:text-sm ${isActive ? navActive : navInactive
+                    }`}
                 >
                   {tab.label}
                 </Link>
@@ -183,9 +177,8 @@ export function SiteHeader() {
             {showOrganizerNav && (
               <Link
                 href={organizerNav.href}
-                className={`whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium xl:text-sm ${
-                  organizerActive ? navActive : navInactive
-                }`}
+                className={`whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium xl:text-sm ${organizerActive ? navActive : navInactive
+                  }`}
               >
                 {organizerNav.label}
               </Link>
@@ -216,24 +209,14 @@ export function SiteHeader() {
       )}
 
       <div
-        className={`fixed inset-y-0 right-0 z-[70] flex w-[min(20rem,calc(100vw-3rem))] flex-col border-l border-border bg-card shadow-2xl shadow-black/40 transition-transform duration-300 ease-out lg:hidden safe-top safe-bottom ${
-          drawerOpen ? "translate-x-0" : "translate-x-full pointer-events-none"
-        }`}
+        className={`fixed inset-y-0 right-0 z-[70] flex w-[min(20rem,calc(100vw-3rem))] flex-col border-l border-border bg-card shadow-2xl shadow-black/40 transition-transform duration-300 ease-out lg:hidden safe-top safe-bottom ${drawerOpen ? "translate-x-0" : "translate-x-full pointer-events-none"
+          }`}
         style={{
           paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
         }}
       >
         <div className="flex items-center justify-between border-b border-border px-4 pb-3">
-          <Link href="/" className="min-w-0" onClick={() => setDrawerOpen(false)}>
-            <Image
-              src="/images/main_logo.png"
-              alt="いたなび！痛車オーナーズナビ"
-              width={140}
-              height={46}
-              className="h-7 w-auto"
-            />
-          </Link>
           <MenuController variant="close" onClick={() => setDrawerOpen(false)} />
         </div>
 
@@ -252,11 +235,10 @@ export function SiteHeader() {
                   key={tab.href}
                   href={tab.href}
                   onClick={() => setDrawerOpen(false)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${
-                    isActive
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${isActive
                       ? "border border-accent-mint/30 bg-accent-mint/15 text-accent-mint"
                       : "text-muted-foreground hover:bg-card-elevated hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <SiteNavDrawerIcon icon={tab.icon} active={isActive} />
                   <span>{tab.label}</span>
@@ -267,11 +249,10 @@ export function SiteHeader() {
               <Link
                 href={organizerNav.href}
                 onClick={() => setDrawerOpen(false)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${
-                  organizerActive
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${organizerActive
                     ? "border border-accent-mint/30 bg-accent-mint/15 text-accent-mint"
                     : "text-muted-foreground hover:bg-card-elevated hover:text-foreground"
-                }`}
+                  }`}
               >
                 <SiteNavDrawerIcon
                   icon={organizerNav.icon}
