@@ -57,6 +57,8 @@ function AdminNewEventPageContent() {
       // クエリパラメータから情報を取得してフォームに設定
       const name = searchParams?.get("name") || "";
       const original_url = searchParams?.get("original_url") || "";
+      const venue_name =
+        searchParams?.get("venue_name") || searchParams?.get("venue") || "";
       const event_date = searchParams?.get("event_date") || "";
       const description = searchParams?.get("description") || "";
       const entry_start_at = searchParams?.get("entry_start_at") || "";
@@ -66,6 +68,7 @@ function AdminNewEventPageContent() {
         ...prev,
         name,
         description,
+        venue_name,
         event_date: event_date ? toDateLocal(event_date) : "",
         official_urls: original_url ? [original_url] : [""],
         entries: [
