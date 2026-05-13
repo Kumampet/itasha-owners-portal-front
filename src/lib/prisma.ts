@@ -78,6 +78,14 @@ function createPrismaClient() {
     const useLocalSslOff =
       host === "localhost" || host === "127.0.0.1" || host === "::1";
 
+    // MySQL 8+（caching_sha2_password）を mariadb アダプタで繋ぐ場合、RSA 公開鍵をサーバーへ
+    // 問い合わせないと接続に失敗する。Workbench と挙動が食い違う典型原因。
+    // DATABASE_ALLOW_PUBLIC_KEY_RETRIEVAL=false で無効化可能（運用ポリシーに合わせて）。
+    const denyPublicKey = process.env.DATABASE_ALLOW_PUBLIC_KEY_RETRIEVAL === "false";
+    const allowPublicKeyRetrieval =
+      !denyPublicKey &&
+      (useLocalSslOff || process.env.DATABASE_ALLOW_PUBLIC_KEY_RETRIEVAL === "true");
+
     const poolConfig = {
       host,
       port: parseInt(dbUrl.port || "3306"),
@@ -95,6 +103,7 @@ function createPrismaClient() {
       maxLifetime: 3600000,
       // ローカル Docker MySQL 等で TLS 協議がタイムアウトする環境向け（RDS 等は URL / プロキシ側で SSL を使う）
       ...(useLocalSslOff ? { ssl: false as const } : {}),
+      ...(allowPublicKeyRetrieval ? { allowPublicKeyRetrieval: true as const } : {}),
     };
 
     const adapter = new PrismaMariaDb(poolConfig);

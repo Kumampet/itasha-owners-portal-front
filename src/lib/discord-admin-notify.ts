@@ -192,8 +192,10 @@ export function notifyDiscordEventListingRequest(payload: {
   id: string;
   name: string;
   originalUrl: string | null;
+  venue_name?: string | null;
+  eventDateIso?: string | null;
 }): void {
-  const { id, name, originalUrl } = payload;
+  const { id, name, originalUrl, venue_name, eventDateIso } = payload;
   const listUrl = adminPath("/admin/submissions");
   void sendAdminEmbed(
     {
@@ -201,8 +203,26 @@ export function notifyDiscordEventListingRequest(payload: {
       fields: [
         { name: "イベント名", value: truncateField(name), inline: false },
         { name: "依頼ID", value: truncateField(id, 256), inline: true },
-        ...(originalUrl
-          ? [{ name: "公式URL", value: truncateField(originalUrl, 1024), inline: false }]
+        ...(venue_name?.trim()
+          ? [{ name: "会場・住所", value: truncateField(venue_name.trim(), 1024), inline: false }]
+          : []),
+        ...(eventDateIso
+          ? [
+              {
+                name: "開催日時",
+                value: truncateField(eventDateIso, 256),
+                inline: false,
+              },
+            ]
+          : []),
+        ...(originalUrl?.trim()
+          ? [
+              {
+                name: "イベント情報URL",
+                value: truncateField(originalUrl.trim(), 1024),
+                inline: false,
+              },
+            ]
           : []),
         { name: "管理画面", value: truncateField(listUrl) },
       ],
