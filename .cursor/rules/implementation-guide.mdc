@@ -10,7 +10,16 @@ alwaysApply: true
 1. 対象の `.cursor/docs/screens` または `features` / `api` を読む
 2. `architecture/routing-and-access.md` で認証・公開範囲を確認
 3. 既存コンポーネント・`src/lib` を再利用し、同パターンで変更
-4. 関連 `__tests__` と `npm run check` を実行
+4. 対象画面・機能の `__tests__` を新規作成または更新する
+5. 関連 `__tests__` と `npm run check` を実行
+
+## 画面・機能テスト
+
+- アプリ側の画面・機能を追加・変更したら、対象 `page.tsx` 直下の `__tests__/page.test.tsx` を同じ変更で新規作成または更新する。完了条件に含め、テスト未整備のまま完了とみなさない
+- 既存の Jest + Testing Library パターン（`next/navigation`・`next-auth/react`・`fetch` のモック、`@/test-utils`）に合わせる
+- サーバーコンポーネントは `prisma` 等をモックし、非同期 `page` は `await` してから `render` する
+- 管理画面は依頼がない限り必須にしない
+- 実装完了前に `npm run test:app`（管理画面を除く）または変更範囲に合わせた `npm test` を実行する
 
 ## 禁止
 

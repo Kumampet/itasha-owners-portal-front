@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@/test-utils'
+import { render, screen, waitFor, within, fireEvent } from '@/test-utils'
 import userEvent from '@testing-library/user-event'
 import { useSession } from 'next-auth/react'
 import GroupDetailPage from '../page'
@@ -516,8 +516,7 @@ describe('GroupDetailPage', () => {
     })
 
     it('1000文字を超えるメッセージは送信できない', async () => {
-      // テスト用に制限値を100文字にモック
-      const maxLength = 100
+      const maxLength = 1000
 
       installGroupDetailFetchMock({
         groupJson: mockGroup,
@@ -539,31 +538,14 @@ describe('GroupDetailPage', () => {
       })
 
       const textarea = screen.getByPlaceholderText('メッセージを入力してください...') as HTMLTextAreaElement
-      
-      // 100文字（制限値）を設定
       const maxMessage = 'あ'.repeat(maxLength)
-      await user.clear(textarea)
-      await user.type(textarea, maxMessage)
-      
+      fireEvent.change(textarea, { target: { value: maxMessage } })
+
       expect(textarea.value).toBe(maxMessage)
       expect(textarea.value.length).toBe(maxLength)
 
-      // 101文字目を追加しようとしても制限される（onChangeハンドラーで制限される）
-      const longMessage = 'あ'.repeat(maxLength + 1)
-      // 直接valueを設定してテスト（実際の動作をシミュレート）
-      const event = new Event('input', { bubbles: true })
-      Object.defineProperty(event, 'target', {
-        writable: false,
-        value: { value: longMessage },
-      })
-      textarea.dispatchEvent(event)
-
-      // 100文字を超える場合は入力が制限される
+      fireEvent.change(textarea, { target: { value: 'あ'.repeat(maxLength + 1) } })
       expect(textarea.value.length).toBeLessThanOrEqual(maxLength)
-      
-      // エラーメッセージが表示されることを確認（100文字を超えた場合）
-      await user.type(textarea, 'あ')
-      // 実際のコンポーネントではalertが表示されるが、テストではモックされている
     })
 
     it('一斉連絡チェックボックスを表示する（オーナーの場合）', async () => {
