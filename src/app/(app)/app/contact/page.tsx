@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { AppPageHeader, AppPageHeaderBackLink } from "@/components/app-page-header";
+import {
+  FormFieldLabelWithAccent,
+  formFieldInputClassName,
+} from "@/components/form-field-label-accent";
 import { ModalBase } from "@/components/modal-base";
 import { Button } from "@/components/button";
 
@@ -76,80 +80,81 @@ export default function ContactPage() {
           </p>
         </AppPageHeader>
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-6 rounded-lg border border-border bg-card p-6"
-        >
+        <form onSubmit={handleSubmit} className="space-y-8 sm:space-y-9">
           <div>
-            <label className="block text-sm font-medium text-muted-foreground">
-              タイトル <span className="text-red-500">*</span>
-            </label>
+            <FormFieldLabelWithAccent htmlFor="contact-title">
+              タイトル <span className="font-normal text-red-500">*</span>
+            </FormFieldLabelWithAccent>
             <input
+              id="contact-title"
               type="text"
               value={formData.title}
               onChange={(e) =>
                 setFormData({ ...formData, title: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              className={formFieldInputClassName}
               placeholder="例: イベント主催について"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground">
-              お名前（ニックネーム可） <span className="text-red-500">*</span>
-            </label>
+            <FormFieldLabelWithAccent htmlFor="contact-name">
+              お名前（ニックネーム可） <span className="font-normal text-red-500">*</span>
+            </FormFieldLabelWithAccent>
             <input
+              id="contact-name"
               type="text"
               value={formData.name}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              className={formFieldInputClassName}
               placeholder="お名前またはニックネーム"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground">
-              メールアドレス <span className="text-red-500">*</span>
-            </label>
+            <FormFieldLabelWithAccent htmlFor="contact-email">
+              メールアドレス <span className="font-normal text-red-500">*</span>
+            </FormFieldLabelWithAccent>
             <input
+              id="contact-email"
               type="email"
               value={formData.email}
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              className={formFieldInputClassName}
               placeholder="example@email.com"
               required
             />
             {session?.user?.email && (
-              <p className="mt-1 text-xs text-muted">
+              <p className="mt-2 text-xs text-muted-foreground">
                 ログイン中のアカウント: {session.user.email}
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground">
-              お問い合わせ内容 <span className="text-red-500">*</span>
-            </label>
+            <FormFieldLabelWithAccent htmlFor="contact-content">
+              お問い合わせ内容 <span className="font-normal text-red-500">*</span>
+            </FormFieldLabelWithAccent>
             <textarea
+              id="contact-content"
               value={formData.content}
               onChange={(e) =>
                 setFormData({ ...formData, content: e.target.value })
               }
               rows={10}
-              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              className={`${formFieldInputClassName} min-h-[10rem] resize-y`}
               placeholder="お問い合わせ内容をご記入ください"
               required
             />
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col gap-3 border-t border-border/50 pt-8 sm:flex-row sm:gap-4">
             <Button
               as="link"
               href={session ? "/app/mypage" : "/"}
@@ -224,4 +229,3 @@ export default function ContactPage() {
     </main>
   );
 }
-
