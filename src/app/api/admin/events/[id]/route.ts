@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { scheduleMergeApprovedEventIntoSitemapOnS3 } from "@/lib/events-sitemap-s3";
 import { fromDateTimeLocal, fromDateLocal } from "@/lib/date-utils";
 import { notifyDiscordEventApprovalRequested } from "@/lib/discord-admin-notify";
+import { EVENT_DESCRIPTION_MAX_CHARS } from "@/lib/event-description";
 
 // GET /api/admin/events/[id]
 // 管理画面用のイベント詳細取得API
@@ -161,6 +162,17 @@ export async function PATCH(
     }
 
     const body = await request.json();
+    if (
+      typeof body.description === "string" &&
+      body.description.length > EVENT_DESCRIPTION_MAX_CHARS
+    ) {
+      return NextResponse.json(
+        {
+          error: `イベント概要文は${EVENT_DESCRIPTION_MAX_CHARS}文字以内で入力してください`,
+        },
+        { status: 400 }
+      );
+    }
     const tags: string[] = body.tags || [];
     const approvalStatus = body.approval_status || existingEvent.approval_status;
     const notifyApprovalRequested =

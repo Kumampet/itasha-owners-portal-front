@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Button } from "./button";
 import { DateTimeInput } from "./date-time-input";
 import { Tooltip } from "./tooltip";
+import { EVENT_DESCRIPTION_MAX_CHARS } from "@/lib/event-description";
 
 // エントリー情報の型
 export type EventEntryData = {
@@ -346,23 +347,26 @@ export default function EventForm({
       {/* イベント概要文 */}
       <div>
         <label className="block text-sm font-medium text-muted-foreground">
-          イベント概要文 * <span className="text-xs text-muted">（最大200文字）</span>
+          イベント概要文 *{" "}
+          <span className="text-xs text-muted">
+            （最大{EVENT_DESCRIPTION_MAX_CHARS}文字）
+          </span>
         </label>
         <textarea
           value={formData.description}
           onChange={(e) => {
             const value = e.target.value;
-            if (value.length <= 200) {
+            if (value.length <= EVENT_DESCRIPTION_MAX_CHARS) {
               onFormDataChange({ ...formData, description: value });
             }
           }}
           rows={4}
-          maxLength={200}
+          maxLength={EVENT_DESCRIPTION_MAX_CHARS}
           className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
           required
         />
         <p className="mt-1 text-xs text-muted">
-          {formData.description.length} / 200文字
+          {formData.description.length} / {EVENT_DESCRIPTION_MAX_CHARS}文字
         </p>
       </div>
 

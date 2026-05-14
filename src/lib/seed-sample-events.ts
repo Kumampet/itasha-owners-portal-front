@@ -1,6 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-
-const DESCRIPTION_MAX = 200;
+import { EVENT_DESCRIPTION_MAX_CHARS } from "@/lib/event-description";
 
 const prefectures = [
   "北海道",
@@ -95,8 +94,8 @@ function randomElement<T>(items: readonly T[]): T {
 }
 
 function truncateDescription(text: string): string {
-  if (text.length <= DESCRIPTION_MAX) return text;
-  return text.slice(0, DESCRIPTION_MAX - 1) + "…";
+  if (text.length <= EVENT_DESCRIPTION_MAX_CHARS) return text;
+  return text.slice(0, EVENT_DESCRIPTION_MAX_CHARS - 1) + "…";
 }
 
 function randomFutureDate(daysFromNow: number, daysRange: number): Date {
