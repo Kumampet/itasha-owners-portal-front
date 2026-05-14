@@ -72,9 +72,7 @@ function CompactHeaderAuth({
           href="/app/mypage"
           className={accountLinkClass}
           onClick={() => onDismiss?.()}
-          aria-label={
-            isDrawer ? `マイページへ（アカウント：${displayName}）` : undefined
-          }
+          aria-label={`マイページへ（アカウント：${displayName}）`}
         >
           {session.user.image ? (
             <Image
@@ -94,10 +92,10 @@ function CompactHeaderAuth({
             className={
               isDrawer
                 ? "min-w-0 flex-1 truncate text-sm font-semibold text-accent-mint"
-                : "min-w-0 max-w-[9rem] truncate font-medium sm:max-w-[11rem]"
+                : "whitespace-nowrap font-medium sm:text-sm"
             }
           >
-            {isDrawer ? "マイページ" : displayName}
+            マイページ
           </span>
         </Link>
         <button
