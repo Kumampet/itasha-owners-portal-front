@@ -32,7 +32,7 @@ export function AuthHeroPanel() {
             で。
           </h2>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-            締切や支払期限の見落としを減らし、団体での参加準備までスムーズに。ログインするとマイページと団体機能をご利用いただけます。
+            イベント予定の確認と団体での参加準備までスムーズに。<br />ログインするとマイページをご利用いただけます。
           </p>
         </div>
 
