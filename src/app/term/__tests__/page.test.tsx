@@ -12,16 +12,10 @@ describe('TermPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('トップページとログインページへのリンクを表示する', () => {
+  it('サイトヘッダーとフッターを表示する', () => {
     render(<TermPage />)
 
-    expect(screen.getByRole('link', { name: '← トップページに戻る' })).toHaveAttribute(
-      'href',
-      '/'
-    )
-    expect(screen.getByRole('link', { name: 'ログインページに戻る' })).toHaveAttribute(
-      'href',
-      '/app/auth'
-    )
+    expect(screen.getByRole('banner')).toBeInTheDocument()
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument()
   })
 })
