@@ -126,7 +126,15 @@ function CompactHeaderAuth({
   );
 }
 
-export function SiteHeader() {
+type SiteHeaderProps = {
+  /**
+   * 認証ページ等で、ログインボタン・アカウントメニュー（ドロワー先頭の同一 UI）のみ非表示。
+   * サイト内ナビとモバイルのメニュー開閉はそのまま表示する。
+   */
+  hideAuthUi?: boolean;
+};
+
+export function SiteHeader({ hideAuthUi = false }: SiteHeaderProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname() || "/";
   const { data: session } = useSession();
@@ -186,9 +194,11 @@ export function SiteHeader() {
           </nav>
 
           <div className="flex shrink-0 items-center gap-2">
-            <div className="hidden lg:flex">
-              <CompactHeaderAuth placement="header" />
-            </div>
+            {!hideAuthUi && (
+              <div className="hidden lg:flex">
+                <CompactHeaderAuth placement="header" />
+              </div>
+            )}
             <div className="lg:hidden">
               <MenuController
                 variant="open"
@@ -221,12 +231,14 @@ export function SiteHeader() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4">
-          <div className="mb-6">
-            <CompactHeaderAuth
-              placement="drawer"
-              onDismiss={() => setDrawerOpen(false)}
-            />
-          </div>
+          {!hideAuthUi && (
+            <div className="mb-6">
+              <CompactHeaderAuth
+                placement="drawer"
+                onDismiss={() => setDrawerOpen(false)}
+              />
+            </div>
+          )}
           <nav className="flex flex-col gap-1 text-sm">
             {navItems.map((tab) => {
               const isActive = tab.key === activeKey;
