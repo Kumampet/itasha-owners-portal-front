@@ -17,13 +17,21 @@ function createRequest(
   return new NextRequest(url, { headers });
 }
 
+function setNodeEnv(
+  value: "development" | "production" | "test",
+): () => void {
+  return jest.replaceProperty(process.env, "NODE_ENV", value).restore;
+}
+
 describe("gdpr-geo", () => {
-  const originalNodeEnv = process.env.NODE_ENV;
   const originalDisableEu = process.env.DISABLE_EU_GEOBLOCK;
   const originalGeoBlockUnknown = process.env.GEO_BLOCK_UNKNOWN_COUNTRY;
+  const envRestores: Array<() => void> = [];
 
   afterEach(() => {
-    process.env.NODE_ENV = originalNodeEnv;
+    while (envRestores.length > 0) {
+      envRestores.pop()?.();
+    }
     if (originalDisableEu === undefined) {
       delete process.env.DISABLE_EU_GEOBLOCK;
     } else {
@@ -38,21 +46,21 @@ describe("gdpr-geo", () => {
 
   describe("isEuGeoBlockDisabled", () => {
     it("本番以外では地理ブロックを無効にする", () => {
-      process.env.NODE_ENV = "test";
+      envRestores.push(setNodeEnv("test"));
       delete process.env.DISABLE_EU_GEOBLOCK;
 
       expect(isEuGeoBlockDisabled()).toBe(true);
     });
 
     it("本番かつ DISABLE_EU_GEOBLOCK が未設定なら地理ブロックを有効にする", () => {
-      process.env.NODE_ENV = "production";
+      envRestores.push(setNodeEnv("production"));
       delete process.env.DISABLE_EU_GEOBLOCK;
 
       expect(isEuGeoBlockDisabled()).toBe(false);
     });
 
     it("本番でも DISABLE_EU_GEOBLOCK=true なら地理ブロックを無効にする", () => {
-      process.env.NODE_ENV = "production";
+      envRestores.push(setNodeEnv("production"));
       process.env.DISABLE_EU_GEOBLOCK = "true";
 
       expect(isEuGeoBlockDisabled()).toBe(true);
@@ -128,7 +136,7 @@ describe("gdpr-geo", () => {
 
   describe("shouldSkipGdprGeoBlock", () => {
     it("本番以外では常にスキップする", () => {
-      process.env.NODE_ENV = "development";
+      envRestores.push(setNodeEnv("development"));
       const request = createRequest("https://example.com/", {
         host: "example.com",
         "cloudfront-viewer-country": "DE",
@@ -138,7 +146,7 @@ describe("gdpr-geo", () => {
     });
 
     it("本番でも DISABLE_EU_GEOBLOCK=true ならスキップする", () => {
-      process.env.NODE_ENV = "production";
+      envRestores.push(setNodeEnv("production"));
       process.env.DISABLE_EU_GEOBLOCK = "true";
       const request = createRequest("https://example.com/", {
         host: "example.com",
@@ -149,7 +157,7 @@ describe("gdpr-geo", () => {
     });
 
     it("本番の localhost は国コードがあってもスキップする", () => {
-      process.env.NODE_ENV = "production";
+      envRestores.push(setNodeEnv("production"));
       delete process.env.DISABLE_EU_GEOBLOCK;
       const request = createRequest("http://localhost:3000/", {
         host: "localhost:3000",
@@ -160,7 +168,7 @@ describe("gdpr-geo", () => {
     });
 
     it("本番の 127.0.0.1 は国コードがあってもスキップする", () => {
-      process.env.NODE_ENV = "production";
+      envRestores.push(setNodeEnv("production"));
       delete process.env.DISABLE_EU_GEOBLOCK;
       const request = createRequest("http://127.0.0.1:3000/", {
         host: "127.0.0.1:3000",
@@ -171,7 +179,7 @@ describe("gdpr-geo", () => {
     });
 
     it("本番の x-forwarded-host が localhost ならスキップする", () => {
-      process.env.NODE_ENV = "production";
+      envRestores.push(setNodeEnv("production"));
       delete process.env.DISABLE_EU_GEOBLOCK;
       const request = createRequest("https://example.com/", {
         host: "example.com",
@@ -183,7 +191,7 @@ describe("gdpr-geo", () => {
     });
 
     it("本番のリモートホストではスキップしない", () => {
-      process.env.NODE_ENV = "production";
+      envRestores.push(setNodeEnv("production"));
       delete process.env.DISABLE_EU_GEOBLOCK;
       const request = createRequest("https://example.com/", {
         host: "example.com",
