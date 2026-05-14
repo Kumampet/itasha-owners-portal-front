@@ -37,7 +37,7 @@ export function AuthHeroPanel() {
         </div>
 
         <Link
-          href="/"
+          href="/about"
           className="inline-flex w-fit items-center gap-2 rounded-full border border-border-strong bg-background/55 px-4 py-2 text-xs font-medium text-foreground backdrop-blur-sm transition hover:border-accent-mint/40 hover:bg-card hover:text-accent-mint focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-mint"
         >
           <span aria-hidden className="h-px w-5 bg-gradient-to-r from-accent-mint/80 to-accent-rose/60" />

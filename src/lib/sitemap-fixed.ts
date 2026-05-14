@@ -7,6 +7,7 @@ import {
 /** 固定ページのパス（旧 src/app/sitemap.ts と同一） */
 export const FIXED_SITEMAP_PATHS: readonly string[] = [
   "/",
+  "/about",
   "/events",
   "/term",
   "/privacy",

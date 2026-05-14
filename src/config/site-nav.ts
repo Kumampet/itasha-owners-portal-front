@@ -1,4 +1,8 @@
-export type SiteNavIconKey = "events" | "event-submission" | "contact";
+export type SiteNavIconKey =
+  | "events"
+  | "about"
+  | "event-submission"
+  | "contact";
 
 /** ドロワー SVG 用（公開項目＋オーガナイザー） */
 export type SiteNavDrawerIconKey = SiteNavIconKey | "organizer";
@@ -29,6 +33,7 @@ export const SITE_NAV_ORGANIZER_ITEM: {
  */
 export const SITE_NAV_ITEMS: SiteNavItem[] = [
   { href: "/events", label: "イベント一覧", key: "events", icon: "events" },
+  { href: "/about", label: "サービス概要", key: "about", icon: "about" },
   {
     href: "/app/event-submission",
     label: "イベント掲載依頼",
@@ -46,6 +51,10 @@ export function resolveSiteNavActiveKey(pathname: string): string {
 
   if (segments[0] === "events") {
     return "events";
+  }
+
+  if (segments[0] === "about") {
+    return "about";
   }
 
   if (segments[0] === "admin") {

@@ -6,12 +6,13 @@ import { createMetadataWithOGP } from "@/lib/metadata";
 import { prisma } from "@/lib/prisma";
 import { buildApprovedFutureEventWhere } from "@/lib/approved-public-events";
 import { HomeTopEventColumns } from "@/components/home/home-top-event-columns";
+import { ServiceOverviewSection } from "@/components/service-overview-section";
 import type { HomeEventBrief } from "@/components/home/home-top-event-columns";
 
 export const metadata = createMetadataWithOGP({
   title: "痛車オーナーズナビ | いたなび！",
   description:
-    "痛車イベントの予定管理・団体参加（併せ）管理に特化した、モバイルファーストの情報プラットフォーム。エントリー開始・締切・支払期限を自動でリマインドし、併せのメンバー募集と一斉連絡機能を提供します。",
+    "無料で使える痛車オーナーのポータルサイト。イベント情報や団体管理、自分だけのリマインダー、全国イベントの無料掲載、静かなコミュニティ、主催者向け機能をご用意しています。",
 });
 
 function toBrief(
@@ -99,44 +100,7 @@ export default async function Home() {
 
           <HomeTopEventColumns recent={recent} upcoming={upcoming} />
 
-          <section className="grid gap-4 rounded-3xl bg-card-elevated p-5 sm:grid-cols-2 sm:gap-6 sm:p-8">
-            <div>
-              <h2 className="text-sm font-semibold text-foreground">
-                期限管理のストレスをゼロに
-              </h2>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                イベントのエントリー開始・締切・支払期限を1つのタイムラインで確認。
-                重要なタイミングはメールで事前にお知らせします。
-              </p>
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-foreground">
-                XのDM制限に依存しない併せ管理
-              </h2>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                団体チャットの一斉連絡機能で、メンバー全員に確実に情報を共有できます。
-                DM制限やアカウント凍結に左右されない、安心できる連絡手段を提供します。
-              </p>
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-foreground">
-                競争のない、静かな情報プラットフォーム
-              </h2>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                フォロー/フォロワー、いいね、ランキングといった SNS的な機能はあえて搭載しません。痛車活動を気楽に続けるための
-                インフラとして設計されています。
-              </p>
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-foreground">
-                イベント主催者（オーガナイザー）向け機能
-              </h2>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                管理者に申請することで、イベント主催者用アカウントを作成できます。
-                一部の未公開のイベント情報も、公開管理を時限的に操作できます。
-              </p>
-            </div>
-          </section>
+          <ServiceOverviewSection />
 
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
             <Link
