@@ -9,7 +9,6 @@ import { MenuController } from "@/components/menu-controller";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import {
   SITE_NAV_ITEMS,
-  SITE_NAV_ORGANIZER_ITEM,
   resolveSiteNavActiveKey,
 } from "@/config/site-nav";
 import { SiteNavDrawerIcon } from "@/components/site-nav-drawer-icons";
@@ -135,16 +134,11 @@ type SiteHeaderProps = {
 export function SiteHeader({ hideAuthUi = false }: SiteHeaderProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname() || "/";
-  const { data: session } = useSession();
   const activeKey = resolveSiteNavActiveKey(pathname);
 
   useBodyScrollLock(drawerOpen);
 
   const navItems = SITE_NAV_ITEMS;
-  const organizerNav = SITE_NAV_ORGANIZER_ITEM;
-  const showOrganizerNav =
-    session?.user?.role === "ADMIN" || session?.user?.role === "ORGANIZER";
-  const organizerActive = activeKey === organizerNav.key;
 
   const navInactive =
     "text-muted-foreground hover:bg-card-elevated hover:text-foreground";
@@ -181,15 +175,6 @@ export function SiteHeader({ hideAuthUi = false }: SiteHeaderProps) {
                 </Link>
               );
             })}
-            {showOrganizerNav && (
-              <Link
-                href={organizerNav.href}
-                className={`whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium xl:text-sm ${organizerActive ? navActive : navInactive
-                  }`}
-              >
-                {organizerNav.label}
-              </Link>
-            )}
           </nav>
 
           <div className="flex shrink-0 items-center gap-2">
@@ -256,22 +241,6 @@ export function SiteHeader({ hideAuthUi = false }: SiteHeaderProps) {
                 </Link>
               );
             })}
-            {showOrganizerNav && (
-              <Link
-                href={organizerNav.href}
-                onClick={() => setDrawerOpen(false)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${organizerActive
-                  ? "border border-accent-mint/30 bg-accent-mint/15 text-accent-mint"
-                  : "text-muted-foreground hover:bg-card-elevated hover:text-foreground"
-                  }`}
-              >
-                <SiteNavDrawerIcon
-                  icon={organizerNav.icon}
-                  active={organizerActive}
-                />
-                <span>{organizerNav.label}</span>
-              </Link>
-            )}
           </nav>
         </div>
       </div>

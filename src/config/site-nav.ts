@@ -4,8 +4,8 @@ export type SiteNavIconKey =
   | "event-submission"
   | "contact";
 
-/** ドロワー SVG 用（公開項目＋オーガナイザー） */
-export type SiteNavDrawerIconKey = SiteNavIconKey | "organizer";
+/** ドロワー用 SVG（公開ナビと同一キー） */
+export type SiteNavDrawerIconKey = SiteNavIconKey;
 
 export type SiteNavItem = {
   href: string;
@@ -15,17 +15,15 @@ export type SiteNavItem = {
   icon: SiteNavIconKey;
 };
 
-/** ADMIN／ORGANIZER のみヘッダー・ドロワーに出す項目（公開ナビとは別経路でも同一ソースにする） */
+/** オーガナイザー管理画面のパス・ラベル（マイページのカードからのみ遷移） */
 export const SITE_NAV_ORGANIZER_ITEM: {
   href: string;
   label: string;
   key: string;
-  icon: "organizer";
 } = {
   href: "/admin/dashboard",
   label: "オーガナイザー機能",
   key: "admin",
-  icon: "organizer",
 };
 
 /**

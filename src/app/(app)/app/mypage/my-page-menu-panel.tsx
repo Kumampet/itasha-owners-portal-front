@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { Card, CardTitle, CardContent } from "@/components/card";
 import { MyPageMenuCard } from "@/components/my-page-menu-card";
+import { SITE_NAV_ORGANIZER_ITEM } from "@/config/site-nav";
 
 type MyPageMenuPanelProps = {
     hasUnreadMessages: boolean;
@@ -182,8 +183,8 @@ export function MyPageMenuPanel({
             {/* オーガナイザー機能（admin/organizerのみ） */}
             {showOrganizerMenu ? (
                 <MyPageMenuCard
-                    href="/admin/dashboard"
-                    title="オーガナイザー機能"
+                    href={SITE_NAV_ORGANIZER_ITEM.href}
+                    title={SITE_NAV_ORGANIZER_ITEM.label}
                     description="イベント管理やユーザー管理、情報提供フォームの処理などができます。"
                     iconShellClassName="bg-indigo-500/10 ring-1 ring-border/60"
                     icon={
@@ -234,7 +235,7 @@ export function MyPageMenuPanel({
                             </svg>
                         </div>
                         <div className="flex-1 min-w-0 sm:flex-none">
-                            <CardTitle className="mb-1 sm:mb-2">オーガナイザー機能</CardTitle>
+                            <CardTitle className="mb-1 sm:mb-2">{SITE_NAV_ORGANIZER_ITEM.label}</CardTitle>
                             <CardContent>
                                 <p className="text-xs text-muted-foreground sm:text-sm">
                                     イベントの作成・管理や参加者の管理など、イベント主催者向けの機能です。
