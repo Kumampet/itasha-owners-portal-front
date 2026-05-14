@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { AppPageHeader, AppPageHeaderBackLink } from "@/components/app-page-header";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { CreateGroupButton } from "./_components/create-group-button";
 import { JoinGroupButton } from "./_components/join-group-button";
@@ -83,23 +83,18 @@ export default function GroupsPage() {
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-        <header className="space-y-2">
-          <Link
-            href="/app/mypage"
-            className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
-          >
-            ← マイページへ戻る
-          </Link>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              団体管理
-            </h1>
-            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-              イベントごとの団体参加（併せ）のメンバー募集・参加状況・一斉連絡を
-              管理する画面です。
-            </p>
-          </div>
-        </header>
+        <AppPageHeader
+          leading={
+            <AppPageHeaderBackLink href="/app/mypage">← マイページへ戻る</AppPageHeaderBackLink>
+          }
+          title="団体管理"
+          size="md"
+        >
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+            イベントごとの団体参加（併せ）のメンバー募集・参加状況・一斉連絡を
+            管理する画面です。
+          </p>
+        </AppPageHeader>
 
         <div className="space-y-4">
           {/* アクションボタン */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { AppPageHeader, AppPageHeaderBackLink } from "@/components/app-page-header";
 import { LinkCard } from "@/components/link-card";
 import { EventsCardContent } from "@/components/events-card-content";
 import { LoadingSpinner } from "@/components/loading-spinner";
@@ -74,23 +74,18 @@ export default function WatchlistPage() {
           </div>
         ) : (
           <>
-            <header className="space-y-2">
-              <Link
-                href="/app/mypage"
-                className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
-              >
-                ← マイページへ戻る
-              </Link>
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                  ウォッチリスト
-                </h1>
-                <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                  気になるイベントをまとめて管理します。ウォッチリストに追加したイベントの
-                  エントリー開始日や支払期限などを一目で確認できます。
-                </p>
-              </div>
-            </header>
+            <AppPageHeader
+              leading={
+                <AppPageHeaderBackLink href="/app/mypage">← マイページへ戻る</AppPageHeaderBackLink>
+              }
+              title="ウォッチリスト"
+              size="md"
+            >
+              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                気になるイベントをまとめて管理します。ウォッチリストに追加したイベントの
+                エントリー開始日や支払期限などを一目で確認できます。
+              </p>
+            </AppPageHeader>
 
             {watchlist.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-border bg-card p-4 sm:p-6">

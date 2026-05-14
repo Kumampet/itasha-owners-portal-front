@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { AppPageHeader, AppPageHeaderBackLink } from "@/components/app-page-header";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { GroupJoinWarningModal } from "@/components/group-join-warning-modal";
@@ -163,22 +164,17 @@ function GroupJoinForm() {
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-        <header className="space-y-2">
-          <Link
-            href="/app/groups"
-            className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
-          >
-            ← 団体一覧に戻る
-          </Link>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              既存の団体に加入する
-            </h1>
-            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-              団体オーナーから共有された8桁の団体コードを入力してください。団体コードは一意のため、これだけで特定の団体に加入できます。
-            </p>
-          </div>
-        </header>
+        <AppPageHeader
+          leading={
+            <AppPageHeaderBackLink href="/app/groups">← 団体一覧に戻る</AppPageHeaderBackLink>
+          }
+          title="既存の団体に加入する"
+          size="md"
+        >
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+            団体オーナーから共有された8桁の団体コードを入力してください。団体コードは一意のため、これだけで特定の団体に加入できます。
+          </p>
+        </AppPageHeader>
 
         <div className="space-y-6 rounded-2xl border border-border bg-card p-4 sm:p-5">
           <LabeledTextInput

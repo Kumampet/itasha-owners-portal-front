@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AboutDetailParagraph } from "@/app/about/about-detail-paragraph";
+import { AppPageHeader } from "@/components/app-page-header";
 import { PublicSiteFooter } from "@/components/public-site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { SERVICE_OVERVIEW_ITEMS } from "@/content/service-overview";
@@ -15,17 +16,13 @@ export default function AboutPage() {
   return (
     <>
       <SiteHeader />
-      <main className="flex-1 pb-16 pt-10 sm:pt-14">
-        <div className="mx-auto max-w-5xl px-4">
-
-          <header className="mb-12 text-center">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              サービス概要
-            </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+      <main className="flex-1 px-4 pb-16 pt-6 sm:pb-12 sm:pt-8">
+        <section className="mx-auto flex w-full max-w-4xl flex-col gap-10 sm:gap-12">
+          <AppPageHeader eyebrow="ABOUT" title="いたなび！サービス概要">
+            <p className="text-sm text-muted-foreground sm:text-base">
               いたなび！が痛車オーナーのみなさまに提供している価値を、要点ごとにご説明します。
             </p>
-          </header>
+          </AppPageHeader>
 
           <div className="flex flex-col gap-16 sm:gap-20">
             {SERVICE_OVERVIEW_ITEMS.map((item) => (
@@ -47,10 +44,10 @@ export default function AboutPage() {
                 </div>
               </section>
             ))}
-            <p className="mt-14 text-sm">※サービス内容は予告なく変更される場合があります。</p>
+            <p className="text-sm text-muted-foreground">※サービス内容は予告なく変更される場合があります。</p>
           </div>
 
-          <p className="mt-14 text-center text-sm">
+          <p className="text-sm">
             <Link
               href="/"
               className="font-medium text-accent-mint underline-offset-2 hover:underline"
@@ -58,7 +55,7 @@ export default function AboutPage() {
               ← トップへ戻る
             </Link>
           </p>
-        </div>
+        </section>
       </main>
       <PublicSiteFooter />
     </>

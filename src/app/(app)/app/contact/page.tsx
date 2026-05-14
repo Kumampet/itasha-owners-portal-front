@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import Link from "next/link";
+import { AppPageHeader, AppPageHeaderBackLink } from "@/components/app-page-header";
 import { ModalBase } from "@/components/modal-base";
 import { Button } from "@/components/button";
 
 export default function ContactPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -62,22 +62,19 @@ export default function ContactPage() {
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-        <header className="space-y-2">
-          <Link
-            href={session ? "/app/mypage" : "/"}
-            className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
-          >
-            ← {session ? "マイページへ戻る" : "トップページへ戻る"}
-          </Link>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              お問い合わせフォーム
-            </h1>
-            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-              ご質問やご要望がございましたら、お気軽にお問い合わせください。
-            </p>
-          </div>
-        </header>
+        <AppPageHeader
+          leading={
+            status === "authenticated" ? (
+              <AppPageHeaderBackLink href="/app/mypage">← マイページへ戻る</AppPageHeaderBackLink>
+            ) : undefined
+          }
+          title="お問い合わせフォーム"
+          size="md"
+        >
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+            ご質問やご要望がございましたら、お気軽にお問い合わせください。
+          </p>
+        </AppPageHeader>
 
         <form
           onSubmit={handleSubmit}

@@ -3,8 +3,13 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { Button } from "@/components/button";
+import {
+  APP_PAGE_HEADER_BACK_NAV_CLASSNAME,
+  AppPageHeader,
+  AppPageHeaderBackLink,
+} from "@/components/app-page-header";
 import ConfirmModal from "@/components/confirm-modal";
+import { Button } from "@/components/button";
 
 const initialFormData = {
   display_name: "",
@@ -117,22 +122,17 @@ export default function OrganizerApplicationPage() {
     return (
       <main className="flex-1">
         <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-          <header className="space-y-2">
-            <Link
-              href="/app/mypage"
-              className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
-            >
-              ← マイページへ戻る
-            </Link>
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                オーガナイザー登録申請
-              </h1>
-              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                イベント主催者として、いたなび！でイベントを管理・運営することができます。
-              </p>
-            </div>
-          </header>
+          <AppPageHeader
+            leading={
+              <AppPageHeaderBackLink href="/app/mypage">← マイページへ戻る</AppPageHeaderBackLink>
+            }
+            title="オーガナイザー登録申請"
+            size="md"
+          >
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+              イベント主催者として、いたなび！でイベントを管理・運営することができます。
+            </p>
+          </AppPageHeader>
 
           {/* オーガナイザー登録とは？の説明 */}
           <div className="space-y-4 rounded-lg border border-border bg-card p-6">
@@ -219,25 +219,26 @@ export default function OrganizerApplicationPage() {
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-        <header className="space-y-2">
-          <button
-            onClick={() => {
-              setShowForm(false);
-              setAgreedToTerms(false);
-            }}
-            className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
-          >
-            ← 戻る
-          </button>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              オーガナイザー登録申請フォーム
-            </h1>
-            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-              必要事項をご記入の上、申請してください。
-            </p>
-          </div>
-        </header>
+        <AppPageHeader
+          leading={
+            <button
+              type="button"
+              className={APP_PAGE_HEADER_BACK_NAV_CLASSNAME}
+              onClick={() => {
+                setShowForm(false);
+                setAgreedToTerms(false);
+              }}
+            >
+              ← 戻る
+            </button>
+          }
+          title="オーガナイザー登録申請フォーム"
+          size="md"
+        >
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+            必要事項をご記入の上、申請してください。
+          </p>
+        </AppPageHeader>
 
         <form
           onSubmit={handleSubmit}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { AppPageHeader, AppPageHeaderBackLink } from "@/components/app-page-header";
 import ConfirmModal from "@/components/confirm-modal";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { ReminderCard } from "@/components/reminder-card";
@@ -96,23 +97,18 @@ export default function ReminderPage() {
           </div>
         ) : (
           <>
-            <header className="space-y-2">
-              <Link
-                href="/app/mypage"
-                className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
-              >
-                ← マイページへ戻る
-              </Link>
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                  リマインダー
-                </h1>
-                <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                  エントリー開始日・締切・支払期限・集合時間など、イベントごとの重要な
-                  タイミングをまとめて管理する画面です。
-                </p>
-              </div>
-            </header>
+            <AppPageHeader
+              leading={
+                <AppPageHeaderBackLink href="/app/mypage">← マイページへ戻る</AppPageHeaderBackLink>
+              }
+              title="リマインダー"
+              size="md"
+            >
+              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                エントリー開始日・締切・支払期限・集合時間など、イベントごとの重要な
+                タイミングをまとめて管理する画面です。
+              </p>
+            </AppPageHeader>
 
             {/* ソート機能と新規作成ボタン */}
             <div className="flex items-center justify-between gap-2">

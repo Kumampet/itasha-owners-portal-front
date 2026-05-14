@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { AppPageHeader, AppPageHeaderBackLink } from "@/components/app-page-header";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { shouldRedirectToNotificationSettings } from "@/lib/notification-check";
 import {
   generateGoogleCalendarUrl,
@@ -178,22 +178,17 @@ export default function NewReminderPage() {
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-        <header className="space-y-2">
-          <Link
-            href="/app/reminder"
-            className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
-          >
-            ← リマインダー一覧に戻る
-          </Link>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              リマインダーを新規作成
-            </h1>
-            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-              イベントの重要なタイミングをリマインダーとして登録します。
-            </p>
-          </div>
-        </header>
+        <AppPageHeader
+          leading={
+            <AppPageHeaderBackLink href="/app/reminder">← リマインダー一覧に戻る</AppPageHeaderBackLink>
+          }
+          title="リマインダーを新規作成"
+          size="md"
+        >
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+            イベントの重要なタイミングをリマインダーとして登録します。
+          </p>
+        </AppPageHeader>
 
         <form
           onSubmit={handleSubmit}

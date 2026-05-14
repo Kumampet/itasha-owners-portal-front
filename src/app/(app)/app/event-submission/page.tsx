@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { AppPageHeader, AppPageHeaderBackLink } from "@/components/app-page-header";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/button";
 import ConfirmModal from "@/components/confirm-modal";
 
@@ -14,6 +16,7 @@ const initialFormData = {
 };
 
 export default function EventSubmissionPage() {
+  const { status } = useSession();
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState(initialFormData);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -64,26 +67,23 @@ export default function EventSubmissionPage() {
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-        <header className="space-y-2">
-          <Link
-            href="/app/mypage"
-            className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
-          >
-            ← マイページへ戻る
-          </Link>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              イベント掲載依頼フォーム
-            </h1>
-            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-              イベント情報をご提供いただくことで、より多くの参加者にイベントを知っていただくことができます。
-            </p>
-            <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
-              必須項目をすべてご記入いただけないイベントは、掲載のご案内ができません。
-              また、本サービスでの掲載は、<strong className="font-medium text-foreground">開催地が日本国内であるイベントに限ります</strong>。
-            </p>
-          </div>
-        </header>
+        <AppPageHeader
+          leading={
+            status === "authenticated" ? (
+              <AppPageHeaderBackLink href="/app/mypage">← マイページへ戻る</AppPageHeaderBackLink>
+            ) : undefined
+          }
+          title="イベント掲載依頼フォーム"
+          size="md"
+        >
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+            イベント情報をご提供いただくことで、より多くの参加者にイベントを知っていただくことができます。
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
+            必須項目をすべてご記入いただけないイベントは、掲載のご案内ができません。
+            また、本サービスでの掲載は、<strong className="font-medium text-foreground">開催地が日本国内であるイベントに限ります</strong>。
+          </p>
+        </AppPageHeader>
 
         <form
           onSubmit={handleSubmit}
