@@ -55,6 +55,27 @@ body {
   color: var(--foreground);
 }
 
+/**
+ * ネイティブ <select> / <option>
+ * Windows + Chromium 系でリストだけライトテーマ描画され、前景色とぶつかって選択肢が読めなくなるのを防ぐ。
+ */
+select {
+  color-scheme: dark;
+  background-color: var(--card);
+  color: var(--foreground);
+}
+
+select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+select option,
+select optgroup {
+  background-color: var(--card-elevated);
+  color: var(--foreground);
+}
+
 ::selection {
   background-color: color-mix(in srgb, var(--accent-rose) 35%, transparent);
   color: var(--foreground);

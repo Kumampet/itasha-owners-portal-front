@@ -576,7 +576,7 @@ export default function EventForm({
           )}
         </div>
         {formData.image_url && (
-          <div className="relative mt-2 aspect-video w-full overflow-hidden rounded-md border border-border bg-muted">
+          <div className="relative mt-2 aspect-video w-full max-w-full sm:max-w-[50%] overflow-hidden rounded-md border border-border bg-muted">
             <Image
               src={formData.image_url}
               alt="プレビュー"
@@ -1024,7 +1024,7 @@ export default function EventForm({
             onChange={(e) =>
               onFormDataChange({ ...formData, prefecture: e.target.value })
             }
-            className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+            className="mt-1 block w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground [color-scheme:dark] focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
             required
           >
             <option value="">選択してください</option>

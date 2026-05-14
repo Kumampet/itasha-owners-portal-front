@@ -188,7 +188,7 @@ export default function EventsPageClient() {
                   key={event.id}
                   href={`/events/${event.id}`}
                   className="hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-mint"
-                  cardClassName="rounded-3xl"
+                  cardClassName="rounded-3xl overflow-hidden"
                 >
                   <EventsCardContent event={event} />
                 </LinkCard>

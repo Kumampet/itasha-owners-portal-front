@@ -549,14 +549,13 @@ export default function AdminEventDetailPage({
           </div>
 
           {event.image_url && (
-            <div className="relative w-full" style={{ maxHeight: "300px" }}>
+            <div className="relative aspect-video w-full overflow-hidden rounded-md border border-border bg-muted">
               <Image
                 src={event.image_url}
                 alt={event.name}
-                width={800}
-                height={300}
-                className="w-full rounded-md object-cover"
-                style={{ maxHeight: "300px" }}
+                fill
+                className="object-contain"
+                sizes="(max-width: 768px) 100vw, 896px"
                 unoptimized
               />
             </div>
