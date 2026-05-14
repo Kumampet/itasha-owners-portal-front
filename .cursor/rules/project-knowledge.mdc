@@ -1,0 +1,21 @@
+---
+description: プロジェクト仕様ナレッジの参照先と更新義務
+alwaysApply: true
+---
+
+# 仕様ナレッジ
+
+実装・調査の前に `.cursor/docs/README.md` から該当ドキュメントを読む。
+
+- 画面: `.cursor/docs/screens/**`
+- 横断機能: `.cursor/docs/features/**`
+- API: `.cursor/docs/api/**`
+- 認証・ルート・DB: `.cursor/docs/architecture/**`
+
+## 更新
+
+仕様が変わったらコードと同じ変更で `.cursor/docs` を更新する。ドキュメント未更新の仕様変更は完了とみなさない。
+
+## 優先
+
+ドキュメントとコードが食い違うときはコードを正とし、差分をドキュメントに反映するかユーザーに確認する。
