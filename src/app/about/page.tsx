@@ -47,6 +47,7 @@ export default function AboutPage() {
                 </div>
               </section>
             ))}
+            <p className="mt-14 text-sm">※サービス内容は予告なく変更される場合があります。</p>
           </div>
 
           <p className="mt-14 text-center text-sm">
