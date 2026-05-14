@@ -66,8 +66,13 @@ export default function EventsPageClient() {
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [prefectureFilter, setPrefectureFilter] = useState("");
+  const [eventYearMonth, setEventYearMonth] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [pageSize, setPageSize] = useState<PageSize>(10);
+
+  const hasActiveFilters =
+    searchQuery.trim() !== "" || Boolean(prefectureFilter) || Boolean(eventYearMonth);
 
   const navigateToPage = useCallback(
     (page: number, mode: "push" | "replace" = "push") => {
@@ -105,6 +110,12 @@ export default function EventsPageClient() {
       if (searchQuery) {
         params.append("search", searchQuery);
       }
+      if (prefectureFilter) {
+        params.append("prefecture", prefectureFilter);
+      }
+      if (eventYearMonth) {
+        params.append("yearMonth", eventYearMonth);
+      }
       params.append("sortOrder", sortOrder);
 
       const res = await fetch(`/api/events?${params.toString()}`);
@@ -135,6 +146,8 @@ export default function EventsPageClient() {
     pageFromUrl,
     pageSize,
     searchQuery,
+    prefectureFilter,
+    eventYearMonth,
     sortOrder,
     navigateToPage,
     resetPageInUrl,
@@ -153,11 +166,28 @@ export default function EventsPageClient() {
     resetPageInUrl();
   };
 
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery("");
+    setPrefectureFilter("");
+    setEventYearMonth("");
+    resetPageInUrl();
+  }, [resetPageInUrl]);
+
   return (
     <>
       <EventsFilterPanel
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
+        prefecture={prefectureFilter}
+        onPrefectureChange={(v) => {
+          setPrefectureFilter(v);
+          resetPageInUrl();
+        }}
+        eventYearMonth={eventYearMonth}
+        onEventYearMonthChange={(v) => {
+          setEventYearMonth(v);
+          resetPageInUrl();
+        }}
         sortOrder={sortOrder}
         onSortOrderChange={(v) => {
           setSortOrder(v);
@@ -169,6 +199,7 @@ export default function EventsPageClient() {
           resetPageInUrl();
         }}
         onSubmit={handleSearch}
+        onClearFilters={handleClearFilters}
       />
 
       {loading ? (
@@ -180,7 +211,7 @@ export default function EventsPageClient() {
           <div className="space-y-3">
             {events.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                {searchQuery ? "検索条件に一致するイベントが見つかりませんでした。" : "イベントが登録されていません。"}
+                {hasActiveFilters ? "検索条件に一致するイベントが見つかりませんでした。" : "イベントが登録されていません。"}
               </p>
             ) : (
               events.map((event) => (
