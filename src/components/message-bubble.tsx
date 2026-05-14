@@ -4,7 +4,7 @@ import { SafeMessageContent } from "@/components/safe-message-content";
 import { SafeHtmlContent } from "@/components/safe-html-content";
 import { MessageReactions } from "@/components/message-reactions";
 import { ImageViewerModal } from "@/components/image-viewer-modal";
-import { useRef, memo, useState } from "react";
+import { useRef, memo, useState, useCallback } from "react";
 import { formatDateTime } from "@/lib/date-utils";
 
 type MessageBubbleProps = {
@@ -60,6 +60,9 @@ function MessageBubbleComponent({
 }: MessageBubbleProps) {
   const messageBubbleRef = useRef<HTMLDivElement>(null);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const handleImageClick = useCallback((imageUrl: string) => {
+    setSelectedImageUrl(imageUrl);
+  }, []);
 
   return (
     <>
@@ -156,7 +159,7 @@ function MessageBubbleComponent({
             <SafeHtmlContent
               html={content}
               className={`text-sm break-words ${isOwnMessage ? "text-white" : "text-muted-foreground"}`}
-              onImageClick={(imageUrl) => setSelectedImageUrl(imageUrl)}
+              onImageClick={handleImageClick}
             />
           ) : (
             <SafeMessageContent
