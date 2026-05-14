@@ -52,9 +52,13 @@ function HomeEventRow({ event }: { event: HomeEventBrief }) {
               unoptimized={Boolean(event.image_url?.startsWith("http"))}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent-mint/15 to-accent-mint-subtle text-[11px] font-medium text-foreground">
-              イベント
-            </div>
+            <Image
+              src="/images/main_logo_v2.svg"
+              alt=""
+              fill
+              className="object-contain"
+              sizes="112px"
+            />
           )}
         </div>
         <div className="min-w-0 flex-1">
@@ -83,32 +87,47 @@ function EventColumn(props: {
 }) {
   const { title, subtitle, events, emptyHint } = props;
   return (
-    <section className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-5 shadow-lg shadow-black/25 sm:p-7">
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">
-          {title}
-        </h2>
-        {subtitle ? (
-          <p className="mt-1 text-xs text-muted sm:text-sm">{subtitle}</p>
-        ) : null}
-      </div>
+    <section className="flex flex-col gap-5 lg:gap-6">
+      <header className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="flex min-w-0 flex-1 items-start gap-3.5 sm:gap-4">
+          <div
+            className="mt-1 h-10 w-[2px] shrink-0 rounded-full bg-gradient-to-b from-accent-mint via-accent-mint/75 to-accent-rose/65 sm:mt-1.5 sm:h-[3rem] sm:w-[3px]"
+            aria-hidden
+          />
+          <div className="min-w-0 flex-1 border-b border-border/80 pb-4 sm:border-0 sm:pb-0">
+            <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl sm:tracking-tight">
+              {title}
+            </h2>
+            {subtitle ? (
+              <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground sm:text-sm">
+                {subtitle}
+              </p>
+            ) : null}
+          </div>
+        </div>
+        <Link
+          href="/events"
+          className="group/footer inline-flex shrink-0 items-center gap-1 whitespace-nowrap pt-0.5 text-sm font-medium text-accent-mint transition hover:gap-1.5 sm:pt-1"
+        >
+          <span className="border-b border-transparent group-hover/footer:border-accent-mint">
+            もっと見る
+          </span>
+          <span aria-hidden className="transition-transform group-hover/footer:translate-x-0.5">
+            →
+          </span>
+        </Link>
+      </header>
       {events.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-border bg-card-elevated px-4 py-8 text-center text-sm text-muted">
+        <p className="border-y border-dashed border-border/70 py-10 text-center text-sm text-muted-foreground">
           {emptyHint}
         </p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-3 sm:gap-3.5">
           {events.map((e) => (
             <HomeEventRow key={e.id} event={e} />
           ))}
         </ul>
       )}
-      <Link
-        href="/events"
-        className="text-center text-xs font-medium text-accent-mint underline-offset-2 hover:underline sm:text-sm"
-      >
-        すべてのイベントを見る
-      </Link>
     </section>
   );
 }
@@ -120,16 +139,16 @@ export function HomeTopEventColumns(props: {
   return (
     <div className="grid gap-8 lg:grid-cols-2 lg:gap-10">
       <EventColumn
+        title="開催が近いイベント"
+        subtitle="開催日が近い順"
+        events={props.upcoming}
+        emptyHint="直近開催予定のイベントがありません。"
+      />
+      <EventColumn
         title="新着イベント"
         subtitle="最近カレンダーに追加されたイベント"
         events={props.recent}
         emptyHint="まだ公開中の新着イベントがありません。"
-      />
-      <EventColumn
-        title="開催が近いイベント"
-        subtitle="開催日が近い順（これから楽しめるイベント）"
-        events={props.upcoming}
-        emptyHint="直近開催予定のイベントがありません。"
       />
     </div>
   );

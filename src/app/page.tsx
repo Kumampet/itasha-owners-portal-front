@@ -101,21 +101,6 @@ export default async function Home() {
           <HomeTopEventColumns recent={recent} upcoming={upcoming} />
 
           <ServiceOverviewSection />
-
-          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-            <Link
-              href="/events"
-              className="inline-flex h-12 w-full items-center justify-center rounded-full bg-accent-mint px-8 text-sm font-semibold text-zinc-950 shadow-sm transition hover:brightness-110 sm:w-auto"
-            >
-              イベント一覧を見る
-            </Link>
-            <Link
-              href="/app/auth"
-              className="inline-flex h-12 w-full items-center justify-center rounded-full border border-accent-rose/35 bg-accent-rose/10 px-8 text-sm font-medium text-accent-rose transition hover:bg-accent-rose/15 sm:w-auto"
-            >
-              ログインする
-            </Link>
-          </div>
         </div>
       </main>
       <PublicSiteFooter />
