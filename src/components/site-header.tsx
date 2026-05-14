@@ -156,6 +156,7 @@ export function SiteHeader({ hideAuthUi = false }: SiteHeaderProps) {
       <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75 safe-top">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:h-14 sm:px-6 lg:gap-8">
           <Link href="/" className="h-full min-w-0 shrink-0 lg:mr-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/itanavi_logo_small_bg_alpha.svg"
               alt="いたなび！痛車オーナーズナビ"
@@ -246,8 +247,8 @@ export function SiteHeader({ hideAuthUi = false }: SiteHeaderProps) {
                   href={tab.href}
                   onClick={() => setDrawerOpen(false)}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${isActive
-                      ? "border border-accent-mint/30 bg-accent-mint/15 text-accent-mint"
-                      : "text-muted-foreground hover:bg-card-elevated hover:text-foreground"
+                    ? "border border-accent-mint/30 bg-accent-mint/15 text-accent-mint"
+                    : "text-muted-foreground hover:bg-card-elevated hover:text-foreground"
                     }`}
                 >
                   <SiteNavDrawerIcon icon={tab.icon} active={isActive} />
@@ -260,8 +261,8 @@ export function SiteHeader({ hideAuthUi = false }: SiteHeaderProps) {
                 href={organizerNav.href}
                 onClick={() => setDrawerOpen(false)}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${organizerActive
-                    ? "border border-accent-mint/30 bg-accent-mint/15 text-accent-mint"
-                    : "text-muted-foreground hover:bg-card-elevated hover:text-foreground"
+                  ? "border border-accent-mint/30 bg-accent-mint/15 text-accent-mint"
+                  : "text-muted-foreground hover:bg-card-elevated hover:text-foreground"
                   }`}
               >
                 <SiteNavDrawerIcon
