@@ -41,12 +41,6 @@ export function PublicSiteFooter() {
           >
             お問い合わせ
           </Link>
-          <Link href="/events" className="underline-offset-2 hover:text-accent-mint hover:underline">
-            イベント一覧
-          </Link>
-          <Link href="/about" className="underline-offset-2 hover:text-accent-mint hover:underline">
-            サービス概要
-          </Link>
         </nav>
         <p className="text-xs text-muted sm:text-right">
           運営：Kumampet（いたなび！）
