@@ -15,6 +15,7 @@
     "test:coverage": "jest --coverage",
     "check": "npm run prisma:generate && npm run type-check && npm run lint",
     "db:seed": "tsx prisma/seed.ts",
+    "db:sample-events": "tsx scripts/create-sample-events.ts",
     "sitemap:sync-events": "tsx scripts/sync-events-sitemap.ts",
     "db:clear-sessions": "tsx scripts/clear-sessions.ts",
     "db:view-users": "tsx scripts/view-users.ts",
