@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import Twitter from "next-auth/providers/twitter";
+import { getAuthSecret } from "@/lib/auth-secret";
 
 // DATABASE_URLが設定されているかチェック
 const hasDatabaseUrl = !!(
@@ -136,11 +137,8 @@ const getAdapter = () => {
   }
 };
 
-// adapterを取得（将来の拡張性のために保持）
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const adapterInstance = getAdapter();
-
-// プロバイダー設定（Google、X）
+// Edge の middleware が auth を読み込むため、ここで getAdapter() を呼ぶと prisma（node:fs 等）が
+// Edge バンドルに入りビルドが失敗する。アダプタは実際に NextAuth に渡すまで初期化しない。
 // DATABASE_URLが設定されている場合のみadapterを設定
 const configBase: NextAuthConfig = {
   providers: [
@@ -467,26 +465,6 @@ const configBase: NextAuthConfig = {
   },
 };
 
-// NEXTAUTH_SECRET: 本番は必須。開発（next dev）のみ未設定時はフォールバックで起動可能にする
-const nextAuthSecretErrorMessage =
-  "NEXTAUTH_SECRET environment variable is required. " +
-  "Please generate a secret key using: openssl rand -base64 32";
-
-const trimmedSecret = process.env.NEXTAUTH_SECRET?.trim();
-const authSecret =
-  trimmedSecret ||
-  (process.env.NODE_ENV !== "production"
-    ? (() => {
-        console.warn(
-          "[NextAuth] NEXTAUTH_SECRET が未設定です。開発用の仮シークレットで起動します。OAuth やセッション用に `.env` へ設定してください: openssl rand -base64 32"
-        );
-        return "local-dev-only-unsafe-nextauth-secret-do-not-use-in-production";
-      })()
-    : (() => {
-        console.error(nextAuthSecretErrorMessage);
-        throw new Error(nextAuthSecretErrorMessage);
-      })());
-
 // NextAuth v5では、AUTH_URLを優先的に使用（NEXTAUTH_URLは後方互換性のためにサポート）
 const authUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL;
 if (authUrl) {
@@ -502,7 +480,7 @@ if (authUrl) {
 const config: NextAuthConfig = {
   ...configBase,
   // adapterは将来の拡張性のために保持（現在はJWT戦略のみ使用）
-  secret: authSecret,
+  secret: getAuthSecret(),
   // 無効なセッションクッキーを無視する（NEXTAUTH_SECRETが変更された場合など）
   trustHost: true,
   // セッションのエラーハンドリングを改善

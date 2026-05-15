@@ -1,11 +1,37 @@
-import { auth } from "@/auth";
+import { getToken } from "next-auth/jwt";
 import {
   getRequestCountryCode,
   shouldBlockGdprRegion,
   shouldSkipGdprGeoBlock,
 } from "@/lib/gdpr-geo";
+import { getAuthSecret, getUseSecureAuthCookie } from "@/lib/auth-secret";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+
+/** Edge では `@/auth`（prisma 経由のバンドル）を避け、JWT クッキーからセッション相当を復元する */
+async function getSessionFromJwtCookie(
+  request: NextRequest,
+): Promise<{ user: { id: string; role: string; email: string } } | null> {
+  const token = await getToken({
+    req: request,
+    secret: getAuthSecret(),
+    secureCookie: getUseSecureAuthCookie(),
+  });
+  if (!token) {
+    return null;
+  }
+  const id =
+    (typeof token.id === "string" ? token.id : null) ??
+    (typeof token.sub === "string" ? token.sub : "") ??
+    "";
+  return {
+    user: {
+      id,
+      role: (typeof token.role === "string" ? token.role : "") || "USER",
+      email: (typeof token.email === "string" ? token.email : "") || "",
+    },
+  };
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -67,7 +93,7 @@ export async function middleware(request: NextRequest) {
   try {
     // /app配下または/admin配下のパスにアクセスする場合にauth()を呼び出す
     if (pathname.startsWith("/app/") || pathname.startsWith("/admin")) {
-      session = await auth();
+      session = await getSessionFromJwtCookie(request);
     }
   } catch {
     // 無効なセッションクッキー（JWEInvalidなど）の場合は無視して続行

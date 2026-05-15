@@ -8,7 +8,7 @@
 - ローカルや `DISABLE_EU_GEOBLOCK` でスキップ可
 - API も matcher 対象
 
-## 認証不要（ミドルウェアで auth を呼ばない/保護対象外）
+## 認証不要（ログインリダイレクト対象外）
 
 | パス | 備考 |
 | --- | --- |
@@ -39,8 +39,9 @@
 
 ## セッション取得の注意
 
-- Edge の middleware では JWT 戦略時に `auth()` が null になり得る
-- セッション Cookie がある場合はクライアント `useSession` に委譲
+- **middleware は `@/auth` を import しない**（`auth.ts` → Prisma 等が Edge バンドルに乗りビルド失敗するため）
+- ミドルウェア内のロール判定は `next-auth/jwt` の `getToken` と `src/lib/auth-secret.ts`（`NEXTAUTH_SECRET`・`secureCookie`）で JWT を復元する
+- セッション Cookie がある場合の詳細はクライアント `useSession` に委譲し得る
 - 無効 Cookie は try/catch で無視し null 扱い
 
 ## グローバルナビ
