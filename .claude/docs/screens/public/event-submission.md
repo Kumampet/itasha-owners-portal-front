@@ -8,9 +8,18 @@
 
 ユーザーがイベント情報を投稿し、管理者が `/admin/submissions` で処理する。
 
+## フォーム
+
+- イベント名（必須）
+- 開催日（必須）: `DateTimeInput` の `type="date"` で日付のみ入力
+- 会場・住所（必須）
+- イベント情報 URL（必須）
+- 備考（任意）
+
 ## API
 
 - `POST /api/event-submissions`
+  - `event_date` は `fromDateLocal()` で JST として解釈し UTC 変換して保存
 - 管理: `GET /api/admin/submissions`, `POST .../process`
 
 ## 通知

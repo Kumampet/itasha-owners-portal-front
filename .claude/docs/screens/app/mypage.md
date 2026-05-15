@@ -8,7 +8,7 @@
 
 - ユーザー情報サマリ
 - リマインダー要約: `my-page-reminder-panel.tsx`
-- 各機能へのメニューカード: `my-page-menu-card.tsx`。カード内アイコンは `@/components/icons`（`outline-24.tsx`）の共通 SVG を使用する。
+- 各機能へのメニューカード: `my-page-menu-card.tsx`。カード内アイコンは `@/components/icons`（`outline-24.tsx`）の共通 SVG を使用する
 - オーガナイザー/管理者向けに `SITE_NAV_ORGANIZER_ITEM` 導線
 - メール未設定時バナー: `email-required-banner`, `my-page-email-required-modal`
 

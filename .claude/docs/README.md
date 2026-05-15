@@ -80,7 +80,3 @@
 | [api/reminders.md](./api/reminders.md) | リマインダー・スケジューラ |
 | [api/user.md](./api/user.md) | ユーザー設定 |
 | [api/admin.md](./api/admin.md) | 管理 API |
-
-## Cursor 実装ガイド
-
-エージェント向けの必読ルールは [.cursor/rules/](../rules/) を参照してください。
