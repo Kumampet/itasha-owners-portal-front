@@ -23,6 +23,7 @@
 | `src/app` | ページ・Route Handler |
 | `src/app/(app)` | 共通シェル付きルート（URL には出ない） |
 | `src/components` | 共有 UI |
+| `src/components/icons` | 公開ナビ・管理サイド等で共通利用する 24px アウトライン SVG |
 | `src/lib` | サーバー/クライアント共通ロジック |
 | `src/config` | ナビ・定数 |
 | `src/content` | 静的コピー（例: サービス概要） |

@@ -1,10 +1,28 @@
+import type { ComponentType } from "react";
 import type { SiteNavDrawerIconKey } from "@/config/site-nav";
+import type { OutlineIcon24Props } from "@/components/icons";
+import {
+  IconCalendar,
+  IconEnvelope,
+  IconInformationCircle,
+  IconPlus,
+} from "@/components/icons";
 
 const iconShell =
   "flex h-9 w-9 shrink-0 items-center justify-center rounded-full";
 const svgClass = "h-5 w-5";
 
-/** サイドドロワー／マイページのカードと同系の Heroicons 風 SVG */
+const iconByKey: Record<
+  SiteNavDrawerIconKey,
+  ComponentType<OutlineIcon24Props>
+> = {
+  events: IconCalendar,
+  about: IconInformationCircle,
+  "event-submission": IconPlus,
+  contact: IconEnvelope,
+};
+
+/** サイドドロワー／マイページのカードと同系の Heroicons 風 SVG（共通: `src/components/icons`） */
 export function SiteNavDrawerIcon({
   icon,
   active,
@@ -36,53 +54,11 @@ export function SiteNavDrawerIcon({
       break;
   }
 
-  const paths = (
-    <>
-      {icon === "events" && (
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-        />
-      )}
-      {icon === "about" && (
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      )}
-      {icon === "event-submission" && (
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 4v16m8-8H4"
-        />
-      )}
-      {icon === "contact" && (
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-        />
-      )}
-    </>
-  );
+  const Icon = iconByKey[icon];
 
   return (
     <span className={`${iconShell} ${palette}`} aria-hidden>
-      <svg
-        className={`${svgClass}`}
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        {paths}
-      </svg>
+      <Icon className={svgClass} />
     </span>
   );
 }

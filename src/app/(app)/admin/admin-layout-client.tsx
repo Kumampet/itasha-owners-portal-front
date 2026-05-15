@@ -3,28 +3,46 @@
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import type { ComponentType, ReactNode } from "react";
 import Link from "next/link";
-import type { ReactNode } from "react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { MobileHeader } from "@/components/mobile-header";
 import { SideNav } from "@/components/side-nav";
+import type { OutlineIcon24Props } from "@/components/icons";
+import {
+  IconArrowLeft,
+  IconCalendar,
+  IconChartBar,
+  IconClipboardDocumentList,
+  IconDocumentText,
+  IconEnvelope,
+  IconPlus,
+  IconRectangleGroup,
+  IconUsers,
+} from "@/components/icons";
 
 type AdminLayoutClientProps = {
   children: ReactNode;
 };
 
-const menuItems = [
-  { href: "/admin/dashboard", label: "ダッシュボード", icon: "📊" },
-  { href: "/admin/events", label: "イベント管理", icon: "📅" },
+type AdminNavItem = {
+  href: string;
+  label: string;
+  Icon: ComponentType<OutlineIcon24Props>;
+};
+
+const menuItems: AdminNavItem[] = [
+  { href: "/admin/dashboard", label: "ダッシュボード", Icon: IconChartBar },
+  { href: "/admin/events", label: "イベント管理", Icon: IconCalendar },
 ];
 
 // adminのみ表示するメニュー項目
-const adminOnlyMenuItems = [
-  { href: "/admin/users", label: "ユーザー管理", icon: "👥" },
-  { href: "/admin/submissions", label: "イベント掲載依頼フォーム", icon: "📝" },
-  { href: "/admin/contacts", label: "お問い合わせ管理", icon: "💬" },
-  { href: "/admin/groups", label: "団体モデレーション", icon: "👥" },
-  { href: "/admin/organizer-applications", label: "オーガナイザー申請一覧", icon: "📋" },
+const adminOnlyMenuItems: AdminNavItem[] = [
+  { href: "/admin/users", label: "ユーザー管理", Icon: IconUsers },
+  { href: "/admin/submissions", label: "イベント掲載依頼フォーム", Icon: IconDocumentText },
+  { href: "/admin/contacts", label: "お問い合わせ管理", Icon: IconEnvelope },
+  { href: "/admin/groups", label: "団体モデレーション", Icon: IconRectangleGroup },
+  { href: "/admin/organizer-applications", label: "オーガナイザー申請一覧", Icon: IconClipboardDocumentList },
 ];
 
 type SidebarContentProps = {
@@ -46,7 +64,7 @@ function AdminSidebarContent({ onLinkClick, pathname, session }: SidebarContentP
             }`}
           onClick={onLinkClick}
         >
-          <span>➕</span>
+          <IconPlus className="h-5 w-5 shrink-0" aria-hidden />
           <span>新規イベントを作成</span>
         </Link>
         <div className="mb-4 border-t border-border"></div>
@@ -64,7 +82,7 @@ function AdminSidebarContent({ onLinkClick, pathname, session }: SidebarContentP
                   }`}
                 onClick={onLinkClick}
               >
-                <span>{item.icon}</span>
+                <item.Icon className="h-5 w-5 shrink-0" aria-hidden />
                 <span>{item.label}</span>
               </Link>
             );
@@ -83,7 +101,7 @@ function AdminSidebarContent({ onLinkClick, pathname, session }: SidebarContentP
                     }`}
                   onClick={onLinkClick}
                 >
-                  <span>{item.icon}</span>
+                  <item.Icon className="h-5 w-5 shrink-0" aria-hidden />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -96,7 +114,7 @@ function AdminSidebarContent({ onLinkClick, pathname, session }: SidebarContentP
             className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
             onClick={onLinkClick}
           >
-            <span>🔙</span>
+            <IconArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
             <span>アプリに戻る</span>
           </Link>
         </div>
