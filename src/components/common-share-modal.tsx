@@ -121,24 +121,24 @@ export function ShareModal({
             }
         >
             <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-zinc-600">
                     {config.description}
                 </p>
 
                 <div className="space-y-2">
-                    <div className="text-xs font-medium text-muted-foreground mb-2">
+                    <div className="text-xs font-medium text-zinc-700 mb-2">
                         {config.itemNameLabel}
                     </div>
-                    <div className="text-sm text-foreground bg-card-elevated rounded-md p-3">
+                    <div className="text-sm text-zinc-900 bg-zinc-50 rounded-md p-3">
                         {config.itemName}
                     </div>
                 </div>
 
                 <div className="space-y-2">
-                    <div className="text-xs font-medium text-muted-foreground mb-2">
+                    <div className="text-xs font-medium text-zinc-700 mb-2">
                         {config.itemUrlLabel}
                     </div>
-                    <div className="text-sm text-muted-foreground bg-card-elevated rounded-md p-3 break-all">
+                    <div className="text-sm text-zinc-600 bg-zinc-50 rounded-md p-3 break-all">
                         {config.itemUrl}
                     </div>
                 </div>

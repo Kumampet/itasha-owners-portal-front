@@ -172,13 +172,13 @@ function AdminNewEventPageContent() {
       <div className="mb-6">
         <Link
           href="/admin/events"
-          className="text-sm text-muted-foreground hover:text-foreground"
+          className="text-sm text-zinc-600 hover:text-zinc-900"
         >
           ← イベント一覧に戻る
         </Link>
       </div>
 
-      <h1 className="mb-6 text-2xl font-semibold text-foreground sm:text-3xl">
+      <h1 className="mb-6 text-2xl font-semibold text-zinc-900 sm:text-3xl">
         新規イベントを作成
       </h1>
 

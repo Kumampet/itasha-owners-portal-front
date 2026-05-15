@@ -129,7 +129,7 @@ export default function AdminSubmissionsPage() {
       case "REJECTED":
         return "bg-red-100 text-red-700";
       default:
-        return "bg-card-elevated text-muted-foreground";
+        return "bg-zinc-100 text-zinc-700";
     }
   };
 
@@ -150,16 +150,16 @@ export default function AdminSubmissionsPage() {
   return (
     <div className="w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">
+        <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
           イベント掲載依頼フォーム
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+        <p className="mt-2 text-sm text-zinc-600 sm:text-base">
           ユーザーからのイベント掲載依頼を確認・処理します
         </p>
       </div>
 
       {/* フィルター・ソート・検索 */}
-      <div className="mb-6 space-y-4 rounded-lg border border-border bg-card p-4">
+      <div className="mb-6 space-y-4 rounded-lg border border-zinc-200 bg-white p-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           {/* 検索 */}
           <div className="flex-1">
@@ -168,7 +168,7 @@ export default function AdminSubmissionsPage() {
               placeholder="イベント名で検索..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
             />
           </div>
 
@@ -182,7 +182,7 @@ export default function AdminSubmissionsPage() {
                   size="sm"
                   rounded="md"
                   onClick={() => setFilterStatus(status)}
-                  className={filterStatus === status ? "" : "bg-card-elevated hover:bg-card"}
+                  className={filterStatus === status ? "" : "bg-zinc-100 hover:bg-zinc-200"}
                 >
                   {status === "ALL"
                     ? "すべて"
@@ -200,11 +200,11 @@ export default function AdminSubmissionsPage() {
         {/* ソート */}
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-muted-foreground">並び替え:</label>
+            <label className="text-xs font-medium text-zinc-700">並び替え:</label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortBy)}
-              className="rounded-md border border-border px-2 py-1 text-xs focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              className="rounded-md border border-zinc-300 px-2 py-1 text-xs focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
             >
               <option value="created_at">提出日</option>
               <option value="event_date">開催日</option>
@@ -230,8 +230,8 @@ export default function AdminSubmissionsPage() {
           <LoadingSpinner size="lg" />
         </div>
       ) : submissions.length === 0 ? (
-        <div className="rounded-lg border border-border bg-card p-8 text-center">
-          <p className="text-sm text-muted-foreground">イベント掲載依頼がありません</p>
+        <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center">
+          <p className="text-sm text-zinc-600">イベント掲載依頼がありません</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -240,8 +240,8 @@ export default function AdminSubmissionsPage() {
               key={submission.id}
               className={`rounded-lg border p-4 transition ${
                 submission.status === "PROCESSED"
-                  ? "border-border bg-card-elevated opacity-60"
-                  : "border-border bg-card hover:border-accent-mint/50 hover:shadow-md"
+                  ? "border-zinc-200 bg-zinc-50 opacity-60"
+                  : "border-zinc-200 bg-white hover:border-zinc-900 hover:shadow-md"
               }`}
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -254,21 +254,21 @@ export default function AdminSubmissionsPage() {
                     >
                       {getStatusLabel(submission.status)}
                     </span>
-                    <span className={`text-xs ${submission.status === "PROCESSED" ? "text-zinc-400" : "text-muted"}`}>
+                    <span className={`text-xs ${submission.status === "PROCESSED" ? "text-zinc-400" : "text-zinc-500"}`}>
                       {submission.submitter?.email || submission.submitter_email || "匿名"}
                     </span>
                   </div>
-                  <h3 className={`text-base font-semibold ${submission.status === "PROCESSED" ? "text-zinc-400" : "text-foreground"}`}>
+                  <h3 className={`text-base font-semibold ${submission.status === "PROCESSED" ? "text-zinc-400" : "text-zinc-900"}`}>
                     {submission.name}
                   </h3>
                   {submission.theme && (
-                    <p className={`text-sm ${submission.status === "PROCESSED" ? "text-zinc-400" : "text-muted-foreground"}`}>
+                    <p className={`text-sm ${submission.status === "PROCESSED" ? "text-zinc-400" : "text-zinc-600"}`}>
                       {submission.theme}
                     </p>
                   )}
-                  <div className={`mt-2 flex flex-wrap gap-4 text-xs ${submission.status === "PROCESSED" ? "text-zinc-400" : "text-muted"}`}>
+                  <div className={`mt-2 flex flex-wrap gap-4 text-xs ${submission.status === "PROCESSED" ? "text-zinc-400" : "text-zinc-500"}`}>
                     {submission.event_date && (
-                      <span>開催日: {formatDate(submission.event_date)}</span>
+                      <span>開催日時: {formatDateTime(submission.event_date)}</span>
                     )}
                     {submission.venue_name && <span>会場・住所: {submission.venue_name}</span>}
                     {submission.entry_start_at && (
@@ -324,15 +324,15 @@ export default function AdminSubmissionsPage() {
       {/* 詳細モーダル */}
       {selectedSubmission && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-card p-6">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-zinc-200 bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-foreground">イベント掲載依頼の詳細</h2>
+              <h2 className="text-xl font-semibold text-zinc-900">イベント掲載依頼の詳細</h2>
               <Button
                 variant="secondary"
                 size="sm"
                 rounded="md"
                 onClick={() => setSelectedSubmission(null)}
-                className="text-muted-foreground hover:text-foreground border-0 bg-transparent"
+                className="text-zinc-600 hover:text-zinc-900 border-0 bg-transparent p-0"
               >
                 ×
               </Button>
@@ -340,21 +340,21 @@ export default function AdminSubmissionsPage() {
 
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground">イベント名</h3>
-                <p className="mt-1 text-sm text-foreground">{selectedSubmission.name}</p>
+                <h3 className="text-sm font-medium text-zinc-700">イベント名</h3>
+                <p className="mt-1 text-sm text-zinc-900">{selectedSubmission.name}</p>
               </div>
 
               {selectedSubmission.theme && (
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">テーマ</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{selectedSubmission.theme}</p>
+                  <h3 className="text-sm font-medium text-zinc-700">テーマ</h3>
+                  <p className="mt-1 text-sm text-zinc-600">{selectedSubmission.theme}</p>
                 </div>
               )}
 
               {selectedSubmission.description && (
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">備考</h3>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                  <h3 className="text-sm font-medium text-zinc-700">備考</h3>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-zinc-600">
                     {selectedSubmission.description}
                   </p>
                 </div>
@@ -362,7 +362,7 @@ export default function AdminSubmissionsPage() {
 
               {selectedSubmission.original_url ? (
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">イベント情報URL</h3>
+                  <h3 className="text-sm font-medium text-zinc-700">イベント情報URL</h3>
                   <a
                     href={selectedSubmission.original_url}
                     target="_blank"
@@ -377,19 +377,17 @@ export default function AdminSubmissionsPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {selectedSubmission.event_date && (
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">開催日</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {formatDate(selectedSubmission.event_date)}
+                    <h3 className="text-sm font-medium text-zinc-700">開催日時</h3>
+                    <p className="mt-1 text-sm text-zinc-600">
+                      {formatDateTime(selectedSubmission.event_date)}
                     </p>
                   </div>
                 )}
 
                 {selectedSubmission.venue_name && (
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">会場・住所</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {selectedSubmission.venue_name}
-                    </p>
+                    <h3 className="text-sm font-medium text-zinc-700">会場・住所</h3>
+                    <p className="mt-1 text-sm text-zinc-600">{selectedSubmission.venue_name}</p>
                   </div>
                 )}
               </div>
@@ -398,8 +396,8 @@ export default function AdminSubmissionsPage() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {selectedSubmission.entry_start_at && (
                     <div>
-                      <h3 className="text-sm font-medium text-muted-foreground">エントリー開始日時</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <h3 className="text-sm font-medium text-zinc-700">エントリー開始日時</h3>
+                      <p className="mt-1 text-sm text-zinc-600">
                         {formatDateTime(selectedSubmission.entry_start_at)}
                       </p>
                     </div>
@@ -407,8 +405,8 @@ export default function AdminSubmissionsPage() {
 
                   {selectedSubmission.payment_due_at && (
                     <div>
-                      <h3 className="text-sm font-medium text-muted-foreground">支払期限日時</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <h3 className="text-sm font-medium text-zinc-700">支払期限日時</h3>
+                      <p className="mt-1 text-sm text-zinc-600">
                         {formatDateTime(selectedSubmission.payment_due_at)}
                       </p>
                     </div>
@@ -417,8 +415,8 @@ export default function AdminSubmissionsPage() {
               )}
 
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground">提供者</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <h3 className="text-sm font-medium text-zinc-700">提供者</h3>
+                <p className="mt-1 text-sm text-zinc-600">
                   {selectedSubmission.submitter?.email ||
                     selectedSubmission.submitter_email ||
                     "匿名"}
@@ -426,8 +424,8 @@ export default function AdminSubmissionsPage() {
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground">提出日</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <h3 className="text-sm font-medium text-zinc-700">提出日</h3>
+                <p className="mt-1 text-sm text-zinc-600">
                   {formatDate(selectedSubmission.created_at)}
                 </p>
               </div>
@@ -436,15 +434,16 @@ export default function AdminSubmissionsPage() {
                 <div className="flex gap-2 pt-4">
                   <Button
                     variant="success"
-                    size="sm"
+                    size="md"
                     rounded="md"
+                    fullWidth
                     onClick={() => handleCreateEvent(selectedSubmission)}
                   >
                     イベント作成画面へ
                   </Button>
                   <Button
                     variant="danger"
-                    size="sm"
+                    size="md"
                     rounded="md"
                     onClick={() => handleProcess(selectedSubmission.id, "REJECTED")}
                     disabled={processing}

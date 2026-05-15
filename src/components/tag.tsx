@@ -6,7 +6,7 @@ interface TagProps {
 }
 
 export function Tag({ children, className = "" }: TagProps) {
-    const baseClasses = "rounded-full bg-card-elevated px-3 py-1 text-xs font-medium text-muted-foreground";
+    const baseClasses = "rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700";
     const combinedClassName = `${baseClasses} ${className}`.trim();
 
     return (

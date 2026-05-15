@@ -118,7 +118,7 @@ export default function ProfileEditPage() {
                 {isLoading ? (
                     <div className="flex items-center gap-2">
                         <LoadingSpinner size="sm" />
-                        <span className="text-sm text-muted">読み込み中...</span>
+                        <span className="text-sm text-zinc-500">読み込み中...</span>
                     </div>
                 ) : (
                     <>
@@ -126,12 +126,12 @@ export default function ProfileEditPage() {
                             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
                                 基本情報の変更
                             </h1>
-                            <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
+                            <p className="mt-2 text-xs text-zinc-600 sm:text-sm">
                                 プロフィールなどの情報を表示し、編集できます。
                             </p>
                         </header>
 
-                        <div className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+                        <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 {error && (
                                     <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
@@ -143,7 +143,7 @@ export default function ProfileEditPage() {
                                 <div>
                                     <label
                                         htmlFor="email"
-                                        className="block text-sm font-medium text-muted-foreground mb-2"
+                                        className="block text-sm font-medium text-zinc-700 mb-2"
                                     >
                                         メールアドレス
                                         {isEmailRequired && <span className="text-red-500"> *</span>}
@@ -155,7 +155,7 @@ export default function ProfileEditPage() {
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="example@email.com"
                                         required={isEmailRequired}
-                                        className="w-full rounded-md border border-border px-3 py-2 text-sm text-foreground placeholder-zinc-400 focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+                                        className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
                                     />
                                     {isEmailRequired && (
                                         <p className="mt-1 text-xs text-red-600">
@@ -163,7 +163,7 @@ export default function ProfileEditPage() {
                                         </p>
                                     )}
                                     {!isEmailRequired && session?.user?.email && (
-                                        <p className="mt-1 text-xs text-muted">
+                                        <p className="mt-1 text-xs text-zinc-500">
                                             現在のメールアドレス: {session.user.email}
                                         </p>
                                     )}
@@ -172,7 +172,7 @@ export default function ProfileEditPage() {
                                 <div>
                                     <label
                                         htmlFor="displayName"
-                                        className="block text-sm font-medium text-muted-foreground mb-2"
+                                        className="block text-sm font-medium text-zinc-700 mb-2"
                                     >
                                         表示名（任意、全角50文字以内）
                                     </label>
@@ -189,17 +189,17 @@ export default function ProfileEditPage() {
                                             }
                                         }}
                                         placeholder="例: 痛車太郎"
-                                        className="w-full rounded-md border border-border px-3 py-2 text-sm text-foreground placeholder-zinc-400 focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+                                        className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
                                         maxLength={50}
                                     />
-                                    <p className="mt-1 text-xs text-muted">
+                                    <p className="mt-1 text-xs text-zinc-500">
                                         {Array.from(displayName).length} / 50文字
                                     </p>
-                                    <p className="mt-2 text-xs text-muted-foreground">
+                                    <p className="mt-2 text-xs text-zinc-600">
                                         団体チャットなどで表示される表示名（ニックネーム）を設定できます。
                                         実名を公開したくない場合でも、この表示名で参加できます。
                                     </p>
-                                    <p className="mt-1 text-xs text-muted-foreground">
+                                    <p className="mt-1 text-xs text-zinc-600">
                                         未設定の場合はログインしたアカウントの名前を使用します。
                                     </p>
                                 </div>

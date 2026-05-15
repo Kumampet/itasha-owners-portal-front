@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { scheduleMergeApprovedEventIntoSitemapOnS3 } from "@/lib/events-sitemap-s3";
 import { fromDateTimeLocal, fromDateLocal } from "@/lib/date-utils";
 import { notifyDiscordEventApprovalRequested } from "@/lib/discord-admin-notify";
-import { EVENT_DESCRIPTION_MAX_CHARS } from "@/lib/event-description";
 
 // GET /api/admin/events/[id]
 // 管理画面用のイベント詳細取得API
@@ -162,17 +160,6 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    if (
-      typeof body.description === "string" &&
-      body.description.length > EVENT_DESCRIPTION_MAX_CHARS
-    ) {
-      return NextResponse.json(
-        {
-          error: `イベント概要文は${EVENT_DESCRIPTION_MAX_CHARS}文字以内で入力してください`,
-        },
-        { status: 400 }
-      );
-    }
     const tags: string[] = body.tags || [];
     const approvalStatus = body.approval_status || existingEvent.approval_status;
     const notifyApprovalRequested =
@@ -348,7 +335,6 @@ export async function PATCH(
           official_urls: true,
           image_url: true,
           approval_status: true,
-          updated_at: true,
           created_by_user_id: true,
           entries: {
             select: {
@@ -400,21 +386,6 @@ export async function PATCH(
           timeZone: "Asia/Tokyo",
         }),
       });
-    }
-
-    const becameApproved =
-      existingEvent.approval_status !== "APPROVED" &&
-      event &&
-      typeof event === "object" &&
-      "approval_status" in event &&
-      event.approval_status === "APPROVED" &&
-      "updated_at" in event;
-
-    if (becameApproved) {
-      scheduleMergeApprovedEventIntoSitemapOnS3(
-        id,
-        event.updated_at as Date,
-      );
     }
 
     return NextResponse.json(event);

@@ -42,29 +42,29 @@ export function GroupListCard({ group, hasUnread }: GroupListCardProps) {
   return (
     <Link
       href={`/app/groups/${group.id}`}
-      className="block rounded-lg border border-border bg-card p-4 transition hover:border-accent-mint/50 hover:shadow-md"
+      className="block rounded-lg border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 hover:shadow-md"
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-foreground">
+            <h3 className="text-sm font-semibold text-zinc-900">
               {group.name}
             </h3>
             {group.isLeader && <OwnerBadge />}
             {hasUnread && <UnreadBadge />}
           </div>
           {group.theme && (
-            <p className="mt-1 text-xs text-muted-foreground">{group.theme}</p>
+            <p className="mt-1 text-xs text-zinc-600">{group.theme}</p>
           )}
-          <p className="mt-2 text-xs text-muted">
+          <p className="mt-2 text-xs text-zinc-500">
             {group.event.name} / {formatDate(group.event.event_date)}
           </p>
-          <p className="mt-1 text-xs text-muted">
+          <p className="mt-1 text-xs text-zinc-500">
             メンバー: {group.memberCount}
             {group.maxMembers && ` / ${group.maxMembers}`}人
           </p>
         </div>
-        <div className="text-sm text-muted">→</div>
+        <div className="text-sm text-zinc-500">→</div>
       </div>
     </Link>
   );

@@ -9,15 +9,13 @@ interface CardProps {
 }
 
 export function Card({ children, className = "", variant = "default" }: CardProps) {
-    const baseClasses =
-        "rounded-2xl border border-border shadow-sm shadow-black/20 p-4 sm:p-5";
+    const baseClasses = "rounded-2xl border border-zinc-200 p-4 sm:p-5";
     const variantClasses = {
-        default: "bg-card",
-        muted: "bg-card-elevated",
+        default: "bg-white",
+        muted: "bg-zinc-50",
     };
 
-    const combinedClassName =
-        `${baseClasses} ${variantClasses[variant]} ${className}`.trim();
+    const combinedClassName = `${baseClasses} ${variantClasses[variant]} ${className}`.trim();
 
     return (
         <div className={combinedClassName}>
@@ -33,9 +31,7 @@ interface CardTitleProps {
 
 export function CardTitle({ children, className = "" }: CardTitleProps) {
     return (
-        <h2
-            className={`text-sm font-semibold text-foreground sm:text-base ${className}`.trim()}
-        >
+        <h2 className={`text-sm font-semibold text-zinc-900 sm:text-base ${className}`.trim()}>
             {children}
         </h2>
     );
@@ -53,3 +49,4 @@ export function CardContent({ children, className = "" }: CardContentProps) {
         </div>
     );
 }
+

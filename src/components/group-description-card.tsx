@@ -149,9 +149,9 @@ export function GroupDescriptionCard({
   };
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+    <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
       <div className="flex items-start justify-between gap-4">
-        <h2 className="text-sm font-semibold text-foreground sm:text-base">
+        <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
           団体説明
         </h2>
         {isLeader && !isEditing && (
@@ -203,11 +203,11 @@ export function GroupDescriptionCard({
             <div className="prose prose-sm max-w-none">
               <SafeHtmlContent
                 html={groupDescription}
-                className="break-words text-sm text-muted-foreground"
+                className="break-words text-sm text-zinc-700"
               />
             </div>
           ) : (
-            <p className="text-sm text-muted">
+            <p className="text-sm text-zinc-500">
               団体説明はまだありません
             </p>
           )}

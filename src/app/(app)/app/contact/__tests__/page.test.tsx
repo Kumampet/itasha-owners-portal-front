@@ -220,7 +220,7 @@ describe('ContactPage', () => {
     expect(backLink.closest('a')).toHaveAttribute('href', '/app/mypage')
   })
 
-  it('未ログインの場合、戻るリンクを表示しない', () => {
+  it('未ログインの場合、トップページへの戻るリンクを表示する', () => {
     mockUseSession.mockReturnValue({
       data: null,
       status: 'unauthenticated',
@@ -228,8 +228,8 @@ describe('ContactPage', () => {
     })
 
     render(<ContactPage />)
-    expect(screen.queryByText(/マイページへ戻る/)).not.toBeInTheDocument()
-    expect(screen.queryByText(/トップページへ戻る/)).not.toBeInTheDocument()
+    const backLink = screen.getByText(/トップページへ戻る/)
+    expect(backLink.closest('a')).toHaveAttribute('href', '/')
   })
 
   it('ログイン中の場合、キャンセルボタンがマイページへのリンクになっている', () => {

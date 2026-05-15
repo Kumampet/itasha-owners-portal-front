@@ -225,29 +225,29 @@ export default function AdminGroupsPage() {
   return (
     <div className="w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">
+        <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
           団体モデレーション
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+        <p className="mt-2 text-sm text-zinc-600 sm:text-base">
           すべての団体のチャット内容と参加ユーザーを管理します
         </p>
       </div>
 
       {/* 検索 */}
-      <div className="mb-6 rounded-lg border border-border bg-card p-4">
+      <div className="mb-6 rounded-lg border border-zinc-200 bg-white p-4">
         <input
           type="text"
           placeholder="団体名、団体コード、テーマで検索..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+          className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* 団体一覧 */}
         <div>
-          <h2 className="mb-4 text-lg font-semibold text-foreground">
+          <h2 className="mb-4 text-lg font-semibold text-zinc-900">
             団体一覧
           </h2>
           {loading ? (
@@ -255,8 +255,8 @@ export default function AdminGroupsPage() {
               <LoadingSpinner size="lg" />
             </div>
           ) : groups.length === 0 ? (
-            <div className="rounded-lg border border-border bg-card p-8 text-center">
-              <p className="text-sm text-muted-foreground">団体がありません</p>
+            <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center">
+              <p className="text-sm text-zinc-600">団体がありません</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -266,27 +266,27 @@ export default function AdminGroupsPage() {
                   onClick={() => fetchGroupDetail(group.id)}
                   className={`w-full rounded-lg border p-4 text-left transition ${
                     selectedGroup?.id === group.id
-                      ? "border-border-strong bg-card-elevated"
-                      : "border-border bg-card hover:border-border"
+                      ? "border-zinc-900 bg-zinc-50"
+                      : "border-zinc-200 bg-white hover:border-zinc-300"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-foreground">
+                      <p className="text-sm font-semibold text-zinc-900">
                         {group.name}
                       </p>
                       {group.theme && (
-                        <p className="mt-1 text-xs text-muted-foreground">{group.theme}</p>
+                        <p className="mt-1 text-xs text-zinc-600">{group.theme}</p>
                       )}
-                      <p className="mt-1 text-xs text-muted">
+                      <p className="mt-1 text-xs text-zinc-500">
                         {group.event.name} / {formatDate(group.event.event_date)}
                       </p>
-                      <p className="mt-1 text-xs text-muted">
+                      <p className="mt-1 text-xs text-zinc-500">
                         メンバー: {group.memberCount}
                         {group.maxMembers && ` / ${group.maxMembers}人`} | メッセージ: {group.messageCount}
                       </p>
                     </div>
-                    <span className="text-xs font-mono text-muted">
+                    <span className="text-xs font-mono text-zinc-500">
                       {group.groupCode}
                     </span>
                   </div>
@@ -298,7 +298,7 @@ export default function AdminGroupsPage() {
 
         {/* 団体詳細 */}
         <div>
-          <h2 className="mb-4 text-lg font-semibold text-foreground">
+          <h2 className="mb-4 text-lg font-semibold text-zinc-900">
             団体詳細
           </h2>
           {selectedGroupLoading ? (
@@ -306,49 +306,49 @@ export default function AdminGroupsPage() {
               <LoadingSpinner size="lg" />
             </div>
           ) : !selectedGroup ? (
-            <div className="rounded-lg border border-border bg-card p-8 text-center">
-              <p className="text-sm text-muted-foreground">
+            <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center">
+              <p className="text-sm text-zinc-600">
                 左側の団体を選択してください
               </p>
             </div>
           ) : (
             <div className="space-y-4">
               {/* 団体情報 */}
-              <div className="rounded-lg border border-border bg-card p-4">
-                <h3 className="text-sm font-semibold text-foreground">
+              <div className="rounded-lg border border-zinc-200 bg-white p-4">
+                <h3 className="text-sm font-semibold text-zinc-900">
                   {selectedGroup.name}
                 </h3>
                 {selectedGroup.theme && (
-                  <p className="mt-1 text-xs text-muted-foreground">{selectedGroup.theme}</p>
+                  <p className="mt-1 text-xs text-zinc-600">{selectedGroup.theme}</p>
                 )}
-                <p className="mt-2 text-xs text-muted">
+                <p className="mt-2 text-xs text-zinc-500">
                   団体コード: {selectedGroup.groupCode}
                 </p>
-                <p className="mt-1 text-xs text-muted">
+                <p className="mt-1 text-xs text-zinc-500">
                   リーダー: {selectedGroup.leader.displayName || selectedGroup.leader.name || selectedGroup.leader.email}
                 </p>
               </div>
 
               {/* メンバー一覧 */}
-              <div className="rounded-lg border border-border bg-card p-4">
-                <h3 className="mb-3 text-sm font-semibold text-foreground">
+              <div className="rounded-lg border border-zinc-200 bg-white p-4">
+                <h3 className="mb-3 text-sm font-semibold text-zinc-900">
                   メンバー一覧 ({selectedGroup.members.length}人)
                 </h3>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {selectedGroup.members.map((member) => (
                     <div
                       key={member.id}
-                      className="flex items-center justify-between rounded border border-border bg-card-elevated p-2"
+                      className="flex items-center justify-between rounded border border-zinc-200 bg-zinc-50 p-2"
                     >
                       <div className="flex-1">
-                        <p className="text-xs font-medium text-foreground">
+                        <p className="text-xs font-medium text-zinc-900">
                           {member.displayName || member.name || "名前未設定"}
                         </p>
-                        <p className="text-xs text-muted">{member.email}</p>
+                        <p className="text-xs text-zinc-500">{member.email}</p>
                       </div>
                       <div className="flex gap-1">
                         {member.id === selectedGroup.leader.id && (
-                          <span className="rounded-full bg-accent-mint/15 px-2 py-0.5 text-xs font-medium text-accent-mint">
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
                             リーダー
                           </span>
                         )}
@@ -389,39 +389,39 @@ export default function AdminGroupsPage() {
               </div>
 
               {/* チャットメッセージ */}
-              <div className="rounded-lg border border-border bg-card p-4">
-                <h3 className="mb-3 text-sm font-semibold text-foreground">
+              <div className="rounded-lg border border-zinc-200 bg-white p-4">
+                <h3 className="mb-3 text-sm font-semibold text-zinc-900">
                   チャットメッセージ ({selectedGroup.messages.length}件)
                 </h3>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {selectedGroup.messages.length === 0 ? (
-                    <p className="py-4 text-center text-xs text-muted">
+                    <p className="py-4 text-center text-xs text-zinc-500">
                       メッセージがありません
                     </p>
                   ) : (
                     selectedGroup.messages.map((message) => (
                       <div
                         key={message.id}
-                        className="rounded border border-border bg-card-elevated p-2"
+                        className="rounded border border-zinc-200 bg-zinc-50 p-2"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <p className="text-xs font-medium text-foreground">
+                              <p className="text-xs font-medium text-zinc-900">
                                 {message.sender.displayName || message.sender.name || message.sender.email}
                               </p>
                               {message.isAnnouncement && (
-                                <span className="rounded-full bg-accent-mint/15 px-1.5 py-0.5 text-[10px] font-medium text-accent-mint">
+                                <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
                                   一斉連絡
                                 </span>
                               )}
                             </div>
                             <SafeMessageContent
                               content={message.content}
-                              className="mt-1 text-xs text-muted-foreground whitespace-pre-wrap break-words"
+                              className="mt-1 text-xs text-zinc-700 whitespace-pre-wrap break-words"
                               linkClassName="text-blue-600"
                             />
-                            <p className="mt-1 text-xs text-muted">
+                            <p className="mt-1 text-xs text-zinc-500">
                               {formatDateTime(message.createdAt)}
                             </p>
                           </div>

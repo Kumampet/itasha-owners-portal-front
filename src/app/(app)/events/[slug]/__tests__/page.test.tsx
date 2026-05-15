@@ -1,4 +1,4 @@
-import { render, screen } from '@/test-utils'
+import { render, screen } from '@testing-library/react'
 import EventDetailPage from '../page'
 import { prisma } from '@/lib/prisma'
 

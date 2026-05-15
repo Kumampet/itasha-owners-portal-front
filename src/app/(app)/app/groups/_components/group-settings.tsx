@@ -21,8 +21,8 @@ export function GroupSettings({
 }: GroupSettingsProps) {
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
-        <h2 className="text-sm font-semibold text-foreground sm:text-base mb-4">
+      <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
+        <h2 className="text-sm font-semibold text-zinc-900 sm:text-base mb-4">
           設定
         </h2>
         <div className="flex flex-col gap-2">
@@ -103,7 +103,7 @@ export function GroupSettings({
               団体を抜ける
             </Button>
           ) : (
-            <p className="text-xs text-muted">
+            <p className="text-xs text-zinc-500">
               設定可能な項目がありません。
             </p>
           )}

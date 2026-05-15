@@ -35,7 +35,7 @@ export default function ConfirmModal({
   const variantColors = {
     success: "text-green-600",
     error: "text-red-600",
-    info: "text-muted-foreground",
+    info: "text-zinc-600",
   };
 
   // onConfirmが指定されていない、またはshowCancelがfalseの場合はメッセージ表示モード（OKボタンのみ）

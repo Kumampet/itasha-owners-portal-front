@@ -104,7 +104,7 @@ describe('ConfirmModal', () => {
     expect(screen.getByText('Test Message')).toHaveClass('text-red-600')
 
     rerender(<ConfirmModal {...defaultProps} messageVariant="info" />)
-    expect(screen.getByText('Test Message')).toHaveClass('text-muted-foreground')
+    expect(screen.getByText('Test Message')).toHaveClass('text-zinc-600')
   })
 })
 

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { scheduleMergeApprovedEventIntoSitemapOnS3 } from "@/lib/events-sitemap-s3";
 import { notifyDiscordEventApproved } from "@/lib/discord-admin-notify";
 
 // POST /api/admin/events/[id]/approve
@@ -27,8 +26,6 @@ export async function POST(
       where: { id },
       data: { approval_status: "APPROVED" },
     });
-
-    scheduleMergeApprovedEventIntoSitemapOnS3(event.id, event.updated_at);
 
     notifyDiscordEventApproved({
       eventId: event.id,

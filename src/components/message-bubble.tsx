@@ -4,7 +4,7 @@ import { SafeMessageContent } from "@/components/safe-message-content";
 import { SafeHtmlContent } from "@/components/safe-html-content";
 import { MessageReactions } from "@/components/message-reactions";
 import { ImageViewerModal } from "@/components/image-viewer-modal";
-import { useRef, memo, useState, useCallback } from "react";
+import { useRef, memo, useState } from "react";
 import { formatDateTime } from "@/lib/date-utils";
 
 type MessageBubbleProps = {
@@ -60,9 +60,6 @@ function MessageBubbleComponent({
 }: MessageBubbleProps) {
   const messageBubbleRef = useRef<HTMLDivElement>(null);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-  const handleImageClick = useCallback((imageUrl: string) => {
-    setSelectedImageUrl(imageUrl);
-  }, []);
 
   return (
     <>
@@ -76,11 +73,11 @@ function MessageBubbleComponent({
         ref={messageBubbleRef}
         className={`max-w-[65vw] sm:max-w-[65%] rounded-2xl px-4 py-2 break-words relative ${isOwnMessage
           ? isAnnouncement
-            ? "bg-accent-mint text-zinc-950"
+            ? "bg-emerald-500 text-white"
             : "bg-zinc-900 text-white"
           : isAnnouncement
-            ? "bg-accent-mint/10 border border-accent-mint/25 text-foreground"
-            : "bg-card-elevated text-foreground"
+            ? "bg-emerald-50 border border-emerald-200 text-zinc-900"
+            : "bg-zinc-100 text-zinc-900"
           }`}
         onMouseEnter={() => {
           if (!isMobile && !isOwnMessage) {
@@ -158,13 +155,13 @@ function MessageBubbleComponent({
           {content.includes('<img') ? (
             <SafeHtmlContent
               html={content}
-              className={`text-sm break-words ${isOwnMessage ? "text-white" : "text-muted-foreground"}`}
-              onImageClick={handleImageClick}
+              className={`text-sm break-words ${isOwnMessage ? "text-white" : "text-zinc-700"}`}
+              onImageClick={(imageUrl) => setSelectedImageUrl(imageUrl)}
             />
           ) : (
             <SafeMessageContent
               content={content}
-              className={`text-sm whitespace-pre-wrap break-words ${isOwnMessage ? "text-white" : "text-muted-foreground"
+              className={`text-sm whitespace-pre-wrap break-words ${isOwnMessage ? "text-white" : "text-zinc-700"
                 }`}
               linkClassName={isOwnMessage ? "text-white" : "text-blue-600"}
             />
@@ -206,7 +203,7 @@ function MessageBubbleComponent({
       )}
       {/* 送信者名とタイムスタンプ */}
       <div className={`mt-1 px-1 ${isOwnMessage ? "text-right" : "text-left"}`}>
-        <p className="text-xs text-muted">
+        <p className="text-xs text-zinc-500">
           {truncateName(sender.displayName || sender.name)}{" "}
           {formatDateTime(createdAt)}
         </p>

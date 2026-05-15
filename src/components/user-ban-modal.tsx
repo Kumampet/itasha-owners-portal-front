@@ -44,7 +44,7 @@ export function UserBanModal({
         </>
       }
     >
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-zinc-700">
         {isBanned
           ? `${userName}のBANを解除しますか？`
           : `${userName}をBANしますか？`}

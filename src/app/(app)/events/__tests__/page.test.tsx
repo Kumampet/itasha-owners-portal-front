@@ -134,101 +134,9 @@ describe('EventsPageClient', () => {
       expect(screen.getByLabelText('検索')).toBeInTheDocument()
     })
 
-    expect(screen.getByLabelText('会場の都道府県')).toBeInTheDocument()
-    expect(screen.getByLabelText('開催年月')).toBeInTheDocument()
     expect(screen.getByLabelText('表示順')).toBeInTheDocument()
     expect(screen.getByLabelText('表示件数')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '検索' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'フィルターをクリア' })).toBeDisabled()
-  })
-
-  it('都道府県と開催年月を選び検索すると、APIクエリに含める', async () => {
-    ;(global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        events: mockEvents,
-        pagination: mockPagination,
-      }),
-    })
-
-    const user = userEvent.setup()
-    render(<EventsPageClient />)
-
-    await waitFor(() => {
-      expect(screen.getByLabelText('会場の都道府県')).toBeInTheDocument()
-    })
-
-    const fetchCountAfterLoad = (global.fetch as jest.Mock).mock.calls.length
-
-    await user.selectOptions(screen.getByLabelText('会場の都道府県'), '東京都')
-    const yearMonthSelect = screen.getByLabelText('開催年月') as HTMLSelectElement
-    const monthOption = Array.from(yearMonthSelect.options).find((o) => o.value !== '')
-    expect(monthOption).toBeTruthy()
-    await user.selectOptions(yearMonthSelect, monthOption!.value)
-
-    expect((global.fetch as jest.Mock).mock.calls.length).toBe(fetchCountAfterLoad)
-
-    await user.click(screen.getByRole('button', { name: '検索' }))
-
-    await waitFor(() => {
-      const calls = (global.fetch as jest.Mock).mock.calls
-      expect(calls.length).toBeGreaterThan(fetchCountAfterLoad)
-      const lastCall = calls[calls.length - 1][0] as string
-      expect(lastCall).toContain('prefecture=%E6%9D%B1%E4%BA%AC%E9%83%BD')
-      expect(lastCall).toContain(`yearMonth=${monthOption!.value}`)
-    })
-  })
-
-  it('フィルターをクリアで検索・都道府県・開催年月をリセットしAPIから外す', async () => {
-    ;(global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        events: mockEvents,
-        pagination: mockPagination,
-      }),
-    })
-
-    const user = userEvent.setup()
-    render(<EventsPageClient />)
-
-    await waitFor(() => {
-      expect(screen.getByLabelText('検索')).toBeInTheDocument()
-    })
-
-    const fetchCountAfterLoad = (global.fetch as jest.Mock).mock.calls.length
-
-    await user.type(screen.getByLabelText('検索'), '痛車')
-    await user.selectOptions(screen.getByLabelText('会場の都道府県'), '東京都')
-    const yearMonthSelect = screen.getByLabelText('開催年月') as HTMLSelectElement
-    const monthOption = Array.from(yearMonthSelect.options).find((o) => o.value !== '')
-    expect(monthOption).toBeTruthy()
-    await user.selectOptions(yearMonthSelect, monthOption!.value)
-
-    expect((global.fetch as jest.Mock).mock.calls.length).toBe(fetchCountAfterLoad)
-
-    await user.click(screen.getByRole('button', { name: '検索' }))
-
-    await waitFor(() => {
-      expect((global.fetch as jest.Mock).mock.calls.length).toBeGreaterThan(fetchCountAfterLoad)
-    })
-
-    const clearBtn = screen.getByRole('button', { name: 'フィルターをクリア' })
-    expect(clearBtn).not.toBeDisabled()
-    await user.click(clearBtn)
-
-    await waitFor(() => {
-      const calls = (global.fetch as jest.Mock).mock.calls
-      const lastCall = calls[calls.length - 1][0] as string
-      expect(lastCall.split('?')[0]).toBe('/api/events')
-      const q = lastCall.split('?')[1] ?? ''
-      expect(q).not.toMatch(/search=/)
-      expect(q).not.toMatch(/prefecture=/)
-      expect(q).not.toMatch(/yearMonth=/)
-    })
-
-    expect(screen.getByLabelText('検索')).toHaveValue('')
-    expect(screen.getByLabelText('会場の都道府県')).toHaveValue('')
-    expect(screen.getByLabelText('開催年月')).toHaveValue('')
   })
 
   it('検索を実行すると、検索クエリでAPIを呼び出す', async () => {
@@ -266,7 +174,7 @@ describe('EventsPageClient', () => {
     })
   })
 
-  it('ソート順を変えて検索すると、ソート順でAPIを呼び出す', async () => {
+  it('ソート順を変更すると、ソート順でAPIを呼び出す', async () => {
     ;(global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
@@ -292,7 +200,6 @@ describe('EventsPageClient', () => {
 
     const sortSelect = screen.getByLabelText('表示順')
     await user.selectOptions(sortSelect, 'desc')
-    await user.click(screen.getByRole('button', { name: '検索' }))
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
@@ -301,7 +208,7 @@ describe('EventsPageClient', () => {
     })
   })
 
-  it('表示件数を変えて検索すると、limitでAPIを呼び出す', async () => {
+  it('表示件数を変更すると、limitでAPIを呼び出す', async () => {
     ;(global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
@@ -326,7 +233,6 @@ describe('EventsPageClient', () => {
     })
 
     await user.selectOptions(screen.getByLabelText('表示件数'), '20')
-    await user.click(screen.getByRole('button', { name: '検索' }))
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(

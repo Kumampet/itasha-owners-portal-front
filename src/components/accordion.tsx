@@ -74,14 +74,14 @@ export function AccordionItem({
   const isOpen = openItems.has(value);
 
   return (
-    <div className={`border-t border-border pt-6 ${className}`}>
+    <div className={`border-t border-zinc-200 pt-6 ${className}`}>
       <div
         onClick={() => toggleItem(value)}
-        className="flex w-full cursor-pointer items-center justify-between text-left transition hover:bg-card-elevated"
+        className="flex w-full cursor-pointer items-center justify-between text-left transition hover:bg-zinc-50"
       >
         <div className="flex-1">{title}</div>
         <svg
-          className={`h-5 w-5 shrink-0 text-muted transition-transform ${isOpen ? "rotate-180" : ""
+          className={`h-5 w-5 shrink-0 text-zinc-500 transition-transform ${isOpen ? "rotate-180" : ""
             }`}
           fill="none"
           stroke="currentColor"

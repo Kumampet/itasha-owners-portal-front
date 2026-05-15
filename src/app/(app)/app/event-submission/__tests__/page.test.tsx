@@ -1,6 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useSession } from 'next-auth/react'
 import EventSubmissionPage from '../page'
 
 // モック設定
@@ -21,8 +20,6 @@ jest.mock('next/navigation', () => ({
 // グローバルfetchのモック
 global.fetch = jest.fn()
 
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>
-
 async function fillRequiredFields(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByPlaceholderText(/痛車ヘブン夏/), 'テストイベント')
   fireEvent.change(screen.getByLabelText(/開催日時/), {
@@ -39,11 +36,6 @@ describe('EventSubmissionPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     ;(global.fetch as jest.Mock).mockClear()
-    mockUseSession.mockReturnValue({
-      data: null,
-      status: 'unauthenticated',
-      update: jest.fn(),
-    } as ReturnType<typeof useSession>)
   })
 
   it('フォームを表示する', () => {
@@ -189,7 +181,7 @@ describe('EventSubmissionPage', () => {
     await waitFor(() => {
       expect(screen.getByText('送信失敗')).toBeInTheDocument()
     }, { timeout: 3000 })
-  }, 15000)
+  })
 
   it('エラー時は入力内容を保持する', async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -214,30 +206,10 @@ describe('EventSubmissionPage', () => {
     expect(nameInput).toHaveValue('テストイベント')
   })
 
-  it('ログイン中の場合、マイページへの戻るリンクを表示する', () => {
-    mockUseSession.mockReturnValue({
-      data: {
-        user: {
-          id: 'user-1',
-          name: 'テストユーザー',
-          email: 'test@example.com',
-          role: 'USER',
-          isBanned: false,
-        },
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      },
-      status: 'authenticated',
-      update: jest.fn(),
-    } as ReturnType<typeof useSession>)
-
+  it('マイページへの戻るリンクを表示する', () => {
     render(<EventSubmissionPage />)
     const backLink = screen.getByText(/マイページへ戻る/)
     expect(backLink.closest('a')).toHaveAttribute('href', '/app/mypage')
-  })
-
-  it('未ログインの場合、戻るリンクを表示しない', () => {
-    render(<EventSubmissionPage />)
-    expect(screen.queryByText(/マイページへ戻る/)).not.toBeInTheDocument()
   })
 
   it('キャンセルボタンがマイページへのリンクになっている', () => {

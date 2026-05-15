@@ -54,7 +54,7 @@ export function MemberActionMenu({ onRemoveClick }: MemberActionMenuProps) {
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-md border border-border bg-card shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-md border border-zinc-200 bg-white shadow-lg">
           <div className="py-1">
             <button
               onClick={() => {

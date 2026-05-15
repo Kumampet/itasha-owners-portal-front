@@ -99,13 +99,13 @@ export function ShareMenu({
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-10 mt-1 w-48 rounded-md border border-border bg-card shadow-lg">
+        <div className="absolute right-0 top-full z-10 mt-1 w-48 rounded-md border border-zinc-200 bg-white shadow-lg">
           <div className="py-1">
             {hasEvent && (
               <Link
                 href={`/events/${eventId}`}
                 onClick={() => setIsOpen(false)}
-                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-muted-foreground transition hover:bg-card-elevated"
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
               >
                 <svg
                   className="h-4 w-4"
@@ -126,7 +126,7 @@ export function ShareMenu({
             <Link
               href={`/app/reminder/${reminderId}/edit`}
               onClick={() => setIsOpen(false)}
-              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-muted-foreground transition hover:bg-card-elevated"
+              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
             >
               <svg
                 className="h-4 w-4"
@@ -146,7 +146,7 @@ export function ShareMenu({
             <Button
               as="action"
               onClick={handleGoogleCalendar}
-              className="text-muted-foreground hover:bg-card-elevated"
+              className="text-zinc-700 hover:bg-zinc-50"
             >
               <svg
                 className="h-4 w-4"

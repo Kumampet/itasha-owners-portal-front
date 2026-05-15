@@ -66,21 +66,21 @@ export function TransferOwnershipModal({
         >
             <div className="space-y-4">
                 <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-zinc-600">
                         本当に団体オーナー権限を譲渡しますか？
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-zinc-600">
                         権限の譲渡はメンバー間で合意の上、実施してください。譲渡に関するトラブル等は、サービス運用側では一切の責任を負いかねます。
                     </p>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">
+                    <label className="block text-sm font-medium text-zinc-700 mb-2">
                         譲渡先のメンバーを選択
                     </label>
                     <select
                         value={selectedMemberId}
                         onChange={(e) => setSelectedMemberId(e.target.value)}
-                        className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+                        className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
                     >
                         <option value="">選択してください</option>
                         {otherMembers.map((member) => (

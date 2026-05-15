@@ -9,7 +9,6 @@ interface LinkCardProps {
     children: ReactNode;
     className?: string;
     cardClassName?: string;
-    heightFull?: boolean;
 }
 
 export function LinkCard({
@@ -17,7 +16,6 @@ export function LinkCard({
     children,
     className = "",
     cardClassName = "",
-    heightFull = false,
 }: LinkCardProps) {
     const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
         // クリックされた要素がボタン、別のリンク、またはその子要素の場合はナビゲーションを防ぐ
@@ -49,7 +47,7 @@ export function LinkCard({
             className={`block group transition ${className}`}
             onClick={handleClick}
         >
-            <Card className={`transition group-hover:border-accent-mint/50 ${cardClassName} ${heightFull ? "h-full" : ""}`}>
+            <Card className={`transition group-hover:border-zinc-900 ${cardClassName}`}>
                 {children}
             </Card>
         </Link>

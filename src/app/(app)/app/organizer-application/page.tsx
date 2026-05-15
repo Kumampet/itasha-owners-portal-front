@@ -3,13 +3,8 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import {
-  APP_PAGE_HEADER_BACK_NAV_CLASSNAME,
-  AppPageHeader,
-  AppPageHeaderBackLink,
-} from "@/components/app-page-header";
-import ConfirmModal from "@/components/confirm-modal";
 import { Button } from "@/components/button";
+import ConfirmModal from "@/components/confirm-modal";
 
 const initialFormData = {
   display_name: "",
@@ -85,11 +80,11 @@ export default function OrganizerApplicationPage() {
     return (
       <main className="flex-1">
         <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-          <div className="flex min-h-[60vh] flex-col items-center justify-center rounded-lg border border-border bg-card p-8 text-center">
-            <h1 className="mb-4 text-2xl font-semibold text-foreground sm:text-3xl">
+          <div className="flex min-h-[60vh] flex-col items-center justify-center rounded-lg border border-zinc-200 bg-white p-8 text-center">
+            <h1 className="mb-4 text-2xl font-semibold text-zinc-900 sm:text-3xl">
               オーガナイザー申請完了
             </h1>
-            <p className="mb-8 text-base text-muted-foreground sm:text-lg">
+            <p className="mb-8 text-base text-zinc-700 sm:text-lg">
               オーガナイザー申請ありがとうございます！<br />
               審査まで今しばらくお待ちください。
             </p>
@@ -122,36 +117,41 @@ export default function OrganizerApplicationPage() {
     return (
       <main className="flex-1">
         <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-          <AppPageHeader
-            leading={
-              <AppPageHeaderBackLink href="/app/mypage">← マイページへ戻る</AppPageHeaderBackLink>
-            }
-            title="オーガナイザー登録申請"
-            size="md"
-          >
-            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-              イベント主催者として、いたなび！でイベントを管理・運営することができます。
-            </p>
-          </AppPageHeader>
+          <header className="space-y-2">
+            <Link
+              href="/app/mypage"
+              className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+            >
+              ← マイページへ戻る
+            </Link>
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                オーガナイザー登録申請
+              </h1>
+              <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+                イベント主催者として、いたなび！でイベントを管理・運営することができます。
+              </p>
+            </div>
+          </header>
 
           {/* オーガナイザー登録とは？の説明 */}
-          <div className="space-y-4 rounded-lg border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold text-foreground">
+          <div className="space-y-4 rounded-lg border border-zinc-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-zinc-900">
               オーガナイザー登録とは？
             </h2>
-            <div className="space-y-3 text-sm text-muted-foreground">
+            <div className="space-y-3 text-sm text-zinc-700">
               <p>
                 オーガナイザー登録をすることで、いたなび！上でイベントの作成・管理を行うことができます。
               </p>
               <div>
-                <h3 className="mb-2 font-medium text-foreground">主な機能</h3>
+                <h3 className="mb-2 font-medium text-zinc-900">主な機能</h3>
                 <ul className="ml-4 list-disc space-y-1">
                   <li>ご自身が主催するイベントを、いたなび！に登録できます</li>
                   <li>登録したイベントの情報を、いつでも自由に更新・編集できます</li>
                 </ul>
               </div>
               <div>
-                <h3 className="mb-2 font-medium text-foreground">申請について</h3>
+                <h3 className="mb-2 font-medium text-zinc-900">申請について</h3>
                 <p>
                   オーガナイザー登録申請は、管理者による審査を経て承認されます。
                 </p>
@@ -160,14 +160,14 @@ export default function OrganizerApplicationPage() {
           </div>
 
           {/* 申請にあたっての注意事項 */}
-          <div className="space-y-4 rounded-lg border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold text-foreground">申請にあたっての注意事項</h2>
-            <div className="space-y-3 text-sm text-muted-foreground">
+          <div className="space-y-4 rounded-lg border border-zinc-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-zinc-900">申請にあたっての注意事項</h2>
+            <div className="space-y-3 text-sm text-zinc-700">
               <p>
                 オーガナイザーとして登録するにあたり、以下の事項に同意していただく必要があります。
               </p>
-              <div className="space-y-2 rounded-md border border-border bg-card-elevated p-4">
-                <p className="font-medium text-foreground">注意事項</p>
+              <div className="space-y-2 rounded-md border border-zinc-200 bg-zinc-50 p-4">
+                <p className="font-medium text-zinc-900">注意事項</p>
                 <ul className="ml-4 list-disc space-y-1">
                   <li>
                     いたなび！の利用規約およびプライバシーポリシーに同意します。
@@ -193,9 +193,9 @@ export default function OrganizerApplicationPage() {
                 id="agree-terms"
                 checked={agreedToTerms}
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-border text-accent-mint focus:ring-accent-mint"
+                className="mt-1 h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
               />
-              <label htmlFor="agree-terms" className="text-sm text-muted-foreground">
+              <label htmlFor="agree-terms" className="text-sm text-zinc-700">
                 上記の同意事項に同意します
               </label>
             </div>
@@ -219,33 +219,32 @@ export default function OrganizerApplicationPage() {
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-        <AppPageHeader
-          leading={
-            <button
-              type="button"
-              className={APP_PAGE_HEADER_BACK_NAV_CLASSNAME}
-              onClick={() => {
-                setShowForm(false);
-                setAgreedToTerms(false);
-              }}
-            >
-              ← 戻る
-            </button>
-          }
-          title="オーガナイザー登録申請フォーム"
-          size="md"
-        >
-          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-            必要事項をご記入の上、申請してください。
-          </p>
-        </AppPageHeader>
+        <header className="space-y-2">
+          <button
+            onClick={() => {
+              setShowForm(false);
+              setAgreedToTerms(false);
+            }}
+            className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+          >
+            ← 戻る
+          </button>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+              オーガナイザー登録申請フォーム
+            </h1>
+            <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+              必要事項をご記入の上、申請してください。
+            </p>
+          </div>
+        </header>
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-6 rounded-lg border border-border bg-card p-6"
+          className="space-y-6 rounded-lg border border-zinc-200 bg-white p-6"
         >
           <div>
-            <label className="block text-sm font-medium text-muted-foreground">
+            <label className="block text-sm font-medium text-zinc-700">
               表示名 <span className="text-red-500">*</span>
             </label>
             <input
@@ -254,17 +253,17 @@ export default function OrganizerApplicationPage() {
               onChange={(e) =>
                 setFormData({ ...formData, display_name: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
               placeholder="例: 痛車イベント運営"
               required
             />
-            <p className="mt-1 text-xs text-muted">
+            <p className="mt-1 text-xs text-zinc-500">
               イベント参加者に表示される名前です
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground">
+            <label className="block text-sm font-medium text-zinc-700">
               メールアドレス <span className="text-red-500">*</span>
             </label>
             <input
@@ -273,17 +272,17 @@ export default function OrganizerApplicationPage() {
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
               placeholder="example@example.com"
               required
             />
-            <p className="mt-1 text-xs text-muted">
+            <p className="mt-1 text-xs text-zinc-500">
               連絡先として使用するメールアドレスです
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground">
+            <label className="block text-sm font-medium text-zinc-700">
               歴代の運営実績 <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -292,21 +291,21 @@ export default function OrganizerApplicationPage() {
                 setFormData({ ...formData, experience: e.target.value })
               }
               rows={8}
-              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
               placeholder="過去に運営したイベントの実績、または今後申請予定のイベントについて簡潔にご記入ください。例: 痛車イベント「痛車ヘブン」を年2回開催（2020年より）"
               required
             />
-            <p className="mt-1 text-xs text-muted">
+            <p className="mt-1 text-xs text-zinc-500">
               運営実績がない場合は、今後申請予定のイベントについて簡潔にご記入ください
             </p>
           </div>
 
           {/* 最終的な審査の結果について */}
-          <div className="rounded-md border border-border bg-card-elevated p-4">
-            <p className="text-sm font-medium text-foreground mb-2">
+          <div className="rounded-md border border-zinc-200 bg-zinc-50 p-4">
+            <p className="text-sm font-medium text-zinc-900 mb-2">
               最終的な審査の結果について
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-zinc-700">
               最終的な審査の結果、権限付与を許可しない場合があります。
             </p>
             <div className="mt-3 flex items-start gap-2">
@@ -315,10 +314,10 @@ export default function OrganizerApplicationPage() {
                 id="agree-final-terms"
                 checked={agreedToFinalTerms}
                 onChange={(e) => setAgreedToFinalTerms(e.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-border text-accent-mint focus:ring-accent-mint"
+                className="mt-1 h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
                 required
               />
-              <label htmlFor="agree-final-terms" className="text-sm text-muted-foreground">
+              <label htmlFor="agree-final-terms" className="text-sm text-zinc-700">
                 上記の内容を理解し、同意します
               </label>
             </div>
@@ -331,7 +330,7 @@ export default function OrganizerApplicationPage() {
                 setShowForm(false);
                 setAgreedToTerms(false);
               }}
-              className="rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-card-elevated"
+              className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
             >
               キャンセル
             </button>

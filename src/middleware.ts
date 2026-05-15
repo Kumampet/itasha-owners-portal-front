@@ -1,37 +1,6 @@
-import { getToken } from "next-auth/jwt";
-import {
-  getRequestCountryCode,
-  shouldBlockGdprRegion,
-  shouldSkipGdprGeoBlock,
-} from "@/lib/gdpr-geo";
-import { getAuthSecret, getUseSecureAuthCookie } from "@/lib/auth-secret";
+import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
-/** Edge では `@/auth`（prisma 経由のバンドル）を避け、JWT クッキーからセッション相当を復元する */
-async function getSessionFromJwtCookie(
-  request: NextRequest,
-): Promise<{ user: { id: string; role: string; email: string } } | null> {
-  const token = await getToken({
-    req: request,
-    secret: getAuthSecret(),
-    secureCookie: getUseSecureAuthCookie(),
-  });
-  if (!token) {
-    return null;
-  }
-  const id =
-    (typeof token.id === "string" ? token.id : null) ??
-    (typeof token.sub === "string" ? token.sub : "") ??
-    "";
-  return {
-    user: {
-      id,
-      role: (typeof token.role === "string" ? token.role : "") || "USER",
-      email: (typeof token.email === "string" ? token.email : "") || "",
-    },
-  };
-}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -45,25 +14,6 @@ export async function middleware(request: NextRequest) {
     pathname === "/robots.txt"
   ) {
     return NextResponse.next();
-  }
-
-  // EU/EEA/英国ほか関連法域（GDPR_BLOCKED_COUNTRY_CODES）からのアクセスを拒否（ローカルホストなどは別途スキップ）
-  // 国コードは CloudFront Viewer Country / x-vercel-ip-country / cf-ipcountry を利用
-  if (!shouldSkipGdprGeoBlock(request)) {
-    const countryCode = getRequestCountryCode(request);
-    if (shouldBlockGdprRegion(countryCode)) {
-      const bodyJa =
-        "このサービスは欧州経済領域（EEA）、英国および本ポリシーで対象とする関連法域からは提供していません。\n\n";
-      const bodyEn =
-        "This service is not offered from the European Economic Area (EEA), the United Kingdom, or other jurisdictions we restrict under our policies.\n";
-      return new NextResponse(bodyJa + bodyEn, {
-        status: 451,
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Cache-Control": "private, no-store",
-        },
-      });
-    }
   }
 
   // LP（/）は認証チェックをスキップ
@@ -93,7 +43,7 @@ export async function middleware(request: NextRequest) {
   try {
     // /app配下または/admin配下のパスにアクセスする場合にauth()を呼び出す
     if (pathname.startsWith("/app/") || pathname.startsWith("/admin")) {
-      session = await getSessionFromJwtCookie(request);
+      session = await auth();
     }
   } catch {
     // 無効なセッションクッキー（JWEInvalidなど）の場合は無視して続行
@@ -227,10 +177,15 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * API も地理ブロック対象に含める（GDPR 対象域からの API 利用を防ぐため）。
-     * 除外: _next 静的・画像最適化、PWA 用アイコン類、ファビコン。
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - manifest.json (PWA manifest)
+     * - icon-*.png (PWA icons)
      */
-    "/((?!_next/static|_next/image|favicon.ico|manifest.json|icon-).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest.json|icon-).*)",
   ],
 };
 

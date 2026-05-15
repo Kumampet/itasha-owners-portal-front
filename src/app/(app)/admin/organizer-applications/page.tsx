@@ -150,7 +150,7 @@ export default function AdminOrganizerApplicationsPage() {
       case "REJECTED":
         return "bg-red-100 text-red-700";
       default:
-        return "bg-card-elevated text-muted-foreground";
+        return "bg-zinc-100 text-zinc-700";
     }
   };
 
@@ -181,16 +181,16 @@ export default function AdminOrganizerApplicationsPage() {
   return (
     <div className="w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">
+        <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
           オーガナイザー申請一覧
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+        <p className="mt-2 text-sm text-zinc-600 sm:text-base">
           ユーザーからのオーガナイザー登録申請を確認・処理します
         </p>
       </div>
 
       {/* フィルター・ソート・検索 */}
-      <div className="mb-6 space-y-4 rounded-lg border border-border bg-card p-4">
+      <div className="mb-6 space-y-4 rounded-lg border border-zinc-200 bg-white p-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           {/* 検索 */}
           <div className="flex-1">
@@ -199,7 +199,7 @@ export default function AdminOrganizerApplicationsPage() {
               placeholder="表示名、メールアドレス、運営実績で検索..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
             />
           </div>
 
@@ -213,7 +213,7 @@ export default function AdminOrganizerApplicationsPage() {
                   size="sm"
                   rounded="md"
                   onClick={() => setFilterStatus(status)}
-                  className={filterStatus === status ? "" : "bg-card-elevated hover:bg-card"}
+                  className={filterStatus === status ? "" : "bg-zinc-100 hover:bg-zinc-200"}
                 >
                   {status === "ALL"
                     ? "すべて"
@@ -231,11 +231,11 @@ export default function AdminOrganizerApplicationsPage() {
         {/* ソート */}
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-muted-foreground">並び替え:</label>
+            <label className="text-xs font-medium text-zinc-700">並び替え:</label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortBy)}
-              className="rounded-md border border-border px-2 py-1 text-xs focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              className="rounded-md border border-zinc-300 px-2 py-1 text-xs focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
             >
               <option value="created_at">申請日</option>
               <option value="display_name">表示名</option>
@@ -261,8 +261,8 @@ export default function AdminOrganizerApplicationsPage() {
           <LoadingSpinner size="lg" />
         </div>
       ) : applications.length === 0 ? (
-        <div className="rounded-lg border border-border bg-card p-8 text-center">
-          <p className="text-sm text-muted-foreground">オーガナイザー申請がありません</p>
+        <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center">
+          <p className="text-sm text-zinc-600">オーガナイザー申請がありません</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -271,8 +271,8 @@ export default function AdminOrganizerApplicationsPage() {
               key={application.id}
               className={`rounded-lg border p-4 transition ${
                 application.status === "APPROVED" || application.status === "REJECTED"
-                  ? "border-border bg-card-elevated opacity-60"
-                  : "border-border bg-card hover:border-accent-mint/50 hover:shadow-md"
+                  ? "border-zinc-200 bg-zinc-50 opacity-60"
+                  : "border-zinc-200 bg-white hover:border-zinc-900 hover:shadow-md"
               }`}
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -285,17 +285,17 @@ export default function AdminOrganizerApplicationsPage() {
                     >
                       {getStatusLabel(application.status)}
                     </span>
-                    <span className={`text-xs ${application.status === "APPROVED" || application.status === "REJECTED" ? "text-zinc-400" : "text-muted"}`}>
+                    <span className={`text-xs ${application.status === "APPROVED" || application.status === "REJECTED" ? "text-zinc-400" : "text-zinc-500"}`}>
                       {application.applicant?.email || application.email}
                     </span>
                   </div>
-                  <h3 className={`text-base font-semibold ${application.status === "APPROVED" || application.status === "REJECTED" ? "text-zinc-400" : "text-foreground"}`}>
+                  <h3 className={`text-base font-semibold ${application.status === "APPROVED" || application.status === "REJECTED" ? "text-zinc-400" : "text-zinc-900"}`}>
                     {application.display_name}
                   </h3>
-                  <p className={`mt-1 text-sm line-clamp-2 ${application.status === "APPROVED" || application.status === "REJECTED" ? "text-zinc-400" : "text-muted-foreground"}`}>
+                  <p className={`mt-1 text-sm line-clamp-2 ${application.status === "APPROVED" || application.status === "REJECTED" ? "text-zinc-400" : "text-zinc-600"}`}>
                     {application.experience}
                   </p>
-                  <div className={`mt-2 flex flex-wrap gap-4 text-xs ${application.status === "APPROVED" || application.status === "REJECTED" ? "text-zinc-400" : "text-muted"}`}>
+                  <div className={`mt-2 flex flex-wrap gap-4 text-xs ${application.status === "APPROVED" || application.status === "REJECTED" ? "text-zinc-400" : "text-zinc-500"}`}>
                     <span>申請日: {formatDate(application.created_at)}</span>
                   </div>
                 </div>
@@ -347,9 +347,9 @@ export default function AdminOrganizerApplicationsPage() {
       {/* 詳細モーダル */}
       {selectedApplication && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-card p-6">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-zinc-200 bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-foreground">オーガナイザー申請の詳細</h2>
+              <h2 className="text-xl font-semibold text-zinc-900">オーガナイザー申請の詳細</h2>
               <Button
                 variant="secondary"
                 size="sm"
@@ -359,7 +359,7 @@ export default function AdminOrganizerApplicationsPage() {
                   setShowApproveModal(false);
                   setShowRejectModal(false);
                 }}
-                className="text-muted-foreground hover:text-foreground border-0 bg-transparent p-0"
+                className="text-zinc-600 hover:text-zinc-900 border-0 bg-transparent p-0"
               >
                 ×
               </Button>
@@ -367,32 +367,32 @@ export default function AdminOrganizerApplicationsPage() {
 
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground">表示名</h3>
-                <p className="mt-1 text-sm text-foreground">{selectedApplication.display_name}</p>
+                <h3 className="text-sm font-medium text-zinc-700">表示名</h3>
+                <p className="mt-1 text-sm text-zinc-900">{selectedApplication.display_name}</p>
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground">メールアドレス</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{selectedApplication.email}</p>
+                <h3 className="text-sm font-medium text-zinc-700">メールアドレス</h3>
+                <p className="mt-1 text-sm text-zinc-600">{selectedApplication.email}</p>
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground">歴代の運営実績</h3>
-                <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
+                <h3 className="text-sm font-medium text-zinc-700">歴代の運営実績</h3>
+                <p className="mt-1 text-sm text-zinc-600 whitespace-pre-wrap">
                   {selectedApplication.experience}
                 </p>
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground">申請者</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <h3 className="text-sm font-medium text-zinc-700">申請者</h3>
+                <p className="mt-1 text-sm text-zinc-600">
                   {selectedApplication.applicant?.email || "未ログイン"}
                 </p>
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground">申請日</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <h3 className="text-sm font-medium text-zinc-700">申請日</h3>
+                <p className="mt-1 text-sm text-zinc-600">
                   {formatDate(selectedApplication.created_at)}
                 </p>
               </div>
@@ -431,9 +431,9 @@ export default function AdminOrganizerApplicationsPage() {
       {/* 承認確認モーダル */}
       {showApproveModal && selectedApplication && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-lg border border-border bg-card p-6">
-            <h2 className="mb-4 text-lg font-semibold text-foreground">承認確認</h2>
-            <p className="mb-6 text-sm text-muted-foreground">
+          <div className="w-full max-w-md rounded-lg border border-zinc-200 bg-white p-6">
+            <h2 className="mb-4 text-lg font-semibold text-zinc-900">承認確認</h2>
+            <p className="mb-6 text-sm text-zinc-700">
               この申請を承認しますか？承認すると、申請者にオーガナイザー権限が付与されます。
             </p>
             <div className="flex gap-2">
@@ -465,9 +465,9 @@ export default function AdminOrganizerApplicationsPage() {
       {/* 却下確認モーダル */}
       {showRejectModal && selectedApplication && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-lg border border-border bg-card p-6">
-            <h2 className="mb-4 text-lg font-semibold text-foreground">却下確認</h2>
-            <p className="mb-6 text-sm text-muted-foreground">
+          <div className="w-full max-w-md rounded-lg border border-zinc-200 bg-white p-6">
+            <h2 className="mb-4 text-lg font-semibold text-zinc-900">却下確認</h2>
+            <p className="mb-6 text-sm text-zinc-700">
               この申請を却下しますか？却下すると、申請者に通知が送信されます。
             </p>
             <div className="flex gap-2">

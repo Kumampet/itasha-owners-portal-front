@@ -70,7 +70,7 @@ export function UserActionMenu({
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-10 mt-1 w-48 rounded-md border border-border bg-card shadow-lg">
+        <div className="absolute right-0 top-full z-10 mt-1 w-48 rounded-md border border-zinc-200 bg-white shadow-lg">
           <div className="py-1">
             {isDeleted ? (
               <>
@@ -100,7 +100,7 @@ export function UserActionMenu({
                     onBanClick();
                     setIsOpen(false);
                   }}
-                  className="block w-full px-4 py-2 text-left text-sm text-muted-foreground hover:bg-card-elevated"
+                  className="block w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100"
                 >
                   {isBanned ? "BAN解除" : "BANする"}
                 </button>
@@ -109,7 +109,7 @@ export function UserActionMenu({
                     onRoleChangeClick();
                     setIsOpen(false);
                   }}
-                  className="block w-full px-4 py-2 text-left text-sm text-muted-foreground hover:bg-card-elevated"
+                  className="block w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100"
                 >
                   権限変更
                 </button>
@@ -118,7 +118,7 @@ export function UserActionMenu({
                     onDisplayNameChangeClick();
                     setIsOpen(false);
                   }}
-                  className="block w-full px-4 py-2 text-left text-sm text-muted-foreground hover:bg-card-elevated"
+                  className="block w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100"
                 >
                   表示名変更
                 </button>

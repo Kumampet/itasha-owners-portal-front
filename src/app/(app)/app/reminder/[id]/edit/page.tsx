@@ -3,10 +3,6 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  AppPageHeader,
-  AppPageHeaderBackLink,
-} from "@/components/app-page-header";
 import ConfirmModal from "@/components/confirm-modal";
 import { Button } from "@/components/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
@@ -149,10 +145,10 @@ export default function EditReminderPage({
     return (
       <main className="flex-1">
         <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-          <p className="text-sm text-muted-foreground">リマインダーが見つかりません</p>
+          <p className="text-sm text-zinc-600">リマインダーが見つかりません</p>
           <Link
             href="/app/reminder"
-            className="text-sm text-accent-mint hover:underline"
+            className="text-sm text-emerald-600 hover:underline"
           >
             ← リマインダー一覧に戻る
           </Link>
@@ -164,24 +160,29 @@ export default function EditReminderPage({
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-        <AppPageHeader
-          leading={
-            <AppPageHeaderBackLink href="/app/reminder">← リマインダー一覧に戻る</AppPageHeaderBackLink>
-          }
-          title="リマインダーを編集"
-          size="md"
-        >
-          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-            リマインダーの情報を編集します。
-          </p>
-        </AppPageHeader>
+        <header className="space-y-2">
+          <Link
+            href="/app/reminder"
+            className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+          >
+            ← リマインダー一覧に戻る
+          </Link>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+              リマインダーを編集
+            </h1>
+            <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+              リマインダーの情報を編集します。
+            </p>
+          </div>
+        </header>
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-6 rounded-lg border border-border bg-card p-6"
+          className="space-y-6 rounded-lg border border-zinc-200 bg-white p-6"
         >
           <div>
-            <label className="block text-sm font-medium text-muted-foreground">
+            <label className="block text-sm font-medium text-zinc-700">
               イベント
             </label>
             <select
@@ -189,7 +190,7 @@ export default function EditReminderPage({
               onChange={(e) =>
                 setFormData({ ...formData, event_id: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
             >
               <option value="">選択してください（任意）</option>
               {events.map((event) => (
@@ -202,7 +203,7 @@ export default function EditReminderPage({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground">
+            <label className="block text-sm font-medium text-zinc-700">
               ラベル *
             </label>
             <input
@@ -211,14 +212,14 @@ export default function EditReminderPage({
               onChange={(e) =>
                 setFormData({ ...formData, label: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
               placeholder="例: エントリー開始、支払期限、集合時間"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground">
+            <label className="block text-sm font-medium text-zinc-700">
               日時 *
             </label>
             <input
@@ -227,13 +228,13 @@ export default function EditReminderPage({
               onChange={(e) =>
                 setFormData({ ...formData, datetime: e.target.value })
               }
-              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground">
+            <label className="block text-sm font-medium text-zinc-700">
               備考
             </label>
             <textarea
@@ -242,7 +243,7 @@ export default function EditReminderPage({
                 setFormData({ ...formData, note: e.target.value })
               }
               rows={4}
-              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
               placeholder="リマインダーに関するメモや備考を入力してください（任意）"
             />
           </div>
@@ -253,7 +254,7 @@ export default function EditReminderPage({
               size="sm"
               rounded="md"
               onClick={handleDeleteClick}
-              className="border-red-300 bg-card text-red-700 hover:bg-red-50"
+              className="border-red-300 bg-white text-red-700 hover:bg-red-50"
               title="削除"
             >
               <svg

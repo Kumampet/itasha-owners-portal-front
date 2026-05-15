@@ -1,32 +1,10 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
-import dotenv from "dotenv";
+// dotenvを常に読み込む（Amplifyでは.envファイルに環境変数を書き出すため）
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+require("dotenv/config");
+
+// IDE で「PrismaClient が export されていない」と出る場合は `npx prisma generate`（npm install 後の postinstall でも実行）
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-
-/**
- * Next.js が環境変数を注入する前に `@/lib/prisma` のみ単体評価された場合への補填。
- * `.env.local` が `.env` より後勝ちになるよう順に適用する（Amplify で DATABASE_URL が既にあるときは NOOP）。
- * 本番用 `.env.prod` はここでは読み込まない（`dotenv -e .env.prod --` で起動する想定）。
- */
-function ensureDotenvFallbackWhenDatabaseMissing(): void {
-  if (process.env.DATABASE_URL?.trim()) {
-    return;
-  }
-  const cwd = process.cwd();
-  const chain = [
-    resolve(cwd, ".env"),
-    resolve(cwd, ".env.development"),
-    resolve(cwd, ".env.local"),
-    resolve(cwd, ".env.development.local"),
-  ];
-  for (const path of chain) {
-    if (!existsSync(path)) continue;
-    dotenv.config({ path, override: true });
-  }
-}
-
-ensureDotenvFallbackWhenDatabaseMissing();
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -69,9 +47,7 @@ function createPrismaClient() {
     if (typeof dbUrlString !== "string") {
       throw new Error(`DATABASE_URL is not a string after conversion. Type: ${typeof dbUrlString}, Value: ${dbUrlString}`);
     }
-    const normalizedUrl = dbUrlString
-      .replace(/^mariadb:\/\//, "http://")
-      .replace(/^mysql:\/\//, "http://");
+    const normalizedUrl = dbUrlString.replace(/^mysql:\/\//, "http://");
     if (!normalizedUrl || normalizedUrl === "http://") {
       throw new Error("DATABASE_URL is invalid or empty after processing");
     }
@@ -87,9 +63,8 @@ function createPrismaClient() {
     // 環境変数で接続プールサイズを制御可能にする
     const connectionLimit = parseInt(process.env.DATABASE_POOL_SIZE || "10", 10);
     const isDev = process.env.NODE_ENV === "development";
-    /** Docker 冷起動で 30s 以内に応答しないと pool が timeout することがあるため development は既定を長めに */
-    const defaultConnectMs = isDev ? 60000 : 10000;
-    const defaultAcquireMs = isDev ? 60000 : 10000;
+    const defaultConnectMs = isDev ? 30000 : 10000;
+    const defaultAcquireMs = isDev ? 30000 : 10000;
     const connectTimeout = parseInt(
       process.env.DATABASE_CONNECT_TIMEOUT_MS || String(defaultConnectMs),
       10,
@@ -100,27 +75,8 @@ function createPrismaClient() {
     );
 
     const host = dbUrl.hostname;
-    /** RDS などはそのまま。ローカル / docker compose で TLS が固まって pool timeout する場合は .env に DATABASE_SSL_OFF=true */
-    const useSslExplicitOff =
-      process.env.DATABASE_SSL_OFF?.trim().toLowerCase() === "true";
-    const useLoopbackSslOff =
-      host === "localhost" ||
-      host === "127.0.0.1" ||
-      host === "::1";
-    /** compose のサービス名で DB に繋ぐ場合に TLS が不要なとき向け（本番 RDS には使わないこと） */
-    const useComposeServiceSslOff =
-      isDev && (host === "mysql" || host === "mariadb" || host === "db");
-    const sslDisabled =
-      useSslExplicitOff || useLoopbackSslOff || useComposeServiceSslOff;
-
-    /** MySQL 8 の caching_sha2_password で、Workbench は通るが Node だけハンドシェイクで長時間になる場合の対処 */
-    const allowPublicKeyRetrievalExplicit =
-      process.env.DATABASE_ALLOW_PUBLIC_KEY_RETRIEVAL?.trim().toLowerCase() ===
-      "true";
-    const allowPublicKeyRetrievalDefaultLocalDev =
-      isDev &&
-      sslDisabled &&
-      (host === "localhost" || host === "127.0.0.1");
+    const useLocalSslOff =
+      host === "localhost" || host === "127.0.0.1" || host === "::1";
 
     // MySQL 8+（caching_sha2_password）を mariadb アダプタで繋ぐ場合、RSA 公開鍵をサーバーへ
     // 問い合わせないと接続に失敗する。Workbench と挙動が食い違う典型原因。
@@ -128,7 +84,7 @@ function createPrismaClient() {
     const denyPublicKey = process.env.DATABASE_ALLOW_PUBLIC_KEY_RETRIEVAL === "false";
     const allowPublicKeyRetrieval =
       !denyPublicKey &&
-      (allowPublicKeyRetrievalExplicit || allowPublicKeyRetrievalDefaultLocalDev);
+      (useLocalSslOff || process.env.DATABASE_ALLOW_PUBLIC_KEY_RETRIEVAL === "true");
 
     const poolConfig = {
       host,
@@ -145,8 +101,8 @@ function createPrismaClient() {
       reuseConnection: true,
       // 接続の最大生存時間（1時間）
       maxLifetime: 3600000,
-      // ローカル / Docker 等で TLS が不要なとき。RDS は sslDisabled を false のままにすること
-      ...(sslDisabled ? { ssl: false as const } : {}),
+      // ローカル Docker MySQL 等で TLS 協議がタイムアウトする環境向け（RDS 等は URL / プロキシ側で SSL を使う）
+      ...(useLocalSslOff ? { ssl: false as const } : {}),
       ...(allowPublicKeyRetrieval ? { allowPublicKeyRetrieval: true as const } : {}),
     };
 

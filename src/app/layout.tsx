@@ -4,7 +4,6 @@ import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers";
 import { EnvironmentRibbon } from "@/components/environment-ribbon";
-import { GoogleAnalytics } from "@/components/google-analytics";
 import { createMetadataWithOGP } from "@/lib/metadata";
 import {
   getAdsenseClientId,
@@ -52,7 +51,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: "cover", // SafeArea対応のため
-  themeColor: "#09090b",
+  themeColor: "#18181b",
 };
 
 export default function RootLayout({
@@ -75,7 +74,6 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen`}
       >
-        <GoogleAnalytics />
         {isAdsenseScriptEnabled() ? (
           <Script
             async

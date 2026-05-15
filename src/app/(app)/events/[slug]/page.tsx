@@ -1,11 +1,11 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import { createMetadataWithOGP, getMetadataBase } from "@/lib/metadata";
+import { createMetadataWithOGP } from "@/lib/metadata";
 import { EventDetailActions } from "@/components/event-detail-actions";
 import { formatShortDateTime } from "@/lib/date-utils";
-import { EventPageHeader } from "./event-page-header";
 
 type EventDetailPageProps = {
   params: Promise<{ slug: string }>;
@@ -17,7 +17,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const event = await prisma.event.findUnique({
     where: { id: slug },
-    select: {
+    select: { 
       name: true,
       description: true,
       image_url: true,
@@ -30,13 +30,10 @@ export async function generateMetadata({
     });
   }
 
-  const trimmedImage = event.image_url?.trim();
-
   return createMetadataWithOGP({
     title: event.name,
     description: event.description || undefined,
-    imageUrl: trimmedImage || undefined,
-    ...(trimmedImage ? { twitterCard: "summary_large_image" as const } : {}),
+    imageUrl: event.image_url || undefined,
   });
 }
 
@@ -172,119 +169,156 @@ export default async function EventDetailPage({
   );
   const entryInfo = formatEntryInfo(event.entries || []);
 
-  const hasLocationDetailSection =
-    Boolean(event.venue_name) ||
-    Boolean(event.prefecture) ||
-    (Array.isArray(event.official_urls) &&
-      (event.official_urls as string[]).length > 0);
-
-  const shareUrl = `${getMetadataBase().origin.replace(/\/$/, "")}/events/${event.id}`;
-
   return (
     <main className="flex-1 px-4 pb-20 pt-6 sm:pb-16 sm:pt-10">
       <article className="mx-auto flex w-full max-w-4xl flex-col gap-6 sm:gap-8">
-        <Link
-          href="/events"
-          className="text-xs font-semibold uppercase tracking-wide text-accent-mint"
-        >
-          ← イベント一覧に戻る
-        </Link>
+        <header className="space-y-3">
+          <Link
+            href="/events"
+            className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+          >
+            ← イベント一覧に戻る
+          </Link>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+            {event.name}
+          </h1>
+          {event.image_url && (
+            <div className="relative w-full" style={{ maxHeight: "400px" }}>
+              <Image
+                src={event.image_url}
+                alt={event.name}
+                width={1200}
+                height={400}
+                className="w-full rounded-lg object-cover"
+                style={{ maxHeight: "400px" }}
+                unoptimized
+              />
+            </div>
+          )}
+          {event.description && (
+            <p className="text-sm text-zinc-600 sm:text-base">{event.description}</p>
+          )}
+          {event.keywords && Array.isArray(event.keywords) && event.keywords.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {(event.keywords as string[]).map((keyword: string, idx: number) => (
+                <span
+                  key={idx}
+                  className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700"
+                >
+                  {keyword}
+                </span>
+              ))}
+            </div>
+          )}
+          {event.tags && event.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {event.tags.map((eventTag: { tag: { name: string } }, idx: number) => (
+                <span
+                  key={idx}
+                  className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700"
+                >
+                  {eventTag.tag.name}
+                </span>
+              ))}
+            </div>
+          )}
+        </header>
 
-        <EventPageHeader
-          name={event.name}
-          description={event.description}
-          image_url={event.image_url}
-          keywords={event.keywords}
-          tags={event.tags}
-          shareUrl={shareUrl}
-        />
-
-        <section className="grid gap-8 border-t border-border pt-8 sm:grid-cols-2">
+        <section className="grid gap-4 rounded-3xl border border-zinc-200 bg-white p-5 sm:grid-cols-2 sm:p-7">
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
               開催情報
             </p>
-            <p className="text-lg font-semibold text-foreground">
+            <p className="text-lg font-semibold text-zinc-900">
               開催日時: {formatted.main}
             </p>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-              エントリー{event.entry_selection_method === "FIRST_COME" ? "（先着）" : event.entry_selection_method === "LOTTERY" ? "（抽選）" : event.entry_selection_method === "SELECTION" ? "（選考）" : ""}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              開始: {entryInfo.entryStart} / 締切: {entryInfo.deadline}
-            </p>
-            {entryInfo.paymentDue !== "未定" && (
-              <p className="text-sm text-muted-foreground">
-                支払期限: {entryInfo.paymentDue}
+            {event.prefecture && (
+              <p className="text-sm text-zinc-600">
+                開催地: {event.prefecture}
+                {event.city && ` ${event.city}`}
+                {event.street_address && ` ${event.street_address}`}
+              </p>
+            )}
+            {event.venue_name && (
+              <p className="text-sm text-zinc-600">
+                会場: {event.venue_name}
               </p>
             )}
           </div>
           <div className="space-y-2">
-            <EventDetailActions
-              eventId={event.id}
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              エントリー{event.entry_selection_method === "FIRST_COME" ? "（先着）" : event.entry_selection_method === "LOTTERY" ? "（抽選）" : event.entry_selection_method === "SELECTION" ? "（選考）" : ""}
+            </p>
+            <p className="text-sm text-zinc-700">
+              開始: {entryInfo.entryStart} / 締切: {entryInfo.deadline}
+            </p>
+            {entryInfo.paymentDue !== "未定" && (
+              <p className="text-sm text-zinc-700">
+                支払期限: {entryInfo.paymentDue}
+              </p>
+            )}
+            <EventDetailActions 
+              eventId={event.id} 
               officialUrls={event.official_urls as string[] | undefined}
             />
           </div>
         </section>
 
         {event.description && (
-          <section className="space-y-3 border-t border-border pt-8">
-            <h2 className="text-lg font-semibold text-foreground">イベント紹介</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">
+          <section className="rounded-3xl border border-zinc-200 bg-white p-5 sm:p-7">
+            <h2 className="text-lg font-semibold text-zinc-900">イベント紹介</h2>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-700 whitespace-pre-wrap">
               {event.description}
             </p>
           </section>
         )}
 
-        {hasLocationDetailSection ? (
-          <section className="space-y-6 border-t border-border pt-8">
-            {(event.venue_name || event.prefecture) ? (
-              <div className="grid gap-6 sm:grid-cols-2">
-                {event.prefecture && (
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                      開催地
-                    </p>
-                    <p className="text-sm text-foreground">
-                      {event.prefecture}
-                      {event.city && ` ${event.city}`}
-                      {event.street_address && ` ${event.street_address}`}
-                    </p>
-                  </div>
-                )}
-                {event.venue_name && (
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                      会場
-                    </p>
-                    <p className="text-sm text-foreground">
-                      {event.venue_name}
-                    </p>
-                  </div>
-                )}
+        <section className="rounded-3xl border border-zinc-200 bg-white p-5 sm:p-7">
+          <div className="grid gap-4 sm:grid-cols-2">
+            {event.venue_name && (
+              <div className="rounded-2xl border border-zinc-200 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  会場
+                </p>
+                <p className="mt-1 text-sm text-zinc-800">
+                  {event.venue_name}
+                </p>
               </div>
-            ) : null}
+            )}
+            {event.prefecture && (
+              <div className="rounded-2xl border border-zinc-200 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  開催地
+                </p>
+                <p className="mt-1 text-sm text-zinc-800">
+                  {event.prefecture}
+                  {event.city && ` ${event.city}`}
+                  {event.street_address && ` ${event.street_address}`}
+                </p>
+              </div>
+            )}
             {event.official_urls && Array.isArray(event.official_urls) && event.official_urls.length > 0 && (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {(event.official_urls as string[]).map((url: string, idx: number) => (
-                  <div key={idx}>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  <Link
+                    key={idx}
+                    href={url}
+                    className="block rounded-2xl border border-zinc-200 p-4 transition hover:border-zinc-900"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
                       公式サイト{(event.official_urls as string[]).length > 1 ? ` ${idx + 1}` : ""}
                     </p>
-                    <Link
-                      href={url}
-                      className="mt-1 inline-block break-all text-sm text-accent-mint underline underline-offset-4 hover:text-accent-mint/90"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                    <p className="mt-1 break-all text-sm text-zinc-800">
                       {url}
-                    </Link>
-                  </div>
+                    </p>
+                  </Link>
                 ))}
               </div>
             )}
-          </section>
-        ) : null}
+          </div>
+        </section>
       </article>
     </main>
   );

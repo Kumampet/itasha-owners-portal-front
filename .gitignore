@@ -68,9 +68,6 @@ next-env.d.ts
 /.aws-sam
 samconfig.toml
 
-# ローカル開発用（サイトマップスナップショット・団体画像ファイル）
-/local-storage/
-
 # lambda build artifacts
 lambda/group-message-reminder/.prisma/
 lambda/group-message-reminder/@prisma/

@@ -9,7 +9,7 @@ export function JoinGroupButton() {
       href="/app/groups/join"
       className="block transition hover:-translate-y-0.5 hover:shadow-md"
     >
-      <Card className="transition hover:border-accent-mint/50">
+      <Card className="transition hover:border-zinc-900">
         <div className="flex items-center gap-3">
           {/* 加入アイコン */}
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-100">
@@ -28,7 +28,7 @@ export function JoinGroupButton() {
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-foreground">
+            <h3 className="text-sm font-semibold text-zinc-900">
               既存団体に加入
             </h3>
           </div>

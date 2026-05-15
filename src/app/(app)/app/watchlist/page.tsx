@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AppPageHeader, AppPageHeaderBackLink } from "@/components/app-page-header";
+import Link from "next/link";
 import { LinkCard } from "@/components/link-card";
 import { EventsCardContent } from "@/components/events-card-content";
 import { LoadingSpinner } from "@/components/loading-spinner";
@@ -74,22 +74,27 @@ export default function WatchlistPage() {
           </div>
         ) : (
           <>
-            <AppPageHeader
-              leading={
-                <AppPageHeaderBackLink href="/app/mypage">← マイページへ戻る</AppPageHeaderBackLink>
-              }
-              title="ウォッチリスト"
-              size="md"
-            >
-              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                気になるイベントをまとめて管理します。ウォッチリストに追加したイベントの
-                エントリー開始日や支払期限などを一目で確認できます。
-              </p>
-            </AppPageHeader>
+            <header className="space-y-2">
+              <Link
+                href="/app/mypage"
+                className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+              >
+                ← マイページへ戻る
+              </Link>
+              <div>
+                <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                  ウォッチリスト
+                </h1>
+                <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+                  気になるイベントをまとめて管理します。ウォッチリストに追加したイベントの
+                  エントリー開始日や支払期限などを一目で確認できます。
+                </p>
+              </div>
+            </header>
 
             {watchlist.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border bg-card p-4 sm:p-6">
-                <p className="text-xs text-muted-foreground sm:text-sm">
+              <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-4 sm:p-6">
+                <p className="text-xs text-zinc-700 sm:text-sm">
                   ウォッチリストに追加されたイベントはありません。
                   イベント一覧から「+」ボタンを押してイベントを追加してください。
                 </p>
@@ -100,7 +105,7 @@ export default function WatchlistPage() {
                   <LinkCard
                     key={item.event.id}
                     href={`/events/${item.event.id}`}
-                    className="hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-mint"
+                    className="hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                     cardClassName="rounded-3xl"
                   >
                     <EventsCardContent event={item.event} onToggle={handleToggle} />

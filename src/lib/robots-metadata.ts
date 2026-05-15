@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 
 const ADSENSE_PUBLISHER_ID = "ca-pub-5239358801885177";
 
-const GOOGLE_ANALYTICS_MEASUREMENT_ID = "G-GM4ZG74JH1";
-
 /** `/admin` 管理画面は常に検索インデックス対象外 */
 export function getAdminRobotsMetadata(): Metadata["robots"] {
   return {
@@ -39,30 +37,4 @@ export function isAdsenseScriptEnabled(): boolean {
 
 export function getAdsenseClientId(): string {
   return ADSENSE_PUBLISHER_ID;
-}
-
-export function isGoogleAnalyticsEnabled(): boolean {
-  return (
-    process.env.NEXT_PUBLIC_PREVENT_INDEXING !== "true" &&
-    process.env.NEXT_PUBLIC_DISABLE_GOOGLE_ANALYTICS !== "true"
-  );
-}
-
-/**
- * `.env` の `NEXT_PUBLIC_GOOGLE_MEASUREMENT_ID` が空で上書きされていれば無効。
- * 未設定のときはコード上の既定 ID（運用用）を使います。
- */
-export function getGoogleMeasurementId(): string | null {
-  if (!isGoogleAnalyticsEnabled()) {
-    return null;
-  }
-  const fromEnv = process.env.NEXT_PUBLIC_GOOGLE_MEASUREMENT_ID;
-  if (fromEnv !== undefined) {
-    const trimmed = fromEnv.trim();
-    if (trimmed === "") {
-      return null;
-    }
-    return trimmed;
-  }
-  return GOOGLE_ANALYTICS_MEASUREMENT_ID;
 }

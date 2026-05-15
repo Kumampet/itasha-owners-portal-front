@@ -49,7 +49,7 @@ export function MobileHeader({
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-30 flex items-center justify-between border-b border-border bg-card/90 px-4 backdrop-blur transition-transform duration-300 ease-in-out sm:hidden safe-top ${isVisible ? "translate-y-0" : "-translate-y-full"
+      className={`fixed top-0 left-0 right-0 z-30 flex items-center justify-between border-b border-zinc-200 bg-white/90 px-4 backdrop-blur transition-transform duration-300 ease-in-out sm:hidden safe-top ${isVisible ? "translate-y-0" : "-translate-y-full"
         }`}
       style={{
         paddingTop: `env(safe-area-inset-top, 0px)`,
@@ -57,9 +57,14 @@ export function MobileHeader({
         minHeight: `calc(3.5rem + env(safe-area-inset-top, 0px))`,
       }}
     >
-      <Link href={logoHref} className="flex min-w-0 shrink-0 items-center">
+      <MenuController
+        variant="open"
+        onClick={onMenuClick}
+        className="h-10 w-10 border border-zinc-200 bg-white shadow-sm"
+      />
+      <Link href={logoHref} className="flex items-center">
         <Image
-          src="/images/main_logo_v2.svg"
+          src="/images/main_logo.png"
           alt="いたなび！痛車オーナーズナビ"
           width={150}
           height={60}
@@ -67,14 +72,7 @@ export function MobileHeader({
           priority
         />
       </Link>
-      <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-        {rightContent}
-        <MenuController
-          variant="open"
-          onClick={onMenuClick}
-          className="h-10 w-10 shrink-0 border border-border bg-card shadow-sm"
-        />
-      </div>
+      {rightContent && <div className="flex items-center">{rightContent}</div>}
     </header>
   );
 }

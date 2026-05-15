@@ -1,15 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AppPageHeader, AppPageHeaderBackLink } from "@/components/app-page-header";
-import {
-  FormFieldLabelWithAccent,
-  formFieldInputClassName,
-} from "@/components/form-field-label-accent";
-import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { Button } from "@/components/button";
 import ConfirmModal from "@/components/confirm-modal";
-import { DateTimeInput } from "@/components/date-time-input";
 
 const initialFormData = {
   name: "",
@@ -20,7 +14,6 @@ const initialFormData = {
 };
 
 export default function EventSubmissionPage() {
-  const { status } = useSession();
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState(initialFormData);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -71,108 +64,127 @@ export default function EventSubmissionPage() {
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-        <AppPageHeader
-          leading={
-            status === "authenticated" ? (
-              <AppPageHeaderBackLink href="/app/mypage">← マイページへ戻る</AppPageHeaderBackLink>
-            ) : undefined
-          }
-          title="イベント掲載依頼フォーム"
-          size="md"
-        >
-          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-            イベント情報をご提供いただくことで、より多くの参加者にイベントを知っていただくことができます。
-          </p>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
-            必須項目をすべてご記入いただけないイベントは、掲載のご案内ができません。
-            また、本サービスでの掲載は、<strong className="font-medium text-foreground">開催地が日本国内であるイベントに限ります</strong>。
-          </p>
-        </AppPageHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-8 sm:space-y-9">
+        <header className="space-y-2">
+          <Link
+            href="/app/mypage"
+            className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+          >
+            ← マイページへ戻る
+          </Link>
           <div>
-            <FormFieldLabelWithAccent htmlFor="event-submission-name">
-              イベント名 <span className="font-normal text-red-500">*</span>
-            </FormFieldLabelWithAccent>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+              イベント掲載依頼フォーム
+            </h1>
+            <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+              イベント情報をご提供いただくことで、より多くの参加者にイベントを知っていただくことができます。
+            </p>
+            <p className="mt-2 text-xs text-zinc-600 sm:text-sm leading-relaxed">
+              必須項目をすべてご記入いただけないイベントは、掲載のご案内ができません。
+              また、本サービスでの掲載は、<strong className="font-medium text-zinc-800">開催地が日本国内であるイベントに限ります</strong>。
+            </p>
+          </div>
+        </header>
+
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6 rounded-lg border border-zinc-200 bg-white p-6"
+        >
+          <div>
+            <label htmlFor="event-submission-name" className="block text-sm font-medium text-zinc-700">
+              イベント名 <span className="text-red-500">*</span>
+            </label>
             <input
               id="event-submission-name"
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className={formFieldInputClassName}
+              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
               placeholder="例: 痛車ヘブン夏"
               required
             />
           </div>
 
           <div>
-            <FormFieldLabelWithAccent htmlFor="event-submission-date">
-              開催日 <span className="font-normal text-red-500">*</span>
-            </FormFieldLabelWithAccent>
-            <DateTimeInput
-              id="event-submission-date"
-              type="date"
+            <label
+              htmlFor="event-submission-datetime"
+              className="block text-sm font-medium text-zinc-700"
+            >
+              開催日時 <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="event-submission-datetime"
+              type="datetime-local"
               value={formData.event_date}
-              onChange={(value) => setFormData({ ...formData, event_date: value })}
+              onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
+              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
               required
             />
           </div>
 
           <div>
-            <FormFieldLabelWithAccent
+            <label
               htmlFor="event-submission-venue-name"
-              hint="掲載時に参加者へ示す住所・会場名を、まとめてご入力ください（管理画面での「会場名」入力欄へ引き継がれます）"
+              className="block text-sm font-medium text-zinc-700"
             >
-              会場・住所 <span className="font-normal text-red-500">*</span>
-            </FormFieldLabelWithAccent>
+              会場・住所 <span className="text-red-500">*</span>
+              <span className="mt-1 block text-xs font-normal text-zinc-500">
+                掲載時に参加者へ示す住所・会場名を、まとめてご入力ください（管理画面での「会場名」入力欄へ引き継がれます）
+              </span>
+            </label>
             <input
               id="event-submission-venue-name"
               type="text"
               value={formData.venue_name}
               onChange={(e) => setFormData({ ...formData, venue_name: e.target.value })}
-              className={formFieldInputClassName}
+              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
               placeholder="例: 愛知県名古屋市〇〇 〇〇イベントホール"
               required
             />
           </div>
 
           <div>
-            <FormFieldLabelWithAccent
-              htmlFor="event-submission-url"
-              hint="公式サイト、SNS、告知ページなどのURL"
-            >
-              イベント情報URL <span className="font-normal text-red-500">*</span>
-            </FormFieldLabelWithAccent>
+            <label htmlFor="event-submission-url" className="block text-sm font-medium text-zinc-700">
+              イベント情報URL <span className="text-red-500">*</span>
+              <span className="block text-xs font-normal text-zinc-500">
+                公式サイト、SNS、告知ページなどのURL
+              </span>
+            </label>
             <input
               id="event-submission-url"
               type="url"
               value={formData.original_url}
               onChange={(e) => setFormData({ ...formData, original_url: e.target.value })}
-              className={formFieldInputClassName}
+              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
               placeholder="https://example.com/event"
               required
             />
           </div>
 
           <div>
-            <FormFieldLabelWithAccent htmlFor="event-submission-remarks">
-              備考 <span className="ml-1 text-xs font-normal text-muted-foreground">（任意）</span>
-            </FormFieldLabelWithAccent>
+            <label
+              htmlFor="event-submission-remarks"
+              className="block text-sm font-medium text-zinc-700"
+            >
+              備考 <span className="ml-1 text-xs font-normal text-zinc-500">（任意）</span>
+            </label>
             <textarea
               id="event-submission-remarks"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={6}
-              className={`${formFieldInputClassName} min-h-[8rem] resize-y`}
+              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
               placeholder="補足や連絡事項などがありましたらご記入ください"
             />
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-border/50 pt-8 sm:flex-row sm:gap-4">
-            <Button as="link" href="/app/mypage" variant="secondary" size="md" rounded="md" fullWidth>
+          <div className="flex justify-end gap-2">
+            <Link
+              href="/app/mypage"
+              className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+            >
               キャンセル
-            </Button>
-            <Button type="submit" variant="primary" size="md" rounded="md" fullWidth disabled={submitting}>
+            </Link>
+            <Button type="submit" variant="primary" size="md" rounded="md" disabled={submitting}>
               {submitting ? "送信中..." : "送信"}
             </Button>
           </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AppPageHeader, AppPageHeaderBackLink } from "@/components/app-page-header";
+import Link from "next/link";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { NewGroupEventsListPanel } from "../_components/new-group-events-list-panel";
 import { NewGroupCreateForm } from "../_components/new-group-create-form";
@@ -140,19 +140,14 @@ function NewGroupForm() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(
-          data.error ||
-            "団体の作成に失敗しました。お手数ですが一度ログアウトしてから再度ログインし、団体作成をやり直してください。"
-        );
+        throw new Error(data.error || "団体の作成に失敗しました");
       }
 
       const data = await res.json();
       router.push(`/app/groups/${data.groupId}`);
     } catch (error) {
       setError(
-        error instanceof Error
-          ? error.message
-          : "団体の作成に失敗しました。お手数ですが一度ログアウトしてから再度ログインし、団体作成をやり直してください。"
+        error instanceof Error ? error.message : "団体の作成に失敗しました"
       );
     } finally {
       setSaving(false);
@@ -162,21 +157,26 @@ function NewGroupForm() {
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-        <AppPageHeader
-          leading={
-            <AppPageHeaderBackLink href="/app/groups">← 団体一覧に戻る</AppPageHeaderBackLink>
-          }
-          title="新規団体を作成"
-          size="md"
-        >
-          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-            あなたが団体オーナーとなり、イベントに紐づく団体を新規作成します。
-          </p>
-        </AppPageHeader>
+        <header className="space-y-2">
+          <Link
+            href="/app/groups"
+            className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
+          >
+            ← 団体一覧に戻る
+          </Link>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+              新規団体を作成
+            </h1>
+            <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+              あなたが団体オーナーとなり、イベントに紐づく団体を新規作成します。
+            </p>
+          </div>
+        </header>
 
         {!eventId ? (
-          <div className="space-y-4 rounded-2xl border border-border bg-card p-4 sm:p-5">
-            <h2 className="text-sm font-semibold text-foreground sm:text-base">
+          <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
+            <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
               イベントを選択してください
             </h2>
             <NewGroupEventsListPanel

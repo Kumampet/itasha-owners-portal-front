@@ -424,12 +424,12 @@ export function WysiwygEditor({
   };
 
   return (
-    <div className="wysiwyg-editor-wrapper border border-border rounded-lg overflow-hidden bg-card">
+    <div className="wysiwyg-editor-wrapper border border-zinc-300 rounded-lg overflow-hidden bg-white">
       {/* ツールバー */}
-      <div className="flex flex-wrap gap-1 p-2 border-b border-border bg-card-elevated">
+      <div className="flex flex-wrap gap-1 p-2 border-b border-zinc-300 bg-zinc-50">
         {/* フォントサイズ */}
         <select
-          className="px-2 py-1 rounded-md bg-card text-muted-foreground border border-border hover:bg-card-elevated text-xs disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-accent-mint"
+          className="px-2 py-1 rounded-md bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-100 text-xs disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-zinc-900"
           disabled={disabled}
           title="フォントサイズ"
           onChange={(e) => {
@@ -456,8 +456,8 @@ export function WysiwygEditor({
         <button
           type="button"
           className={`px-2 py-1 rounded-md border text-xs disabled:opacity-50 disabled:cursor-not-allowed ${isActive("bold")
-            ? "bg-zinc-900 text-white border-border-strong"
-            : "bg-card text-muted-foreground border-border hover:bg-card-elevated"
+            ? "bg-zinc-900 text-white border-zinc-900"
+            : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100"
             }`}
           onMouseDown={(e) => {
             e.preventDefault();
@@ -473,8 +473,8 @@ export function WysiwygEditor({
         <button
           type="button"
           className={`px-2 py-1 rounded-md border text-xs disabled:opacity-50 disabled:cursor-not-allowed ${isActive("italic")
-            ? "bg-zinc-900 text-white border-border-strong"
-            : "bg-card text-muted-foreground border-border hover:bg-card-elevated"
+            ? "bg-zinc-900 text-white border-zinc-900"
+            : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100"
             }`}
           onMouseDown={(e) => {
             e.preventDefault();
@@ -490,8 +490,8 @@ export function WysiwygEditor({
         <button
           type="button"
           className={`px-2 py-1 rounded-md border text-xs disabled:opacity-50 disabled:cursor-not-allowed ${isActive("underline")
-            ? "bg-zinc-900 text-white border-border-strong"
-            : "bg-card text-muted-foreground border-border hover:bg-card-elevated"
+            ? "bg-zinc-900 text-white border-zinc-900"
+            : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100"
             }`}
           onMouseDown={(e) => {
             e.preventDefault();
@@ -507,8 +507,8 @@ export function WysiwygEditor({
         <button
           type="button"
           className={`px-2 py-1 rounded-md border text-xs disabled:opacity-50 disabled:cursor-not-allowed ${isActive("strikeThrough")
-            ? "bg-zinc-900 text-white border-border-strong"
-            : "bg-card text-muted-foreground border-border hover:bg-card-elevated"
+            ? "bg-zinc-900 text-white border-zinc-900"
+            : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100"
             }`}
           onMouseDown={(e) => {
             e.preventDefault();
@@ -524,8 +524,8 @@ export function WysiwygEditor({
         <button
           type="button"
           className={`px-2 py-1 rounded-md border text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${isActive("insertUnorderedList")
-            ? "bg-zinc-900 text-white border-border-strong"
-            : "bg-card text-muted-foreground border-border hover:bg-card-elevated"
+            ? "bg-zinc-900 text-white border-zinc-900"
+            : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100"
             }`}
           onMouseDown={(e) => {
             e.preventDefault();
@@ -540,7 +540,7 @@ export function WysiwygEditor({
             viewBox="0 0 16 16"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className={isActive("insertUnorderedList") ? "text-white" : "text-muted-foreground"}
+            className={isActive("insertUnorderedList") ? "text-white" : "text-zinc-700"}
           >
             <circle cx="3" cy="4" r="1.5" fill="currentColor" />
             <circle cx="3" cy="8" r="1.5" fill="currentColor" />
@@ -555,8 +555,8 @@ export function WysiwygEditor({
         <button
           type="button"
           className={`px-2 py-1 rounded-md border text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${isActive("insertOrderedList")
-            ? "bg-zinc-900 text-white border-border-strong"
-            : "bg-card text-muted-foreground border-border hover:bg-card-elevated"
+            ? "bg-zinc-900 text-white border-zinc-900"
+            : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100"
             }`}
           onMouseDown={(e) => {
             e.preventDefault();
@@ -571,7 +571,7 @@ export function WysiwygEditor({
             viewBox="0 0 16 16"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className={isActive("insertOrderedList") ? "text-white" : "text-muted-foreground"}
+            className={isActive("insertOrderedList") ? "text-white" : "text-zinc-700"}
           >
             <text x="1.5" y="5.5" fontSize="8" fill="currentColor" fontFamily="Arial, sans-serif" fontWeight="600">1.</text>
             <text x="1.5" y="9.5" fontSize="8" fill="currentColor" fontFamily="Arial, sans-serif" fontWeight="600">2.</text>
@@ -586,8 +586,8 @@ export function WysiwygEditor({
         <button
           type="button"
           className={`px-2 py-1 rounded-md border text-xs disabled:opacity-50 disabled:cursor-not-allowed ${isActive("justifyLeft")
-            ? "bg-zinc-900 text-white border-border-strong"
-            : "bg-card text-muted-foreground border-border hover:bg-card-elevated"
+            ? "bg-zinc-900 text-white border-zinc-900"
+            : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100"
             }`}
           onMouseDown={(e) => {
             e.preventDefault();
@@ -603,8 +603,8 @@ export function WysiwygEditor({
         <button
           type="button"
           className={`px-2 py-1 rounded-md border text-xs disabled:opacity-50 disabled:cursor-not-allowed ${isActive("justifyCenter")
-            ? "bg-zinc-900 text-white border-border-strong"
-            : "bg-card text-muted-foreground border-border hover:bg-card-elevated"
+            ? "bg-zinc-900 text-white border-zinc-900"
+            : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100"
             }`}
           onMouseDown={(e) => {
             e.preventDefault();
@@ -620,8 +620,8 @@ export function WysiwygEditor({
         <button
           type="button"
           className={`px-2 py-1 rounded-md border text-xs disabled:opacity-50 disabled:cursor-not-allowed ${isActive("justifyRight")
-            ? "bg-zinc-900 text-white border-border-strong"
-            : "bg-card text-muted-foreground border-border hover:bg-card-elevated"
+            ? "bg-zinc-900 text-white border-zinc-900"
+            : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100"
             }`}
           onMouseDown={(e) => {
             e.preventDefault();
@@ -638,7 +638,7 @@ export function WysiwygEditor({
           <button
             ref={linkButtonRef}
             type="button"
-            className="px-2 py-1 rounded-md bg-card text-muted-foreground border border-border hover:bg-card-elevated text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-2 py-1 rounded-md bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-100 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
             onMouseDown={(e) => {
               e.preventDefault();
               openLinkDialog();
@@ -654,9 +654,9 @@ export function WysiwygEditor({
                 className="fixed inset-0 z-[100]"
                 onClick={() => setShowLinkDialog(false)}
               />
-              <div className="absolute top-full left-0 mt-1 z-[101] bg-card border border-border rounded-lg shadow-lg p-4 min-w-[320px] max-w-[90vw]">
+              <div className="absolute top-full left-0 mt-1 z-[101] bg-white border border-zinc-300 rounded-lg shadow-lg p-4 min-w-[320px] max-w-[90vw]">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-foreground">リンクを追加</h3>
+                  <h3 className="text-sm font-semibold text-zinc-900">リンクを追加</h3>
                   <button
                     type="button"
                     onClick={() => setShowLinkDialog(false)}
@@ -670,7 +670,7 @@ export function WysiwygEditor({
                 <div className="space-y-3">
                   {/* URL入力 */}
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1">
+                    <label className="block text-xs font-medium text-zinc-700 mb-1">
                       URL
                     </label>
                     <input
@@ -678,7 +678,7 @@ export function WysiwygEditor({
                       value={linkUrl}
                       onChange={(e) => setLinkUrl(e.target.value)}
                       placeholder="http://"
-                      className="w-full rounded border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+                      className="w-full rounded border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && linkUrl.trim()) {
@@ -691,7 +691,7 @@ export function WysiwygEditor({
 
                   {/* タイトル入力 */}
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1">
+                    <label className="block text-xs font-medium text-zinc-700 mb-1">
                       タイトル
                     </label>
                     <input
@@ -699,7 +699,7 @@ export function WysiwygEditor({
                       value={linkTitle}
                       onChange={(e) => setLinkTitle(e.target.value)}
                       placeholder="リンクテキスト"
-                      className="w-full rounded border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+                      className="w-full rounded border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && linkUrl.trim()) {
                           e.preventDefault();
@@ -711,7 +711,7 @@ export function WysiwygEditor({
 
                   {/* ウィンドウ選択 */}
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1">
+                    <label className="block text-xs font-medium text-zinc-700 mb-1">
                       ウィンドウ
                     </label>
                     <select
@@ -719,7 +719,7 @@ export function WysiwygEditor({
                       onChange={(e) =>
                         setLinkTarget(e.target.value as "_self" | "_blank")
                       }
-                      className="w-full rounded border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+                      className="w-full rounded border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
                     >
                       <option value="_blank">新しいウィンドウで開く</option>
                       <option value="_self">同じウィンドウで開く</option>
@@ -747,7 +747,7 @@ export function WysiwygEditor({
         <div className="relative group">
           <button
             type="button"
-            className="px-2 py-1 rounded-md bg-card text-muted-foreground border border-border hover:bg-card-elevated text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-2 py-1 rounded-md bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-100 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={disabled}
             title="文字色"
             onMouseDown={(e) => {
@@ -763,12 +763,12 @@ export function WysiwygEditor({
                 className="fixed inset-0 z-40"
                 onClick={() => setShowColorPicker(false)}
               />
-              <div className="w-max absolute top-full left-0 mt-1 bg-card border border-border rounded-md shadow-lg z-50 p-2 grid grid-cols-4 gap-1">
+              <div className="w-max absolute top-full left-0 mt-1 bg-white border border-zinc-200 rounded-md shadow-lg z-50 p-2 grid grid-cols-4 gap-1">
                 {COLORS.map((color) => (
                   <button
                     key={color.value}
                     type="button"
-                    className="w-8 h-8 rounded border border-border hover:scale-110 transition-transform"
+                    className="w-8 h-8 rounded border border-zinc-200 hover:scale-110 transition-transform"
                     style={{ backgroundColor: color.value }}
                     onMouseDown={(e) => {
                       e.preventDefault();
