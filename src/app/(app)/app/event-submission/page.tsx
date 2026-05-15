@@ -9,6 +9,7 @@ import {
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/button";
 import ConfirmModal from "@/components/confirm-modal";
+import { DateTimeInput } from "@/components/date-time-input";
 
 const initialFormData = {
   name: "",
@@ -105,15 +106,14 @@ export default function EventSubmissionPage() {
           </div>
 
           <div>
-            <FormFieldLabelWithAccent htmlFor="event-submission-datetime">
-              開催日時 <span className="font-normal text-red-500">*</span>
+            <FormFieldLabelWithAccent htmlFor="event-submission-date">
+              開催日 <span className="font-normal text-red-500">*</span>
             </FormFieldLabelWithAccent>
-            <input
-              id="event-submission-datetime"
-              type="datetime-local"
+            <DateTimeInput
+              id="event-submission-date"
+              type="date"
               value={formData.event_date}
-              onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
-              className={formFieldInputClassName}
+              onChange={(value) => setFormData({ ...formData, event_date: value })}
               required
             />
           </div>

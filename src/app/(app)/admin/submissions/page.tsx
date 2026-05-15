@@ -268,7 +268,7 @@ export default function AdminSubmissionsPage() {
                   )}
                   <div className={`mt-2 flex flex-wrap gap-4 text-xs ${submission.status === "PROCESSED" ? "text-zinc-400" : "text-muted"}`}>
                     {submission.event_date && (
-                      <span>開催日時: {formatDateTime(submission.event_date)}</span>
+                      <span>開催日: {formatDate(submission.event_date)}</span>
                     )}
                     {submission.venue_name && <span>会場・住所: {submission.venue_name}</span>}
                     {submission.entry_start_at && (
@@ -332,7 +332,7 @@ export default function AdminSubmissionsPage() {
                 size="sm"
                 rounded="md"
                 onClick={() => setSelectedSubmission(null)}
-                className="text-muted-foreground hover:text-foreground border-0 bg-transparent p-0"
+                className="text-muted-foreground hover:text-foreground border-0 bg-transparent"
               >
                 ×
               </Button>
@@ -377,9 +377,9 @@ export default function AdminSubmissionsPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {selectedSubmission.event_date && (
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">開催日時</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground">開催日</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {formatDateTime(selectedSubmission.event_date)}
+                      {formatDate(selectedSubmission.event_date)}
                     </p>
                   </div>
                 )}
@@ -436,16 +436,15 @@ export default function AdminSubmissionsPage() {
                 <div className="flex gap-2 pt-4">
                   <Button
                     variant="success"
-                    size="md"
+                    size="sm"
                     rounded="md"
-                    fullWidth
                     onClick={() => handleCreateEvent(selectedSubmission)}
                   >
                     イベント作成画面へ
                   </Button>
                   <Button
                     variant="danger"
-                    size="md"
+                    size="sm"
                     rounded="md"
                     onClick={() => handleProcess(selectedSubmission.id, "REJECTED")}
                     disabled={processing}
