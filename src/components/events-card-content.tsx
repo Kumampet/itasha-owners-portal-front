@@ -81,7 +81,7 @@ export function EventsCardContent({ event, onToggle }: EventsCardContentProps) {
                         fill
                         className="object-cover"
                         sizes="(max-width: 639px) 100vw, min(44vw, 18rem)"
-                        unoptimized={event.image_url!.startsWith("http")}
+                        unoptimized={event.image_url!.startsWith("http") || event.image_url!.startsWith("/api/")}
                     />
                 ) : (
                     <>

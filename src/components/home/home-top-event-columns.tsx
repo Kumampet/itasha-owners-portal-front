@@ -49,7 +49,7 @@ function HomeEventRow({ event }: { event: HomeEventBrief }) {
               fill
               className="object-cover"
               sizes="112px"
-              unoptimized={Boolean(event.image_url?.startsWith("http"))}
+              unoptimized={Boolean(event.image_url?.startsWith("http") || event.image_url?.startsWith("/api/"))}
             />
           ) : (
             <Image
