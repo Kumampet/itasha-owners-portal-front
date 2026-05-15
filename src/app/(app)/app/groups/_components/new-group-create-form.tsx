@@ -35,24 +35,24 @@ function GroupTargetEventCard({
   }
 
   return (
-    <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 mb-2">
+    <div className="rounded-lg border-2 border-accent-mint/25 bg-accent-mint/10 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-accent-mint mb-2">
         対象イベント
       </p>
-      <p className="text-base font-bold text-zinc-900">
+      <p className="text-base font-bold text-foreground">
         {selectedEvent.name}
       </p>
       {selectedEvent.theme && (
-        <p className="mt-1 text-sm text-zinc-700">{selectedEvent.theme}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{selectedEvent.theme}</p>
       )}
-      <p className="mt-2 text-xs text-zinc-600">
+      <p className="mt-2 text-xs text-muted-foreground">
         {new Date(selectedEvent.event_date).toLocaleDateString("ja-JP", {
           year: "numeric",
           month: "long",
           day: "numeric",
         })}
       </p>
-      <p className="mt-3 text-xs text-zinc-600 border-t border-emerald-200 pt-3">
+      <p className="mt-3 text-xs text-muted-foreground border-t border-accent-mint/25 pt-3">
         このイベントに関連する団体を作成します
       </p>
     </div>
@@ -94,7 +94,7 @@ export function NewGroupCreateForm({
       />
       <form
         onSubmit={onSubmit}
-        className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5"
+        className="space-y-6 rounded-2xl border border-border bg-card p-4 sm:p-5"
       >
         {error && (
           <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
@@ -148,7 +148,7 @@ export function NewGroupCreateForm({
           </Button>
           <Link
             href="/app/groups"
-            className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 whitespace-nowrap"
+            className="rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-card-elevated whitespace-nowrap"
           >
             キャンセル
           </Link>

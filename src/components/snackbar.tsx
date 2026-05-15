@@ -4,8 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import { useSnackbar, SnackbarMessage } from "@/contexts/snackbar-context";
 
 const severityStyles = {
-  success: "bg-emerald-500 text-white",
-  error: "bg-red-500 text-white",
+  /** アクセントの「mint」トークンはピンク系のため、成功は純ミント緑系で表示 */
+  success: "bg-emerald-500 text-white shadow-lg shadow-emerald-900/25",
+  error: "bg-pink-500 text-white shadow-lg shadow-pink-900/20",
   warning: "bg-amber-500 text-white",
   info: "bg-blue-500 text-white",
 };

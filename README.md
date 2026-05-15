@@ -156,6 +156,7 @@ MySQL のデータファイルは Docker の**名前付きボリューム** `ita
 マイグレーションを適用したうえで、スキーマに沿ったサンプル（イベント・エントリー枠・タグ・フォロー・参加・団体・メッセージ・リマインダー等）を流し込みます。`prisma/seed.ts` は実行時に **`.env` と `.env.local` を読み込み**（`.env.local` があればそちらで上書き）するため、次のように **`export` しなくても** 接続文字列が取れます。
 
 ```bash
+npx prisma generate
 npx prisma migrate deploy
 npm run db:seed
 ```

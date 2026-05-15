@@ -37,16 +37,16 @@ export function ReminderCard({
 
   // スタイルの違いを定義
   const cardClassName = isUpcoming
-    ? "rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-900 hover:shadow-md sm:p-5"
-    : "rounded-2xl border border-zinc-200 bg-zinc-50 p-4 sm:p-5";
+    ? "rounded-2xl border border-border bg-card p-4 transition hover:border-accent-mint/50 hover:shadow-md sm:p-5"
+    : "rounded-2xl border border-border bg-card-elevated p-4 sm:p-5";
 
   const tagClassName = isUpcoming
-    ? "rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700"
-    : "rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium text-zinc-600";
+    ? "rounded-full bg-accent-mint/15 px-2 py-0.5 text-xs font-medium text-accent-mint"
+    : "rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium text-muted-foreground";
 
   const dateTimeClassName = isUpcoming
-    ? "mt-2 text-xs text-zinc-600 sm:text-sm"
-    : "mt-2 text-xs text-zinc-500 sm:text-sm";
+    ? "mt-2 text-xs text-muted-foreground sm:text-sm"
+    : "mt-2 text-xs text-muted sm:text-sm";
 
   return (
     <div className={cardClassName}>
@@ -57,16 +57,16 @@ export function ReminderCard({
               <span className={tagClassName}>{reminder.event.name}</span>
             )}
             {reminder.notified && (
-              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+              <span className="rounded-full bg-card-elevated px-2 py-0.5 text-xs font-medium text-muted-foreground">
                 通知済み
               </span>
             )}
           </div>
-          <p className="mt-2 text-sm font-semibold text-zinc-900 sm:text-base">
+          <p className="mt-2 text-sm font-semibold text-foreground sm:text-base">
             {reminder.label}
           </p>
           {reminder.event?.theme && (
-            <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
               {reminder.event.theme}
             </p>
           )}

@@ -90,7 +90,7 @@ export default function AdminEventsPage() {
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case "DRAFT":
-        return "bg-zinc-100 text-zinc-700";
+        return "bg-card-elevated text-muted-foreground";
       case "PENDING":
         return "bg-yellow-100 text-yellow-700";
       case "APPROVED":
@@ -98,7 +98,7 @@ export default function AdminEventsPage() {
       case "REJECTED":
         return "bg-red-100 text-red-700";
       default:
-        return "bg-zinc-100 text-zinc-700";
+        return "bg-card-elevated text-muted-foreground";
     }
   };
 
@@ -123,10 +123,10 @@ export default function AdminEventsPage() {
       <div className="mb-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl">
+            <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">
               イベント管理
             </h1>
-            <p className="mt-2 text-sm text-zinc-600 sm:text-base">
+            <p className="mt-2 text-sm text-muted-foreground sm:text-base">
               イベントの作成、編集、承認を行います
             </p>
           </div>
@@ -140,7 +140,7 @@ export default function AdminEventsPage() {
       </div>
 
       {/* フィルター・ソート・検索 */}
-      <div className="mb-6 space-y-4 rounded-lg border border-zinc-200 bg-white p-4">
+      <div className="mb-6 space-y-4 rounded-lg border border-border bg-card p-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           {/* 検索 */}
           <div className="flex-1 min-w-0">
@@ -155,7 +155,7 @@ export default function AdminEventsPage() {
                 placeholder="イベント名で検索..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               />
             </form>
           </div>
@@ -173,7 +173,7 @@ export default function AdminEventsPage() {
                     setFilterStatus(status);
                     setCurrentPage(1); // フィルター変更時は1ページ目に戻る
                   }}
-                  className={filterStatus === status ? "whitespace-nowrap" : "bg-zinc-100 hover:bg-zinc-200 whitespace-nowrap"}
+                  className={filterStatus === status ? "whitespace-nowrap" : "bg-card-elevated hover:bg-card whitespace-nowrap"}
                 >
                   {status === "ALL"
                     ? "すべて"
@@ -193,14 +193,14 @@ export default function AdminEventsPage() {
         {/* ソート */}
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-zinc-700">並び替え:</label>
+            <label className="text-xs font-medium text-muted-foreground">並び替え:</label>
             <select
               value={sortBy}
               onChange={(e) => {
                 setSortBy(e.target.value as SortBy);
                 setCurrentPage(1); // ソート変更時は1ページ目に戻る
               }}
-              className="rounded-md border border-zinc-300 px-2 py-1 text-xs focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="rounded-md border border-border px-2 py-1 text-xs focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
             >
               <option value="created_at">作成日</option>
               <option value="event_date">開催日</option>
@@ -228,9 +228,9 @@ export default function AdminEventsPage() {
                   setFilterNoEntryStart(e.target.checked);
                   setCurrentPage(1); // フィルター変更時は1ページ目に戻る
                 }}
-                className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+                className="h-4 w-4 rounded border-border text-accent-mint focus:ring-accent-mint"
               />
-              <span className="text-xs font-medium text-zinc-700">エントリー開始日時未登録</span>
+              <span className="text-xs font-medium text-muted-foreground">エントリー開始日時未登録</span>
             </label>
           </div>
         </div>
@@ -242,15 +242,15 @@ export default function AdminEventsPage() {
           <LoadingSpinner size="lg" />
         </div>
       ) : events.length === 0 ? (
-        <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center">
-          <p className="text-sm text-zinc-600">イベントがありません</p>
+        <div className="rounded-lg border border-border bg-card p-8 text-center">
+          <p className="text-sm text-muted-foreground">イベントがありません</p>
         </div>
       ) : (
         <>
           {/* 件数表示とページネーション（上部） */}
           {pagination && (
             <div className="mb-4 flex items-center justify-between">
-              <div className="text-sm text-zinc-600">
+              <div className="text-sm text-muted-foreground">
                 {pagination.totalCount}件中 {((pagination.currentPage - 1) * pagination.limit) + 1}〜{Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)}件を表示
               </div>
               {pagination.totalPages > 1 && (
@@ -264,39 +264,39 @@ export default function AdminEventsPage() {
             </div>
           )}
           
-          <div className="w-full overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-            <table className="min-w-[1200px] divide-y divide-zinc-200">
-              <thead className="bg-zinc-50">
+          <div className="w-full overflow-x-auto rounded-lg border border-border bg-card">
+            <table className="min-w-[1200px] divide-y divide-border">
+              <thead className="bg-card-elevated">
                 <tr>
-                  <th className="w-24 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  <th className="w-24 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     ステータス
                   </th>
-                  <th className="min-w-[200px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  <th className="min-w-[200px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     イベント名
                   </th>
-                  <th className="min-w-[250px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  <th className="min-w-[250px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     イベント詳細
                   </th>
-                  <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     開催日
                   </th>
-                  <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     エントリー開始
                   </th>
-                  <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     支払期限
                   </th>
-                  <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                  <th className="w-32 whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     作成日
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 bg-white">
+              <tbody className="divide-y divide-border bg-card">
                 {events.map((event) => (
                   <tr
                     key={event.id}
                     onClick={() => router.push(`/admin/events/${event.id}`)}
-                    className="cursor-pointer transition hover:bg-zinc-50"
+                    className="cursor-pointer transition hover:bg-card-elevated"
                   >
                     <td className="whitespace-nowrap px-4 py-3">
                       <span
@@ -308,29 +308,29 @@ export default function AdminEventsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-sm font-medium text-zinc-900">
+                      <div className="text-sm font-medium text-foreground">
                         {event.name}
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-sm text-zinc-600 line-clamp-2">
+                      <div className="text-sm text-muted-foreground line-clamp-2">
                         {event.description || "-"}
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
                       {formatDate(event.event_date)}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
                       {event.entries && event.entries.length > 0 && event.entries[0].entry_start_at
                         ? formatDateTime(event.entries[0].entry_start_at) || "-"
                         : "-"}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-700">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
                       {event.entries && event.entries.length > 0 && event.entries[0].payment_due_at
                         ? formatDateTime(event.entries[0].payment_due_at)
                         : "-"}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
                       {formatDate(event.created_at)}
                     </td>
                   </tr>

@@ -4,7 +4,9 @@ import { SessionProvider } from "next-auth/react";
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { SnackbarProvider } from "@/contexts/snackbar-context";
+import { PwaBannerInsetProvider } from "@/contexts/pwa-banner-inset-context";
 import { Snackbar } from "@/components/snackbar";
+import { ConditionalPWAInstallBanner } from "@/components/conditional-pwa-install-banner";
 
 type ProvidersProps = {
   children: ReactNode;
@@ -35,8 +37,11 @@ export function Providers({ children }: ProvidersProps) {
       refetchOnWindowFocus={true}
     >
       <SnackbarProvider>
-        {children}
-        <Snackbar />
+        <PwaBannerInsetProvider>
+          {children}
+          <Snackbar />
+          <ConditionalPWAInstallBanner />
+        </PwaBannerInsetProvider>
       </SnackbarProvider>
     </SessionProvider>
   );

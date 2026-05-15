@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { AppPageHeader, AppPageHeaderBackLink } from "@/components/app-page-header";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { CreateGroupButton } from "./_components/create-group-button";
 import { JoinGroupButton } from "./_components/join-group-button";
@@ -83,23 +83,18 @@ export default function GroupsPage() {
   return (
     <main className="flex-1">
       <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pb-20 pt-6 sm:pb-10 sm:pt-8">
-        <header className="space-y-2">
-          <Link
-            href="/app/mypage"
-            className="text-xs font-semibold uppercase tracking-wide text-emerald-600"
-          >
-            ← マイページへ戻る
-          </Link>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              団体管理
-            </h1>
-            <p className="mt-1 text-xs text-zinc-600 sm:text-sm">
-              イベントごとの団体参加（併せ）のメンバー募集・参加状況・一斉連絡を
-              管理する画面です。
-            </p>
-          </div>
-        </header>
+        <AppPageHeader
+          leading={
+            <AppPageHeaderBackLink href="/app/mypage">← マイページへ戻る</AppPageHeaderBackLink>
+          }
+          title="団体管理"
+          size="md"
+        >
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+            イベントごとの団体参加（併せ）のメンバー募集・参加状況・一斉連絡を
+            管理する画面です。
+          </p>
+        </AppPageHeader>
 
         <div className="space-y-4">
           {/* アクションボタン */}
@@ -107,8 +102,8 @@ export default function GroupsPage() {
             <CreateGroupButton />
             <JoinGroupButton />
           </div>
-          <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
-            <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
+          <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+            <h2 className="text-sm font-semibold text-foreground sm:text-base">
               参加団体一覧
             </h2>
             {loading ? (
@@ -116,7 +111,7 @@ export default function GroupsPage() {
                 <LoadingSpinner size="md" />
               </div>
             ) : groups.length === 0 ? (
-              <p className="mt-1 text-xs text-zinc-700 sm:text-sm">
+              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                 まだ団体は登録されていません。イベント詳細ページから「団体を組む」ボタンで団体を作成または加入できます。
               </p>
             ) : (
@@ -132,11 +127,11 @@ export default function GroupsPage() {
             )}
           </section>
 
-          {/* <section className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-4 sm:p-5">
-            <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
+          {/* <section className="rounded-2xl border border-dashed border-border bg-card-elevated p-4 sm:p-5">
+            <h2 className="text-sm font-semibold text-foreground sm:text-base">
               一斉連絡ポリシー
             </h2>
-            <ul className="mt-2 space-y-1 text-xs text-zinc-700 sm:text-sm">
+            <ul className="mt-2 space-y-1 text-xs text-muted-foreground sm:text-sm">
               <li>・団体メッセージで「一斉連絡」として投稿すると、重要なメッセージとしてマークされます。</li>
             </ul>
           </section> */}

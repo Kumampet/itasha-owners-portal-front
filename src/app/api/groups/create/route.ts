@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+
+/** セッションと DB のユーザーがずれたとき等（再ログインで解消するケース） */
+const GROUP_CREATE_RELOGIN_MESSAGE =
+  "ログイン状態とサーバー側の情報が一致していない可能性があります。お手数ですが一度ログアウトしてから、再度ログインしたうえで団体作成をやり直してください。";
+
+/** 原因が特定できない失敗でも、ユーザーにログインやり直しを促す（「時間をおいて」では案内しない） */
+const GROUP_CREATE_FAILURE_RELOGIN_MESSAGE =
+  "団体の作成に失敗しました。お手数ですが一度ログアウトしてから再度ログインし、団体作成をやり直してください。";
 
 // POST /api/groups/create
 // 新規団体作成API
@@ -9,10 +18,20 @@ export async function POST(request: Request) {
     const session = await auth();
 
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: GROUP_CREATE_RELOGIN_MESSAGE }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+    if (!userId) {
+      return NextResponse.json({ error: GROUP_CREATE_RELOGIN_MESSAGE }, { status: 401 });
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!existingUser) {
+      return NextResponse.json({ error: GROUP_CREATE_RELOGIN_MESSAGE }, { status: 403 });
     }
 
     const body = await request.json();
@@ -64,14 +83,14 @@ export async function POST(request: Request) {
           theme: theme || null,
           max_members: maxMembers || null,
           group_code: groupCode!,
-          leader_user_id: session.user.id,
+          leader_user_id: userId,
         },
       });
 
       // UserGroupを作成（複数団体参加対応）
       await tx.userGroup.create({
         data: {
-          user_id: session.user.id,
+          user_id: userId,
           group_id: group.id,
           event_id: eventId,
           status: "INTERESTED",
@@ -82,7 +101,7 @@ export async function POST(request: Request) {
       await tx.userEvent.upsert({
         where: {
           user_id_event_id: {
-            user_id: session.user.id,
+            user_id: userId,
             event_id: eventId,
           },
         },
@@ -90,7 +109,7 @@ export async function POST(request: Request) {
           group_id: group.id,
         },
         create: {
-          user_id: session.user.id,
+          user_id: userId,
           event_id: eventId,
           group_id: group.id,
           status: "INTERESTED",
@@ -105,10 +124,16 @@ export async function POST(request: Request) {
       groupCode: result.group_code,
     });
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2003"
+    ) {
+      return NextResponse.json({ error: GROUP_CREATE_RELOGIN_MESSAGE }, { status: 409 });
+    }
     console.error("Error creating group:", error);
     return NextResponse.json(
-      { error: "Failed to create group" },
-      { status: 500 }
+      { error: GROUP_CREATE_FAILURE_RELOGIN_MESSAGE },
+      { status: 500 },
     );
   }
 }

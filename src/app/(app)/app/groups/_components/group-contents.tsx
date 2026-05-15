@@ -28,14 +28,14 @@ export function GroupContents({
 }: GroupContentsProps) {
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
-        <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+        <h2 className="text-sm font-semibold text-foreground sm:text-base">
           団体コード
         </h2>
-        <p className="mt-2 text-2xl font-mono font-semibold text-zinc-900">
+        <p className="mt-2 text-2xl font-mono font-semibold text-foreground">
           {group.groupCode}
         </p>
-        <p className="mt-1 text-xs text-zinc-500">
+        <p className="mt-1 text-xs text-muted">
           このコードを共有することで、他のメンバーがこの団体に加入できます。
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">

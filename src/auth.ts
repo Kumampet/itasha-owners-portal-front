@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import Twitter from "next-auth/providers/twitter";
+import { getAuthSecret } from "@/lib/auth-secret";
 
 // DATABASE_URLが設定されているかチェック
 const hasDatabaseUrl = !!(
@@ -10,137 +11,8 @@ const hasDatabaseUrl = !!(
   process.env.DATABASE_URL.trim() !== ""
 );
 
-// DATABASE_URLが設定されている場合のみPrisma Adapterを使用
-let adapter: ReturnType<typeof import("@auth/prisma-adapter").PrismaAdapter> | undefined;
-
-const getAdapter = () => {
-  // 既に作成済みの場合はそれを返す
-  if (adapter !== undefined) {
-    return adapter;
-  }
-
-  // DATABASE_URLが設定されていない場合はundefinedを返す
-  if (!hasDatabaseUrl) {
-    console.warn("DATABASE_URL is not set. Authentication will use JWT strategy.");
-    adapter = undefined;
-    return undefined;
-  }
-
-  try {
-    // DATABASE_URLが設定されているか再確認（実行時に再チェック）
-    const databaseUrl = process.env.DATABASE_URL;
-
-    if (!databaseUrl || typeof databaseUrl !== "string" || databaseUrl.trim() === "") {
-      adapter = undefined;
-      return undefined;
-    }
-
-    // 動的インポートでPrisma AdapterとPrisma Clientを読み込む
-    // これにより、DATABASE_URLが設定されていない場合はPrisma Clientが初期化されない
-    // ただし、requireを使うとモジュールが読み込まれるため、実際の初期化は遅延される
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { PrismaAdapter } = require("@auth/prisma-adapter");
-
-    // Prisma Clientを動的にインポート（実際に使用される時点で初期化される）
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const prismaModule = require("@/lib/prisma");
-    const { prisma } = prismaModule;
-
-    if (!prisma) {
-      throw new Error("Prisma Client is not available");
-    }
-
-    // PrismaAdapterを呼び出すと、Prisma Clientのプロパティにアクセスしようとし、
-    // その際にPrisma Clientが初期化される
-    // DATABASE_URLが未設定の場合は、この時点でエラーが発生する
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const baseAdapter = PrismaAdapter(prisma) as any;
-
-    // Prisma Adapterをカスタマイズして、既存のユーザーのロールを保持する
-    // createUser、updateUser、linkAccountメソッドをラップ
-    adapter = {
-      ...baseAdapter,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      async createUser(data: any) {
-        // 既存のユーザーを確認（同じメールアドレスで）
-        if (data.email) {
-          const existingUser = await prisma.user.findUnique({
-            where: { email: data.email },
-            select: { id: true, role: true, email: true },
-          });
-
-          if (existingUser) {
-            // 既存のユーザーが見つかった場合、既存のユーザーを返す（新規作成しない）
-            return existingUser;
-          }
-        }
-
-        // 新規ユーザーを作成
-        return baseAdapter.createUser(data);
-      },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      async updateUser(data: any) {
-        // 既存のユーザーのロールを保持
-        if (data.id) {
-          const existingUser = await prisma.user.findUnique({
-            where: { id: data.id },
-            select: { role: true, email: true },
-          });
-
-          if (existingUser && existingUser.role !== "USER") {
-            // 既存のロールを保持
-            data.role = existingUser.role;
-          }
-        }
-
-        return baseAdapter.updateUser(data);
-      },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      async linkAccount(data: any) {
-        return baseAdapter.linkAccount(data);
-      },
-      async getUserByEmail(email: string) {
-        // 既存のユーザーを取得（Prisma Adapterの前に直接確認）
-        try {
-          const existingUser = await prisma.user.findUnique({
-            where: { email },
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              image: true,
-              role: true,
-              emailVerified: true,
-            },
-          });
-
-          if (existingUser) {
-            return existingUser;
-          }
-        } catch (error) {
-          console.error(`[PrismaAdapter.getUserByEmail] Error finding user:`, error);
-        }
-
-        // Prisma Adapterのメソッドも呼び出す（念のため）
-        return baseAdapter.getUserByEmail(email);
-      },
-      async getUserByAccount(account: { provider: string; providerAccountId: string }) {
-        return baseAdapter.getUserByAccount(account);
-      },
-    };
-
-    return adapter;
-  } catch {
-    adapter = undefined;
-    return undefined;
-  }
-};
-
-// adapterを取得（将来の拡張性のために保持）
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const adapterInstance = getAdapter();
-
-// プロバイダー設定（Google、X）
+// Edge の middleware が auth を読み込むため、ここで getAdapter() を呼ぶと prisma（node:fs 等）が
+// Edge バンドルに入りビルドが失敗する。アダプタは実際に NextAuth に渡すまで初期化しない。
 // DATABASE_URLが設定されている場合のみadapterを設定
 const configBase: NextAuthConfig = {
   providers: [
@@ -225,7 +97,7 @@ const configBase: NextAuthConfig = {
 
         // メールアドレスをセッションに設定（nullの場合は空文字列）
         session.user.email = token.email || "";
-        
+
         // 表示名をセッションに設定
         session.user.displayName = token.displayName || null;
       }
@@ -235,7 +107,7 @@ const configBase: NextAuthConfig = {
       // DBから最新情報を取得してトークンを更新する関数
       const updateTokenFromDB = async () => {
         if (!hasDatabaseUrl || !token.id) return false;
-        
+
         try {
           const { prisma } = await import("@/lib/prisma");
           const dbUser = await prisma.user.findUnique({
@@ -268,13 +140,13 @@ const configBase: NextAuthConfig = {
         const updated = await updateTokenFromDB();
         if (updated) return token;
       }
-      
+
       // trigger === "update" の場合もDBから最新情報を取得（念のため）
       if (trigger === "update") {
         const updated = await updateTokenFromDB();
         if (updated) return token;
       }
-      
+
       // 初回ログイン時のみDBからユーザー情報を取得
       // それ以降はトークンに保存された情報を使用（DBアクセスを削減）
       if (user) {
@@ -375,7 +247,7 @@ const configBase: NextAuthConfig = {
               try {
                 // メールアドレスを決定（Twitter認証の場合はnull）
                 const userEmail = user?.email || null;
-                
+
                 // メールアドレスがnullでもユーザーを作成できる（Twitter認証の場合）
                 const newUser = await prisma.user.create({
                   data: {
@@ -467,26 +339,6 @@ const configBase: NextAuthConfig = {
   },
 };
 
-// NEXTAUTH_SECRET: 本番は必須。開発（next dev）のみ未設定時はフォールバックで起動可能にする
-const nextAuthSecretErrorMessage =
-  "NEXTAUTH_SECRET environment variable is required. " +
-  "Please generate a secret key using: openssl rand -base64 32";
-
-const trimmedSecret = process.env.NEXTAUTH_SECRET?.trim();
-const authSecret =
-  trimmedSecret ||
-  (process.env.NODE_ENV !== "production"
-    ? (() => {
-        console.warn(
-          "[NextAuth] NEXTAUTH_SECRET が未設定です。開発用の仮シークレットで起動します。OAuth やセッション用に `.env` へ設定してください: openssl rand -base64 32"
-        );
-        return "local-dev-only-unsafe-nextauth-secret-do-not-use-in-production";
-      })()
-    : (() => {
-        console.error(nextAuthSecretErrorMessage);
-        throw new Error(nextAuthSecretErrorMessage);
-      })());
-
 // NextAuth v5では、AUTH_URLを優先的に使用（NEXTAUTH_URLは後方互換性のためにサポート）
 const authUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL;
 if (authUrl) {
@@ -502,7 +354,7 @@ if (authUrl) {
 const config: NextAuthConfig = {
   ...configBase,
   // adapterは将来の拡張性のために保持（現在はJWT戦略のみ使用）
-  secret: authSecret,
+  secret: getAuthSecret(),
   // 無効なセッションクッキーを無視する（NEXTAUTH_SECRETが変更された場合など）
   trustHost: true,
   // セッションのエラーハンドリングを改善

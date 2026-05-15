@@ -43,7 +43,7 @@ export function NewGroupEventsListPanel({
 
   if (events.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-zinc-500">
+      <p className="py-8 text-center text-sm text-muted">
         イベントが見つかりません
       </p>
     );
@@ -60,19 +60,19 @@ export function NewGroupEventsListPanel({
             rounded="md"
             fullWidth
             onClick={() => onEventSelect(event.id, event)}
-            className="p-4 text-left justify-start hover:border-zinc-900"
+            className="p-4 text-left justify-start hover:border-accent-mint/50"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
-                <p className="text-sm font-medium text-zinc-900">
+                <p className="text-sm font-medium text-foreground">
                   {event.name}
                 </p>
                 {event.theme && (
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <p className="mt-1 text-xs text-muted">
                     {event.theme}
                   </p>
                 )}
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-muted">
                   {new Date(event.event_date).toLocaleDateString("ja-JP", {
                     year: "numeric",
                     month: "short",
@@ -80,7 +80,7 @@ export function NewGroupEventsListPanel({
                   })}
                 </p>
               </div>
-              <span className="text-xs font-semibold text-emerald-600">
+              <span className="text-xs font-semibold text-accent-mint">
                 選択 →
               </span>
             </div>

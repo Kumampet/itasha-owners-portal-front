@@ -95,15 +95,15 @@ export function DisplayNameModal({
       }
     >
       <div className="space-y-4">
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-muted-foreground">
           団体チャットなどで表示される表示名（ニックネーム）を設定できます。
           実名を公開したくない場合でも、この表示名で参加できます。
         </p>
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-muted-foreground">
           未設定の場合はログインしたアカウントの名前を使用します。
         </p>
         <div>
-          <label className="block text-sm font-medium text-zinc-700 mb-2">
+          <label className="block text-sm font-medium text-muted-foreground mb-2">
             表示名（任意、全角50文字以内）
           </label>
           <input
@@ -118,10 +118,10 @@ export function DisplayNameModal({
               }
             }}
             placeholder="例: 痛車太郎"
-            className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+            className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
             maxLength={50}
           />
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-muted">
             {Array.from(displayName).length} / 50文字
           </p>
         </div>
