@@ -80,9 +80,9 @@ export function GroupOwnerNoteCard({
   };
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
+    <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
       <div className="flex items-start justify-between gap-4">
-        <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
+        <h2 className="text-sm font-semibold text-foreground sm:text-base">
           お知らせ
         </h2>
         {isLeader && !isEditing && (
@@ -105,7 +105,7 @@ export function GroupOwnerNoteCard({
             onChange={(e) => setEditValue(e.target.value)}
             placeholder="お知らせを入力してください..."
             rows={6}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 resize-none"
+            className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint resize-none"
           />
           <div className="flex justify-end gap-2">
             <Button
@@ -131,15 +131,15 @@ export function GroupOwnerNoteCard({
       ) : (
         <div className="mt-4">
           {ownerNote ? (
-            <div className="whitespace-pre-wrap break-words text-sm text-zinc-700">
+            <div className="whitespace-pre-wrap break-words text-sm text-muted-foreground">
               <SafeMessageContent
                 content={ownerNote}
                 className="whitespace-pre-wrap break-words"
-                linkClassName="text-emerald-600 hover:text-emerald-700"
+                linkClassName="text-accent-mint hover:text-accent-mint"
               />
             </div>
           ) : (
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-muted">
               お知らせはまだありません
             </p>
           )}

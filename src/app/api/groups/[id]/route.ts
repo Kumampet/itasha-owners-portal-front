@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  deleteLocalGroupImagesByGroupId,
+  isGroupImageStorageLocal,
+} from "@/lib/group-image-local-store";
 import { S3Client, ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 // S3クライアントの初期化
@@ -18,6 +22,15 @@ const s3Client = new S3Client({
  * 団体に関連するS3の画像をすべて削除する
  */
 async function deleteGroupImages(groupId: string): Promise<void> {
+  if (isGroupImageStorageLocal()) {
+    try {
+      await deleteLocalGroupImagesByGroupId(groupId);
+    } catch (error) {
+      console.error(`Error deleting local images for group ${groupId}:`, error);
+    }
+    return;
+  }
+
   // 環境変数が設定されていない場合はスキップ
   if (!process.env.IMAGE_S3_BUCKET_NAME) {
     console.warn("IMAGE_S3_BUCKET_NAME is not set, skipping image deletion");

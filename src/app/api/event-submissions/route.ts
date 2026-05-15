@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { notifyDiscordEventListingRequest } from "@/lib/discord-admin-notify";
+import { fromDateLocal } from "@/lib/date-utils";
 
 function parseHttpUrl(raw: string): URL | null {
   const trimmed = raw.trim();
@@ -39,11 +40,11 @@ export async function POST(request: Request) {
     }
 
     if (!event_date || typeof event_date !== "string" || event_date.trim() === "") {
-      return NextResponse.json({ error: "開催日時は必須です" }, { status: 400 });
+      return NextResponse.json({ error: "開催日は必須です" }, { status: 400 });
     }
-    const eventDateParsed = new Date(event_date);
-    if (Number.isNaN(eventDateParsed.getTime())) {
-      return NextResponse.json({ error: "開催日時の形式が正しくありません" }, { status: 400 });
+    const eventDateParsed = fromDateLocal(event_date);
+    if (!eventDateParsed) {
+      return NextResponse.json({ error: "開催日の形式が正しくありません" }, { status: 400 });
     }
 
     const submission = await prisma.eventSubmission.create({

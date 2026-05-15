@@ -13,13 +13,13 @@ describe('Button', () => {
   it('renders button with primary variant', () => {
     render(<Button variant="primary">Primary Button</Button>)
     const button = screen.getByRole('button', { name: /primary button/i })
-    expect(button).toHaveClass('bg-zinc-900')
+    expect(button).toHaveClass('bg-accent-mint')
   })
 
   it('renders button with secondary variant', () => {
     render(<Button variant="secondary">Secondary Button</Button>)
     const button = screen.getByRole('button', { name: /secondary button/i })
-    expect(button).toHaveClass('bg-white')
+    expect(button).toHaveClass('bg-card-elevated')
   })
 
   it('renders button with danger variant', () => {

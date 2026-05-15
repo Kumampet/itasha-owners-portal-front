@@ -113,6 +113,6 @@ Allow: /
 Crawl-delay: 0
 
 # その他のすべてのボットを拒否
-User-agent: *
-Disallow: /
-Crawl-delay: 86400
+# User-agent: *
+# Disallow: /
+# Crawl-delay: 86400

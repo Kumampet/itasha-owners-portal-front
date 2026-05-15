@@ -79,7 +79,7 @@ export function Pagination({
             return (
               <span
                 key={`ellipsis-${index}`}
-                className="px-2 py-1 text-sm text-zinc-500"
+                className="px-2 py-1 text-sm text-muted"
               >
                 ...
               </span>
@@ -95,8 +95,8 @@ export function Pagination({
               onClick={() => onPageChange(pageNumber)}
               className={`px-3 py-1 text-sm font-medium transition rounded-md ${
                 isActive
-                  ? "bg-zinc-900 text-white"
-                  : "bg-white text-zinc-700 hover:bg-zinc-50 border border-zinc-200"
+                  ? "bg-accent-mint text-zinc-950 shadow-sm shadow-black/25"
+                  : "border border-border bg-card text-muted-foreground hover:bg-card-elevated"
               }`}
               aria-label={`ページ ${pageNumber}`}
               aria-current={isActive ? "page" : undefined}

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Button } from "./button";
+import { usePwaBannerInset } from "@/contexts/pwa-banner-inset-context";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -9,6 +10,9 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PWAInstallBanner() {
+  const bannerShellRef = useRef<HTMLDivElement | null>(null);
+  const { setFooterInsetPx } = usePwaBannerInset();
+
   // ローカルストレージで非表示状態を初期値として設定
   const [isDismissed, setIsDismissedState] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -100,6 +104,45 @@ export function PWAInstallBanner() {
   // モバイルで、PWAとしてインストールされていない場合、かつ非表示にされていない場合は表示
   const isVisible = isMobile && !isStandalone && !isDismissed;
 
+  useLayoutEffect(() => {
+    if (!isVisible) {
+      setFooterInsetPx(0);
+      return;
+    }
+
+    const update = () => {
+      const el = bannerShellRef.current;
+      const isSmOrUp =
+        typeof window.matchMedia !== "undefined" &&
+        window.matchMedia("(min-width: 640px)").matches;
+
+      if (!el || isSmOrUp) {
+        setFooterInsetPx(0);
+        return;
+      }
+      const h = Math.ceil(el.getBoundingClientRect().height);
+      setFooterInsetPx(h);
+    };
+
+    update();
+    const ro =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(update)
+        : null;
+    if (bannerShellRef.current && ro) {
+      ro.observe(bannerShellRef.current);
+    }
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+      setFooterInsetPx(0);
+    };
+  }, [isVisible, setFooterInsetPx]);
+
   const handleInstall = async () => {
     // beforeinstallpromptイベントが利用可能な場合（Android Chrome等）
     if (deferredPrompt) {
@@ -128,17 +171,18 @@ export function PWAInstallBanner() {
   return (
     <>
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-zinc-200 shadow-lg sm:hidden safe-bottom"
+        ref={bannerShellRef}
+        className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-lg sm:hidden safe-bottom"
         style={{
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
       >
         <div className="flex items-center gap-3 px-4 py-3">
           <div className="flex-1">
-            <p className="text-sm font-medium text-zinc-900">
+            <p className="text-sm font-medium text-foreground">
               ホーム画面に追加
             </p>
-            <p className="text-xs text-zinc-600 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               アプリのように使えます
             </p>
           </div>
@@ -154,7 +198,7 @@ export function PWAInstallBanner() {
             <Button
               as="action"
               onClick={handleDismiss}
-              className="h-8 w-8 justify-center rounded-lg text-zinc-600 hover:bg-zinc-100"
+              className="h-8 w-8 justify-center rounded-lg text-muted-foreground hover:bg-card-elevated"
               aria-label="閉じる"
             >
               <svg
@@ -178,25 +222,25 @@ export function PWAInstallBanner() {
       {/* ブラウザ別のインストール手順モーダル */}
       {showInstructions && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl">
             <div className="mb-4">
-              <h2 className="text-lg font-semibold text-zinc-900">
+              <h2 className="text-lg font-semibold text-foreground">
                 {browserType === "safari"
                   ? "ホーム画面に追加する方法 (Safari)"
                   : browserType === "chrome"
                     ? "アプリをインストールする方法 (Chrome)"
                     : "ホーム画面に追加する方法"}
               </h2>
-              <p className="mt-1 text-sm text-zinc-600">
+              <p className="mt-1 text-sm text-muted-foreground">
                 アプリのように使うには、以下の手順でホーム画面に追加してください。
               </p>
             </div>
 
             {browserType === "safari" ? (
               // Safari系の手順
-              <ol className="space-y-3 text-sm text-zinc-700">
+              <ol className="space-y-3 text-sm text-muted-foreground">
                 <li className="flex items-start gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-mint text-xs font-bold text-zinc-950">
                     1
                   </span>
                   <span className="pt-0.5">
@@ -204,7 +248,7 @@ export function PWAInstallBanner() {
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-mint text-xs font-bold text-zinc-950">
                     2
                   </span>
                   <span className="pt-0.5">
@@ -212,7 +256,7 @@ export function PWAInstallBanner() {
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-mint text-xs font-bold text-zinc-950">
                     3
                   </span>
                   <span className="pt-0.5">
@@ -220,7 +264,7 @@ export function PWAInstallBanner() {
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-mint text-xs font-bold text-zinc-950">
                     4
                   </span>
                   <span className="pt-0.5">
@@ -230,7 +274,7 @@ export function PWAInstallBanner() {
               </ol>
             ) : browserType === "chrome" ? (
               // Chrome系の手順
-              <ol className="space-y-3 text-sm text-zinc-700">
+              <ol className="space-y-3 text-sm text-muted-foreground">
                 <li className="flex items-start gap-3">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500 text-xs font-bold text-white">
                     1
@@ -266,9 +310,9 @@ export function PWAInstallBanner() {
               </ol>
             ) : (
               // その他のブラウザの手順
-              <ol className="space-y-3 text-sm text-zinc-700">
+              <ol className="space-y-3 text-sm text-muted-foreground">
                 <li className="flex items-start gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-500 text-xs font-bold text-white">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-card-elevated0 text-xs font-bold text-white">
                     1
                   </span>
                   <span className="pt-0.5">
@@ -276,7 +320,7 @@ export function PWAInstallBanner() {
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-500 text-xs font-bold text-white">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-card-elevated0 text-xs font-bold text-white">
                     2
                   </span>
                   <span className="pt-0.5">
@@ -284,7 +328,7 @@ export function PWAInstallBanner() {
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-500 text-xs font-bold text-white">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-card-elevated0 text-xs font-bold text-white">
                     3
                   </span>
                   <span className="pt-0.5">
@@ -292,7 +336,7 @@ export function PWAInstallBanner() {
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-500 text-xs font-bold text-white">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-card-elevated0 text-xs font-bold text-white">
                     4
                   </span>
                   <span className="pt-0.5">

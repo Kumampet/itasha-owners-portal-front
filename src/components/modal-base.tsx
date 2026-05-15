@@ -25,10 +25,10 @@ export function ModalBase({
             onClick={onClose}
         >
             <div 
-                className="rounded-lg bg-white p-6 shadow-lg max-w-md w-full mx-4"
+                className="max-w-md w-full mx-4 rounded-lg border border-border bg-card p-6 shadow-2xl shadow-black/40"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h2 className="mb-4 text-lg font-semibold text-zinc-900">{title}</h2>
+                <h2 className="mb-4 text-lg font-semibold text-foreground">{title}</h2>
                 <div className="mb-6">{children}</div>
                 <div className="flex justify-end gap-2">{footer}</div>
             </div>

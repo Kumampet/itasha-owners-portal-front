@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { scheduleMergeApprovedEventIntoSitemapOnS3 } from "@/lib/events-sitemap-s3";
 import { fromDateTimeLocal, fromDateLocal } from "@/lib/date-utils";
 import { notifyDiscordEventApprovalRequested } from "@/lib/discord-admin-notify";
+import { EVENT_DESCRIPTION_MAX_CHARS } from "@/lib/event-description";
 
 // GET /api/admin/events
 // 管理画面用のイベント一覧取得API（全ステータス、ソート・絞り込み対応）
@@ -169,6 +171,17 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+    if (
+      typeof body.description === "string" &&
+      body.description.length > EVENT_DESCRIPTION_MAX_CHARS
+    ) {
+      return NextResponse.json(
+        {
+          error: `イベント概要文は${EVENT_DESCRIPTION_MAX_CHARS}文字以内で入力してください`,
+        },
+        { status: 400 }
+      );
+    }
     const keywords: string[] = body.keywords || [];
     const entries = body.entries || [];
     const approvalStatus = body.approval_status || "DRAFT";
@@ -323,6 +336,7 @@ export async function POST(request: Request) {
           official_urls: true,
           image_url: true,
           approval_status: true,
+          updated_at: true,
           entry_selection_method: true,
           max_participants: true,
           entries: {
@@ -367,6 +381,20 @@ export async function POST(request: Request) {
         eventName: event.name as string,
         eventDateLabel: d.toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" }),
       });
+    }
+
+    if (
+      event &&
+      typeof event === "object" &&
+      "approval_status" in event &&
+      event.approval_status === "APPROVED" &&
+      "id" in event &&
+      "updated_at" in event
+    ) {
+      scheduleMergeApprovedEventIntoSitemapOnS3(
+        event.id as string,
+        event.updated_at as Date,
+      );
     }
 
     return NextResponse.json(event);

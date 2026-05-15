@@ -1,8 +1,31 @@
 @import "tailwindcss";
 
+/**
+ * アプリ共通：端末のライト/ダーク設定に依存せず、常にダークトーン。
+ * 黒ベース＋メインはダークピンク／サブとしてダークミント（トークン名は hist. 由来の mint / rose のまま）。
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+
+  --background: #09090b;
+  --foreground: #e8e8ed;
+  --muted: #71717a;
+  --muted-foreground: #a4a4ad;
+
+  --border: #52525b;
+  --border-strong: #71717a;
+
+  --card: #101012;
+  --card-elevated: #18181c;
+
+  /* メイン・アクセント（ピンク系）— Tailwind の accent-mint クラスが参照 */
+  --accent-mint: #c49bb0;
+  --accent-mint-subtle: #3a2932;
+
+  /* セカンダリ（ミントティール）— accent-rose クラスが参照 */
+  --accent-rose: #5fa896;
+  --accent-rose-subtle: #1e3530;
+
   /* SafeArea用のCSS変数 */
   --safe-area-inset-top: env(safe-area-inset-top, 0px);
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
@@ -13,14 +36,49 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-card: var(--card);
+  --color-card-elevated: var(--card-elevated);
+  --color-accent-mint: var(--accent-mint);
+  --color-accent-mint-subtle: var(--accent-mint-subtle);
+  --color-accent-rose: var(--accent-rose);
+  --color-accent-rose-subtle: var(--accent-rose-subtle);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: #ffffff;
+  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/**
+ * ネイティブ <select> / <option>
+ * Windows + Chromium 系でリストだけライトテーマ描画され、前景色とぶつかって選択肢が読めなくなるのを防ぐ。
+ */
+select {
+  color-scheme: dark;
+  background-color: var(--card);
+  color: var(--foreground);
+}
+
+select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+select option,
+select optgroup {
+  background-color: var(--card-elevated);
+  color: var(--foreground);
+}
+
+::selection {
+  background-color: color-mix(in srgb, var(--accent-rose) 35%, transparent);
+  color: var(--foreground);
 }
 
 /* WYSIWYGエディタ用のフォントスタイル */
@@ -151,40 +209,40 @@ body {
   font-family: "Poppins", sans-serif !important;
 }
 
-/* HTML表示用のリンクスタイル（SafeHtmlContent用） */
+/* HTML表示用のリンクスタイル（ダーク基調・メインピンク） */
 .group-description-content a {
-  color: #2563eb !important;
-  /* 標準の青色 */
+  color: var(--accent-mint) !important;
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .group-description-content a:hover {
-  color: #1d4ed8 !important;
-  /* ホバー時の濃い青色 */
+  color: color-mix(in srgb, var(--accent-mint) 85%, white) !important;
   text-decoration: underline;
 }
 
 .group-description-content a:visited {
-  color: #7c3aed !important;
-  /* 訪問済みリンクの紫色 */
+  color: color-mix(in srgb, var(--accent-rose) 92%, white) !important;
 }
 
-/* HTML表示用のテキストスタイル（SafeHtmlContent用） */
-/* フォントファミリーを明示的に設定（太字をサポートするフォント） */
+/* HTML表示用のテキストスタイル */
 .group-description-content {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Roboto", "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Roboto", "Helvetica Neue", Arial,
+    sans-serif;
+  color: var(--foreground);
 }
 
-/* 通常のテキストは400（normal）を維持 */
 .group-description-content * {
   font-weight: 400;
 }
 
-/* 太字スタイル - strongタグとfont-weightが設定されている要素のみ */
 .group-description-content strong,
 .group-description-content strong * {
   font-weight: 700 !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Roboto", "Helvetica Neue", Arial,
+    sans-serif !important;
 }
 
 .group-description-content span[style*="font-weight: bold"],
@@ -196,10 +254,11 @@ body {
 .group-description-content div[style*="font-weight: 700"],
 .group-description-content div[style*="font-weight:700"] {
   font-weight: 700 !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", "Roboto", "Helvetica Neue", Arial,
+    sans-serif !important;
 }
 
-/* 斜体スタイル */
 .group-description-content em {
   font-style: italic !important;
 }
@@ -209,7 +268,6 @@ body {
   font-style: italic !important;
 }
 
-/* 下線スタイル */
 .group-description-content u {
   text-decoration: underline !important;
 }
@@ -219,7 +277,6 @@ body {
   text-decoration: underline !important;
 }
 
-/* 取り消し線スタイル */
 .group-description-content s {
   text-decoration: line-through !important;
 }
@@ -229,7 +286,6 @@ body {
   text-decoration: line-through !important;
 }
 
-/* リストスタイル */
 .group-description-content ul {
   list-style-type: disc !important;
   list-style-position: outside !important;
@@ -251,20 +307,19 @@ body {
 /* WYSIWYGエディタコンポーネント用のスタイル */
 .wysiwyg-editor-wrapper [contenteditable][data-placeholder]:empty:before {
   content: attr(data-placeholder);
-  color: #9ca3af;
+  color: var(--muted);
   pointer-events: none;
 }
 
 .wysiwyg-editor-wrapper [contenteditable] a {
-  color: #2563eb;
+  color: var(--accent-mint);
   text-decoration: underline;
 }
 
 .wysiwyg-editor-wrapper [contenteditable] a:hover {
-  color: #1d4ed8;
+  color: color-mix(in srgb, var(--accent-mint) 85%, white);
 }
 
-/* WYSIWYGエディタ内のリストスタイル */
 .wysiwyg-editor-wrapper [contenteditable] ul {
   list-style-type: disc !important;
   list-style-position: outside !important;

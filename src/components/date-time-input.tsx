@@ -42,7 +42,7 @@ export function DateTimeInput({
                 max={max}
                 disabled={disabled}
                 id={id}
-                className={`block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 ${className} ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+                className={`block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint ${className} ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
                     }`}
                 onClick={(e) => {
                     if (disabled) return;

@@ -3,28 +3,46 @@
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import type { ComponentType, ReactNode } from "react";
 import Link from "next/link";
-import type { ReactNode } from "react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { MobileHeader } from "@/components/mobile-header";
 import { SideNav } from "@/components/side-nav";
+import type { OutlineIcon24Props } from "@/components/icons";
+import {
+  IconArrowLeft,
+  IconCalendar,
+  IconChartBar,
+  IconClipboardDocumentList,
+  IconDocumentText,
+  IconEnvelope,
+  IconPlus,
+  IconRectangleGroup,
+  IconUsers,
+} from "@/components/icons";
 
 type AdminLayoutClientProps = {
   children: ReactNode;
 };
 
-const menuItems = [
-  { href: "/admin/dashboard", label: "ダッシュボード", icon: "📊" },
-  { href: "/admin/events", label: "イベント管理", icon: "📅" },
+type AdminNavItem = {
+  href: string;
+  label: string;
+  Icon: ComponentType<OutlineIcon24Props>;
+};
+
+const menuItems: AdminNavItem[] = [
+  { href: "/admin/dashboard", label: "ダッシュボード", Icon: IconChartBar },
+  { href: "/admin/events", label: "イベント管理", Icon: IconCalendar },
 ];
 
 // adminのみ表示するメニュー項目
-const adminOnlyMenuItems = [
-  { href: "/admin/users", label: "ユーザー管理", icon: "👥" },
-  { href: "/admin/submissions", label: "イベント掲載依頼フォーム", icon: "📝" },
-  { href: "/admin/contacts", label: "お問い合わせ管理", icon: "💬" },
-  { href: "/admin/groups", label: "団体モデレーション", icon: "👥" },
-  { href: "/admin/organizer-applications", label: "オーガナイザー申請一覧", icon: "📋" },
+const adminOnlyMenuItems: AdminNavItem[] = [
+  { href: "/admin/users", label: "ユーザー管理", Icon: IconUsers },
+  { href: "/admin/submissions", label: "イベント掲載依頼フォーム", Icon: IconDocumentText },
+  { href: "/admin/contacts", label: "お問い合わせ管理", Icon: IconEnvelope },
+  { href: "/admin/groups", label: "団体モデレーション", Icon: IconRectangleGroup },
+  { href: "/admin/organizer-applications", label: "オーガナイザー申請一覧", Icon: IconClipboardDocumentList },
 ];
 
 type SidebarContentProps = {
@@ -40,16 +58,16 @@ function AdminSidebarContent({ onLinkClick, pathname, session }: SidebarContentP
         {/* 新規イベントを作成ボタン */}
         <Link
           href="/admin/events/new"
-          className={`mb-4 flex items-center gap-3 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium transition ${pathname === "/admin/events/new"
-            ? "bg-zinc-900 text-white border-zinc-900"
-            : "bg-white text-zinc-900 hover:bg-zinc-50 hover:border-zinc-900"
+          className={`mb-4 flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm font-medium transition ${pathname === "/admin/events/new"
+            ? "bg-zinc-900 text-white border-border-strong"
+            : "bg-card text-foreground hover:bg-card-elevated hover:border-accent-mint/50"
             }`}
           onClick={onLinkClick}
         >
-          <span>➕</span>
+          <IconPlus className="h-5 w-5 shrink-0" aria-hidden />
           <span>新規イベントを作成</span>
         </Link>
-        <div className="mb-4 border-t border-zinc-200"></div>
+        <div className="mb-4 border-t border-border"></div>
         {/* 通常のメニュー項目 */}
         <div className="space-y-1">
           {menuItems.map((item) => {
@@ -60,11 +78,11 @@ function AdminSidebarContent({ onLinkClick, pathname, session }: SidebarContentP
                 href={item.href}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${isActive
                   ? "bg-zinc-900 text-white"
-                  : "text-zinc-700 hover:bg-zinc-50"
+                  : "text-muted-foreground hover:bg-card-elevated"
                   }`}
                 onClick={onLinkClick}
               >
-                <span>{item.icon}</span>
+                <item.Icon className="h-5 w-5 shrink-0" aria-hidden />
                 <span>{item.label}</span>
               </Link>
             );
@@ -79,24 +97,24 @@ function AdminSidebarContent({ onLinkClick, pathname, session }: SidebarContentP
                   href={item.href}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${isActive
                     ? "bg-zinc-900 text-white"
-                    : "text-zinc-700 hover:bg-zinc-50"
+                    : "text-muted-foreground hover:bg-card-elevated"
                     }`}
                   onClick={onLinkClick}
                 >
-                  <span>{item.icon}</span>
+                  <item.Icon className="h-5 w-5 shrink-0" aria-hidden />
                   <span>{item.label}</span>
                 </Link>
               );
             })}
         </div>
-        <div className="mt-4 border-t border-zinc-200 pt-4">
-          <div className="mb-2 text-xs text-zinc-600">{session.user.email}</div>
+        <div className="mt-4 border-t border-border pt-4">
+          <div className="mb-2 text-xs text-muted-foreground">{session.user.email}</div>
           <Link
             href="/app/mypage"
-            className="flex items-center gap-2 text-xs text-zinc-600 hover:text-zinc-900"
+            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
             onClick={onLinkClick}
           >
-            <span>🔙</span>
+            <IconArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
             <span>アプリに戻る</span>
           </Link>
         </div>
@@ -186,7 +204,7 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
         <MobileHeader
           onMenuClick={() => setIsMenuOpen(true)}
           logoHref="/admin/dashboard"
-          rightContent={<span className="text-sm text-zinc-600">{session.user.email}</span>}
+          rightContent={<span className="text-sm text-muted-foreground">{session.user.email}</span>}
           enableAutoHide={true}
         />
         <main className="min-w-0 flex-1 pt-14 lg:pt-0">{children}</main>

@@ -16,8 +16,8 @@ export function MenuController({
   const defaultAriaLabel = variant === "open" ? "メニューを開く" : "メニューを閉じる";
   const baseClasses =
     variant === "open"
-      ? "flex h-8 w-8 items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100"
-      : "flex h-8 w-8 items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-100";
+      ? "flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-card-elevated"
+      : "flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-card-elevated";
 
   return (
     <div

@@ -13,6 +13,15 @@ const withPWA = require("next-pwa")({
 });
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/privacy-policy",
+        destination: "/privacy",
+        permanent: true,
+      },
+    ];
+  },
   // next-pwaはwebpackを使用するため、Turbopackを無効化
   turbopack: {},
   webpack: (config, { isServer }) => {
@@ -22,6 +31,12 @@ const nextConfig: NextConfig = {
     return config;
   },
   images: {
+    // 同一オリジンのローカル src にクエリ（キャッシュバスター等）がある場合に必要（Next 16+）
+    localPatterns: [
+      {
+        pathname: "/api/images/**",
+      },
+    ],
     remotePatterns: [
       {
         protocol: "https",

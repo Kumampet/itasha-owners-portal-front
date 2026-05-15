@@ -55,11 +55,11 @@ export function UserDisplayNameModal({
       }
     >
       <div className="space-y-4">
-        <p className="text-sm text-zinc-700">
+        <p className="text-sm text-muted-foreground">
           {userName}の表示名を変更します。
         </p>
         <div>
-          <label className="block text-sm font-medium text-zinc-700 mb-2">
+          <label className="block text-sm font-medium text-muted-foreground mb-2">
             表示名（任意、全角50文字以内）
           </label>
           <input
@@ -73,10 +73,10 @@ export function UserDisplayNameModal({
               }
             }}
             placeholder="例: 痛車太郎"
-            className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+            className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
             maxLength={50}
           />
-          <p className={`mt-1 text-xs ${charCount > 50 ? "text-red-600" : "text-zinc-500"}`}>
+          <p className={`mt-1 text-xs ${charCount > 50 ? "text-red-600" : "text-muted"}`}>
             {charCount} / 50文字
           </p>
         </div>

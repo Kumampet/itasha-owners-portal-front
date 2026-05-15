@@ -197,7 +197,7 @@ export function GroupMessage({
             <LoadingSpinner size="md" />
           </div>
         ) : messages.length === 0 ? (
-          <p className="py-8 text-center text-sm text-zinc-500">
+          <p className="py-8 text-center text-sm text-muted">
             まだメッセージがありません
           </p>
         ) : (
@@ -233,7 +233,7 @@ export function GroupMessage({
       </div>
 
       {/* メッセージ送信フォーム（固定） */}
-      <div className="border-t border-zinc-200 bg-white p-4 pb-0 flex-shrink-0">
+      <div className="border-t border-border bg-card p-4 pb-0 flex-shrink-0">
         <div className="space-y-2">
           {/* 画像プレビュー */}
           {imagePreviewUrl && (
@@ -282,7 +282,7 @@ export function GroupMessage({
                   }}
                   placeholder="メッセージを入力してください..."
                   rows={2}
-                  className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 resize-none"
+                  className="flex-1 rounded-lg border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint resize-none"
                 />
                 {/* 画像添付ボタン */}
                 <div className="flex items-center gap-2">
@@ -298,7 +298,7 @@ export function GroupMessage({
                   />
                   <label
                     htmlFor={`image-upload-${groupId}`}
-                    className={`flex items-center gap-1 text-xs text-zinc-600 cursor-pointer hover:text-zinc-900 transition-colors ${sending ? "opacity-50 cursor-not-allowed" : ""
+                    className={`flex items-center gap-1 text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors ${sending ? "opacity-50 cursor-not-allowed" : ""
                       }`}
                   >
                     <svg
@@ -326,9 +326,9 @@ export function GroupMessage({
                   type="checkbox"
                   checked={isAnnouncement}
                   onChange={(e) => setIsAnnouncement(e.target.checked)}
-                  className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+                  className="h-4 w-4 rounded border-border text-accent-mint focus:ring-accent-mint"
                 />
-                <span className="text-xs text-zinc-700">
+                <span className="text-xs text-muted-foreground">
                   一斉連絡として送信
                 </span>
               </label>
@@ -355,7 +355,7 @@ export function GroupMessage({
           </div>
         </div>
         <div className="flex justify-end">
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted">
             {Array.from(displayTextContent).length} / 1000文字
           </p>
         </div>

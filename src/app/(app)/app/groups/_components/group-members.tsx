@@ -67,11 +67,11 @@ export function GroupMembers({
   return (
     <>
       <div className="space-y-4">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
-          <h2 className="text-sm font-semibold text-zinc-900 sm:text-base">
+        <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+          <h2 className="text-sm font-semibold text-foreground sm:text-base">
             メンバー一覧
           </h2>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-muted">
             メンバー: {group.memberCount}
             {group.maxMembers && ` / ${group.maxMembers}人`}
           </p>
