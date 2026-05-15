@@ -5,6 +5,7 @@ import {
   useState,
   useCallback,
   useMemo,
+  useRef,
   type FormEvent,
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -52,31 +53,45 @@ type PaginationData = {
 
 export default function EventsPageClient() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  /** useSearchParams の参照が毎レンダーで変わるとコールバックが再生成され fetch が連鎖するため、クエリ文字列で安定化する */
+  const searchParamsSnapshot = searchParams.toString();
 
   const pageFromUrl = useMemo(() => {
-    const raw = searchParams.get("page");
+    const params = new URLSearchParams(searchParamsSnapshot);
+    const raw = params.get("page");
     const n = parseInt(raw ?? "1", 10);
     if (!Number.isFinite(n) || n < 1) return 1;
     return n;
-  }, [searchParams]);
+  }, [searchParamsSnapshot]);
 
   const [events, setEvents] = useState<DbEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
+  /** フォーム上の値（検索ボタンまで API に反映しない） */
   const [searchQuery, setSearchQuery] = useState("");
   const [prefectureFilter, setPrefectureFilter] = useState("");
   const [eventYearMonth, setEventYearMonth] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [pageSize, setPageSize] = useState<PageSize>(10);
+  /** 最後に検索で確定した条件（fetch に使う） */
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
+  const [appliedPrefectureFilter, setAppliedPrefectureFilter] = useState("");
+  const [appliedEventYearMonth, setAppliedEventYearMonth] = useState("");
+  const [appliedSortOrder, setAppliedSortOrder] = useState<"asc" | "desc">("asc");
+  const [appliedPageSize, setAppliedPageSize] = useState<PageSize>(10);
 
   const hasActiveFilters =
-    searchQuery.trim() !== "" || Boolean(prefectureFilter) || Boolean(eventYearMonth);
+    appliedSearchQuery.trim() !== "" ||
+    Boolean(appliedPrefectureFilter) ||
+    Boolean(appliedEventYearMonth);
 
   const navigateToPage = useCallback(
     (page: number, mode: "push" | "replace" = "push") => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams(searchParamsSnapshot);
       if (page <= 1) {
         params.delete("page");
       } else {
@@ -84,39 +99,40 @@ export default function EventsPageClient() {
       }
       const qs = params.toString();
       const url = qs ? `${pathname}?${qs}` : pathname;
+      const r = routerRef.current;
       if (mode === "replace") {
-        router.replace(url, { scroll: false });
+        r.replace(url, { scroll: false });
       } else {
-        router.push(url, { scroll: true });
+        r.push(url, { scroll: true });
       }
     },
-    [router, pathname, searchParams]
+    [pathname, searchParamsSnapshot]
   );
 
   const resetPageInUrl = useCallback(() => {
-    if (!searchParams.has("page")) return;
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParamsSnapshot);
+    if (!params.has("page")) return;
     params.delete("page");
     const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }, [router, pathname, searchParams]);
+    routerRef.current.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [pathname, searchParamsSnapshot]);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       params.append("page", pageFromUrl.toString());
-      params.append("limit", String(pageSize));
-      if (searchQuery) {
-        params.append("search", searchQuery);
+      params.append("limit", String(appliedPageSize));
+      if (appliedSearchQuery) {
+        params.append("search", appliedSearchQuery);
       }
-      if (prefectureFilter) {
-        params.append("prefecture", prefectureFilter);
+      if (appliedPrefectureFilter) {
+        params.append("prefecture", appliedPrefectureFilter);
       }
-      if (eventYearMonth) {
-        params.append("yearMonth", eventYearMonth);
+      if (appliedEventYearMonth) {
+        params.append("yearMonth", appliedEventYearMonth);
       }
-      params.append("sortOrder", sortOrder);
+      params.append("sortOrder", appliedSortOrder);
 
       const res = await fetch(`/api/events?${params.toString()}`);
       const data = await res.json();
@@ -144,11 +160,11 @@ export default function EventsPageClient() {
     }
   }, [
     pageFromUrl,
-    pageSize,
-    searchQuery,
-    prefectureFilter,
-    eventYearMonth,
-    sortOrder,
+    appliedPageSize,
+    appliedSearchQuery,
+    appliedPrefectureFilter,
+    appliedEventYearMonth,
+    appliedSortOrder,
     navigateToPage,
     resetPageInUrl,
   ]);
@@ -163,6 +179,11 @@ export default function EventsPageClient() {
 
   const handleSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setAppliedSearchQuery(searchQuery.trim());
+    setAppliedPrefectureFilter(prefectureFilter);
+    setAppliedEventYearMonth(eventYearMonth);
+    setAppliedSortOrder(sortOrder);
+    setAppliedPageSize(pageSize);
     resetPageInUrl();
   };
 
@@ -170,6 +191,9 @@ export default function EventsPageClient() {
     setSearchQuery("");
     setPrefectureFilter("");
     setEventYearMonth("");
+    setAppliedSearchQuery("");
+    setAppliedPrefectureFilter("");
+    setAppliedEventYearMonth("");
     resetPageInUrl();
   }, [resetPageInUrl]);
 
@@ -179,25 +203,13 @@ export default function EventsPageClient() {
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
         prefecture={prefectureFilter}
-        onPrefectureChange={(v) => {
-          setPrefectureFilter(v);
-          resetPageInUrl();
-        }}
+        onPrefectureChange={setPrefectureFilter}
         eventYearMonth={eventYearMonth}
-        onEventYearMonthChange={(v) => {
-          setEventYearMonth(v);
-          resetPageInUrl();
-        }}
+        onEventYearMonthChange={setEventYearMonth}
         sortOrder={sortOrder}
-        onSortOrderChange={(v) => {
-          setSortOrder(v);
-          resetPageInUrl();
-        }}
+        onSortOrderChange={setSortOrder}
         pageSize={pageSize}
-        onPageSizeChange={(v) => {
-          setPageSize(v);
-          resetPageInUrl();
-        }}
+        onPageSizeChange={setPageSize}
         onSubmit={handleSearch}
         onClearFilters={handleClearFilters}
       />

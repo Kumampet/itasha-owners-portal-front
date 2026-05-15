@@ -119,7 +119,7 @@ export function EventsFilterPanel({
           <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-4 sm:gap-y-3">
             <div className="w-full min-w-0 sm:min-w-[12rem] sm:flex-1 sm:max-w-md">
               <label htmlFor="search" className="mb-1 block text-sm font-medium text-muted-foreground">
-                検索
+                キーワード
               </label>
               <input
                 type="text"
@@ -130,43 +130,78 @@ export function EventsFilterPanel({
                 className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
               />
             </div>
-            <div className="flex w-full min-w-0 flex-row gap-3 sm:w-auto sm:shrink-0">
-              <div className="min-w-0 flex-1 sm:w-40 sm:flex-none">
-                <label htmlFor="prefecture-filter" className="mb-1 block text-sm font-medium text-muted-foreground">
-                  会場の都道府県
-                </label>
-                <select
-                  id="prefecture-filter"
-                  value={prefecture}
-                  onChange={(e) => onPrefectureChange(e.target.value)}
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
-                >
-                  <option value="">指定なし</option>
-                  {JAPAN_PREFECTURES.map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
+            <div className="flex w-full min-w-0 flex-row flex-wrap md:flex-nowrap gap-3 sm:shrink-0">
+              <div className="flex gap-3">
+                <div className="min-w-0 flex-1 sm:w-40 sm:flex-none">
+                  <label htmlFor="prefecture-filter" className="mb-1 block text-sm font-medium text-muted-foreground">
+                    会場の都道府県
+                  </label>
+                  <select
+                    id="prefecture-filter"
+                    value={prefecture}
+                    onChange={(e) => onPrefectureChange(e.target.value)}
+                    className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+                  >
+                    <option value="">指定なし</option>
+                    {JAPAN_PREFECTURES.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="min-w-0 flex-1 sm:w-44 sm:flex-none">
+                  <label htmlFor="event-year-month" className="mb-1 block text-sm font-medium text-muted-foreground">
+                    開催年月
+                  </label>
+                  <select
+                    id="event-year-month"
+                    value={eventYearMonth}
+                    onChange={(e) => onEventYearMonthChange(e.target.value)}
+                    title="イベントの開始日が含まれる月で絞り込みます"
+                    className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+                  >
+                    <option value="">指定なし</option>
+                    {yearMonthOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="min-w-0 flex-1 sm:w-44 sm:flex-none">
-                <label htmlFor="event-year-month" className="mb-1 block text-sm font-medium text-muted-foreground">
-                  開催年月
-                </label>
-                <select
-                  id="event-year-month"
-                  value={eventYearMonth}
-                  onChange={(e) => onEventYearMonthChange(e.target.value)}
-                  title="イベントの開始日が含まれる月で絞り込みます"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
-                >
-                  <option value="">指定なし</option>
-                  {yearMonthOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+              <div className="flex gap-3">
+                <div className="min-w-0 flex-1 sm:w-48 sm:flex-none">
+                  <label htmlFor="sortOrder" className="mb-1 block text-sm font-medium text-muted-foreground">
+                    表示順
+                  </label>
+                  <select
+                    id="sortOrder"
+                    value={sortOrder}
+                    onChange={(e) => onSortOrderChange(e.target.value as "asc" | "desc")}
+                    className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+                  >
+                    <option value="asc">{SORT_LABELS.asc}</option>
+                    <option value="desc">{SORT_LABELS.desc}</option>
+                  </select>
+                </div>
+                <div className="min-w-0 flex-1 sm:w-36 sm:flex-none">
+                  <label htmlFor="pageSize" className="mb-1 block text-sm font-medium text-muted-foreground">
+                    表示件数
+                  </label>
+                  <select
+                    id="pageSize"
+                    value={pageSize}
+                    onChange={(e) => onPageSizeChange(Number(e.target.value) as PageSize)}
+                    className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
+                  >
+                    {PAGE_SIZE_OPTIONS.map((n) => (
+                      <option key={n} value={n}>
+                        {n}件
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
             <div className="flex w-full shrink-0 flex-row gap-2 sm:w-auto">
@@ -184,45 +219,6 @@ export function EventsFilterPanel({
               >
                 フィルターをクリア
               </button>
-            </div>
-          </div>
-
-          <div
-            className="h-px w-full shrink-0 bg-zinc-200 sm:h-10 sm:w-px sm:self-end"
-            aria-hidden="true"
-          />
-
-          <div className="flex w-full min-w-0 flex-row gap-3 sm:w-auto sm:shrink-0 sm:gap-4">
-            <div className="min-w-0 flex-1 sm:w-48 sm:flex-none">
-              <label htmlFor="sortOrder" className="mb-1 block text-sm font-medium text-muted-foreground">
-                表示順
-              </label>
-              <select
-                id="sortOrder"
-                value={sortOrder}
-                onChange={(e) => onSortOrderChange(e.target.value as "asc" | "desc")}
-                className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
-              >
-                <option value="asc">{SORT_LABELS.asc}</option>
-                <option value="desc">{SORT_LABELS.desc}</option>
-              </select>
-            </div>
-            <div className="min-w-0 flex-1 sm:w-36 sm:flex-none">
-              <label htmlFor="pageSize" className="mb-1 block text-sm font-medium text-muted-foreground">
-                表示件数
-              </label>
-              <select
-                id="pageSize"
-                value={pageSize}
-                onChange={(e) => onPageSizeChange(Number(e.target.value) as PageSize)}
-                className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-accent-mint"
-              >
-                {PAGE_SIZE_OPTIONS.map((n) => (
-                  <option key={n} value={n}>
-                    {n}件
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
         </form>
