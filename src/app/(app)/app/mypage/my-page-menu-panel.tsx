@@ -35,12 +35,14 @@ export function MyPageMenuPanel({
         href="/app/profile/edit"
         title="基本情報"
         description="プロフィールなどの情報を編集できます。"
-        iconShellClassName="bg-accent-mint/10 ring-1 ring-border/60"
+
         icon={
-          <IconUserCircle
-            className={`${menuIconClass} text-accent-mint`}
-            aria-hidden
-          />
+          <div className="inline-flex items-center justify-center rounded-lg bg-zinc-700 p-2">
+            <IconUserCircle
+              className={`${menuIconClass} text-accent-mint`}
+              aria-hidden
+            />
+          </div>
         }
       />
 
@@ -48,12 +50,14 @@ export function MyPageMenuPanel({
         href="/events"
         title="イベント一覧"
         description="公開中の痛車イベントを日付順などで一覧・詳細確認できます。"
-        iconShellClassName="bg-blue-500/10 ring-1 ring-border/60"
+
         icon={
-          <IconCalendar
-            className={`${menuIconClass} text-blue-400/90`}
-            aria-hidden
-          />
+          <div className="inline-flex items-center justify-center rounded-lg bg-zinc-700 p-2">
+            <IconCalendar
+              className={`${menuIconClass} text-accent-mint`}
+              aria-hidden
+            />
+          </div>
         }
       />
 
@@ -61,12 +65,14 @@ export function MyPageMenuPanel({
         href="/app/watchlist"
         title="ウォッチリスト"
         description="ウォッチリストに追加したイベントを管理できます。"
-        iconShellClassName="bg-sky-500/10 ring-1 ring-border/60"
+
         icon={
-          <IconEye
-            className={`${menuIconClass} text-sky-400/90`}
-            aria-hidden
-          />
+          <div className="inline-flex items-center justify-center rounded-lg bg-zinc-700 p-2">
+            <IconEye
+              className={`${menuIconClass} text-accent-mint`}
+              aria-hidden
+            />
+          </div>
         }
       />
 
@@ -74,14 +80,16 @@ export function MyPageMenuPanel({
         href="/app/groups"
         title="団体管理"
         description="併せメンバーの募集状況や一斉連絡ポリシーを確認・運用できます。"
-        iconShellClassName="bg-violet-500/12 ring-1 ring-border/60"
+
         linkClassName="relative"
         showUnreadDot={hasUnreadMessages}
         icon={
-          <IconUserGroup
-            className={`${menuIconClass} text-violet-400/90`}
-            aria-hidden
-          />
+          <div className="inline-flex items-center justify-center rounded-lg bg-zinc-700 p-2">
+            <IconUserGroup
+              className={`${menuIconClass} text-accent-mint`}
+              aria-hidden
+            />
+          </div>
         }
       />
 
@@ -89,12 +97,14 @@ export function MyPageMenuPanel({
         href="/app/reminder"
         title="リマインダー管理"
         description="エントリー済みイベントの締切・集合時間・支払期日をまとめて確認。"
-        iconShellClassName="bg-orange-500/10 ring-1 ring-border/60"
+
         icon={
-          <IconClock
-            className={`${menuIconClass} text-orange-400/90`}
-            aria-hidden
-          />
+          <div className="inline-flex items-center justify-center rounded-lg bg-zinc-700 p-2">
+            <IconClock
+              className={`${menuIconClass} text-accent-mint`}
+              aria-hidden
+            />
+          </div>
         }
       />
 
@@ -102,12 +112,14 @@ export function MyPageMenuPanel({
         href="/app/notification-settings"
         title="通知設定"
         description="各種通知の設定を行えます。"
-        iconShellClassName="bg-amber-500/10 ring-1 ring-border/60"
+
         icon={
-          <IconBell
-            className={`${menuIconClass} text-amber-400/90`}
-            aria-hidden
-          />
+          <div className="inline-flex items-center justify-center rounded-lg bg-zinc-700 p-2">
+            <IconBell
+              className={`${menuIconClass} text-accent-mint`}
+              aria-hidden
+            />
+          </div>
         }
       />
 
@@ -115,12 +127,14 @@ export function MyPageMenuPanel({
         href="/app/event-submission"
         title="イベント掲載依頼"
         description="イベント情報をご提供いただくことで、より多くの参加者に知っていただけます。"
-        iconShellClassName="bg-accent-rose/12 ring-1 ring-border/60"
+
         icon={
-          <IconPlus
-            className={`${menuIconClass} text-accent-rose opacity-90`}
-            aria-hidden
-          />
+          <div className="inline-flex items-center justify-center rounded-lg bg-zinc-700 p-2">
+            <IconPlus
+              className={`${menuIconClass} text-accent-mint`}
+              aria-hidden
+            />
+          </div>
         }
       />
 
@@ -130,19 +144,21 @@ export function MyPageMenuPanel({
           href={SITE_NAV_ORGANIZER_ITEM.href}
           title={SITE_NAV_ORGANIZER_ITEM.label}
           description="イベント管理やユーザー管理、情報提供フォームの処理などができます。"
-          iconShellClassName="bg-indigo-500/10 ring-1 ring-border/60"
+
           icon={
-            <IconSparklesUser
-              className={`${menuIconClass} text-indigo-400/90`}
-              aria-hidden
-            />
+            <div className="inline-flex items-center justify-center rounded-lg bg-zinc-700 p-2">
+              <IconSparklesUser
+                className={`${menuIconClass} text-accent-mint`}
+                aria-hidden
+              />
+            </div>
           }
         />
       ) : (
         <Card variant="muted">
           <div className="flex items-center gap-3 sm:flex-col sm:items-center sm:text-center">
             {/* オーガナイザー機能アイコン（無効状態） */}
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-card-elevated ring-1 ring-border/60 sm:mb-3 sm:h-14 sm:w-14">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-zinc-700 sm:mb-3 sm:h-14 sm:w-14">
               <IconSparklesUser
                 className="h-6 w-6 text-muted-foreground sm:h-7 sm:w-7"
                 aria-hidden

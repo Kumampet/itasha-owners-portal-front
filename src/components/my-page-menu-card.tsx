@@ -7,9 +7,6 @@ import { CardTitle, CardContent } from "@/components/card";
 const linkBaseClass =
   "h-full hover:-translate-y-0.5 hover:shadow-md";
 
-const iconCircleBase =
-  "flex h-12 w-12 shrink-0 items-center justify-center rounded-full sm:mb-3 sm:h-14 sm:w-14";
-
 const bodyRowClass =
   "flex items-center gap-3 sm:flex-col sm:items-center sm:text-center";
 
@@ -19,8 +16,6 @@ export type MyPageMenuCardProps = {
   href: string;
   title: string;
   description: ReactNode;
-  /** アイコン円の背景・リングなど（ベースサイズ／角丸以外） */
-  iconShellClassName: string;
   icon: ReactNode;
   /** 右上の通知ドット（団体チャットの未読など） */
   showUnreadDot?: boolean;
@@ -32,7 +27,6 @@ export function MyPageMenuCard({
   href,
   title,
   description,
-  iconShellClassName,
   icon,
   showUnreadDot = false,
   linkClassName = "",
@@ -48,7 +42,7 @@ export function MyPageMenuCard({
         />
       ) : null}
       <div className={bodyRowClass}>
-        <div className={`${iconCircleBase} ${iconShellClassName}`.trim()}>
+        <div className="shrink-0 sm:mb-3">
           {icon}
         </div>
         <div className={textColumnClass}>
