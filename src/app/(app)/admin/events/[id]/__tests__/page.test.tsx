@@ -58,6 +58,9 @@ jest.mock('react', () => {
 // グローバルfetchとalertのモック
 global.fetch = jest.fn()
 global.alert = jest.fn()
+// EventForm の URL.createObjectURL 使用に対応
+global.URL.createObjectURL = jest.fn(() => 'blob:mock-url')
+global.URL.revokeObjectURL = jest.fn()
 
 describe('AdminEventDetailPage', () => {
   const mockEvent = {
@@ -309,6 +312,29 @@ describe('AdminEventDetailPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('再申請')).toBeInTheDocument()
+    })
+  })
+
+  it('編集モードでサムネイル入力欄が選択可能である', async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockEvent,
+    })
+
+    const user = userEvent.setup()
+    const params = Promise.resolve({ id: 'event-1' })
+    render(<AdminEventDetailPage params={params} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('編集')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByText('編集'))
+
+    await waitFor(() => {
+      const fileInput = document.querySelector('input[type="file"]')
+      expect(fileInput).toBeInTheDocument()
+      expect(fileInput).not.toBeDisabled()
     })
   })
 

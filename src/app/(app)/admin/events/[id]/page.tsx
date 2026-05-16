@@ -63,6 +63,7 @@ export default function AdminEventDetailPage({
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
     name: "",
     description: "",
@@ -212,6 +213,21 @@ export default function AdminEventDetailPage({
 
       if (!res.ok) throw new Error("Failed to update event");
 
+      // 保留中の画像があればアップロード
+      if (pendingImageFile) {
+        try {
+          const uploadForm = new FormData();
+          uploadForm.append("file", pendingImageFile);
+          await fetch(`/api/upload/image?eventId=${encodeURIComponent(id)}`, {
+            method: "POST",
+            body: uploadForm,
+          });
+          setPendingImageFile(null);
+        } catch (error) {
+          console.error("Failed to upload image:", error);
+        }
+      }
+
       await fetchEvent();
       setIsEditing(false);
     } catch (error) {
@@ -251,6 +267,7 @@ export default function AdminEventDetailPage({
   };
 
   const handleConfirmCancel = () => {
+    setPendingImageFile(null);
     setIsEditing(false);
     setShowCancelModal(false);
     fetchEvent();
@@ -451,7 +468,7 @@ export default function AdminEventDetailPage({
           onFormDataChange={setFormData}
           keywords={keywords}
           onKeywordsChange={setKeywords}
-          eventIdForImageUpload={event?.id ?? null}
+          onPendingImageChange={setPendingImageFile}
         >
           <Button
             variant="secondary"

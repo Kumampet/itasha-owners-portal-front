@@ -97,6 +97,16 @@ describe('AdminNewEventPage', () => {
     })
   })
 
+  it('イベントサムネイル入力欄が最初から選択可能である', async () => {
+    render(<AdminNewEventPage />)
+
+    await waitFor(() => {
+      const fileInput = document.querySelector('input[type="file"]')
+      expect(fileInput).toBeInTheDocument()
+      expect(fileInput).not.toBeDisabled()
+    })
+  })
+
   it('下書き保存に成功すると、イベント詳細ページに遷移する', async () => {
     const mockEventId = 'new-event-1'
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({

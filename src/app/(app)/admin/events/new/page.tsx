@@ -19,6 +19,7 @@ function AdminNewEventPageContent() {
   const [saving, setSaving] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
     name: "",
@@ -135,6 +136,21 @@ function AdminNewEventPageContent() {
 
       const data = await res.json();
 
+      // 保留中の画像があればアップロード
+      if (pendingImageFile) {
+        try {
+          const uploadForm = new FormData();
+          uploadForm.append("file", pendingImageFile);
+          await fetch(`/api/upload/image?eventId=${encodeURIComponent(data.id)}`, {
+            method: "POST",
+            body: uploadForm,
+          });
+        } catch (error) {
+          console.error("Failed to upload image:", error);
+          // 画像アップロード失敗はイベント作成の成功を妨げない
+        }
+      }
+
       // イベント掲載依頼フォームから作成した場合は、処理済みにマーク
       if (submissionId) {
         try {
@@ -198,6 +214,7 @@ function AdminNewEventPageContent() {
         onFormDataChange={setFormData}
         keywords={keywords}
         onKeywordsChange={setKeywords}
+        onPendingImageChange={setPendingImageFile}
       >
         <Button
           variant="secondary"

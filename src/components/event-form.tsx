@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "./button";
 import { DateTimeInput } from "./date-time-input";
-import { Tooltip } from "./tooltip";
 import { EVENT_DESCRIPTION_MAX_CHARS } from "@/lib/event-description";
 
 // エントリー情報の型
@@ -49,9 +48,45 @@ interface EventFormProps {
   onFormDataChange: (data: EventFormData) => void;
   keywords: string[];
   onKeywordsChange: (keywords: string[]) => void;
-  /** 指定時のみイベントサムネイルをアップロード可能（保存済みイベントの編集時など） */
-  eventIdForImageUpload?: string | null;
+  /** 画像ファイルが選択・クリアされるたびに呼ばれる（保存時にアップロードするため親で保持する） */
+  onPendingImageChange?: (file: File | null) => void;
   children?: React.ReactNode; // ボタン部分を親から受け取る
+}
+
+async function resizeImageClientSide(file: File, maxWidth: number): Promise<File> {
+  const ext = file.name.toLowerCase().split(".").pop() ?? "";
+  if (ext === "heic" || ext === "heif") return file;
+
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let { width, height } = img;
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { resolve(file); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      const isPng = file.type === "image/png";
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { resolve(file); return; }
+          const name = isPng ? "thumbnail.png" : "thumbnail.jpg";
+          resolve(new File([blob], name, { type: isPng ? "image/png" : "image/jpeg" }));
+        },
+        isPng ? "image/png" : "image/jpeg",
+        isPng ? undefined : 0.85,
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
+    img.src = objectUrl;
+  });
 }
 
 export default function EventForm({
@@ -59,13 +94,21 @@ export default function EventForm({
   onFormDataChange,
   keywords,
   onKeywordsChange,
-  eventIdForImageUpload,
+  onPendingImageChange,
   children,
 }: EventFormProps) {
   const [keywordInput, setKeywordInput] = useState("");
   const [searchingPostalCode, setSearchingPostalCode] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!pendingFile) { setPreviewObjectUrl(null); return; }
+    const url = URL.createObjectURL(pendingFile);
+    setPreviewObjectUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [pendingFile]);
 
   const handleAddKeyword = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -205,56 +248,30 @@ export default function EventForm({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!eventIdForImageUpload) {
-      alert("イベント作成後、詳細画面の編集からサムネイルをアップロードできます");
-      return;
-    }
-
-    // ファイルタイプの検証
     if (!file.type.startsWith("image/")) {
       alert("画像ファイルのみアップロード可能です");
       return;
     }
 
-    const maxSize = 20 * 1024 * 1024; // API と揃えて 20MB
+    const maxSize = 20 * 1024 * 1024;
     if (file.size > maxSize) {
       alert("ファイルサイズは20MB以下にしてください");
       return;
     }
 
-    setUploadingImage(true);
-    try {
-      const uploadFormData = new FormData();
-      uploadFormData.append("file", file);
+    const resized = await resizeImageClientSide(file, 1920);
+    setPendingFile(resized);
+    onPendingImageChange?.(resized);
+    onFormDataChange({ ...formData, image_url: "" });
 
-      const response = await fetch(
-        `/api/upload/image?eventId=${encodeURIComponent(eventIdForImageUpload)}`,
-        {
-          method: "POST",
-          body: uploadFormData,
-        },
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
-        throw new Error(errorData.error || "画像のアップロードに失敗しました");
-      }
-
-      const data = await response.json();
-      onFormDataChange({ ...formData, image_url: data.url });
-    } catch (error) {
-      console.error("Failed to upload image:", error);
-      alert(error instanceof Error ? error.message : "画像のアップロードに失敗しました");
-    } finally {
-      setUploadingImage(false);
-      // ファイル入力をリセット（同じファイルを再度選択できるように）
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
   const handleImageRemove = () => {
+    setPendingFile(null);
+    onPendingImageChange?.(null);
     onFormDataChange({ ...formData, image_url: "" });
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -561,28 +578,18 @@ export default function EventForm({
           縦長画像は表示領域の高さに合わせて左右に余白が付く場合があります。
         </p>
         <div className="mt-1 space-y-2">
-          <Tooltip
-            content="イベント作成後、詳細画面の編集からアップロードできます。"
-            disabled={Boolean(eventIdForImageUpload)}
-            arrowPosition="center"
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageFileSelect}
-              disabled={!eventIdForImageUpload}
-              className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-card-elevated file:px-4 file:py-2 file:text-sm file:font-medium file:text-muted-foreground hover:file:bg-card disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-          </Tooltip>
-          {uploadingImage && (
-            <p className="text-xs text-muted">アップロード中...</p>
-          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageFileSelect}
+            className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-card-elevated file:px-4 file:py-2 file:text-sm file:font-medium file:text-muted-foreground hover:file:bg-card"
+          />
         </div>
-        {formData.image_url && (
+        {(previewObjectUrl ?? formData.image_url) && (
           <div className="relative mt-2 aspect-video w-full max-w-full sm:max-w-[50%] overflow-hidden rounded-md border border-border bg-muted">
             <Image
-              src={formData.image_url}
+              src={previewObjectUrl ?? formData.image_url}
               alt="プレビュー"
               fill
               className="object-contain"
