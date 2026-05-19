@@ -67,4 +67,74 @@ describe('Home', () => {
 
     expect(screen.getAllByText('テストイベント').length).toBeGreaterThanOrEqual(1)
   })
+
+  it('当日開催のイベントに「本日開催」バッジを表示する', async () => {
+    // 2026-05-19 JST 00:00 = 2026-05-18T15:00:00Z
+    jest.useFakeTimers({ now: new Date('2026-05-19T03:00:00Z') })
+    const mockEvent = {
+      id: 'event-today',
+      name: '本日のイベント',
+      description: '',
+      event_date: new Date('2026-05-18T15:00:00Z'), // JST 2026-05-19 00:00
+      event_end_date: null,
+      is_multi_day: false,
+      image_url: null,
+    }
+
+    mockPrisma.event.findMany
+      .mockResolvedValueOnce([mockEvent])
+      .mockResolvedValueOnce([mockEvent])
+
+    const page = await Home()
+    render(page)
+
+    expect(screen.getAllByText('本日開催').length).toBeGreaterThanOrEqual(1)
+    jest.useRealTimers()
+  })
+
+  it('7日以内のイベントに「あとN日」バッジを表示する', async () => {
+    jest.useFakeTimers({ now: new Date('2026-05-19T03:00:00Z') }) // JST 2026-05-19
+    const mockEvent = {
+      id: 'event-future',
+      name: '未来のイベント',
+      description: '',
+      event_date: new Date('2026-05-20T15:00:00Z'), // JST 2026-05-21 00:00 → あと2日
+      event_end_date: null,
+      is_multi_day: false,
+      image_url: null,
+    }
+
+    mockPrisma.event.findMany
+      .mockResolvedValueOnce([mockEvent])
+      .mockResolvedValueOnce([mockEvent])
+
+    const page = await Home()
+    render(page)
+
+    expect(screen.getAllByText('あと2日').length).toBeGreaterThanOrEqual(1)
+    jest.useRealTimers()
+  })
+
+  it('会期中の複数日イベントに「開催中」バッジを表示する', async () => {
+    jest.useFakeTimers({ now: new Date('2026-05-19T03:00:00Z') }) // JST 2026-05-19
+    const mockEvent = {
+      id: 'event-ongoing',
+      name: '開催中イベント',
+      description: '',
+      event_date: new Date('2026-05-17T15:00:00Z'), // JST 2026-05-18 00:00（開始済み）
+      event_end_date: new Date('2026-05-19T15:00:00Z'), // JST 2026-05-20 00:00（明日まで）
+      is_multi_day: true,
+      image_url: null,
+    }
+
+    mockPrisma.event.findMany
+      .mockResolvedValueOnce([mockEvent])
+      .mockResolvedValueOnce([mockEvent])
+
+    const page = await Home()
+    render(page)
+
+    expect(screen.getAllByText('開催中').length).toBeGreaterThanOrEqual(1)
+    jest.useRealTimers()
+  })
 })

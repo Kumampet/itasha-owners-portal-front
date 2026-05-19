@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { JAPAN_PREFECTURES } from "@/lib/japan-prefectures";
+import { startOfTodayJST } from "@/lib/date-utils";
 
 /**
  * クエリ `yearMonth=YYYY-MM` を日本時間の暦月範囲に変換する。
@@ -34,20 +35,22 @@ export async function GET(request: Request) {
     const yearMonthParam = searchParams.get("yearMonth") || "";
 
     const now = new Date();
+    const startOfToday = startOfTodayJST(now);
 
     // 過去のイベントを除外する条件（終了日がある場合は終了日、ない場合は開始日で判定）
+    // JST 当日開始を基準にすることで、開催当日のイベントも終日含める
     const dateFilter = {
       OR: [
         {
           AND: [
             { event_end_date: { not: null } },
-            { event_end_date: { gte: now } },
+            { event_end_date: { gte: startOfToday } },
           ],
         },
         {
           AND: [
             { event_end_date: null },
-            { event_date: { gte: now } },
+            { event_date: { gte: startOfToday } },
           ],
         },
       ],

@@ -143,6 +143,33 @@ async function main(db: PrismaClient) {
     nameNumberStart: 1,
   });
 
+  // 複数日開催・開催中サンプル（バッジ確認用）
+  // シード実行日を基準に「昨日開始・明後日終了」の3日間イベントを固定で1件追加する
+  const jstOffset = 9 * 60 * 60 * 1000;
+  const jstNow = new Date(Date.now() + jstOffset);
+  const todayJST = new Date(Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate()) - jstOffset);
+  const yesterdayJST = new Date(todayJST.getTime() - 86400000);
+  const dayAfterTomorrowJST = new Date(todayJST.getTime() + 2 * 86400000);
+
+  const ongoingEvent = await db.event.create({
+    data: {
+      name: "【サンプル】全国痛車オーナーズフェスタ（複数日開催・開催中）",
+      description: "複数日開催イベントの「開催中」バッジ確認用サンプルデータです。昨日から始まり明後日まで開催されます。",
+      event_date: yesterdayJST,
+      event_end_date: dayAfterTomorrowJST,
+      is_multi_day: true,
+      approval_status: "APPROVED",
+      prefecture: "東京都",
+      city: "江東区",
+      venue_name: "東京ビッグサイト",
+      official_urls: [] as unknown as import("@prisma/client").Prisma.InputJsonValue,
+      keywords: ["痛車", "複数日", "開催中"] as unknown as import("@prisma/client").Prisma.InputJsonValue,
+      created_by_user_id: organizer.id,
+      entry_selection_method: "FIRST_COME",
+    },
+  });
+  createdEventIds.push(ongoingEvent.id);
+
   const approvedIds = (
     await db.event.findMany({
       where: { id: { in: createdEventIds }, approval_status: "APPROVED" },
