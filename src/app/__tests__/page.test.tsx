@@ -114,4 +114,27 @@ describe('Home', () => {
     expect(screen.getAllByText('あと2日').length).toBeGreaterThanOrEqual(1)
     jest.useRealTimers()
   })
+
+  it('会期中の複数日イベントに「開催中」バッジを表示する', async () => {
+    jest.useFakeTimers({ now: new Date('2026-05-19T03:00:00Z') }) // JST 2026-05-19
+    const mockEvent = {
+      id: 'event-ongoing',
+      name: '開催中イベント',
+      description: '',
+      event_date: new Date('2026-05-17T15:00:00Z'), // JST 2026-05-18 00:00（開始済み）
+      event_end_date: new Date('2026-05-19T15:00:00Z'), // JST 2026-05-20 00:00（明日まで）
+      is_multi_day: true,
+      image_url: null,
+    }
+
+    mockPrisma.event.findMany
+      .mockResolvedValueOnce([mockEvent])
+      .mockResolvedValueOnce([mockEvent])
+
+    const page = await Home()
+    render(page)
+
+    expect(screen.getAllByText('開催中').length).toBeGreaterThanOrEqual(1)
+    jest.useRealTimers()
+  })
 })

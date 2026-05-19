@@ -581,5 +581,39 @@ describe('EventsPageClient', () => {
 
     jest.useRealTimers()
   })
+
+  it('会期中の複数日イベントに「開催中」バッジを表示する', async () => {
+    jest.useFakeTimers({ now: new Date('2026-05-19T03:00:00Z') }) // JST 2026-05-19
+    const ongoingEvent = {
+      id: 'event-ongoing',
+      name: '開催中イベント',
+      description: '複数日開催',
+      event_date: '2026-05-17T15:00:00Z', // JST 2026-05-18 00:00（開始済み）
+      event_end_date: '2026-05-19T15:00:00Z', // JST 2026-05-20 00:00（明日まで）
+      is_multi_day: true,
+      official_urls: [],
+      keywords: null,
+      image_url: null,
+      approval_status: 'APPROVED',
+      entries: [],
+      tags: [],
+    }
+
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        events: [ongoingEvent],
+        pagination: { currentPage: 1, totalPages: 1, totalCount: 1, limit: 10 },
+      }),
+    })
+
+    renderWithProviders(<EventsPageClient />)
+
+    await waitFor(() => {
+      expect(screen.getByText('開催中')).toBeInTheDocument()
+    })
+
+    jest.useRealTimers()
+  })
 })
 

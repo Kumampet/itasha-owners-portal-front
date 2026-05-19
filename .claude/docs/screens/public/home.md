@@ -12,7 +12,8 @@
 
 - 承認済みかつ「まだ終了していない」イベントを DB から取得（`buildApprovedFutureEventWhere` で JST 当日開始を基準に判定）
 - 開催当日のイベントも含む（`startOfTodayJST` を基準にすることで終日表示）
-- ホーム用イベントカラム: `src/components/home/home-top-event-columns.tsx`（「本日開催」「あとN日」バッジ付き、`event-day-badge.tsx` 使用）
+- ホーム用イベントカラム: `src/components/home/home-top-event-columns.tsx`（「本日開催」「あとN日」「開催中」バッジ付き、`event-day-badge.tsx` 使用）
+- 会期中の複数日イベントも含む（`event_end_date >= startOfTodayJST` で終了日まで表示し続ける）
 
 ## UI
 

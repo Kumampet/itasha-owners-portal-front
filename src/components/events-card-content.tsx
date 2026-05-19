@@ -117,7 +117,7 @@ export function EventsCardContent({ event, onToggle }: EventsCardContentProps) {
                         <p className="text-xs font-semibold uppercase tracking-wide text-accent-mint">
                             {eventDateText}
                         </p>
-                        <EventDayBadge eventDateISO={event.event_date} />
+                        <EventDayBadge eventDateISO={event.event_date} eventEndDateISO={event.event_end_date} />
                     </div>
                     <h2 className="text-lg font-semibold text-white sm:text-foreground">
                         {event.name}

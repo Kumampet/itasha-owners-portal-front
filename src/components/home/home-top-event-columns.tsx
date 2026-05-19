@@ -67,7 +67,7 @@ function HomeEventRow({ event }: { event: HomeEventBrief }) {
             <p className="text-[11px] font-semibold text-accent-mint sm:text-xs">
               {period}
             </p>
-            <EventDayBadge eventDateISO={event.event_date} />
+            <EventDayBadge eventDateISO={event.event_date} eventEndDateISO={event.event_end_date} />
           </div>
           <h3 className="mt-1 line-clamp-2 text-sm font-semibold text-foreground group-hover:text-accent-mint sm:text-base">
             {event.name}
