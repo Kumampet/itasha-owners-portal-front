@@ -5,7 +5,6 @@ import { EventPageShareButtons } from "./event-page-share-buttons";
 
 export type EventPageHeaderProps = {
   name: string;
-  description: string | null;
   image_url: string | null;
   keywords: unknown;
   tags: EventTagItem[] | null | undefined;
@@ -14,7 +13,6 @@ export type EventPageHeaderProps = {
 
 export function EventPageHeader({
   name,
-  description,
   image_url,
   keywords,
   tags,
@@ -27,9 +25,6 @@ export function EventPageHeader({
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
         {name}
       </h1>
-      {description && (
-        <p className="text-sm text-muted-foreground sm:text-base">{description}</p>
-      )}
       <EventKeywordsContainer keywords={keywords} />
       <EventTagsContainer tags={tags} />
     </header>
