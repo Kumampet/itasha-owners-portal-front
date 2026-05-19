@@ -8,6 +8,8 @@ import { HomeTopEventColumns } from "@/components/home/home-top-event-columns";
 import { ServiceOverviewSection } from "@/components/service-overview-section";
 import type { HomeEventBrief } from "@/components/home/home-top-event-columns";
 
+export const revalidate = 60;
+
 export const metadata = createMetadataWithOGP({
   title: "痛車オーナーズナビ | いたなび！",
   description:
