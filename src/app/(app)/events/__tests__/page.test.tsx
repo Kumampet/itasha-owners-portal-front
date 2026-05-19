@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { render as renderWithProviders } from '@/test-utils'
 import userEvent from '@testing-library/user-event'
 import EventsPageClient from '../events-page-client'
 
@@ -510,6 +511,75 @@ describe('EventsPageClient', () => {
       const eventCard = screen.getByText('テストイベント1').closest('a')
       expect(eventCard).toHaveAttribute('href', '/events/event-1')
     })
+  })
+
+  it('当日開催のイベントに「本日開催」バッジを表示する', async () => {
+    // 2026-05-19 JST 12:00 = 2026-05-19T03:00:00Z
+    jest.useFakeTimers({ now: new Date('2026-05-19T03:00:00Z') })
+    const todayEvent = {
+      id: 'event-today',
+      name: '本日のイベント',
+      description: '今日開催されるイベント',
+      event_date: '2026-05-18T15:00:00Z', // JST 2026-05-19 00:00
+      event_end_date: null,
+      is_multi_day: false,
+      official_urls: [],
+      keywords: null,
+      image_url: null,
+      approval_status: 'APPROVED',
+      entries: [],
+      tags: [],
+    }
+
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        events: [todayEvent],
+        pagination: { currentPage: 1, totalPages: 1, totalCount: 1, limit: 10 },
+      }),
+    })
+
+    renderWithProviders(<EventsPageClient />)
+
+    await waitFor(() => {
+      expect(screen.getByText('本日開催')).toBeInTheDocument()
+    })
+
+    jest.useRealTimers()
+  })
+
+  it('未来のイベントに「あとN日」バッジを表示する', async () => {
+    jest.useFakeTimers({ now: new Date('2026-05-19T03:00:00Z') }) // JST 2026-05-19
+    const futureEvent = {
+      id: 'event-future',
+      name: '未来のイベント',
+      description: '近日開催',
+      event_date: '2026-05-20T15:00:00Z', // JST 2026-05-21 → あと2日
+      event_end_date: null,
+      is_multi_day: false,
+      official_urls: [],
+      keywords: null,
+      image_url: null,
+      approval_status: 'APPROVED',
+      entries: [],
+      tags: [],
+    }
+
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        events: [futureEvent],
+        pagination: { currentPage: 1, totalPages: 1, totalCount: 1, limit: 10 },
+      }),
+    })
+
+    renderWithProviders(<EventsPageClient />)
+
+    await waitFor(() => {
+      expect(screen.getByText('あと2日')).toBeInTheDocument()
+    })
+
+    jest.useRealTimers()
   })
 })
 

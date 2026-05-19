@@ -238,6 +238,26 @@ export function toDateLocal(
 }
 
 /**
+ * JST の当日 00:00 を UTC の Date オブジェクトとして返す。
+ * イベントの開催日フィルタで「当日まで含める」ために使う。
+ */
+export function startOfTodayJST(now?: Date): Date {
+  return dayjs(now).tz(DEFAULT_TIMEZONE).startOf("day").toDate();
+}
+
+/**
+ * イベント開催日（UTC ISO 文字列）まで、JST 今日から何日あるかを返す。
+ * - 0: 当日開催
+ * - 正の値: N 日後
+ * - 負の値: 既に開始済み（複数日イベントで開始日が過去）
+ */
+export function daysUntilEventJST(eventDateISO: string, now?: Date): number {
+  const todayJST = dayjs(now).tz(DEFAULT_TIMEZONE).startOf("day");
+  const eventJST = dayjs.utc(eventDateISO).tz(DEFAULT_TIMEZONE).startOf("day");
+  return eventJST.diff(todayJST, "day");
+}
+
+/**
  * datetime-local入力フィールドから取得した値（JST）をUTCのDateオブジェクトに変換
  * datetime-local入力フィールドはローカルタイムゾーン（JST）の値を返すため、
  * これをJSTとして解釈してからUTCに変換してデータベースに保存する

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { EventDayBadge } from "@/components/event-day-badge";
 
 export type HomeEventBrief = {
   id: string;
@@ -62,9 +63,12 @@ function HomeEventRow({ event }: { event: HomeEventBrief }) {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold text-accent-mint sm:text-xs">
-            {period}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-[11px] font-semibold text-accent-mint sm:text-xs">
+              {period}
+            </p>
+            <EventDayBadge eventDateISO={event.event_date} />
+          </div>
           <h3 className="mt-1 line-clamp-2 text-sm font-semibold text-foreground group-hover:text-accent-mint sm:text-base">
             {event.name}
           </h3>
