@@ -6,6 +6,7 @@ import { WatchlistButton } from "@/components/watchlist-button";
 import { DateTime } from "@/components/date-time";
 import { TagList } from "@/components/tag";
 import { Button } from "@/components/button";
+import { EventDayBadge } from "@/components/event-day-badge";
 
 interface EventsCardContentProps {
     event: {
@@ -112,9 +113,12 @@ export function EventsCardContent({ event, onToggle }: EventsCardContentProps) {
 
             <div className="relative z-10 flex min-h-[220px] flex-1 flex-col justify-end gap-4 p-4 pt-12 sm:min-h-0 sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:p-0 sm:pt-0">
                 <div className="min-w-0 flex-1 space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-accent-mint">
-                        {eventDateText}
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-accent-mint">
+                            {eventDateText}
+                        </p>
+                        <EventDayBadge eventDateISO={event.event_date} eventEndDateISO={event.event_end_date} />
+                    </div>
                     <h2 className="text-lg font-semibold text-white sm:text-foreground">
                         {event.name}
                     </h2>
