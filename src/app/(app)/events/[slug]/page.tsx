@@ -192,7 +192,6 @@ export default async function EventDetailPage({
 
         <EventPageHeader
           name={event.name}
-          description={event.description}
           image_url={event.image_url}
           keywords={event.keywords}
           tags={event.tags}

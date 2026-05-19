@@ -6,7 +6,8 @@
 
 ## 表示
 
-- サムネイル、タグ、説明（サニタイズ HTML）、開催情報、公式 URL
+- サムネイル、タグ、開催情報、公式 URL
+- 説明（`description`）はタイトル直下には表示せず、「イベント紹介」セクション（`whitespace-pre-wrap`）にのみ表示する
 - エントリー枠・日程表示は `EventEntry` と日時ユーティリティに従う
 - OGP: `src/lib/metadata.ts`（承認済み公開向け）
 
