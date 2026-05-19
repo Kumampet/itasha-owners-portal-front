@@ -97,7 +97,8 @@ describe('EventDetailPage', () => {
     render(page)
 
     expect(screen.getByText('テストイベント')).toBeInTheDocument()
-    expect(screen.getAllByText('テストイベントの説明です。').length).toBeGreaterThan(0)
+    // 説明は「イベント紹介」セクションに1箇所のみ表示（ヘッダーには出ない）
+    expect(screen.getAllByText('テストイベントの説明です。')).toHaveLength(1)
   })
 
   it('イベントが見つからない場合、notFoundを呼び出す', async () => {
@@ -119,14 +120,15 @@ describe('EventDetailPage', () => {
     expect(screen.getByText('テストイベント')).toBeInTheDocument()
   })
 
-  it('イベント説明を表示する', async () => {
+  it('イベント説明を「イベント紹介」セクションに表示する', async () => {
     mockPrisma.event.findUnique.mockResolvedValue(mockEvent as never)
 
     const params = Promise.resolve({ slug: 'event-1' })
     const page = await EventDetailPage({ params })
     render(page)
 
-    expect(screen.getAllByText('テストイベントの説明です。').length).toBeGreaterThan(0)
+    expect(screen.getByText('イベント紹介')).toBeInTheDocument()
+    expect(screen.getByText('テストイベントの説明です。')).toBeInTheDocument()
   })
 
   it('イベント画像を表示する', async () => {
