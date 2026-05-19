@@ -14,7 +14,7 @@ export function EventDayBadge({ eventDateISO, eventEndDateISO }: EventDayBadgePr
       </span>
     );
   }
-  if (days > 0) {
+  if (days > 0 && days <= 7) {
     return (
       <span className="inline-flex items-center rounded-full bg-accent-mint/10 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-accent-mint">
         あと{days}日

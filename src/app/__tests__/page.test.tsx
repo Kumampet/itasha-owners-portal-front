@@ -92,7 +92,7 @@ describe('Home', () => {
     jest.useRealTimers()
   })
 
-  it('明日以降のイベントに「あとN日」バッジを表示する', async () => {
+  it('7日以内のイベントに「あとN日」バッジを表示する', async () => {
     jest.useFakeTimers({ now: new Date('2026-05-19T03:00:00Z') }) // JST 2026-05-19
     const mockEvent = {
       id: 'event-future',

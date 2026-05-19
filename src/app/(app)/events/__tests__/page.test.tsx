@@ -548,7 +548,7 @@ describe('EventsPageClient', () => {
     jest.useRealTimers()
   })
 
-  it('未来のイベントに「あとN日」バッジを表示する', async () => {
+  it('7日以内のイベントに「あとN日」バッジを表示する', async () => {
     jest.useFakeTimers({ now: new Date('2026-05-19T03:00:00Z') }) // JST 2026-05-19
     const futureEvent = {
       id: 'event-future',
@@ -578,6 +578,41 @@ describe('EventsPageClient', () => {
     await waitFor(() => {
       expect(screen.getByText('あと2日')).toBeInTheDocument()
     })
+
+    jest.useRealTimers()
+  })
+
+  it('8日以上先のイベントに「あとN日」バッジを表示しない', async () => {
+    jest.useFakeTimers({ now: new Date('2026-05-19T03:00:00Z') }) // JST 2026-05-19
+    const farEvent = {
+      id: 'event-far',
+      name: '遠い未来のイベント',
+      description: '来月開催',
+      event_date: '2026-05-26T15:00:00Z', // JST 2026-05-27 → あと8日
+      event_end_date: null,
+      is_multi_day: false,
+      official_urls: [],
+      keywords: null,
+      image_url: null,
+      approval_status: 'APPROVED',
+      entries: [],
+      tags: [],
+    }
+
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        events: [farEvent],
+        pagination: { currentPage: 1, totalPages: 1, totalCount: 1, limit: 10 },
+      }),
+    })
+
+    renderWithProviders(<EventsPageClient />)
+
+    await waitFor(() => {
+      expect(screen.getByText('遠い未来のイベント')).toBeInTheDocument()
+    })
+    expect(screen.queryByText(/あと\d+日/)).not.toBeInTheDocument()
 
     jest.useRealTimers()
   })
