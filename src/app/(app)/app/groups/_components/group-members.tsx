@@ -14,16 +14,18 @@ interface GroupMembersProps {
     leader: {
       id: string;
     };
-    members: Array<{
-      id: string;
-      name: string | null;
-      displayName?: string | null;
-      email: string;
-      status: string;
-    }>;
+    members: Array<GroupMemberProps>;
   };
   currentUserId?: string;
   onUpdate: () => void;
+}
+
+interface GroupMemberProps {
+  id: string;
+  name: string | null;
+  displayName?: string | null;
+  email: string;
+  status: string;
 }
 
 export function GroupMembers({
