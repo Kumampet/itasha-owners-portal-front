@@ -24,7 +24,8 @@ const s3Client = new S3Client({
 async function deleteGroupImages(groupId: string): Promise<void> {
   if (isGroupImageStorageLocal()) {
     try {
-      await deleteLocalGroupImagesByGroupId(groupId);
+      // await deleteLocalGroupImagesByGroupId(groupId);
+      NextResponse.json({ success: true, message: "Temporarily mocked for Cloudflare migration" });
     } catch (error) {
       console.error(`Error deleting local images for group ${groupId}:`, error);
     }

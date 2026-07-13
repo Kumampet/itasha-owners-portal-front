@@ -5,7 +5,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "@/lib/prisma";
 import {
   isGroupImageStorageLocal,
-  writeLocalGroupImage,
+  // writeLocalGroupImage,
 } from "@/lib/group-image-local-store";
 import { deleteEventImageStorage } from "@/lib/event-image-storage";
 
@@ -120,7 +120,8 @@ async function putOptimizedImage(
   contentType: "image/jpeg" | "image/png",
 ): Promise<void> {
   if (isGroupImageStorageLocal()) {
-    await writeLocalGroupImage(s3Key, optimizedBuffer);
+    // await writeLocalGroupImage(s3Key, optimizedBuffer);
+    NextResponse.json({ success: true, message: "Temporarily mocked for Cloudflare migration" });
     return;
   }
 

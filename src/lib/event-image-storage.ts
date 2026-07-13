@@ -25,7 +25,7 @@ const s3Client = new S3Client({
  */
 export async function deleteEventImageStorage(eventId: string): Promise<void> {
   if (isGroupImageStorageLocal()) {
-    await deleteLocalEventImagesByEventId(eventId);
+    // await deleteLocalEventImagesByEventId(eventId);
     return;
   }
 
