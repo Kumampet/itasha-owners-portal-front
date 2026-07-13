@@ -736,7 +736,7 @@ export default function GroupDetailPage({
   } else {
     return (
       <main className="flex-1">
-        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 py-6 min-h-[calc(100vh-64px)] max-h-[calc(100vh-64px)]">
+        <section className="mx-auto flex max-w-4xl flex-col gap-4 px-4 py-6 min-h-[calc(100vh-158px)]">
           <>
             <AppPageHeader
               leading={
