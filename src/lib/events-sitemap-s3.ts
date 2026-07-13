@@ -1,4 +1,4 @@
-import fs from "node:fs/promises";
+// import fs from "node:fs/promises";
 import path from "node:path";
 import {
   GetObjectCommand,
@@ -106,12 +106,12 @@ export async function getPublicEventsUrlsetXml(): Promise<string> {
  */
 async function writeLocalEventsSitemapSnapshotFile(xml: string): Promise<void> {
   const root = getLocalBundledStorageRoot();
-  await fs.mkdir(root, { recursive: true });
-  await fs.writeFile(
-    path.join(root, DEFAULT_EVENTS_SITEMAP_S3_KEY),
-    xml,
-    "utf8",
-  );
+  // await fs.mkdir(root, { recursive: true });
+  // await fs.writeFile(
+  //   path.join(root, DEFAULT_EVENTS_SITEMAP_S3_KEY),
+  //   xml,
+  //   "utf8",
+  // );
 }
 
 /**
