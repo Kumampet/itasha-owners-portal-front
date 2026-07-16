@@ -62,7 +62,8 @@ const nextConfig: NextConfig = {
     '@prisma/client',
     'prisma',
     "sharp",
-    "@panva/hkdf"
+    "@panva/hkdf",
+    "@opennextjs/cloudflare"
   ],
   typescript: {
     ignoreBuildErrors: true,

@@ -1,8 +1,10 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import dotenv from "dotenv";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient as PrismaClientMySQL } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { PrismaClient as PrismaClientSQLite } from "prisma-sqlite/edge";
+import { PrismaD1 } from "@prisma/adapter-d1";
 
 /**
  * Next.js が環境変数を注入する前に `@/lib/prisma` のみ単体評価された場合への補填。
@@ -29,12 +31,11 @@ function ensureDotenvFallbackWhenDatabaseMissing(): void {
 ensureDotenvFallbackWhenDatabaseMissing();
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+  prisma: any | undefined;
 };
 
-// Prisma Clientの初期化関数
-function createPrismaClient() {
-  // DATABASE_URLをパースしてmariadb用の設定に変換
+// Prisma Client(MySQL)の初期化関数
+function createMySQLPrismaClient(): PrismaClientMySQL {
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl || typeof databaseUrl !== "string" || databaseUrl.trim() === "") {
@@ -53,41 +54,15 @@ function createPrismaClient() {
   }
 
   try {
-    // mysql:// または mariadb:// の接続文字列をパース
-    // URL形式: mysql://user:password@host:port/database
-    // databaseUrlは上記のチェックで確実に文字列であることが保証されている
-    if (!databaseUrl || typeof databaseUrl !== "string") {
-      throw new Error("DATABASE_URL must be a non-empty string");
-    }
-    // databaseUrlが確実に文字列であることを確認
     const dbUrlString = String(databaseUrl || "").trim();
-    if (!dbUrlString) {
-      throw new Error("DATABASE_URL is empty after conversion to string");
-    }
-    // mysql:// を http:// に置換してURLとしてパース
-    // dbUrlStringが確実に文字列であることを確認してからreplaceを呼び出す
-    if (typeof dbUrlString !== "string") {
-      throw new Error(`DATABASE_URL is not a string after conversion. Type: ${typeof dbUrlString}, Value: ${dbUrlString}`);
-    }
     const normalizedUrl = dbUrlString
       .replace(/^mariadb:\/\//, "http://")
       .replace(/^mysql:\/\//, "http://");
-    if (!normalizedUrl || normalizedUrl === "http://") {
-      throw new Error("DATABASE_URL is invalid or empty after processing");
-    }
     const dbUrl = new URL(normalizedUrl);
-
-    // パスワードのデコード（URLエンコードされている場合）
     const password = decodeURIComponent(dbUrl.password || "");
 
-    // PrismaMariaDbはPoolConfigまたは接続文字列を受け取る
-    // サーバーレス環境での接続リークを防ぐため、接続プールの設定を調整
-    // JWT戦略に変更したことで複数のリクエストが同時に発生する可能性があるため、
-    // コネクションプールサイズを増やす（デフォルト: 10）
-    // 環境変数で接続プールサイズを制御可能にする
     const connectionLimit = parseInt(process.env.DATABASE_POOL_SIZE || "10", 10);
     const isDev = process.env.NODE_ENV === "development";
-    /** Docker 冷起動で 30s 以内に応答しないと pool が timeout することがあるため development は既定を長めに */
     const defaultConnectMs = isDev ? 60000 : 10000;
     const defaultAcquireMs = isDev ? 60000 : 10000;
     const connectTimeout = parseInt(
@@ -100,20 +75,17 @@ function createPrismaClient() {
     );
 
     const host = dbUrl.hostname;
-    /** RDS などはそのまま。ローカル / docker compose で TLS が固まって pool timeout する場合は .env に DATABASE_SSL_OFF=true */
     const useSslExplicitOff =
       process.env.DATABASE_SSL_OFF?.trim().toLowerCase() === "true";
     const useLoopbackSslOff =
       host === "localhost" ||
       host === "127.0.0.1" ||
       host === "::1";
-    /** compose のサービス名で DB に繋ぐ場合に TLS が不要なとき向け（本番 RDS には使わないこと） */
     const useComposeServiceSslOff =
       isDev && (host === "mysql" || host === "mariadb" || host === "db");
     const sslDisabled =
       useSslExplicitOff || useLoopbackSslOff || useComposeServiceSslOff;
 
-    /** MySQL 8 の caching_sha2_password で、Workbench は通るが Node だけハンドシェイクで長時間になる場合の対処 */
     const allowPublicKeyRetrievalExplicit =
       process.env.DATABASE_ALLOW_PUBLIC_KEY_RETRIEVAL?.trim().toLowerCase() ===
       "true";
@@ -122,9 +94,6 @@ function createPrismaClient() {
       sslDisabled &&
       (host === "localhost" || host === "127.0.0.1");
 
-    // MySQL 8+（caching_sha2_password）を mariadb アダプタで繋ぐ場合、RSA 公開鍵をサーバーへ
-    // 問い合わせないと接続に失敗する。Workbench と挙動が食い違う典型原因。
-    // DATABASE_ALLOW_PUBLIC_KEY_RETRIEVAL=false で無効化可能（運用ポリシーに合わせて）。
     const denyPublicKey = process.env.DATABASE_ALLOW_PUBLIC_KEY_RETRIEVAL === "false";
     const allowPublicKeyRetrieval =
       !denyPublicKey &&
@@ -135,24 +104,20 @@ function createPrismaClient() {
       port: parseInt(dbUrl.port || "3306"),
       user: dbUrl.username,
       password: password,
-      database: dbUrl.pathname.slice(1), // 先頭の/を削除
-      connectionLimit, // 環境変数で制御可能（デフォルト: 10）
-      connectTimeout, // 初回接続待ち（ローカルで Docker 起動直後は長めに: DATABASE_CONNECT_TIMEOUT_MS）
-      acquireTimeout, // プール取得待ち（DATABASE_ACQUIRE_TIMEOUT_MS）
-      idleTimeout: 30000, // 30秒（アイドル接続を早めに解放して接続数を削減）
-      queueLimit: 0, // 接続待ちキューを無制限（タイムアウトで制御）
-      // 接続の再利用を最適化
+      database: dbUrl.pathname.slice(1),
+      connectionLimit,
+      connectTimeout,
+      acquireTimeout,
+      idleTimeout: 30000,
+      queueLimit: 0,
       reuseConnection: true,
-      // 接続の最大生存時間（1時間）
       maxLifetime: 3600000,
-      // ローカル / Docker 等で TLS が不要なとき。RDS は sslDisabled を false のままにすること
       ...(sslDisabled ? { ssl: false as const } : {}),
       ...(allowPublicKeyRetrieval ? { allowPublicKeyRetrieval: true as const } : {}),
     };
 
     const adapter = new PrismaMariaDb(poolConfig);
-
-    const client = new PrismaClient({
+    const client = new PrismaClientMySQL({
       adapter,
       log:
         process.env.NODE_ENV === "development"
@@ -160,7 +125,6 @@ function createPrismaClient() {
           : ["error"],
     });
 
-    // 接続プールの設定をログ出力（初回のみ）
     if (process.env.NODE_ENV === "development" || process.env.DATABASE_DEBUG === "true") {
       console.log(`[Prisma] Connection pool initialized with limit: ${connectionLimit}`);
     }
@@ -171,7 +135,7 @@ function createPrismaClient() {
   }
 }
 
-function createMockPrismaClient(): PrismaClient {
+function createMockPrismaClient(): any {
   const modelProxy = new Proxy({}, {
     get(target, prop) {
       if (typeof prop === "symbol") {
@@ -220,14 +184,13 @@ function createMockPrismaClient(): PrismaClient {
       }
       return modelProxy;
     }
-  }) as unknown as PrismaClient;
+  }) as unknown as any;
 }
 
-// Prisma Clientを遅延初期化（実際に使用される時点で初期化）
-// サーバーレス環境でも接続を共有するため、常にグローバル変数に保存
-let prismaInstance: PrismaClient | undefined;
+// Prisma Clientを遅延初期化
+let prismaInstance: any | undefined;
 
-function getPrisma(): PrismaClient {
+function getPrisma(): any {
   if (process.env.MOCK_DATABASE === "true") {
     if (!prismaInstance) {
       console.log("[Prisma] MOCK_DATABASE is true, initializing mock Prisma client.");
@@ -246,12 +209,58 @@ function getPrisma(): PrismaClient {
   }
 
   try {
-    prismaInstance = createPrismaClient();
-    
-    // サーバーレス環境でも接続を共有するため、常にグローバル変数に保存
-    // これにより、各リクエストで新しいPrisma Clientインスタンスが作成されるのを防ぐ
-    globalForPrisma.prisma = prismaInstance;
+    // Cloudflare D1 バインディングの取得を試みる
+    let d1Database: any = undefined;
 
+    // 1. globalThis の Cloudflare コンテキストシンボルから直接取得
+    const contextSymbol = Symbol.for("__cloudflare-context__");
+    const cloudflareCtx = (globalThis as any)[contextSymbol];
+    if (cloudflareCtx?.env?.DB) {
+      d1Database = cloudflareCtx.env.DB;
+    }
+
+    // 2. getRequestContext() をフォールバックとして使用
+    if (!d1Database) {
+      try {
+        const { getRequestContext } = require("@opennextjs/cloudflare");
+        d1Database = getRequestContext()?.env?.DB;
+      } catch {
+        // getRequestContext がない環境（ビルド時等）は無視
+      }
+    }
+
+    // 3. 一般的な環境変数やグローバル変数からのフォールバック
+    if (!d1Database) {
+      d1Database = (process.env as any).DB || (globalThis as any).DB || (globalThis as any).__cloudflare_env__?.DB;
+    }
+
+    if (d1Database) {
+      console.log("[Prisma] Cloudflare D1 binding detected, initializing SQLite Prisma Client with PrismaD1 adapter.");
+      const adapter = new PrismaD1(d1Database);
+      prismaInstance = new PrismaClientSQLite({
+        adapter,
+        log:
+          process.env.NODE_ENV === "development"
+            ? ["query", "info", "warn", "error"]
+            : ["error"],
+      });
+    } else {
+      // Edge Runtime(Wrangler/OpenNext環境)でMySQLクライアントがエイリアス(空)になっているか判定
+      const isMySQLMockedOrMissing =
+        typeof PrismaClientMySQL !== "function" ||
+        !PrismaClientMySQL.prototype ||
+        PrismaClientMySQL.name === "Object";
+
+      if (isMySQLMockedOrMissing) {
+        console.warn("[Prisma] Edge Runtime detected but D1 binding is not yet available (likely module load phase). Returning mock client temporarily.");
+        return createMockPrismaClient();
+      }
+
+      console.log("[Prisma] Cloudflare D1 binding not detected, falling back to MySQL Client.");
+      prismaInstance = createMySQLPrismaClient();
+    }
+    
+    globalForPrisma.prisma = prismaInstance;
     return prismaInstance;
   } catch (error) {
     console.error("[Prisma] Failed to initialize Prisma Client:", error);
