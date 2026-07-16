@@ -1,0 +1,35 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "itasha-owners-portal-front",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-07-13",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "itasha-owners-portal-db",
+      "database_id": "5efbca80-1a8f-4600-9896-b45e24c48c32"
+    }
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "build": {
+    "command": "npm run cf-build"
+  },
+  "vars": {
+    "MOCK_DATABASE": "false",
+    "AUTH_TRUST_HOST": "true"
+  },
+  "alias": {
+    "sharp": "./src/lib/empty.js",
+    "sharp-20c6a5da84e2135f": "./src/lib/empty.js",
+    "@prisma/client": "./src/lib/empty.js",
+    "@prisma/client-2c3a283f134fdcb6": "./src/lib/empty.js",
+    "@aws-sdk/client-s3": "./src/lib/empty.js",
+    "@aws-sdk/client-s3-ecbef8e33fd0b8f0": "./src/lib/empty.js"
+  }
+}
