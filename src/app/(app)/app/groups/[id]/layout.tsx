@@ -1,5 +1,7 @@
 import { createMetadataWithOGP } from "@/lib/metadata";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { groups } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 type GroupDetailLayoutProps = {
   params: Promise<{ id: string }>;
@@ -10,15 +12,13 @@ export async function generateMetadata({
   params,
 }: GroupDetailLayoutProps) {
   const { id } = await params;
-  const group = await prisma.group.findUnique({
-    where: { id },
-    select: {
-      name: true,
-      theme: true,
+  const group = await db.query.groups.findFirst({
+    where: eq(groups.id, id),
+    with: {
       event: {
-        select: {
+        columns: {
           name: true,
-          image_url: true,
+          imageUrl: true,
         },
       },
     },
@@ -36,8 +36,8 @@ export async function generateMetadata({
 
   return createMetadataWithOGP({
     title,
-    description: `${group.event.name}に参加する団体「${group.name}」の詳細ページです。`,
-    imageUrl: group.event.image_url || undefined,
+    description: `${group.event?.name || "イベント"}に参加する団体「${group.name}」の詳細ページです。`,
+    imageUrl: group.event?.imageUrl || undefined,
   });
 }
 

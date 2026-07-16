@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { groups, userGroups } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 
 // GET /api/groups/[id]/owner-note
 // 団体オーナーからのお知らせを取得
@@ -11,18 +13,19 @@ export async function GET(
   try {
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
+    const userId = session.user.id;
     const { id } = await params;
 
     // 団体を取得
-    const group = await prisma.group.findUnique({
-      where: { id },
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, id),
     });
 
     if (!group) {
@@ -32,18 +35,20 @@ export async function GET(
       );
     }
 
-    // ユーザーがこの団体に参加しているか確認（複数団体参加対応：UserGroupテーブルを使用）
-    const userGroup = await prisma.userGroup.findUnique({
-      where: {
-        user_id_group_id: {
-          user_id: session.user.id,
-          group_id: id,
-        },
-      },
-    });
+    // ユーザーがこの団体に参加しているか確認
+    const userGroup = await db
+      .select()
+      .from(userGroups)
+      .where(
+        and(
+          eq(userGroups.userId, userId),
+          eq(userGroups.groupId, id)
+        )
+      )
+      .get();
 
     // オーナー（リーダー）の場合はUserGroupに存在しなくてもアクセス可能
-    const isLeader = group.leader_user_id === session.user.id;
+    const isLeader = group.leaderUserId === userId;
     if (!userGroup && !isLeader) {
       return NextResponse.json(
         { error: "You are not a member of this group" },
@@ -54,13 +59,13 @@ export async function GET(
     // オーナーがUserGroupに存在しない場合、UserGroupに追加（データ整合性のため）
     if (isLeader && !userGroup) {
       try {
-        await prisma.userGroup.create({
-          data: {
-            user_id: group.leader_user_id,
-            group_id: id,
-            event_id: group.event_id,
-            status: "INTERESTED",
-          },
+        await db.insert(userGroups).values({
+          userId: group.leaderUserId,
+          groupId: id,
+          eventId: group.eventId,
+          status: "INTERESTED",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         });
       } catch {
         // 既に存在する場合は無視
@@ -69,9 +74,8 @@ export async function GET(
 
     return NextResponse.json(
       {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ownerNote: (group as any).owner_note ?? null,
-        isLeader: group.leader_user_id === session.user.id,
+        ownerNote: group.ownerNote ?? null,
+        isLeader: isLeader,
       },
       {
         headers: {
@@ -97,18 +101,19 @@ export async function PATCH(
   try {
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
+    const userId = session.user.id;
     const { id } = await params;
     const body = await request.json();
     const { ownerNote } = body;
 
-    // ownerNoteは任意（nullまたは文字列）
+    // ownerNoteは任意
     if (ownerNote !== null && ownerNote !== undefined && typeof ownerNote !== "string") {
       return NextResponse.json(
         { error: "ownerNote must be a string or null" },
@@ -117,8 +122,8 @@ export async function PATCH(
     }
 
     // 団体を取得
-    const group = await prisma.group.findUnique({
-      where: { id },
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, id),
     });
 
     if (!group) {
@@ -129,7 +134,7 @@ export async function PATCH(
     }
 
     // オーナーのみ更新可能
-    if (group.leader_user_id !== session.user.id) {
+    if (group.leaderUserId !== userId) {
       return NextResponse.json(
         { error: "Only the group leader can update the owner note" },
         { status: 403 }
@@ -139,18 +144,17 @@ export async function PATCH(
     // 更新（空文字列の場合はnullに変換）
     const noteValue = ownerNote === "" ? null : ownerNote;
 
-    const updatedGroup = await prisma.group.update({
-      where: { id },
-      data: {
-        owner_note: noteValue,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
-    });
+    await db
+      .update(groups)
+      .set({
+        ownerNote: noteValue,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(groups.id, id));
 
     return NextResponse.json(
       {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ownerNote: (updatedGroup as any).owner_note ?? null,
+        ownerNote: noteValue,
       },
       {
         headers: {

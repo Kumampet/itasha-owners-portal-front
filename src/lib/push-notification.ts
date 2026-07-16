@@ -1,5 +1,7 @@
 import webpush from "web-push";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { userNotificationSettings, pushSubscriptions } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // VAPIDキーを環境変数から取得
 const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -22,18 +24,18 @@ export async function sendPushNotification(
 ) {
   try {
     // ユーザーの通知設定を確認
-    const notificationSettings = await prisma.userNotificationSettings.findUnique({
-      where: { user_id: userId },
+    const notificationSettings = await db.query.userNotificationSettings.findFirst({
+      where: eq(userNotificationSettings.userId, userId),
     });
 
-    if (!notificationSettings?.browser_notification_enabled) {
+    if (!notificationSettings?.browserNotificationEnabled) {
       console.log(`[Push Notification] Browser notifications disabled for user ${userId}`);
       return { success: false, reason: "notifications_disabled" };
     }
 
     // ユーザーのプッシュサブスクリプションを取得
-    const subscriptions = await prisma.pushSubscription.findMany({
-      where: { user_id: userId },
+    const subscriptions = await db.query.pushSubscriptions.findMany({
+      where: eq(pushSubscriptions.userId, userId),
     });
 
     if (subscriptions.length === 0) {
@@ -71,9 +73,7 @@ export async function sendPushNotification(
         // 410 (Gone) または 404 (Not Found) の場合はサブスクリプションを削除
         const statusCode = (error as { statusCode?: number })?.statusCode;
         if (statusCode === 410 || statusCode === 404) {
-          await prisma.pushSubscription.delete({
-            where: { id: subscription.id },
-          });
+          await db.delete(pushSubscriptions).where(eq(pushSubscriptions.id, subscription.id));
           console.log(`[Push Notification] Removed invalid subscription ${subscription.id}`);
         }
 
@@ -114,4 +114,3 @@ export async function sendPushNotificationToUsers(
 
   return results;
 }
-

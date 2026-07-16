@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { S3Client, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { Readable } from "stream";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { groups, userGroups, events } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import {
   isGroupImageStorageLocal,
   readLocalGroupImage,
@@ -17,7 +19,7 @@ interface S3Error {
   message?: string;
 }
 
-// S3クライアントの初期化
+// S3クライインターフェースの初期化
 const s3Client = new S3Client({
   region: process.env.APP_AWS_REGION || "ap-northeast-1",
   credentials: process.env.IMAGE_S3_AWS_ACCESS_KEY_ID && process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY
@@ -240,10 +242,11 @@ export async function GET(
 
     if (isEventThumbnail) {
       const eventId = pathParts[3];
-      const event = await prisma.event.findUnique({
-        where: { id: eventId },
-        select: { id: true },
-      });
+      const event = await db
+        .select({ id: events.id })
+        .from(events)
+        .where(eq(events.id, eventId))
+        .get();
 
       if (!event) {
         return NextResponse.json(
@@ -257,7 +260,7 @@ export async function GET(
 
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -272,8 +275,8 @@ export async function GET(
       );
     }
 
-    const group = await prisma.group.findUnique({
-      where: { id: groupId },
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, groupId),
     });
 
     if (!group) {
@@ -283,16 +286,18 @@ export async function GET(
       );
     }
 
-    const userGroup = await prisma.userGroup.findUnique({
-      where: {
-        user_id_group_id: {
-          user_id: session.user.id,
-          group_id: groupId,
-        },
-      },
-    });
+    const userGroup = await db
+      .select()
+      .from(userGroups)
+      .where(
+        and(
+          eq(userGroups.userId, session.user.id),
+          eq(userGroups.groupId, groupId)
+        )
+      )
+      .get();
 
-    const isLeader = group.leader_user_id === session.user.id;
+    const isLeader = group.leaderUserId === session.user.id;
     if (!userGroup && !isLeader) {
       return NextResponse.json(
         { error: "You are not a member of this group" },

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { reminders } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { scheduleExists } from "@/lib/reminder-scheduler";
 
 // GET /api/reminders/[id]/schedule
@@ -22,14 +24,8 @@ export async function GET(
     const userId = session.user.id;
 
     // リマインダーが存在し、ユーザーが所有しているか確認
-    const reminder = await prisma.reminder.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        user_id: true,
-        reminder_data: true,
-        notified: true,
-      },
+    const reminder = await db.query.reminders.findFirst({
+      where: eq(reminders.id, id),
     });
 
     if (!reminder) {
@@ -39,7 +35,7 @@ export async function GET(
       );
     }
 
-    if (reminder.user_id !== userId) {
+    if (reminder.userId !== userId) {
       return NextResponse.json(
         { error: "Forbidden" },
         { status: 403 }
@@ -47,10 +43,13 @@ export async function GET(
     }
 
     // リマインダーデータから通知時刻を取得
-    const reminderData = reminder.reminder_data as {
-      datetime: string;
-      label: string;
-    };
+    let reminderData: any = {};
+    try {
+      reminderData = typeof reminder.reminderData === "string"
+        ? JSON.parse(reminder.reminderData)
+        : reminder.reminderData;
+    } catch {}
+
     const reminderDate = new Date(reminderData.datetime);
     const now = new Date();
 
@@ -81,4 +80,3 @@ export async function GET(
     );
   }
 }
-

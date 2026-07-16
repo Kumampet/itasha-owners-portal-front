@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { groups, userGroups } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import { sanitizeHtmlServer } from "@/lib/server-html-sanitizer";
 
 // GET /api/groups/[id]/description
@@ -12,18 +14,19 @@ export async function GET(
   try {
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
+    const userId = session.user.id;
     const { id } = await params;
 
     // 団体を取得
-    const group = await prisma.group.findUnique({
-      where: { id },
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, id),
     });
 
     if (!group) {
@@ -34,16 +37,20 @@ export async function GET(
     }
 
     // ユーザーがこの団体に参加しているか確認
-    const userGroup = await prisma.userGroup.findUnique({
-      where: {
-        user_id_group_id: {
-          user_id: session.user.id,
-          group_id: id,
-        },
-      },
-    });
+    const userGroup = await db
+      .select()
+      .from(userGroups)
+      .where(
+        and(
+          eq(userGroups.userId, userId),
+          eq(userGroups.groupId, id)
+        )
+      )
+      .get();
 
-    if (!userGroup) {
+    // リーダーの場合はUserGroupにいなくてもアクセス可能
+    const isLeader = group.leaderUserId === userId;
+    if (!userGroup && !isLeader) {
       return NextResponse.json(
         { error: "You are not a member of this group" },
         { status: 403 }
@@ -52,9 +59,8 @@ export async function GET(
 
     return NextResponse.json(
       {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        groupDescription: (group as any).group_description ?? null,
-        isLeader: group.leader_user_id === session.user.id,
+        groupDescription: group.groupDescription ?? null,
+        isLeader: isLeader,
       },
       {
         headers: {
@@ -80,18 +86,19 @@ export async function PATCH(
   try {
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
+    const userId = session.user.id;
     const { id } = await params;
     const body = await request.json();
     const { groupDescription } = body;
 
-    // groupDescriptionは任意（nullまたは文字列）
+    // groupDescriptionは任意
     if (groupDescription !== null && groupDescription !== undefined && typeof groupDescription !== "string") {
       return NextResponse.json(
         { error: "groupDescription must be a string or null" },
@@ -100,8 +107,8 @@ export async function PATCH(
     }
 
     // 団体を取得
-    const group = await prisma.group.findUnique({
-      where: { id },
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, id),
     });
 
     if (!group) {
@@ -112,7 +119,7 @@ export async function PATCH(
     }
 
     // オーナーのみ更新可能
-    if (group.leader_user_id !== session.user.id) {
+    if (group.leaderUserId !== userId) {
       return NextResponse.json(
         { error: "Only the group leader can update the group description" },
         { status: 403 }
@@ -122,10 +129,9 @@ export async function PATCH(
     // 更新（空文字列の場合はnullに変換）
     let descriptionValue = groupDescription === "" ? null : groupDescription;
     
-    // HTMLをサニタイズ（サーバーサイドでもXSS対策）
+    // HTMLをサニタイズ
     if (descriptionValue && typeof descriptionValue === "string") {
       try {
-        // DOCTYPE、html、head、bodyタグを削除（SafeHtmlContent内で表示される部分のみ）
         descriptionValue = descriptionValue
           .replace(/<!DOCTYPE[^>]*>/gi, "")
           .replace(/<html[^>]*>/gi, "")
@@ -136,32 +142,26 @@ export async function PATCH(
           .trim();
         
         descriptionValue = sanitizeHtmlServer(descriptionValue);
-        // サニタイズ後に空文字列になった場合はnullに変換
         if (descriptionValue.trim() === "") {
           descriptionValue = null;
         }
       } catch (sanitizeError) {
         console.error("Error sanitizing HTML:", sanitizeError);
-        const sanitizeErrorMessage = sanitizeError instanceof Error ? sanitizeError.message : String(sanitizeError);
-        const sanitizeErrorStack = sanitizeError instanceof Error ? sanitizeError.stack : undefined;
-        console.error("Sanitize error details:", { sanitizeErrorMessage, sanitizeErrorStack });
-        // サニタイズに失敗した場合はnullに変換（セキュリティのため）
         descriptionValue = null;
       }
     }
 
-    const updatedGroup = await prisma.group.update({
-      where: { id },
-      data: {
-        group_description: descriptionValue,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
-    });
+    await db
+      .update(groups)
+      .set({
+        groupDescription: descriptionValue,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(groups.id, id));
 
     return NextResponse.json(
       {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        groupDescription: (updatedGroup as any).group_description ?? null,
+        groupDescription: descriptionValue,
       },
       {
         headers: {
@@ -172,8 +172,6 @@ export async function PATCH(
   } catch (error) {
     console.error("Error updating group description:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    console.error("Error details:", { errorMessage, errorStack });
     return NextResponse.json(
       { 
         error: "Failed to update group description",

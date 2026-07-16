@@ -1,19 +1,17 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { contactSubmissions } from "@/db/schema";
+import { eq, and, or, asc, desc, like } from "drizzle-orm";
 
 // GET /api/admin/contacts
-// 管理画面用のお問い合わせ一覧取得API（ソート・絞り込み対応）
+// 管理画面用のお問い合わせ一覧取得API
 export async function GET(request: Request) {
   try {
     const session = await auth();
 
-    // 管理者権限チェック
     if (!session || session.user?.role !== "ADMIN") {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -22,66 +20,53 @@ export async function GET(request: Request) {
     const sortOrder = searchParams.get("sortOrder") || "desc";
     const search = searchParams.get("search");
 
-    // フィルター条件を構築
-    const where: Record<string, unknown> = {};
+    const andConditions: any[] = [];
     if (status && status !== "ALL") {
-      where.status = status;
+      andConditions.push(eq(contactSubmissions.status, status));
     }
     if (search) {
-      where.OR = [
-        { title: { contains: search } },
-        { name: { contains: search } },
-        { email: { contains: search } },
-        { content: { contains: search } },
-      ];
+      andConditions.push(
+        or(
+          like(contactSubmissions.title, `%${search}%`),
+          like(contactSubmissions.name, `%${search}%`),
+          like(contactSubmissions.email, `%${search}%`),
+          like(contactSubmissions.content, `%${search}%`)
+        )
+      );
     }
 
-    // ソート条件を構築
-    const orderBy: Record<string, string> = {};
-    if (sortBy === "title") {
-      orderBy.title = sortOrder;
-    } else if (sortBy === "name") {
-      orderBy.name = sortOrder;
-    } else {
-      orderBy.created_at = sortOrder;
-    }
+    let sortCol = contactSubmissions.createdAt;
+    if (sortBy === "title") sortCol = contactSubmissions.title;
+    else if (sortBy === "name") sortCol = contactSubmissions.name;
 
-    const contacts = await prisma.contactSubmission.findMany({
-      where,
-      orderBy,
-      select: {
-        id: true,
-        title: true,
-        name: true,
-        email: true,
-        content: true,
-        status: true,
-        admin_note: true,
-        submitter: {
-          select: {
-            email: true,
-          },
+    const list = await db.query.contactSubmissions.findMany({
+      where: andConditions.length > 0 ? and(...andConditions) : undefined,
+      orderBy: sortOrder === "asc" ? asc(sortCol) : desc(sortCol),
+      with: {
+        user: {
+          columns: { email: true },
         },
-        created_at: true,
-        updated_at: true,
       },
     });
 
-    // 管理画面用のため、privateディレクティブを使用して10秒間キャッシュ
-    return NextResponse.json(
-      contacts,
-      {
-        headers: {
-          "Cache-Control": "private, s-maxage=10, stale-while-revalidate=30",
-        },
-      }
-    );
+    const formatted = list.map((c: any) => ({
+      id: c.id,
+      title: c.title,
+      name: c.name,
+      email: c.email,
+      content: c.content,
+      status: c.status,
+      admin_note: c.adminNote,
+      submitter: c.user ? { email: c.user.email } : null,
+      created_at: new Date(c.createdAt).toISOString(),
+      updated_at: new Date(c.updatedAt).toISOString(),
+    }));
+
+    return NextResponse.json(formatted, {
+      headers: { "Cache-Control": "private, s-maxage=10, stale-while-revalidate=30" },
+    });
   } catch (error) {
     console.error("Error fetching contacts:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch contacts" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch contacts" }, { status: 500 });
   }
 }
-

@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import sharp from "sharp";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { groups, userGroups, events } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import {
   isGroupImageStorageLocal,
-  // writeLocalGroupImage,
 } from "@/lib/group-image-local-store";
 import { deleteEventImageStorage } from "@/lib/event-image-storage";
 
@@ -25,8 +26,8 @@ const ALLOWED_MIME_TYPES = [
   'image/png',
   'image/jpeg',
   'image/jpg',
-  'image/heic',      // iPhone標準形式（iOS 11以降）
-  'image/heif',      // iPhone標準形式
+  'image/heic',
+  'image/heif',
 ];
 
 // 許可する拡張子
@@ -34,17 +35,13 @@ const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.heic', '.heif'];
 
 // ファイルタイプ検証
 function isValidImageFile(file: File): boolean {
-  // MIMEタイプで検証
   if (ALLOWED_MIME_TYPES.includes(file.type.toLowerCase())) {
     return true;
   }
-
-  // 拡張子で検証（MIMEタイプが不明な場合）
   const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
   if (ALLOWED_EXTENSIONS.includes(extension)) {
     return true;
   }
-
   return false;
 }
 
@@ -149,13 +146,13 @@ async function putOptimizedImage(
   await s3Client.send(putCommand);
 }
 
-// POST /api/upload/image?groupId=xxx | POST /api/upload/image?eventId=xxx
+// POST /api/upload/image
 // 画像ファイルをアップロード
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -216,8 +213,8 @@ export async function POST(request: NextRequest) {
     let contentType: "image/jpeg" | "image/png";
 
     if (groupId) {
-      const group = await prisma.group.findUnique({
-        where: { id: groupId },
+      const group = await db.query.groups.findFirst({
+        where: eq(groups.id, groupId),
       });
 
       if (!group) {
@@ -227,16 +224,18 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const userGroup = await prisma.userGroup.findUnique({
-        where: {
-          user_id_group_id: {
-            user_id: session.user.id,
-            group_id: groupId,
-          },
-        },
-      });
+      const userGroup = await db
+        .select()
+        .from(userGroups)
+        .where(
+          and(
+            eq(userGroups.userId, session.user.id),
+            eq(userGroups.groupId, groupId)
+          )
+        )
+        .get();
 
-      const isLeader = group.leader_user_id === session.user.id;
+      const isLeader = group.leaderUserId === session.user.id;
       if (!userGroup && !isLeader) {
         return NextResponse.json(
           { error: "You are not a member of this group" },
@@ -260,10 +259,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const event = await prisma.event.findUnique({
-        where: { id },
-        select: { id: true, created_by_user_id: true },
-      });
+      const event = await db
+        .select({ id: events.id, createdByUserId: events.createdByUserId })
+        .from(events)
+        .where(eq(events.id, id))
+        .get();
 
       if (!event) {
         return NextResponse.json(
@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
 
       if (
         session.user.role === "ORGANIZER" &&
-        event.created_by_user_id !== session.user.id
+        event.createdByUserId !== session.user.id
       ) {
         return NextResponse.json(
           { error: "Unauthorized" },

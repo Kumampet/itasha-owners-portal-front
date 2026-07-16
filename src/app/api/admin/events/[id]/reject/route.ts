@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { events } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // POST /api/admin/events/[id]/reject
 // イベント却下API
@@ -20,18 +22,40 @@ export async function POST(
     }
 
     const { id } = await params;
+    const nowStr = new Date().toISOString();
 
-    const event = await prisma.event.update({
-      where: { id },
-      data: { approval_status: "REJECTED" },
+    await db
+      .update(events)
+      .set({
+        approvalStatus: "REJECTED",
+        updatedAt: nowStr,
+      })
+      .where(eq(events.id, id));
+
+    const event = await db.query.events.findFirst({
+      where: eq(events.id, id),
     });
 
-    // キャッシュを無効化（一覧と個別イベントの両方）
+    if (!event) {
+      return NextResponse.json(
+        { error: "Event not found" },
+        { status: 404 }
+      );
+    }
+
+    // キャッシュを無効化
     const { revalidateTag } = await import("next/cache");
     revalidateTag("events", {});
     revalidateTag(`event-${id}`, {});
 
-    return NextResponse.json(event);
+    const resObj = {
+      id: event.id,
+      name: event.name,
+      approval_status: event.approvalStatus,
+      updated_at: new Date(event.updatedAt).toISOString(),
+    };
+
+    return NextResponse.json(resObj);
   } catch (error) {
     console.error("Error rejecting event:", error);
     return NextResponse.json(
@@ -40,4 +64,3 @@ export async function POST(
     );
   }
 }
-

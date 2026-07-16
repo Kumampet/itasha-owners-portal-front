@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { users, organizerApplications } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // POST /api/admin/organizer-applications/[id]/approve
 // オーガナイザー申請承認API
@@ -22,8 +24,8 @@ export async function POST(
     const { id } = await params;
 
     // 申請を取得
-    const application = await prisma.organizerApplication.findUnique({
-      where: { id },
+    const application = await db.query.organizerApplications.findFirst({
+      where: eq(organizerApplications.id, id),
     });
 
     if (!application) {
@@ -41,9 +43,11 @@ export async function POST(
     }
 
     // 既存ユーザーを確認
-    const existingUser = await prisma.user.findUnique({
-      where: { email: application.email },
-    });
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, application.email))
+      .get();
 
     if (!existingUser) {
       return NextResponse.json(
@@ -60,27 +64,35 @@ export async function POST(
       );
     }
 
-    // 一般ユーザーの場合、権限をオーガナイザーに変更
-    const user = await prisma.user.update({
-      where: { id: existingUser.id },
-      data: {
-        role: "ORGANIZER",
-        display_name: application.display_name,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-      },
-    });
+    // トランザクションでユーザー権限変更と申請承認を同時に実行
+    const user = await db.transaction(async (tx) => {
+      await tx
+        .update(users)
+        .set({
+          role: "ORGANIZER",
+          displayName: application.displayName,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(users.id, existingUser.id));
 
-    // 申請ステータスを承認済みに更新
-    await prisma.organizerApplication.update({
-      where: { id },
-      data: {
-        status: "APPROVED",
-      },
+      await tx
+        .update(organizerApplications)
+        .set({
+          status: "APPROVED",
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(organizerApplications.id, id));
+
+      return await tx
+        .select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          role: users.role,
+        })
+        .from(users)
+        .where(eq(users.id, existingUser.id))
+        .get();
     });
 
     return NextResponse.json({ success: true, user });
@@ -92,4 +104,3 @@ export async function POST(
     );
   }
 }
-

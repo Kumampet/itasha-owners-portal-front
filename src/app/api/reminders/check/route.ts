@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { reminders } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // GET /api/reminders/check
 // 通知時刻になったリマインダーをチェックして通知を送信
 // このエンドポイントは定期的に呼び出される（cronジョブなど）
-// TODO: 通知機能（プッシュ通知・メール通知）を削除しました。将来的に再実装する場合は、ここに通知送信ロジックを追加してください。
 export async function GET(request: Request) {
   try {
-    // 認証チェック（オプション: 環境変数でAPIキーを設定）
+    // 認証チェック
     const authHeader = request.headers.get("authorization");
     const apiKey = process.env.REMINDER_CHECK_API_KEY;
     
@@ -20,23 +21,20 @@ export async function GET(request: Request) {
 
     const now = new Date();
     // 通知時刻を過ぎたリマインダーを取得（まだ通知していないもの）
-    // 過去のリマインダーも含める（最大1時間前まで。それより古いものは削除済み）
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
     
-    // 通知時刻になったリマインダーを取得（まだ通知していないもの）
-    const reminders = await prisma.reminder.findMany({
-      where: {
-        notified: false,
-      },
-      include: {
+    // 通知時刻になっていないリマインダーをすべて取得（まだ通知していないもの）
+    const remindersList = await db.query.reminders.findMany({
+      where: eq(reminders.notified, false),
+      with: {
         user: {
-          select: {
+          columns: {
             id: true,
             email: true,
           },
         },
         event: {
-          select: {
+          columns: {
             id: true,
             name: true,
           },
@@ -44,21 +42,24 @@ export async function GET(request: Request) {
       },
     });
 
-    console.log(`[Reminder Check] Found ${reminders.length} un-notified reminders`);
+    console.log(`[Reminder Check] Found ${remindersList.length} un-notified reminders`);
     console.log(`[Reminder Check] Current time: ${now.toISOString()}`);
     console.log(`[Reminder Check] Checking reminders from ${oneHourAgo.toISOString()} to ${now.toISOString()}`);
 
     // リマインダーデータからdatetimeを取得してフィルタリング
     // 通知時刻を過ぎたリマインダーを対象（過去1時間以内のもの）
-    const dueReminders = reminders.filter((reminder) => {
+    const dueReminders = remindersList.filter((reminder) => {
       try {
-        const reminderData = reminder.reminder_data as {
-          datetime: string;
-          label: string;
-        };
+        let reminderData: any = {};
+        if (typeof reminder.reminderData === "string") {
+          reminderData = JSON.parse(reminder.reminderData);
+        } else {
+          reminderData = reminder.reminderData;
+        }
+
         const reminderDate = new Date(reminderData.datetime);
         
-        // デバッグ: すべてのリマインダーの情報をログに出力
+        // デバッグログを出力
         const timeDiffMinutes = Math.round((reminderDate.getTime() - now.getTime()) / 1000 / 60);
         console.log(`[Reminder Check] Reminder ${reminder.id}:`, {
           datetime: reminderData.datetime,
@@ -68,8 +69,6 @@ export async function GET(request: Request) {
           timeDiffMinutes: timeDiffMinutes,
         });
         
-        // 通知時刻を過ぎたリマインダーを対象（過去1時間以内のもの）
-        // これにより、通知時刻を過ぎたリマインダーが確実に通知される
         const isDue = reminderDate <= now && reminderDate >= oneHourAgo;
         if (isDue) {
           console.log(`[Reminder Check] ✅ Found due reminder: ${reminder.id}, datetime: ${reminderData.datetime}, label: ${reminderData.label}, timeDiff: ${timeDiffMinutes} minutes`);
@@ -85,17 +84,15 @@ export async function GET(request: Request) {
 
     for (const reminder of dueReminders) {
       try {
-        // TODO: 通知送信機能を削除しました。将来的に再実装する場合は、ここに通知送信ロジックを追加してください。
-        // 現在は通知送信済みフラグのみを更新します。
-
         // 通知送信済みフラグを更新
-        await prisma.reminder.update({
-          where: { id: reminder.id },
-          data: {
+        await db
+          .update(reminders)
+          .set({
             notified: true,
-            notified_at: now,
-          },
-        });
+            notifiedAt: now.toISOString(),
+            updatedAt: now.toISOString(),
+          })
+          .where(eq(reminders.id, reminder.id));
 
         results.push({
           reminderId: reminder.id,
@@ -112,7 +109,7 @@ export async function GET(request: Request) {
     }
 
     const response = {
-      checked: reminders.length,
+      checked: remindersList.length,
       due: dueReminders.length,
       sent: results.filter((r) => r.success).length,
       failed: results.filter((r) => !r.success).length,
@@ -120,9 +117,9 @@ export async function GET(request: Request) {
       timestamp: now.toISOString(),
     };
 
-    console.log(`[Reminder Check] Checked ${reminders.length} reminders, ${dueReminders.length} due, ${response.sent} processed, ${response.failed} failed`);
+    console.log(`[Reminder Check] Checked ${remindersList.length} reminders, ${dueReminders.length} due, ${response.sent} processed, ${response.failed} failed`);
 
-    // 処理系のエンドポイントでリアルタイム性が重要なのでキャッシュを無効にする
+    // キャッシュを無効にする
     return NextResponse.json(
       response,
       {

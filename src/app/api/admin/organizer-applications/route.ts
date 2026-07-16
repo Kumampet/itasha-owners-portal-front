@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { organizerApplications } from "@/db/schema";
+import { eq, and, or, asc, desc, like } from "drizzle-orm";
 
 // GET /api/admin/organizer-applications
 // オーガナイザー申請一覧取得API
@@ -22,52 +24,59 @@ export async function GET(request: Request) {
     const sortOrder = searchParams.get("sortOrder") || "desc";
     const search = searchParams.get("search");
 
-    // フィルター条件を構築
-    const where: Record<string, unknown> = {};
+    const andConditions = [];
     if (status && status !== "ALL") {
-      where.status = status;
+      andConditions.push(eq(organizerApplications.status, status));
     }
     if (search) {
-      where.OR = [
-        { display_name: { contains: search } },
-        { email: { contains: search } },
-        { experience: { contains: search } },
-      ];
+      andConditions.push(
+        or(
+          like(organizerApplications.displayName, `%${search}%`),
+          like(organizerApplications.email, `%${search}%`),
+          like(organizerApplications.experience, `%${search}%`)
+        )
+      );
     }
 
-    // ソート条件を構築
-    const orderBy: Record<string, string> = {};
+    let sortCol = organizerApplications.createdAt;
     if (sortBy === "display_name") {
-      orderBy.display_name = sortOrder;
+      sortCol = organizerApplications.displayName;
     } else if (sortBy === "email") {
-      orderBy.email = sortOrder;
-    } else {
-      orderBy.created_at = sortOrder;
+      sortCol = organizerApplications.email;
     }
 
-    const applications = await prisma.organizerApplication.findMany({
-      where,
-      orderBy,
-      select: {
-        id: true,
-        display_name: true,
-        email: true,
-        experience: true,
-        status: true,
-        admin_note: true,
-        applicant: {
-          select: {
+    const list = await db.query.organizerApplications.findMany({
+      where: andConditions.length > 0 ? and(...andConditions) : undefined,
+      orderBy: sortOrder === "asc" ? asc(sortCol) : desc(sortCol),
+      with: {
+        user: { // applicant
+          columns: {
             email: true,
           },
         },
-        created_at: true,
-        updated_at: true,
       },
+    });
+
+    // レスポンス整形
+    const formatted = list.map((app: any) => {
+      return {
+        id: app.id,
+        display_name: app.displayName,
+        email: app.email,
+        experience: app.experience,
+        status: app.status,
+        admin_note: app.adminNote,
+        applicant: app.user ? {
+          email: app.user.email,
+        } : null,
+        created_at: new Date(app.createdAt).toISOString(),
+        updated_at: new Date(app.updatedAt).toISOString(),
+      };
     });
 
     // 管理画面用のため、privateディレクティブを使用して10秒間キャッシュ
     return NextResponse.json(
-      applications,
+      formatted,
       {
         headers: {
           "Cache-Control": "private, s-maxage=10, stale-while-revalidate=30",
@@ -77,12 +86,9 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Error fetching organizer applications:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    console.error("Error details:", { errorMessage, errorStack });
     return NextResponse.json(
       { error: "Failed to fetch organizer applications", details: errorMessage },
       { status: 500 }
     );
   }
 }
-

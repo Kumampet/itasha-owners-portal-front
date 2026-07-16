@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { events } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { scheduleMergeApprovedEventIntoSitemapOnS3 } from "@/lib/events-sitemap-s3";
 import { notifyDiscordEventApproved } from "@/lib/discord-admin-notify";
 
@@ -22,28 +24,50 @@ export async function POST(
     }
 
     const { id } = await params;
+    const nowStr = new Date().toISOString();
 
-    const event = await prisma.event.update({
-      where: { id },
-      data: { approval_status: "APPROVED" },
+    await db
+      .update(events)
+      .set({
+        approvalStatus: "APPROVED",
+        updatedAt: nowStr,
+      })
+      .where(eq(events.id, id));
+
+    const event = await db.query.events.findFirst({
+      where: eq(events.id, id),
     });
 
-    scheduleMergeApprovedEventIntoSitemapOnS3(event.id, event.updated_at);
+    if (!event) {
+      return NextResponse.json(
+        { error: "Event not found" },
+        { status: 404 }
+      );
+    }
+
+    scheduleMergeApprovedEventIntoSitemapOnS3(event.id, new Date(event.updatedAt));
 
     notifyDiscordEventApproved({
       eventId: event.id,
       eventName: event.name,
-      eventDateLabel: event.event_date.toLocaleDateString("ja-JP", {
+      eventDateLabel: new Date(event.eventDate).toLocaleDateString("ja-JP", {
         timeZone: "Asia/Tokyo",
       }),
     });
 
-    // キャッシュを無効化（一覧と個別イベントの両方）
+    // キャッシュを無効化
     const { revalidateTag } = await import("next/cache");
     revalidateTag("events", {});
     revalidateTag(`event-${id}`, {});
 
-    return NextResponse.json(event);
+    const resObj = {
+      id: event.id,
+      name: event.name,
+      approval_status: event.approvalStatus,
+      updated_at: new Date(event.updatedAt).toISOString(),
+    };
+
+    return NextResponse.json(resObj);
   } catch (error) {
     console.error("Error approving event:", error);
     return NextResponse.json(
@@ -52,4 +76,3 @@ export async function POST(
     );
   }
 }
-

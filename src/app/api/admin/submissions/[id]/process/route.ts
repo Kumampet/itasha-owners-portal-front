@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { eventSubmissions } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // POST /api/admin/submissions/[id]/process
 // 情報提供の処理ステータスを更新するAPI
@@ -29,32 +31,55 @@ export async function POST(
       );
     }
 
-    const submission = await prisma.eventSubmission.update({
-      where: { id },
-      data: { status: body.status },
-      select: {
-        id: true,
-        name: true,
-        venue_name: true,
-        theme: true,
-        description: true,
-        original_url: true,
-        event_date: true,
-        entry_start_at: true,
-        payment_due_at: true,
-        status: true,
-        admin_note: true,
-        submitter_email: true,
-        submitter: {
-          select: {
+    const nowStr = new Date().toISOString();
+
+    await db
+      .update(eventSubmissions)
+      .set({
+        status: body.status,
+        updatedAt: nowStr,
+      })
+      .where(eq(eventSubmissions.id, id));
+
+    const submission = await db.query.eventSubmissions.findFirst({
+      where: eq(eventSubmissions.id, id),
+      with: {
+        user: { // submitter
+          columns: {
             email: true,
           },
         },
-        created_at: true,
       },
     });
 
-    return NextResponse.json(submission);
+    if (!submission) {
+      return NextResponse.json(
+        { error: "Submission not found" },
+        { status: 404 }
+      );
+    }
+
+    // レスポンス整形
+    const formatted = {
+      id: submission.id,
+      name: submission.name,
+      venue_name: submission.venueName,
+      theme: submission.theme,
+      description: submission.description,
+      original_url: submission.originalUrl,
+      event_date: submission.eventDate ? new Date(submission.eventDate).toISOString() : null,
+      entry_start_at: submission.entryStartAt ? new Date(submission.entryStartAt).toISOString() : null,
+      payment_due_at: submission.paymentDueAt ? new Date(submission.paymentDueAt).toISOString() : null,
+      status: submission.status,
+      admin_note: submission.adminNote,
+      submitter_email: submission.submitterEmail,
+      submitter: submission.user ? {
+        email: submission.user.email,
+      } : null,
+      created_at: new Date(submission.createdAt).toISOString(),
+    };
+
+    return NextResponse.json(formatted);
   } catch (error) {
     console.error("Error processing submission:", error);
     return NextResponse.json(
@@ -63,4 +88,3 @@ export async function POST(
     );
   }
 }
-

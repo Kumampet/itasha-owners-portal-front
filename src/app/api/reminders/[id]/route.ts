@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { reminders, events } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import { updateReminderSchedule, deleteReminderSchedule } from "@/lib/reminder-scheduler";
 
 // GET /api/reminders/[id]
@@ -21,15 +23,15 @@ export async function GET(
     const { id } = await params;
     const userId = session.user.id;
 
-    const reminder = await prisma.reminder.findUnique({
-      where: { id },
-      include: {
+    const reminder = await db.query.reminders.findFirst({
+      where: eq(reminders.id, id),
+      with: {
         event: {
-          select: {
+          columns: {
             id: true,
             name: true,
-            event_date: true,
-            official_urls: true,
+            eventDate: true,
+            officialUrls: true,
           },
         },
       },
@@ -43,23 +45,28 @@ export async function GET(
     }
 
     // 自分のリマインダーか確認
-    if (reminder.user_id !== userId) {
+    if (reminder.userId !== userId) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 403 }
       );
     }
 
-    const reminderData = reminder.reminder_data as {
-      type: string;
-      datetime: string;
-      label: string;
-      event_id: string | null;
-      event_name: string | null;
-    };
+    let reminderData: any = {};
+    try {
+      reminderData = typeof reminder.reminderData === "string"
+        ? JSON.parse(reminder.reminderData)
+        : reminder.reminderData;
+    } catch {}
 
-    // official_urlsは配列なので、最初のURLをoriginal_urlとして返す（後方互換性のため）
-    const officialUrls = reminder.event?.official_urls as string[] | null;
+    let officialUrls: string[] | null = null;
+    try {
+      if (reminder.event?.officialUrls) {
+        officialUrls = typeof reminder.event.officialUrls === "string"
+          ? JSON.parse(reminder.event.officialUrls)
+          : reminder.event.officialUrls;
+      }
+    } catch {}
     const firstUrl = officialUrls && officialUrls.length > 0 ? officialUrls[0] : null;
 
     // ユーザー固有データのため、privateディレクティブを使用して5秒間キャッシュ
@@ -69,7 +76,7 @@ export async function GET(
         event: reminder.event ? {
           id: reminder.event.id,
           name: reminder.event.name,
-          event_date: reminder.event.event_date,
+          event_date: new Date(reminder.event.eventDate).toISOString(),
           original_url: firstUrl,
         } : null,
         type: reminderData.type,
@@ -77,8 +84,8 @@ export async function GET(
         label: reminderData.label,
         note: reminder.note,
         notified: reminder.notified,
-        notified_at: reminder.notified_at,
-        created_at: reminder.created_at,
+        notified_at: reminder.notifiedAt ? new Date(reminder.notifiedAt).toISOString() : null,
+        created_at: new Date(reminder.createdAt).toISOString(),
       },
       {
         headers: {
@@ -113,8 +120,8 @@ export async function PATCH(
     const { id } = await params;
     const userId = session.user.id;
 
-    const reminder = await prisma.reminder.findUnique({
-      where: { id },
+    const reminder = await db.query.reminders.findFirst({
+      where: eq(reminders.id, id),
     });
 
     if (!reminder) {
@@ -125,7 +132,7 @@ export async function PATCH(
     }
 
     // 自分のリマインダーか確認
-    if (reminder.user_id !== userId) {
+    if (reminder.userId !== userId) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 403 }
@@ -136,15 +143,18 @@ export async function PATCH(
     const { label, datetime, event_id, note } = body;
 
     // event_idが指定されている場合のみイベント情報を取得
-    let event = null;
+    let event: any = null;
     if (event_id) {
-      event = await prisma.event.findUnique({
-        where: { id: event_id },
-        select: {
-          id: true,
-          name: true,
-        },
-      });
+      event = await db
+        .select({
+          id: events.id,
+          name: events.name,
+          eventDate: events.eventDate,
+          officialUrls: events.officialUrls,
+        })
+        .from(events)
+        .where(eq(events.id, event_id))
+        .get();
 
       if (!event) {
         return NextResponse.json(
@@ -154,91 +164,79 @@ export async function PATCH(
       }
     }
 
-    // リマインダーデータを更新
-    const reminderData = reminder.reminder_data as {
-      type: string;
-      datetime: string;
-      label: string;
-      event_id: string | null;
-      event_name: string | null;
+    let reminderData: any = {};
+    try {
+      reminderData = typeof reminder.reminderData === "string"
+        ? JSON.parse(reminder.reminderData)
+        : reminder.reminderData;
+    } catch {}
+
+    const newReminderData = {
+      type: reminderData.type || "custom",
+      datetime: datetime,
+      label: label,
+      event_id: event_id || null,
+      event_name: event?.name || null,
     };
 
-    const updatedReminder = await prisma.reminder.update({
-      where: { id },
-      data: {
-        event_id: event_id || null,
-        reminder_data: {
-          type: reminderData.type || "custom",
-          datetime: datetime,
-          label: label,
-          event_id: event_id || null,
-          event_name: event?.name || null,
-        },
+    // リマインダーを更新
+    await db
+      .update(reminders)
+      .set({
+        eventId: event_id || null,
+        reminderData: JSON.stringify(newReminderData),
         note: note || null,
-      },
-      include: {
-        event: event ? {
-          select: {
-            id: true,
-            name: true,
-            event_date: true,
-            official_urls: true,
-          },
-        } : false,
-      },
-    });
-
-    const updatedReminderData = updatedReminder.reminder_data as {
-      type: string;
-      datetime: string;
-      label: string;
-      event_id: string | null;
-      event_name: string | null;
-    };
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(reminders.id, id));
 
     // EventBridge Schedulerのスケジュールを更新（通知時刻が未来の場合のみ）
-    const reminderDate = new Date(updatedReminderData.datetime);
-    if (reminderDate > new Date() && !updatedReminder.notified) {
+    const reminderDate = new Date(newReminderData.datetime);
+    if (reminderDate > new Date() && !reminder.notified) {
       try {
-        const scheduleResult = await updateReminderSchedule(updatedReminder.id, reminderDate);
+        const scheduleResult = await updateReminderSchedule(id, reminderDate);
         if (!scheduleResult.success) {
-          console.warn(`[Reminder API] Failed to update schedule for reminder ${updatedReminder.id}: ${scheduleResult.error}`);
-          // スケジュール更新に失敗してもリマインダー更新は成功とする
+          console.warn(`[Reminder API] Failed to update schedule for reminder ${id}: ${scheduleResult.error}`);
         }
       } catch (error) {
-        console.error(`[Reminder API] Error updating schedule for reminder ${updatedReminder.id}:`, error);
-        // スケジュール更新に失敗してもリマインダー更新は成功とする
+        console.error(`[Reminder API] Error updating schedule for reminder ${id}:`, error);
       }
-    } else if (reminderDate <= new Date() || updatedReminder.notified) {
+    } else if (reminderDate <= new Date() || reminder.notified) {
       // 過去のリマインダーまたは既に通知済みの場合はスケジュールを削除
       try {
-        await deleteReminderSchedule(updatedReminder.id);
+        await deleteReminderSchedule(id);
       } catch (error) {
-        console.error(`[Reminder API] Error deleting schedule for reminder ${updatedReminder.id}:`, error);
+        console.error(`[Reminder API] Error deleting schedule for reminder ${id}:`, error);
       }
     }
 
-    // official_urlsは配列なので、最初のURLをoriginal_urlとして返す（後方互換性のため）
-    const updatedOfficialUrls = updatedReminder.event?.official_urls as string[] | null;
-    const updatedFirstUrl = updatedOfficialUrls && updatedOfficialUrls.length > 0 ? updatedOfficialUrls[0] : null;
+    let officialUrls: string[] | null = null;
+    try {
+      if (event?.officialUrls) {
+        officialUrls = typeof event.officialUrls === "string"
+          ? JSON.parse(event.officialUrls)
+          : event.officialUrls;
+      }
+    } catch {}
+    const updatedFirstUrl = officialUrls && officialUrls.length > 0 ? officialUrls[0] : null;
 
     // 書き込み操作で即座に反映が必要なのでキャッシュを無効にする
     return NextResponse.json(
       {
-        id: updatedReminder.id,
-        event: updatedReminder.event ? {
-          id: updatedReminder.event.id,
-          name: updatedReminder.event.name,
-          event_date: updatedReminder.event.event_date,
+        id: id,
+        event: event ? {
+          id: event.id,
+          name: event.name,
+          event_date: new Date(event.eventDate).toISOString(),
           original_url: updatedFirstUrl,
         } : null,
-        type: updatedReminderData.type,
-        datetime: updatedReminderData.datetime,
-        label: updatedReminderData.label,
-        note: updatedReminder.note,
-        notified: updatedReminder.notified,
-        notified_at: updatedReminder.notified_at,
-        created_at: updatedReminder.created_at,
+        type: newReminderData.type,
+        datetime: newReminderData.datetime,
+        label: newReminderData.label,
+        note: note || null,
+        notified: reminder.notified,
+        notified_at: reminder.notifiedAt ? new Date(reminder.notifiedAt).toISOString() : null,
+        created_at: new Date(reminder.createdAt).toISOString(),
       },
       {
         headers: {
@@ -273,8 +271,8 @@ export async function DELETE(
     const { id } = await params;
     const userId = session.user.id;
 
-    const reminder = await prisma.reminder.findUnique({
-      where: { id },
+    const reminder = await db.query.reminders.findFirst({
+      where: eq(reminders.id, id),
     });
 
     if (!reminder) {
@@ -285,7 +283,7 @@ export async function DELETE(
     }
 
     // 自分のリマインダーか確認
-    if (reminder.user_id !== userId) {
+    if (reminder.userId !== userId) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 403 }
@@ -297,12 +295,9 @@ export async function DELETE(
       await deleteReminderSchedule(id);
     } catch (error) {
       console.error(`[Reminder API] Error deleting schedule for reminder ${id}:`, error);
-      // スケジュール削除に失敗してもリマインダー削除は続行
     }
 
-    await prisma.reminder.delete({
-      where: { id },
-    });
+    await db.delete(reminders).where(eq(reminders.id, id));
 
     // 書き込み操作で即座に反映が必要なのでキャッシュを無効にする
     return NextResponse.json(
@@ -321,4 +316,3 @@ export async function DELETE(
     );
   }
 }
-

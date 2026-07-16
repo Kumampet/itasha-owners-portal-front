@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { organizerApplications } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // POST /api/admin/organizer-applications/[id]/reject
 // オーガナイザー申請却下API
@@ -22,8 +24,8 @@ export async function POST(
     const { id } = await params;
 
     // 申請を取得
-    const application = await prisma.organizerApplication.findUnique({
-      where: { id },
+    const application = await db.query.organizerApplications.findFirst({
+      where: eq(organizerApplications.id, id),
     });
 
     if (!application) {
@@ -41,14 +43,13 @@ export async function POST(
     }
 
     // 申請ステータスを却下に更新
-    await prisma.organizerApplication.update({
-      where: { id },
-      data: {
+    await db
+      .update(organizerApplications)
+      .set({
         status: "REJECTED",
-      },
-    });
-
-    // TODO: 却下通知メールを送信する場合はここに追加
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(organizerApplications.id, id));
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -59,4 +60,3 @@ export async function POST(
     );
   }
 }
-

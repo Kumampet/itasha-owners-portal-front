@@ -1,4 +1,3 @@
-// import fs from "node:fs/promises";
 import path from "node:path";
 import {
   GetObjectCommand,
@@ -11,7 +10,9 @@ import {
   parseUrlsetLocToLastmod,
   type SitemapUrlEntry,
 } from "@/lib/sitemap-xml";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { events } from "@/db/schema";
+import { eq, asc } from "drizzle-orm";
 import {
   getLocalBundledStorageRoot,
   isLocalBundledStorageEnabled,
@@ -80,14 +81,18 @@ export function isDatabaseBackedEventsSitemapEnabled(): boolean {
 }
 
 export async function buildApprovedEventsSitemapXmlFromDatabase(): Promise<string> {
-  const events = await prisma.event.findMany({
-    where: { approval_status: "APPROVED" },
-    select: { id: true, updated_at: true },
-    orderBy: { updated_at: "asc" },
-  });
-  const entries: SitemapUrlEntry[] = events.map((e) => ({
+  const eventsList = await db
+    .select({
+      id: events.id,
+      updatedAt: events.updatedAt,
+    })
+    .from(events)
+    .where(eq(events.approvalStatus, "APPROVED"))
+    .orderBy(asc(events.updatedAt));
+
+  const entries: SitemapUrlEntry[] = eventsList.map((e) => ({
     loc: eventDetailPublicUrl(e.id),
-    lastmod: e.updated_at.toISOString(),
+    lastmod: new Date(e.updatedAt).toISOString(),
   }));
   return buildUrlsetXml(entries);
 }
@@ -246,7 +251,7 @@ export async function syncApprovedEventsSitemapFromDbEvents(
     const xml = buildUrlsetXml(entries);
     await writeLocalEventsSitemapSnapshotFile(xml);
     console.log(
-      `[events-sitemap] ローカルモード: 承認済み ${merged.length} 件を DB 構成で local-storage/${DEFAULT_EVENTS_SITEMAP_S3_KEY} に書き込み済み`,
+      `[events-sitemap] ローカルモード: 承認済み ${merged.length} 件を DB 構成で local-storage/events-sitemap.xml に書き込み済み`,
     );
     return;
   }

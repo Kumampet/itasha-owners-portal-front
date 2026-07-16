@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { groups, userGroups, userEvents, groupMessages, groupMessageReactions, groupMessageReads } from "@/db/schema";
+import { eq, and, inArray } from "drizzle-orm";
 import {
-  deleteLocalGroupImagesByGroupId,
   isGroupImageStorageLocal,
 } from "@/lib/group-image-local-store";
 import { S3Client, ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
@@ -78,9 +79,7 @@ async function deleteGroupImages(groupId: string): Promise<void> {
       continuationToken = listResponse.NextContinuationToken;
     } while (continuationToken);
   } catch (error) {
-    // S3削除エラーはログに記録するが、団体削除は続行する
     console.error(`Error deleting images for group ${groupId}:`, error);
-    // エラーが発生しても団体削除は続行する（画像は後で手動削除可能）
   }
 }
 
@@ -95,27 +94,22 @@ export async function GET(
     const { id } = await params;
 
     // 団体を取得
-    const group = await prisma.group.findUnique({
-      where: { id },
-      include: {
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, id),
+      with: {
         event: {
-          select: {
+          columns: {
             id: true,
             name: true,
-            event_date: true,
+            eventDate: true,
           },
         },
-        leader: {
-          select: {
+        user: { // leader
+          columns: {
             id: true,
             name: true,
-            display_name: true,
+            displayName: true,
             email: true,
-          },
-        },
-        _count: {
-          select: {
-            user_groups: true,
           },
         },
       },
@@ -131,30 +125,32 @@ export async function GET(
     // ログインしている場合のみ、メンバーシップチェックとisLeaderを設定
     let isLeader = false;
     let userGroup = null;
-    if (session && session.user) {
-      // ユーザーがこの団体に参加しているか確認（複数団体参加対応：UserGroupテーブルを使用）
-      userGroup = await prisma.userGroup.findUnique({
-        where: {
-          user_id_group_id: {
-            user_id: session.user.id,
-            group_id: id,
-          },
-        },
-      });
+    const sessionUserId = session?.user?.id;
+    if (sessionUserId) {
+      userGroup = await db
+        .select()
+        .from(userGroups)
+        .where(
+          and(
+            eq(userGroups.userId, sessionUserId),
+            eq(userGroups.groupId, id)
+          )
+        )
+        .get();
 
       // オーナー（リーダー）の場合はUserGroupに存在しなくてもアクセス可能
-      isLeader = group.leader_user_id === session.user.id;
+      isLeader = group.leaderUserId === sessionUserId;
 
       // オーナーがUserGroupに存在しない場合、UserGroupに追加（データ整合性のため）
       if (isLeader && !userGroup) {
         try {
-          await prisma.userGroup.create({
-            data: {
-              user_id: group.leader_user_id,
-              group_id: id,
-              event_id: group.event_id,
-              status: "INTERESTED",
-            },
+          await db.insert(userGroups).values({
+            userId: group.leaderUserId,
+            groupId: id,
+            eventId: group.eventId,
+            status: "INTERESTED",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           });
         } catch {
           // 既に存在する場合は無視
@@ -162,53 +158,59 @@ export async function GET(
       }
     }
 
-    // メンバー一覧を取得（UserGroupテーブルから）
-    const groupMembers = await prisma.userGroup.findMany({
-      where: {
-        group_id: id,
-      },
-      include: {
+    // メンバー一覧を取得
+    const groupMembers = await db.query.userGroups.findMany({
+      where: eq(userGroups.groupId, id),
+      with: {
         user: {
-          select: {
+          columns: {
             id: true,
             name: true,
-            display_name: true,
+            displayName: true,
             email: true,
           },
         },
       },
     });
 
+    const leader = group.user || {
+      id: group.leaderUserId,
+      name: "リーダー",
+      displayName: null,
+      email: null,
+    };
+
     // リーダーがUserGroupに存在しない場合、リーダーもメンバー一覧に追加
-    const leaderInMembers = groupMembers.some((gm) => gm.user_id === group.leader_user_id);
-    const membersList = groupMembers.map((gm) => ({
-      id: gm.user.id,
-      name: gm.user.name,
-      displayName: gm.user.display_name,
-      email: gm.user.email,
-      status: gm.status,
-    }));
+    const leaderInMembers = groupMembers.some((gm: any) => gm.userId === group.leaderUserId);
+    const membersList = groupMembers
+      .filter((gm: any) => gm.user !== null)
+      .map((gm: any) => ({
+        id: gm.user.id,
+        name: gm.user.name,
+        displayName: gm.user.displayName,
+        email: gm.user.email,
+        status: gm.status,
+      }));
 
     if (!leaderInMembers) {
-      // リーダーをメンバー一覧に追加
       membersList.push({
-        id: group.leader.id,
-        name: group.leader.name,
-        displayName: group.leader.display_name,
-        email: group.leader.email,
+        id: leader.id,
+        name: leader.name,
+        displayName: leader.displayName,
+        email: leader.email,
         status: "INTERESTED",
       });
 
-      // ログインしている場合のみ、リーダーをUserGroupに追加（データ整合性のため）
-      if (session && session.user) {
+      // ログインしている場合のみ、リーダーをUserGroupに追加
+      if (sessionUserId) {
         try {
-          await prisma.userGroup.create({
-            data: {
-              user_id: group.leader_user_id,
-              group_id: id,
-              event_id: group.event_id,
-              status: "INTERESTED",
-            },
+          await db.insert(userGroups).values({
+            userId: group.leaderUserId,
+            groupId: id,
+            eventId: group.eventId,
+            status: "INTERESTED",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           });
         } catch {
           // 既に存在する場合は無視
@@ -216,35 +218,34 @@ export async function GET(
       }
     }
 
-    // ログインしていない場合は公開情報のみ返す
-    // ログインしている場合は認証情報も含める
     return NextResponse.json(
       {
         id: group.id,
         name: group.name,
         theme: group.theme,
-        groupCode: group.group_code,
-        maxMembers: group.max_members,
+        groupCode: group.groupCode,
+        maxMembers: group.maxMembers,
         memberCount: membersList.length,
-        isLeader: session && session.user ? isLeader : false,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ownerNote: (group as any).owner_note ?? null,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        groupDescription: (group as any).group_description ?? null,
-        event: group.event,
+        isLeader: sessionUserId ? isLeader : false,
+        ownerNote: group.ownerNote ?? null,
+        groupDescription: group.groupDescription ?? null,
+        event: group.event ? {
+          id: group.event.id,
+          name: group.event.name,
+          event_date: new Date(group.event.eventDate).toISOString(),
+        } : null,
         leader: {
-          id: group.leader.id,
-          name: group.leader.name,
-          displayName: group.leader.display_name,
-          email: group.leader.email,
+          id: leader.id,
+          name: leader.name,
+          displayName: leader.displayName,
+          email: leader.email,
         },
         members: membersList,
-        createdAt: group.created_at,
+        createdAt: new Date(group.createdAt).toISOString(),
       },
       {
         headers: {
-          // ログインしていない場合でもキャッシュ可能（公開情報のため）
-          "Cache-Control": session && session.user
+          "Cache-Control": sessionUserId
             ? "private, s-maxage=5, stale-while-revalidate=10"
             : "public, s-maxage=60, stale-while-revalidate=120",
         },
@@ -268,7 +269,7 @@ export async function DELETE(
   try {
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -276,10 +277,11 @@ export async function DELETE(
     }
 
     const { id } = await params;
+    const userId = session.user.id;
 
     // 団体を取得
-    const group = await prisma.group.findUnique({
-      where: { id },
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, id),
     });
 
     if (!group) {
@@ -290,7 +292,7 @@ export async function DELETE(
     }
 
     // オーナーのみ解散可能
-    if (group.leader_user_id !== session.user.id) {
+    if (group.leaderUserId !== userId) {
       return NextResponse.json(
         { error: "Only the group leader can disband the group" },
         { status: 403 }
@@ -298,34 +300,43 @@ export async function DELETE(
     }
 
     // トランザクションで団体と関連データを削除
-    await prisma.$transaction(async (tx) => {
-      // メッセージを削除
-      await tx.groupMessage.deleteMany({
-        where: { group_id: id },
-      });
+    await db.transaction(async (tx) => {
+      // 1. メッセージIDをリストアップ
+      const messagesList = await tx
+        .select({ id: groupMessages.id })
+        .from(groupMessages)
+        .where(eq(groupMessages.groupId, id));
 
-      // UserGroupから削除（複数団体参加対応）
-      await tx.userGroup.deleteMany({
-        where: { group_id: id },
-      });
+      const msgIds = messagesList.map((m: any) => m.id);
 
-      // UserEventからgroup_idを削除（nullに更新、後方互換性のため）
-      await tx.userEvent.updateMany({
-        where: { group_id: id },
-        data: { group_id: null },
-      });
+      // 2. メッセージに関連する既読情報・リアクションを削除
+      if (msgIds.length > 0) {
+        await tx.delete(groupMessageReactions).where(inArray(groupMessageReactions.messageId, msgIds));
+        await tx.delete(groupMessageReads).where(inArray(groupMessageReads.messageId, msgIds));
+        await tx.delete(groupMessages).where(inArray(groupMessages.id, msgIds));
+      } else {
+        await tx.delete(groupMessages).where(eq(groupMessages.groupId, id));
+      }
 
-      // 団体を削除
-      await tx.group.delete({
-        where: { id },
-      });
+      // 3. UserGroupから削除
+      await tx.delete(userGroups).where(eq(userGroups.groupId, id));
+
+      // 4. UserEventからgroup_idを削除（nullに更新）
+      await tx
+        .update(userEvents)
+        .set({ 
+          groupId: null,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(userEvents.groupId, id));
+
+      // 5. 団体を削除
+      await tx.delete(groups).where(eq(groups.id, id));
     });
 
     // S3から団体に関連する画像を削除（トランザクション外で実行）
-    // エラーが発生しても団体削除は成功とする
     await deleteGroupImages(id);
 
-    // 書き込み操作で即座に反映が必要なのでキャッシュを無効にする
     return NextResponse.json(
       { success: true },
       {
@@ -342,4 +353,3 @@ export async function DELETE(
     );
   }
 }
-

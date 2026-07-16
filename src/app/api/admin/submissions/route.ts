@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { eventSubmissions } from "@/db/schema";
+import { eq, and, or, asc, desc, like } from "drizzle-orm";
 
 // GET /api/admin/submissions
-// 管理画面用の情報提供一覧取得API（ソート・絞り込み対応）
+// 管理画面用の情報提供一覧取得API
 export async function GET(request: Request) {
   try {
     const session = await auth();
@@ -22,59 +24,65 @@ export async function GET(request: Request) {
     const sortOrder = searchParams.get("sortOrder") || "desc";
     const search = searchParams.get("search");
 
-    // フィルター条件を構築
-    const where: Record<string, unknown> = {};
+    const andConditions = [];
     if (status && status !== "ALL") {
-      where.status = status;
+      andConditions.push(eq(eventSubmissions.status, status));
     }
-    // status === "ALL" の場合はすべてのステータスを表示（処理済みも含む）
     if (search) {
-      where.OR = [
-        { name: { contains: search } },
-        { theme: { contains: search } },
-        { venue_name: { contains: search } },
-        { description: { contains: search } },
-      ];
+      andConditions.push(
+        or(
+          like(eventSubmissions.name, `%${search}%`),
+          like(eventSubmissions.theme, `%${search}%`),
+          like(eventSubmissions.venueName, `%${search}%`),
+          like(eventSubmissions.description, `%${search}%`)
+        )
+      );
     }
 
-    // ソート条件を構築
-    const orderBy: Record<string, string> = {};
+    let sortCol = eventSubmissions.createdAt;
     if (sortBy === "event_date") {
-      orderBy.event_date = sortOrder;
+      sortCol = eventSubmissions.eventDate;
     } else if (sortBy === "name") {
-      orderBy.name = sortOrder;
-    } else {
-      orderBy.created_at = sortOrder;
+      sortCol = eventSubmissions.name;
     }
 
-    const submissions = await prisma.eventSubmission.findMany({
-      where,
-      orderBy,
-      select: {
-        id: true,
-        name: true,
-        venue_name: true,
-        theme: true,
-        description: true,
-        original_url: true,
-        event_date: true,
-        entry_start_at: true,
-        payment_due_at: true,
-        status: true,
-        admin_note: true,
-        submitter_email: true,
-        submitter: {
-          select: {
+    const list = await db.query.eventSubmissions.findMany({
+      where: andConditions.length > 0 ? and(...andConditions) : undefined,
+      orderBy: sortOrder === "asc" ? asc(sortCol) : desc(sortCol),
+      with: {
+        user: { // submitter
+          columns: {
             email: true,
           },
         },
-        created_at: true,
       },
+    });
+
+    // レスポンス整形
+    const formatted = list.map((sub: any) => {
+      return {
+        id: sub.id,
+        name: sub.name,
+        venue_name: sub.venueName,
+        theme: sub.theme,
+        description: sub.description,
+        original_url: sub.originalUrl,
+        event_date: sub.eventDate ? new Date(sub.eventDate).toISOString() : null,
+        entry_start_at: sub.entryStartAt ? new Date(sub.entryStartAt).toISOString() : null,
+        payment_due_at: sub.paymentDueAt ? new Date(sub.paymentDueAt).toISOString() : null,
+        status: sub.status,
+        admin_note: sub.adminNote,
+        submitter_email: sub.submitterEmail,
+        submitter: sub.user ? {
+          email: sub.user.email,
+        } : null,
+        created_at: new Date(sub.createdAt).toISOString(),
+      };
     });
 
     // 管理画面用のため、privateディレクティブを使用して10秒間キャッシュ
     return NextResponse.json(
-      submissions,
+      formatted,
       {
         headers: {
           "Cache-Control": "private, s-maxage=10, stale-while-revalidate=30",
@@ -89,4 +97,3 @@ export async function GET(request: Request) {
     );
   }
 }
-

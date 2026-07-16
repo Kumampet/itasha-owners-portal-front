@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // PATCH /api/user/display-name
 // 表示名を更新
@@ -8,13 +10,14 @@ export async function PATCH(request: Request) {
   try {
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
+    const userId = session.user.id;
     const body = await request.json();
     const { displayName } = body;
 
@@ -33,12 +36,13 @@ export async function PATCH(request: Request) {
     }
 
     // 表示名を更新
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        display_name: displayNameValue,
-      },
-    });
+    await db
+      .update(users)
+      .set({
+        displayName: displayNameValue,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(users.id, userId));
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -49,4 +53,3 @@ export async function PATCH(request: Request) {
     );
   }
 }
-
