@@ -22,7 +22,7 @@
     "db:view-users": "tsx scripts/view-users.ts",
     "test:reminder-check": "tsx scripts/test-reminder-check.ts",
     "prisma:generate": "prisma generate",
-    "postinstall": "cross-env DATABASE_URL=mysql://user:password@127.0.0.1:3306/_postinstall_dummy prisma generate",
+    "postinstall": "cross-env DATABASE_URL=mysql://user:password@127.0.0.1:3306/_postinstall_dummy prisma generate && node src/lib/patch-opennext.js",
     "lambda:group-message-reminder:build": "bash lambda/group-message-reminder/build.sh",
     "lambda:build:layer": "bash lambda/prisma-layer/build.sh",
     "lambda:prisma-layer:deploy:staging": "bash scripts/deploy-prisma-layer-staging.sh",
