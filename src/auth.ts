@@ -8,7 +8,8 @@ import { getAuthSecret } from "@/lib/auth-secret";
 const hasDatabaseUrl = !!(
   process.env.DATABASE_URL &&
   typeof process.env.DATABASE_URL === "string" &&
-  process.env.DATABASE_URL.trim() !== ""
+  process.env.DATABASE_URL.trim() !== "" &&
+  process.env.MOCK_DATABASE !== "true"
 );
 
 // Edge の middleware が auth を読み込むため、ここで getAdapter() を呼ぶと prisma（node:fs 等）が

@@ -171,11 +171,71 @@ function createPrismaClient() {
   }
 }
 
+function createMockPrismaClient(): PrismaClient {
+  const modelProxy = new Proxy({}, {
+    get(target, prop) {
+      if (typeof prop === "symbol") {
+        return undefined;
+      }
+      return async (...args: any[]) => {
+        console.log(`[Mock Prisma] Intercepted model method: ${String(prop)}`, args);
+        if (prop === "findMany") {
+          return [];
+        }
+        if (prop === "findUnique" || prop === "findFirst") {
+          return null;
+        }
+        if (prop === "count") {
+          return 0;
+        }
+        if (prop === "create" || prop === "update" || prop === "upsert" || prop === "delete") {
+          return {};
+        }
+        return null;
+      };
+    }
+  });
+
+  return new Proxy({}, {
+    get(target, prop) {
+      if (typeof prop === "symbol") {
+        return undefined;
+      }
+      if (typeof prop === "string" && prop.startsWith("$")) {
+        if (prop === "$transaction") {
+          return async (arg: any) => {
+            if (typeof arg === "function") {
+              return arg(createMockPrismaClient());
+            }
+            if (Array.isArray(arg)) {
+              return Promise.all(arg);
+            }
+            return arg;
+          };
+        }
+        return async (...args: any[]) => {
+          console.log(`[Mock Prisma] Intercepted client method: ${String(prop)}`, args);
+          return null;
+        };
+      }
+      return modelProxy;
+    }
+  }) as unknown as PrismaClient;
+}
+
 // Prisma Clientを遅延初期化（実際に使用される時点で初期化）
 // サーバーレス環境でも接続を共有するため、常にグローバル変数に保存
 let prismaInstance: PrismaClient | undefined;
 
 function getPrisma(): PrismaClient {
+  if (process.env.MOCK_DATABASE === "true") {
+    if (!prismaInstance) {
+      console.log("[Prisma] MOCK_DATABASE is true, initializing mock Prisma client.");
+      prismaInstance = createMockPrismaClient();
+    }
+    return prismaInstance;
+  }
+
   if (prismaInstance) {
     return prismaInstance;
   }

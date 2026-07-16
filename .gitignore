@@ -80,3 +80,6 @@ lambda/prisma-layer/nodejs/
 
 # OpenNext build outputs
 .open-next/
+
+# Cloudflare Wrangler (local dev cache & temp files)
+.wrangler/

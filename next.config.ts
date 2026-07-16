@@ -60,7 +60,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [
     '@auth/core',
     '@prisma/client',
-    'prisma'
+    'prisma',
+    "sharp",
+    "@panva/hkdf"
   ],
   typescript: {
     ignoreBuildErrors: true,
