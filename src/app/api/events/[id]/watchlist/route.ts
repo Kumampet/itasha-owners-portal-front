@@ -1,37 +1,26 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { events, eventFollows, reminders, eventEntries } from "@/db/schema";
+import { eq, and, asc } from "drizzle-orm";
 
 // イベントの期限情報を取得してリマインダーデータを生成する関数
 // 将来の仕様変更に対応するため、柔軟なJSON形式で保存
 async function generateRemindersForEvent(eventId: string, userId: string) {
-  const event = await prisma.event.findUnique({
-    where: { id: eventId },
-    select: {
-      id: true,
-      name: true,
-      event_date: true,
-      entries: {
-        select: {
-          entry_number: true,
-          entry_start_at: true,
-          entry_start_public_at: true,
-          entry_deadline_at: true,
-          payment_due_at: true,
-          payment_due_public_at: true,
-        },
-        orderBy: {
-          entry_number: "asc",
-        },
-      },
-    },
+  const event = await db.query.events.findFirst({
+    where: eq(events.id, eventId),
+    with: {
+      eventEntries: {
+        orderBy: asc(eventEntries.entryNumber),
+      }
+    }
   });
 
   if (!event) {
     return [];
   }
 
-  const reminders: Array<{
+  const reminderItems: Array<{
     reminder_data: {
       type: string;
       datetime: string;
@@ -44,21 +33,21 @@ async function generateRemindersForEvent(eventId: string, userId: string) {
   const now = new Date();
 
   // エントリー情報からリマインダーを生成（最初のエントリーのみ）
-  if (event.entries && event.entries.length > 0) {
-    const firstEntry = event.entries[0];
+  if (event.eventEntries && event.eventEntries.length > 0) {
+    const firstEntry = event.eventEntries[0];
 
     // エントリー開始日時（公開日時が未来の場合は非表示）
     const entryStartAt =
-      firstEntry.entry_start_public_at &&
-      new Date(firstEntry.entry_start_public_at) > now
+      firstEntry.entryStartPublicAt &&
+      new Date(firstEntry.entryStartPublicAt) > now
         ? null
-        : firstEntry.entry_start_at;
+        : firstEntry.entryStartAt;
 
     if (entryStartAt) {
-      reminders.push({
+      reminderItems.push({
         reminder_data: {
           type: "entry_start",
-          datetime: entryStartAt.toISOString(),
+          datetime: new Date(entryStartAt).toISOString(),
           label: "エントリー開始",
           event_id: event.id,
           event_name: event.name,
@@ -68,16 +57,16 @@ async function generateRemindersForEvent(eventId: string, userId: string) {
 
     // 支払期限（公開日時が未来の場合は非表示）
     const paymentDueAt =
-      firstEntry.payment_due_public_at &&
-      new Date(firstEntry.payment_due_public_at) > now
+      firstEntry.paymentDuePublicAt &&
+      new Date(firstEntry.paymentDuePublicAt) > now
         ? null
-        : firstEntry.payment_due_at;
+        : firstEntry.paymentDueAt;
 
     if (paymentDueAt) {
-      reminders.push({
+      reminderItems.push({
         reminder_data: {
           type: "payment_due",
-          datetime: paymentDueAt.toISOString(),
+          datetime: new Date(paymentDueAt).toISOString(),
           label: "支払期限",
           event_id: event.id,
           event_name: event.name,
@@ -87,10 +76,10 @@ async function generateRemindersForEvent(eventId: string, userId: string) {
   }
 
   // イベント開催日
-  reminders.push({
+  reminderItems.push({
     reminder_data: {
       type: "event_date",
-      datetime: event.event_date.toISOString(),
+      datetime: new Date(event.eventDate).toISOString(),
       label: "イベント開催日",
       event_id: event.id,
       event_name: event.name,
@@ -99,15 +88,20 @@ async function generateRemindersForEvent(eventId: string, userId: string) {
 
   // リマインダーを作成
   const createdReminders = await Promise.all(
-    reminders.map((reminder) =>
-      prisma.reminder.create({
-        data: {
-          user_id: userId,
-          event_id: eventId,
-          reminder_data: reminder.reminder_data,
-        },
-      })
-    )
+    reminderItems.map(async (reminder) => {
+      const reminderId = crypto.randomUUID();
+      const insertVal = {
+        id: reminderId,
+        userId: userId,
+        eventId: eventId,
+        reminderData: JSON.stringify(reminder.reminder_data),
+        notified: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      await db.insert(reminders).values(insertVal);
+      return insertVal;
+    })
   );
 
   return createdReminders;
@@ -131,14 +125,11 @@ export async function GET(
     const { id } = await params;
     const userId = session.user.id;
 
-    const follow = await prisma.eventFollow.findUnique({
-      where: {
-        user_id_event_id: {
-          user_id: userId,
-          event_id: id,
-        },
-      },
-    });
+    const follow = await db
+      .select()
+      .from(eventFollows)
+      .where(and(eq(eventFollows.userId, userId), eq(eventFollows.eventId, id)))
+      .get();
 
     // リアルタイム性が重要なのでキャッシュを無効にする
     return NextResponse.json(
@@ -179,25 +170,21 @@ export async function POST(
     const userId = session.user.id;
 
     // 既に登録されているか確認
-    const existing = await prisma.eventFollow.findUnique({
-      where: {
-        user_id_event_id: {
-          user_id: userId,
-          event_id: id,
-        },
-      },
-    });
+    const existing = await db
+      .select()
+      .from(eventFollows)
+      .where(and(eq(eventFollows.userId, userId), eq(eventFollows.eventId, id)))
+      .get();
 
     if (existing) {
       return NextResponse.json({ message: "Already in watchlist" });
     }
 
     // ウォッチリストに追加
-    await prisma.eventFollow.create({
-      data: {
-        user_id: userId,
-        event_id: id,
-      },
+    await db.insert(eventFollows).values({
+      userId: userId,
+      eventId: id,
+      followedAt: new Date().toISOString(),
     });
 
     // リマインダーを自動生成
@@ -232,20 +219,14 @@ export async function DELETE(
     const userId = session.user.id;
 
     // ウォッチリストから削除
-    await prisma.eventFollow.deleteMany({
-      where: {
-        user_id: userId,
-        event_id: id,
-      },
-    });
+    await db
+      .delete(eventFollows)
+      .where(and(eq(eventFollows.userId, userId), eq(eventFollows.eventId, id)));
 
     // 関連するリマインダーも削除
-    await prisma.reminder.deleteMany({
-      where: {
-        user_id: userId,
-        event_id: id,
-      },
-    });
+    await db
+      .delete(reminders)
+      .where(and(eq(reminders.userId, userId), eq(reminders.eventId, id)));
 
     return NextResponse.json({ message: "Removed from watchlist" });
   } catch (error) {
@@ -256,4 +237,3 @@ export async function DELETE(
     );
   }
 }
-

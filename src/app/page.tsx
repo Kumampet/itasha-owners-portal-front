@@ -2,8 +2,10 @@ import Image from "next/image";
 import { PublicSiteFooter } from "@/components/public-site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { createMetadataWithOGP } from "@/lib/metadata";
-import { prisma } from "@/lib/prisma";
-import { buildApprovedFutureEventWhere } from "@/lib/approved-public-events";
+import { db } from "@/lib/db";
+import { events } from "@/db/schema";
+import { desc, asc } from "drizzle-orm";
+import { buildApprovedFutureEventWhereDrizzle } from "@/lib/approved-public-events";
 import { HomeTopEventColumns } from "@/components/home/home-top-event-columns";
 import { ServiceOverviewSection } from "@/components/service-overview-section";
 import type { HomeEventBrief } from "@/components/home/home-top-event-columns";
@@ -21,51 +23,49 @@ function toBrief(
     id: string;
     name: string;
     description: string;
-    event_date: Date;
-    event_end_date: Date | null;
-    is_multi_day: boolean;
-    image_url: string | null;
+    eventDate: string;
+    eventEndDate: string | null;
+    isMultiDay: boolean;
+    imageUrl: string | null;
   },
 ): HomeEventBrief {
   return {
     id: row.id,
     name: row.name,
     description: row.description,
-    event_date: row.event_date.toISOString(),
-    event_end_date: row.event_end_date
-      ? row.event_end_date.toISOString()
+    event_date: new Date(row.eventDate).toISOString(),
+    event_end_date: row.eventEndDate
+      ? new Date(row.eventEndDate).toISOString()
       : null,
-    is_multi_day: row.is_multi_day,
-    image_url: row.image_url,
+    is_multi_day: row.isMultiDay,
+    image_url: row.imageUrl,
   };
 }
 
 async function fetchHomeLists() {
   const now = new Date();
-  const where = buildApprovedFutureEventWhere(now);
-  const select = {
-    id: true,
-    name: true,
-    description: true,
-    event_date: true,
-    event_end_date: true,
-    is_multi_day: true,
-    image_url: true,
-  } as const;
+  const where = buildApprovedFutureEventWhereDrizzle(now);
+  const selectFields = {
+    id: events.id,
+    name: events.name,
+    description: events.description,
+    eventDate: events.eventDate,
+    eventEndDate: events.eventEndDate,
+    isMultiDay: events.isMultiDay,
+    imageUrl: events.imageUrl,
+  };
 
   const [recentRows, upcomingRows] = await Promise.all([
-    prisma.event.findMany({
-      where,
-      orderBy: { created_at: "desc" },
-      take: 3,
-      select,
-    }),
-    prisma.event.findMany({
-      where,
-      orderBy: { event_date: "asc" },
-      take: 3,
-      select,
-    }),
+    db.select(selectFields)
+      .from(events)
+      .where(where)
+      .orderBy(desc(events.createdAt))
+      .limit(3),
+    db.select(selectFields)
+      .from(events)
+      .where(where)
+      .orderBy(asc(events.eventDate))
+      .limit(3),
   ]);
 
   return {
