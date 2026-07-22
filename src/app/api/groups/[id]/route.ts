@@ -9,15 +9,9 @@ import {
 import { S3Client, ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 // S3クライアントの初期化
-const s3Client = new S3Client({
-  region: process.env.APP_AWS_REGION || "ap-northeast-1",
-  credentials: process.env.IMAGE_S3_AWS_ACCESS_KEY_ID && process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY
-    ? {
-      accessKeyId: process.env.IMAGE_S3_AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY,
-    }
-    : undefined,
-});
+import { getR2Client } from "@/lib/r2";
+
+const s3Client = getR2Client();
 
 /**
  * 団体に関連するS3の画像をすべて削除する
@@ -34,8 +28,8 @@ async function deleteGroupImages(groupId: string): Promise<void> {
   }
 
   // 環境変数が設定されていない場合はスキップ
-  if (!process.env.IMAGE_S3_BUCKET_NAME) {
-    console.warn("IMAGE_S3_BUCKET_NAME is not set, skipping image deletion");
+  if (!process.env.R2_BUCKET_NAME) {
+    console.warn("R2_BUCKET_NAME is not set, skipping image deletion");
     return;
   }
 
@@ -52,7 +46,7 @@ async function deleteGroupImages(groupId: string): Promise<void> {
     do {
       // 団体ID配下のすべてのオブジェクトをリストアップ
       const listCommand = new ListObjectsV2Command({
-        Bucket: process.env.IMAGE_S3_BUCKET_NAME,
+        Bucket: process.env.R2_BUCKET_NAME,
         Prefix: prefix,
         ContinuationToken: continuationToken,
       });
@@ -66,7 +60,7 @@ async function deleteGroupImages(groupId: string): Promise<void> {
           if (!object.Key) return Promise.resolve();
 
           const deleteCommand = new DeleteObjectCommand({
-            Bucket: process.env.IMAGE_S3_BUCKET_NAME,
+            Bucket: process.env.R2_BUCKET_NAME,
             Key: object.Key,
           });
           return s3Client.send(deleteCommand);
@@ -300,7 +294,7 @@ export async function DELETE(
     }
 
     // トランザクションで団体と関連データを削除
-    await db.transaction(async (tx) => {
+    await db.transaction(async (tx: any) => {
       // 1. メッセージIDをリストアップ
       const messagesList = await tx
         .select({ id: groupMessages.id })
@@ -324,7 +318,7 @@ export async function DELETE(
       // 4. UserEventからgroup_idを削除（nullに更新）
       await tx
         .update(userEvents)
-        .set({ 
+        .set({
           groupId: null,
           updatedAt: new Date().toISOString(),
         })

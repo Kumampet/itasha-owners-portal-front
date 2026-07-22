@@ -11,15 +11,9 @@ import {
 import { deleteEventImageStorage } from "@/lib/event-image-storage";
 
 // S3クライアントの初期化
-const s3Client = new S3Client({
-  region: process.env.APP_AWS_REGION || "ap-northeast-1",
-  credentials: process.env.IMAGE_S3_AWS_ACCESS_KEY_ID && process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY
-    ? {
-      accessKeyId: process.env.IMAGE_S3_AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY,
-    }
-    : undefined,
-});
+import { getR2Client } from "@/lib/r2";
+
+const s3Client = getR2Client();
 
 // 許可するMIMEタイプ
 const ALLOWED_MIME_TYPES = [
@@ -122,8 +116,8 @@ async function putOptimizedImage(
     return;
   }
 
-  if (!process.env.IMAGE_S3_BUCKET_NAME) {
-    throw new Error("IMAGE_S3_BUCKET_NAME environment variable is not set");
+  if (!process.env.R2_BUCKET_NAME) {
+    throw new Error("R2_BUCKET_NAME environment variable is not set");
   }
 
   if (
@@ -136,7 +130,7 @@ async function putOptimizedImage(
   }
 
   const putCommand = new PutObjectCommand({
-    Bucket: process.env.IMAGE_S3_BUCKET_NAME,
+    Bucket: process.env.R2_BUCKET_NAME,
     Key: s3Key,
     Body: optimizedBuffer,
     ContentType: contentType,
@@ -304,8 +298,8 @@ export async function POST(request: NextRequest) {
     let statusCode = 500;
 
     if (error instanceof Error) {
-      if (error.message.includes("IMAGE_S3_BUCKET_NAME")) {
-        errorMessage = "S3バケット名が設定されていません。環境変数IMAGE_S3_BUCKET_NAMEを設定してください。";
+      if (error.message.includes("R2_BUCKET_NAME")) {
+        errorMessage = "S3バケット名が設定されていません。環境変数R2_BUCKET_NAMEを設定してください。";
         statusCode = 500;
       }
       else if (error.message.includes("IMAGE_S3_AWS_ACCESS_KEY_ID") || error.message.includes("IMAGE_S3_AWS_SECRET_ACCESS_KEY")) {

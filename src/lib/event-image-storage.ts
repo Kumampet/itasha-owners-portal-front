@@ -7,18 +7,9 @@ import {
   deleteLocalEventImagesByEventId,
   isGroupImageStorageLocal,
 } from "@/lib/group-image-local-store";
+import { getR2Client } from "@/lib/r2";
 
-const s3Client = new S3Client({
-  region: process.env.APP_AWS_REGION || "ap-northeast-1",
-  credentials:
-    process.env.IMAGE_S3_AWS_ACCESS_KEY_ID &&
-    process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY
-      ? {
-          accessKeyId: process.env.IMAGE_S3_AWS_ACCESS_KEY_ID,
-          secretAccessKey: process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY,
-        }
-      : undefined,
-});
+const s3Client = getR2Client();
 
 /**
  * イベントIDごとのディレクトリ配下を空にする（差し替え時）
@@ -29,8 +20,8 @@ export async function deleteEventImageStorage(eventId: string): Promise<void> {
     return;
   }
 
-  if (!process.env.IMAGE_S3_BUCKET_NAME) {
-    console.warn("IMAGE_S3_BUCKET_NAME is not set, skipping event image deletion");
+  if (!process.env.R2_BUCKET_NAME) {
+    console.warn("R2_BUCKET_NAME is not set, skipping event image deletion");
     return;
   }
 
@@ -49,7 +40,7 @@ export async function deleteEventImageStorage(eventId: string): Promise<void> {
     do {
       const listResponse = await s3Client.send(
         new ListObjectsV2Command({
-          Bucket: process.env.IMAGE_S3_BUCKET_NAME,
+          Bucket: process.env.R2_BUCKET_NAME,
           Prefix: prefix,
           ContinuationToken: continuationToken,
         }),
@@ -61,7 +52,7 @@ export async function deleteEventImageStorage(eventId: string): Promise<void> {
             if (!object.Key) return Promise.resolve();
             return s3Client.send(
               new DeleteObjectCommand({
-                Bucket: process.env.IMAGE_S3_BUCKET_NAME,
+                Bucket: process.env.R2_BUCKET_NAME,
                 Key: object.Key,
               }),
             );

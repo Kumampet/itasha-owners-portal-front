@@ -18,18 +18,10 @@ interface S3Error {
   };
   message?: string;
 }
+import { getR2Client } from "@/lib/r2";
 
 // S3クライインターフェースの初期化
-const s3Client = new S3Client({
-  region: process.env.APP_AWS_REGION || "ap-northeast-1",
-  credentials: process.env.IMAGE_S3_AWS_ACCESS_KEY_ID && process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY
-    ? {
-        accessKeyId: process.env.IMAGE_S3_AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY,
-      }
-    : undefined,
-});
-
+const s3Client = getR2Client();
 type ImageCacheMode = "immutable" | "replaceable";
 
 function cacheControlHeader(mode: ImageCacheMode): string {
@@ -87,7 +79,7 @@ async function serveStoredImage(
     });
   }
 
-  if (!process.env.IMAGE_S3_BUCKET_NAME) {
+  if (!process.env.R2_BUCKET_NAME) {
     return NextResponse.json(
       { error: "S3 bucket not configured" },
       { status: 500 }
@@ -102,7 +94,7 @@ async function serveStoredImage(
   }
 
   const headCommand = new HeadObjectCommand({
-    Bucket: process.env.IMAGE_S3_BUCKET_NAME,
+    Bucket: process.env.R2_BUCKET_NAME,
     Key: s3Key,
   });
 
@@ -162,7 +154,7 @@ async function serveStoredImage(
   }
 
   const command = new GetObjectCommand({
-    Bucket: process.env.IMAGE_S3_BUCKET_NAME,
+    Bucket: process.env.R2_BUCKET_NAME,
     Key: s3Key,
   });
 
