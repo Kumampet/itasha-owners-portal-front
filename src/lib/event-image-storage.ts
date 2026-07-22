@@ -26,8 +26,8 @@ export async function deleteEventImageStorage(eventId: string): Promise<void> {
   }
 
   if (
-    !process.env.IMAGE_S3_AWS_ACCESS_KEY_ID ||
-    !process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY
+    !process.env.R2_ACCESS_KEY_ID ||
+    !process.env.R2_SECRET_ACCESS_KEY
   ) {
     console.warn("S3 credentials are not set, skipping event image deletion");
     return;

@@ -34,7 +34,7 @@ async function deleteGroupImages(groupId: string): Promise<void> {
   }
 
   // 認証情報が設定されていない場合はスキップ
-  if (!process.env.IMAGE_S3_AWS_ACCESS_KEY_ID || !process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY) {
+  if (!process.env.R2_ACCESS_KEY_ID || !process.env.R2_SECRET_ACCESS_KEY) {
     console.warn("S3 credentials are not set, skipping image deletion");
     return;
   }

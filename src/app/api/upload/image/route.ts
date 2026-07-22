@@ -121,11 +121,11 @@ async function putOptimizedImage(
   }
 
   if (
-    !process.env.IMAGE_S3_AWS_ACCESS_KEY_ID ||
-    !process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY
+    !process.env.R2_ACCESS_KEY_ID ||
+    !process.env.R2_SECRET_ACCESS_KEY
   ) {
     throw new Error(
-      "IMAGE_S3_AWS_ACCESS_KEY_ID or IMAGE_S3_AWS_SECRET_ACCESS_KEY environment variable is not set",
+      "R2_ACCESS_KEY_ID or R2_SECRET_ACCESS_KEY environment variable is not set",
     );
   }
   
@@ -304,8 +304,8 @@ export async function POST(request: NextRequest) {
         errorMessage = "S3バケット名が設定されていません。環境変数R2_BUCKET_NAMEを設定してください。";
         statusCode = 500;
       }
-      else if (error.message.includes("IMAGE_S3_AWS_ACCESS_KEY_ID") || error.message.includes("IMAGE_S3_AWS_SECRET_ACCESS_KEY")) {
-        errorMessage = "S3アクセスキーが設定されていません。環境変数IMAGE_S3_AWS_ACCESS_KEY_IDとIMAGE_S3_AWS_SECRET_ACCESS_KEYを設定してください。";
+      else if (error.message.includes("R2_ACCESS_KEY_ID") || error.message.includes("R2_SECRET_ACCESS_KEY")) {
+        errorMessage = "S3アクセスキーが設定されていません。環境変数R2_ACCESS_KEY_IDとR2_SECRET_ACCESS_KEYを設定してください。";
         statusCode = 500;
       }
       else if (error.message.includes("AccessDenied") || error.message.includes("Forbidden") || error.message.includes("403")) {

@@ -85,7 +85,7 @@ async function serveStoredImage(
     );
   }
 
-  if (!process.env.IMAGE_S3_AWS_ACCESS_KEY_ID || !process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY) {
+  if (!process.env.R2_ACCESS_KEY_ID || !process.env.R2_SECRET_ACCESS_KEY) {
     return NextResponse.json(
       { error: "S3 credentials not configured" },
       { status: 500 }
