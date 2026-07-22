@@ -20,8 +20,7 @@ interface S3Error {
 }
 import { getR2Client } from "@/lib/r2";
 
-// S3クライインターフェースの初期化
-const s3Client = getR2Client();
+
 type ImageCacheMode = "immutable" | "replaceable";
 
 function cacheControlHeader(mode: ImageCacheMode): string {
@@ -93,6 +92,7 @@ async function serveStoredImage(
     );
   }
 
+  const s3Client = getR2Client();
   const headCommand = new HeadObjectCommand({
     Bucket: process.env.R2_BUCKET_NAME,
     Key: s3Key,

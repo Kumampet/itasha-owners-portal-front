@@ -9,7 +9,7 @@ import {
 } from "@/lib/group-image-local-store";
 import { getR2Client } from "@/lib/r2";
 
-const s3Client = getR2Client();
+
 
 /**
  * イベントIDごとのディレクトリ配下を空にする（差し替え時）
@@ -36,6 +36,7 @@ export async function deleteEventImageStorage(eventId: string): Promise<void> {
   const prefix = `uploads/images/events/${eventId}/`;
   let continuationToken: string | undefined;
 
+  const s3Client = getR2Client();
   try {
     do {
       const listResponse = await s3Client.send(

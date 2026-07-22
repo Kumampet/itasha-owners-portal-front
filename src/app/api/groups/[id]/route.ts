@@ -11,7 +11,7 @@ import { S3Client, ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/cl
 // S3クライアントの初期化
 import { getR2Client } from "@/lib/r2";
 
-const s3Client = getR2Client();
+
 
 /**
  * 団体に関連するS3の画像をすべて削除する
@@ -40,6 +40,7 @@ async function deleteGroupImages(groupId: string): Promise<void> {
   }
 
   try {
+    const s3Client = getR2Client();
     const prefix = `uploads/images/${groupId}/`;
     let continuationToken: string | undefined;
 

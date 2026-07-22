@@ -13,7 +13,7 @@ import { deleteEventImageStorage } from "@/lib/event-image-storage";
 // S3クライアントの初期化
 import { getR2Client } from "@/lib/r2";
 
-const s3Client = getR2Client();
+
 
 // 許可するMIMEタイプ
 const ALLOWED_MIME_TYPES = [
@@ -128,6 +128,8 @@ async function putOptimizedImage(
       "IMAGE_S3_AWS_ACCESS_KEY_ID or IMAGE_S3_AWS_SECRET_ACCESS_KEY environment variable is not set",
     );
   }
+  
+  const s3Client = getR2Client();
 
   const putCommand = new PutObjectCommand({
     Bucket: process.env.R2_BUCKET_NAME,
