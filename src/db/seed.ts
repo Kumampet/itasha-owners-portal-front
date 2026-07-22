@@ -6,7 +6,7 @@
 import { config as loadEnv } from "dotenv";
 import { resolve } from "node:path";
 import { eq, inArray, sql } from "drizzle-orm";
-import { db } from "../src/lib/db";
+import { db } from "../lib/db";
 import {
   users,
   accounts,
@@ -29,8 +29,8 @@ import {
   organizerApplications,
   userEvents,
   userGroups,
-} from "../src/db/schema";
-import { createSampleEventsWithEntries } from "../src/lib/seed-sample-events";
+} from "./schema";
+import { createSampleEventsWithEntries } from "../lib/seed-sample-events";
 
 // Next.js と同様に .env のあと .env.local で上書き
 loadEnv({ path: resolve(process.cwd(), ".env") });
