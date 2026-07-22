@@ -6,9 +6,6 @@ import { eq, and, inArray } from "drizzle-orm";
 import {
   isGroupImageStorageLocal,
 } from "@/lib/group-image-local-store";
-import { S3Client, ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
-
-// S3クライアントの初期化
 import { getR2Client } from "@/lib/r2";
 
 
@@ -40,38 +37,34 @@ async function deleteGroupImages(groupId: string): Promise<void> {
   }
 
   try {
-    const s3Client = getR2Client();
+    const awsClient = getR2Client();
     const prefix = `uploads/images/${groupId}/`;
     let continuationToken: string | undefined;
 
     do {
-      // 団体ID配下のすべてのオブジェクトをリストアップ
-      const listCommand = new ListObjectsV2Command({
-        Bucket: process.env.R2_BUCKET_NAME,
-        Prefix: prefix,
-        ContinuationToken: continuationToken,
-      });
+      let url = `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}?prefix=${encodeURIComponent(prefix)}&list-type=2`;
+      if (continuationToken) {
+        url += `&continuation-token=${encodeURIComponent(continuationToken)}`;
+      }
 
-      const listResponse = await s3Client.send(listCommand);
+      const listResponse = await awsClient.fetch(url, { method: "GET" });
+      if (!listResponse.ok) {
+        throw new Error(`Failed to list objects: ${listResponse.status}`);
+      }
 
-      // オブジェクトが存在する場合、削除を実行
-      if (listResponse.Contents && listResponse.Contents.length > 0) {
-        // 各オブジェクトを削除
-        const deletePromises = listResponse.Contents.map((object) => {
-          if (!object.Key) return Promise.resolve();
+      const xml = await listResponse.text();
+      const keys = [...xml.matchAll(/<Key>([^<]+)<\/Key>/g)].map(m => m[1]);
+      const nextTokenMatch = xml.match(/<NextContinuationToken>([^<]+)<\/NextContinuationToken>/);
 
-          const deleteCommand = new DeleteObjectCommand({
-            Bucket: process.env.R2_BUCKET_NAME,
-            Key: object.Key,
-          });
-          return s3Client.send(deleteCommand);
+      if (keys.length > 0) {
+        const deletePromises = keys.map((key) => {
+          const deleteUrl = `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${key}`;
+          return awsClient.fetch(deleteUrl, { method: "DELETE" });
         });
-
         await Promise.all(deletePromises);
       }
 
-      // 次のページがある場合は続行
-      continuationToken = listResponse.NextContinuationToken;
+      continuationToken = nextTokenMatch ? nextTokenMatch[1] : undefined;
     } while (continuationToken);
   } catch (error) {
     console.error(`Error deleting images for group ${groupId}:`, error);

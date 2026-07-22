@@ -1,8 +1,4 @@
-import {
-  DeleteObjectCommand,
-  ListObjectsV2Command,
-  S3Client,
-} from "@aws-sdk/client-s3";
+
 import {
   deleteLocalEventImagesByEventId,
   isGroupImageStorageLocal,
@@ -36,32 +32,32 @@ export async function deleteEventImageStorage(eventId: string): Promise<void> {
   const prefix = `uploads/images/events/${eventId}/`;
   let continuationToken: string | undefined;
 
-  const s3Client = getR2Client();
+  const awsClient = getR2Client();
   try {
     do {
-      const listResponse = await s3Client.send(
-        new ListObjectsV2Command({
-          Bucket: process.env.R2_BUCKET_NAME,
-          Prefix: prefix,
-          ContinuationToken: continuationToken,
-        }),
-      );
-
-      if (listResponse.Contents && listResponse.Contents.length > 0) {
-        await Promise.all(
-          listResponse.Contents.map((object) => {
-            if (!object.Key) return Promise.resolve();
-            return s3Client.send(
-              new DeleteObjectCommand({
-                Bucket: process.env.R2_BUCKET_NAME,
-                Key: object.Key,
-              }),
-            );
-          }),
-        );
+      let url = `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}?prefix=${encodeURIComponent(prefix)}&list-type=2`;
+      if (continuationToken) {
+        url += `&continuation-token=${encodeURIComponent(continuationToken)}`;
       }
 
-      continuationToken = listResponse.NextContinuationToken;
+      const listResponse = await awsClient.fetch(url, { method: "GET" });
+      if (!listResponse.ok) {
+        throw new Error(`Failed to list objects: ${listResponse.status}`);
+      }
+
+      const xml = await listResponse.text();
+      const keys = [...xml.matchAll(/<Key>([^<]+)<\/Key>/g)].map(m => m[1]);
+      const nextTokenMatch = xml.match(/<NextContinuationToken>([^<]+)<\/NextContinuationToken>/);
+
+      if (keys.length > 0) {
+        const deletePromises = keys.map((key) => {
+          const deleteUrl = `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${key}`;
+          return awsClient.fetch(deleteUrl, { method: "DELETE" });
+        });
+        await Promise.all(deletePromises);
+      }
+
+      continuationToken = nextTokenMatch ? nextTokenMatch[1] : undefined;
     } while (continuationToken);
   } catch (error) {
     console.error(`Error deleting S3 images for event ${eventId}:`, error);

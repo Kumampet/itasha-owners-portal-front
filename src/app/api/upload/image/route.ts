@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import sharp from "sharp";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getR2Client } from "@/lib/r2";
 import { db } from "@/lib/db";
 import { groups, userGroups, events } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -11,7 +11,7 @@ import {
 import { deleteEventImageStorage } from "@/lib/event-image-storage";
 
 // S3クライアントの初期化
-import { getR2Client } from "@/lib/r2";
+// S3クライアントの初期化 (replaced by aws4fetch)
 
 
 
@@ -129,17 +129,21 @@ async function putOptimizedImage(
     );
   }
   
-  const s3Client = getR2Client();
+  const awsClient = getR2Client();
+  const url = `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${s3Key}`;
 
-  const putCommand = new PutObjectCommand({
-    Bucket: process.env.R2_BUCKET_NAME,
-    Key: s3Key,
-    Body: optimizedBuffer,
-    ContentType: contentType,
-    ServerSideEncryption: "AES256",
+  const response = await awsClient.fetch(url, {
+    method: "PUT",
+    body: optimizedBuffer,
+    headers: {
+      "Content-Type": contentType,
+    }
   });
 
-  await s3Client.send(putCommand);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to put object to R2: ${response.status} ${errorText}`);
+  }
 }
 
 // POST /api/upload/image

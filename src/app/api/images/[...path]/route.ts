@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { S3Client, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+
 import { Readable } from "stream";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
@@ -10,14 +10,7 @@ import {
   readLocalGroupImage,
 } from "@/lib/group-image-local-store";
 
-// S3エラーの型定義
-interface S3Error {
-  name?: string;
-  $metadata?: {
-    httpStatusCode?: number;
-  };
-  message?: string;
-}
+
 import { getR2Client } from "@/lib/r2";
 
 
@@ -92,28 +85,30 @@ async function serveStoredImage(
     );
   }
 
-  const s3Client = getR2Client();
-  const headCommand = new HeadObjectCommand({
-    Bucket: process.env.R2_BUCKET_NAME,
-    Key: s3Key,
-  });
+  const awsClient = getR2Client();
+  const url = `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${s3Key}`;
 
   let headResponse;
   try {
-    headResponse = await s3Client.send(headCommand);
+    headResponse = await awsClient.fetch(url, { method: "HEAD" });
   } catch (headError) {
-    const error = headError as S3Error;
-    if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
-      return NextResponse.json(
-        { error: "Image not found" },
-        { status: 404 }
-      );
-    }
     throw headError;
   }
 
-  const etag = headResponse.ETag?.replace(/"/g, '') || '';
-  const lastModified = headResponse.LastModified;
+  if (headResponse.status === 404) {
+    return NextResponse.json(
+      { error: "Image not found" },
+      { status: 404 }
+    );
+  }
+
+  if (!headResponse.ok) {
+    throw new Error(`Failed to head object: ${headResponse.status} ${headResponse.statusText}`);
+  }
+
+  const etag = headResponse.headers.get("etag")?.replace(/"/g, '') || '';
+  const lastModifiedStr = headResponse.headers.get("last-modified");
+  const lastModified = lastModifiedStr ? new Date(lastModifiedStr) : undefined;
   const cc = cacheControlHeader(cacheMode);
 
   const ifNoneMatch = request.headers.get('if-none-match');
@@ -153,14 +148,9 @@ async function serveStoredImage(
     }
   }
 
-  const command = new GetObjectCommand({
-    Bucket: process.env.R2_BUCKET_NAME,
-    Key: s3Key,
-  });
+  const response = await awsClient.fetch(url, { method: "GET" });
 
-  const response = await s3Client.send(command);
-
-  if (!response.Body) {
+  if (!response.ok || !response.body) {
     return NextResponse.json(
       { error: "Image not found" },
       { status: 404 }
@@ -175,7 +165,7 @@ async function serveStoredImage(
     contentType = 'image/jpeg';
   }
 
-  const stream = response.Body as Readable;
+  const stream = response.body;
 
   const headers: Record<string, string> = {
     'Content-Type': contentType,

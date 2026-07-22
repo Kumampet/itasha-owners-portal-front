@@ -1,4 +1,4 @@
-import { S3Client } from "@aws-sdk/client-s3";
+import { AwsClient } from "aws4fetch";
 
 export const getR2Client = () => {
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
@@ -9,12 +9,11 @@ export const getR2Client = () => {
     throw new Error("Missing R2 credentials in environment variables");
   }
 
-  return new S3Client({
+  return new AwsClient({
+    accessKeyId,
+    secretAccessKey,
     region: "auto",
-    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId,
-      secretAccessKey,
-    },
+    service: "s3",
   });
 };
+

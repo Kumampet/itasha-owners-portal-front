@@ -22,7 +22,7 @@ try {
             {
                 name: "ignore-hashed-externals",
                 setup(build) {
-                    build.onResolve({ filter: /^(sharp|@aws-sdk\\/client-s3|@prisma\\/client)-.*/ }, (args) => ({
+                    build.onResolve({ filter: /^(sharp|@prisma\\/client)-.*/ }, (args) => ({
                         path: args.path,
                         external: true,
                     }));
