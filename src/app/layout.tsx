@@ -12,6 +12,8 @@ import {
   isAdsenseScriptEnabled,
 } from "@/lib/robots-metadata";
 
+export const dynamic = "force-dynamic";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
