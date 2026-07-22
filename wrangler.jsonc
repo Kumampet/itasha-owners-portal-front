@@ -30,7 +30,6 @@
 		"sharp-20c6a5da84e2135f": "./src/lib/empty.js",
 		"@prisma/client": "./src/lib/empty.js",
 		"@prisma/client-2c3a283f134fdcb6": "./src/lib/empty.js",
-		"@aws-sdk/client-s3": "./src/lib/empty.js",
 		"@aws-sdk/client-s3-ecbef8e33fd0b8f0": "./src/lib/empty.js"
 	}
 }
