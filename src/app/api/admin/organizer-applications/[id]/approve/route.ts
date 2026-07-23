@@ -65,25 +65,27 @@ export async function POST(
     }
 
     // トランザクションでユーザー権限変更と申請承認を同時に実行
-    const user = await db.transaction(async (tx) => {
-      await tx
-        .update(users)
-        .set({
-          role: "ORGANIZER",
-          displayName: application.displayName,
-          updatedAt: new Date().toISOString(),
-        })
-        .where(eq(users.id, existingUser.id));
+    let user;
+    const updateUsersQuery = db
+      .update(users)
+      .set({
+        role: "ORGANIZER",
+        displayName: application.displayName,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(users.id, existingUser.id));
 
-      await tx
-        .update(organizerApplications)
-        .set({
-          status: "APPROVED",
-          updatedAt: new Date().toISOString(),
-        })
-        .where(eq(organizerApplications.id, id));
+    const updateAppQuery = db
+      .update(organizerApplications)
+      .set({
+        status: "APPROVED",
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(organizerApplications.id, id));
 
-      return await tx
+    if (typeof (db as any).batch === "function") {
+      await (db as any).batch([updateUsersQuery, updateAppQuery]);
+      user = await db
         .select({
           id: users.id,
           email: users.email,
@@ -93,7 +95,37 @@ export async function POST(
         .from(users)
         .where(eq(users.id, existingUser.id))
         .get();
-    });
+    } else {
+      user = await db.transaction(async (tx: any) => {
+        await tx
+          .update(users)
+          .set({
+            role: "ORGANIZER",
+            displayName: application.displayName,
+            updatedAt: new Date().toISOString(),
+          })
+          .where(eq(users.id, existingUser.id));
+
+        await tx
+          .update(organizerApplications)
+          .set({
+            status: "APPROVED",
+            updatedAt: new Date().toISOString(),
+          })
+          .where(eq(organizerApplications.id, id));
+
+        return await tx
+          .select({
+            id: users.id,
+            email: users.email,
+            name: users.name,
+            role: users.role,
+          })
+          .from(users)
+          .where(eq(users.id, existingUser.id))
+          .get();
+      });
+    }
 
     return NextResponse.json({ success: true, user });
   } catch (error) {

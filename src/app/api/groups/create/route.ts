@@ -74,54 +74,88 @@ export async function POST(request: Request) {
       );
     }
 
-    // トランザクションで団体とUserEvent、UserGroupを作成
-    const result = await db.transaction(async (tx) => {
-      const groupId = crypto.randomUUID();
+    const groupId = crypto.randomUUID();
+    const groupInsert = db.insert(groups).values({
+      id: groupId,
+      eventId,
+      name,
+      theme: theme || null,
+      maxMembers: maxMembers || null,
+      groupCode: groupCode,
+      leaderUserId: userId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
 
-      // 団体を作成
-      await tx.insert(groups).values({
-        id: groupId,
-        eventId,
-        name,
-        theme: theme || null,
-        maxMembers: maxMembers || null,
-        groupCode: groupCode,
-        leaderUserId: userId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+    const userGroupInsert = db.insert(userGroups).values({
+      userId,
+      groupId,
+      eventId,
+      status: "INTERESTED",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
 
-      // UserGroupを作成
-      await tx.insert(userGroups).values({
+    const userEventInsert = db.insert(userEvents)
+      .values({
         userId,
-        groupId,
         eventId,
+        groupId,
         status: "INTERESTED",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+      })
+      .onConflictDoUpdate({
+        target: [userEvents.userId, userEvents.eventId],
+        set: {
+          groupId,
+          updatedAt: new Date().toISOString(),
+        },
       });
 
-      // UserEventを作成または更新
-      await tx
-        .insert(userEvents)
-        .values({
-          userId,
+    if (typeof (db as any).batch === "function") {
+      await (db as any).batch([groupInsert, userGroupInsert, userEventInsert]);
+    } else {
+      await db.transaction(async (tx: any) => {
+        await tx.insert(groups).values({
+          id: groupId,
           eventId,
+          name,
+          theme: theme || null,
+          maxMembers: maxMembers || null,
+          groupCode: groupCode,
+          leaderUserId: userId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        await tx.insert(userGroups).values({
+          userId,
           groupId,
+          eventId,
           status: "INTERESTED",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-        })
-        .onConflictDoUpdate({
-          target: [userEvents.userId, userEvents.eventId],
-          set: {
-            groupId,
-            updatedAt: new Date().toISOString(),
-          },
         });
+        await tx.insert(userEvents)
+          .values({
+            userId,
+            eventId,
+            groupId,
+            status: "INTERESTED",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          })
+          .onConflictDoUpdate({
+            target: [userEvents.userId, userEvents.eventId],
+            set: {
+              groupId,
+              updatedAt: new Date().toISOString(),
+            },
+          });
+      });
+    }
 
-      return { id: groupId, groupCode };
-    });
+    const result = { id: groupId, groupCode };
 
     return NextResponse.json({
       groupId: result.id,

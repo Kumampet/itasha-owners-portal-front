@@ -287,40 +287,42 @@ export async function DELETE(
       );
     }
 
-    // トランザクションで団体と関連データを削除
-    await db.transaction(async (tx: any) => {
-      // 1. メッセージIDをリストアップ
-      const messagesList = await tx
-        .select({ id: groupMessages.id })
-        .from(groupMessages)
-        .where(eq(groupMessages.groupId, id));
+    // トランザクション（またはバッチ）で団体と関連データを削除
+    const messagesList = await db
+      .select({ id: groupMessages.id })
+      .from(groupMessages)
+      .where(eq(groupMessages.groupId, id));
 
-      const msgIds = messagesList.map((m: any) => m.id);
+    const msgIds = messagesList.map((m: any) => m.id);
 
-      // 2. メッセージに関連する既読情報・リアクションを削除
+    if (typeof (db as any).batch === "function") {
+      const batchQueries: any[] = [];
       if (msgIds.length > 0) {
-        await tx.delete(groupMessageReactions).where(inArray(groupMessageReactions.messageId, msgIds));
-        await tx.delete(groupMessageReads).where(inArray(groupMessageReads.messageId, msgIds));
-        await tx.delete(groupMessages).where(inArray(groupMessages.id, msgIds));
+        batchQueries.push(db.delete(groupMessageReactions).where(inArray(groupMessageReactions.messageId, msgIds)));
+        batchQueries.push(db.delete(groupMessageReads).where(inArray(groupMessageReads.messageId, msgIds)));
+        batchQueries.push(db.delete(groupMessages).where(inArray(groupMessages.id, msgIds)));
       } else {
-        await tx.delete(groupMessages).where(eq(groupMessages.groupId, id));
+        batchQueries.push(db.delete(groupMessages).where(eq(groupMessages.groupId, id)));
       }
-
-      // 3. UserGroupから削除
-      await tx.delete(userGroups).where(eq(userGroups.groupId, id));
-
-      // 4. UserEventからgroup_idを削除（nullに更新）
-      await tx
-        .update(userEvents)
-        .set({
-          groupId: null,
-          updatedAt: new Date().toISOString(),
-        })
-        .where(eq(userEvents.groupId, id));
-
-      // 5. 団体を削除
-      await tx.delete(groups).where(eq(groups.id, id));
-    });
+      batchQueries.push(db.delete(userGroups).where(eq(userGroups.groupId, id)));
+      batchQueries.push(db.update(userEvents).set({ groupId: null, updatedAt: new Date().toISOString() }).where(eq(userEvents.groupId, id)));
+      batchQueries.push(db.delete(groups).where(eq(groups.id, id)));
+      
+      await (db as any).batch(batchQueries);
+    } else {
+      await db.transaction(async (tx: any) => {
+        if (msgIds.length > 0) {
+          await tx.delete(groupMessageReactions).where(inArray(groupMessageReactions.messageId, msgIds));
+          await tx.delete(groupMessageReads).where(inArray(groupMessageReads.messageId, msgIds));
+          await tx.delete(groupMessages).where(inArray(groupMessages.id, msgIds));
+        } else {
+          await tx.delete(groupMessages).where(eq(groupMessages.groupId, id));
+        }
+        await tx.delete(userGroups).where(eq(userGroups.groupId, id));
+        await tx.update(userEvents).set({ groupId: null, updatedAt: new Date().toISOString() }).where(eq(userEvents.groupId, id));
+        await tx.delete(groups).where(eq(groups.id, id));
+      });
+    }
 
     // S3から団体に関連する画像を削除（トランザクション外で実行）
     await deleteGroupImages(id);

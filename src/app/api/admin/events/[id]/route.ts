@@ -85,7 +85,7 @@ export async function GET(
           ? JSON.parse(event.officialUrls)
           : event.officialUrls;
       }
-    } catch {}
+    } catch { }
 
     let keywords: string[] = [];
     try {
@@ -94,7 +94,7 @@ export async function GET(
           ? JSON.parse(event.keywords)
           : event.keywords;
       }
-    } catch {}
+    } catch { }
 
     const formattedEvent = {
       id: event.id,
@@ -260,8 +260,7 @@ export async function PATCH(
       }
     }
 
-    // トランザクションでイベントとタグを同時に更新
-    const updatedEvent = await db.transaction(async (tx) => {
+    const performUpdate = async (tx: any) => {
       // 既存のタグを削除
       await tx.delete(eventTags).where(eq(eventTags.eventId, id));
 
@@ -297,7 +296,7 @@ export async function PATCH(
       if (body.entries && Array.isArray(body.entries)) {
         for (const entry of body.entries) {
           const entryStartAt = fromDateTimeLocal(entry.entry_start_at);
-          
+
           if (entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== "") {
             if (!entryStartAt) {
               throw new Error(`エントリー${entry.entry_number}の開始日時が無効です`);
@@ -366,7 +365,13 @@ export async function PATCH(
       }
 
       // 更新したイベントを取得
-      return await tx.query.events.findFirst({
+      let txQuery = tx;
+      if (tx.query) {
+        txQuery = tx.query;
+      } else {
+        txQuery = db.query; // fallback for sequential execution if tx doesn't have query
+      }
+      return await txQuery.events.findFirst({
         where: eq(events.id, id),
         with: {
           eventEntries: {
@@ -379,7 +384,16 @@ export async function PATCH(
           },
         },
       });
-    });
+    };
+
+    let updatedEvent;
+    if (typeof (db as any).batch === "function") {
+      updatedEvent = await performUpdate(db);
+    } else {
+      updatedEvent = await db.transaction(async (tx: any) => {
+        return await performUpdate(tx);
+      });
+    }
 
     const { revalidateTag } = await import("next/cache");
     revalidateTag("events", {});
@@ -419,7 +433,7 @@ export async function PATCH(
           ? JSON.parse(updatedEvent.officialUrls)
           : updatedEvent.officialUrls;
       }
-    } catch {}
+    } catch { }
 
     let updatedKeywords: string[] = [];
     try {
@@ -428,7 +442,7 @@ export async function PATCH(
           ? JSON.parse(updatedEvent.keywords)
           : updatedEvent.keywords;
       }
-    } catch {}
+    } catch { }
 
     const resObj = updatedEvent ? {
       id: updatedEvent.id,
