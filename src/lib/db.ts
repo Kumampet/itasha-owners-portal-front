@@ -66,7 +66,7 @@ function getDb() {
         const rowsAsArrays = rows.map((row: any) => Object.values(row));
         
         if (method === "get") {
-          return { rows: rowsAsArrays[0] || [] };
+          return { rows: rowsAsArrays[0] };
         }
         
         return { rows: rowsAsArrays };
