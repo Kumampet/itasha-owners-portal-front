@@ -1,5 +1,6 @@
 import { drizzle as drizzleD1 } from "drizzle-orm/d1";
 import { drizzle as drizzleSqlite } from "drizzle-orm/better-sqlite3";
+import { drizzle as drizzleProxy } from "drizzle-orm/sqlite-proxy";
 import Database from "better-sqlite3";
 import * as schema from "../db/schema";
 import * as relations from "../db/relations";
@@ -25,6 +26,54 @@ let dbInstance: any;
 
 function getDb() {
   if (dbInstance) {
+    return dbInstance;
+  }
+
+  // リモートのCloudflare D1にHTTP API経由で直接アクセスする場合
+  if (process.env.USE_REMOTE_D1 === "true") {
+    console.log("[Drizzle] Using remote Cloudflare D1 via HTTP Proxy.");
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+    const dbId = process.env.CLOUDFLARE_DATABASE_ID;
+    const token = process.env.CLOUDFLARE_API_TOKEN;
+
+    if (!accountId || !dbId || !token || accountId.includes("YOUR_") || token.includes("YOUR_")) {
+      throw new Error("Missing or invalid Cloudflare D1 HTTP API credentials in .env.prod");
+    }
+
+    dbInstance = drizzleProxy(
+      async (sql, params, method) => {
+        const res = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${dbId}/query`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ sql, params }),
+          }
+        );
+
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.errors?.[0]?.message || "Failed to query remote D1");
+        }
+
+        const result = data.result[0];
+        const rows = result.results || [];
+        // Drizzleのsqlite-proxyは、オブジェクトの配列ではなく、値の配列の配列（[[val1, val2], ...]）を期待します。
+        // （getメソッドの場合は [val1, val2] という単一の配列）
+        const rowsAsArrays = rows.map((row: any) => Object.values(row));
+        
+        if (method === "get") {
+          return { rows: rowsAsArrays[0] || [] };
+        }
+        
+        return { rows: rowsAsArrays };
+      },
+      { schema: { ...schema, ...relations } }
+    );
+    
     return dbInstance;
   }
 

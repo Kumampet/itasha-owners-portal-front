@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:prod": "dotenv -e .env.prod -- next dev",
+    "dev:prod": "dotenv -e .env.prod -- cross-env USE_REMOTE_D1=true next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
