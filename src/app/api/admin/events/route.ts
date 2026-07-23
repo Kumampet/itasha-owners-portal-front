@@ -387,7 +387,7 @@ export async function POST(request: Request) {
       createdEvent &&
       createdEvent.approvalStatus === "PENDING"
     ) {
-      notifyDiscordEventApprovalRequested({
+      await notifyDiscordEventApprovalRequested({
         eventId: createdEvent.id,
         eventName: createdEvent.name,
         eventDateLabel: new Date(createdEvent.eventDate).toLocaleDateString("ja-JP", {

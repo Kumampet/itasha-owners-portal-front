@@ -113,14 +113,14 @@ async function sendAdminEmbed(
 }
 
 /** オーガナイザーによるイベントの承認申請（PENDING） */
-export function notifyDiscordEventApprovalRequested(payload: {
+export async function notifyDiscordEventApprovalRequested(payload: {
   eventId: string;
   eventName: string;
   eventDateLabel?: string | null;
-}): void {
+}): Promise<void> {
   const { eventId, eventName, eventDateLabel } = payload;
   const url = adminPath(`/admin/events/${eventId}`);
-  void sendAdminEmbed(
+  await sendAdminEmbed(
     {
       title: "イベント承認依頼",
       description: truncateField(
@@ -141,14 +141,14 @@ export function notifyDiscordEventApprovalRequested(payload: {
 }
 
 /** 管理者によるイベント承認（APPROVED） */
-export function notifyDiscordEventApproved(payload: {
+export async function notifyDiscordEventApproved(payload: {
   eventId: string;
   eventName: string;
   eventDateLabel?: string | null;
-}): void {
+}): Promise<void> {
   const { eventId, eventName, eventDateLabel } = payload;
   const url = adminPath(`/admin/events/${eventId}`);
-  void sendAdminEmbed(
+  await sendAdminEmbed(
     {
       title: "イベント承認済み",
       description: truncateField(
@@ -170,10 +170,10 @@ export function notifyDiscordEventApproved(payload: {
 }
 
 /** お問い合わせフォーム送信（ID と管理画面 URL のみ。個人情報は送らない） */
-export function notifyDiscordContactReceived(payload: { id: string }): void {
+export async function notifyDiscordContactReceived(payload: { id: string }): Promise<void> {
   const { id } = payload;
   const listUrl = adminPath("/admin/contacts");
-  void sendAdminEmbed(
+  await sendAdminEmbed(
     {
       title: "お問い合わせ",
       description: "新規のお問い合わせがあります！",
@@ -188,16 +188,16 @@ export function notifyDiscordContactReceived(payload: { id: string }): void {
 }
 
 /** イベント掲載依頼フォーム */
-export function notifyDiscordEventListingRequest(payload: {
+export async function notifyDiscordEventListingRequest(payload: {
   id: string;
   name: string;
   originalUrl: string | null;
   venue_name?: string | null;
   eventDateIso?: string | null;
-}): void {
+}): Promise<void> {
   const { id, name, originalUrl, venue_name, eventDateIso } = payload;
   const listUrl = adminPath("/admin/submissions");
-  void sendAdminEmbed(
+  await sendAdminEmbed(
     {
       title: "イベント掲載依頼",
       fields: [
@@ -236,13 +236,13 @@ export function notifyDiscordEventListingRequest(payload: {
 }
 
 /** オーガナイザー登録申請 */
-export function notifyDiscordOrganizerApplication(payload: {
+export async function notifyDiscordOrganizerApplication(payload: {
   id: string;
   displayName: string;
-}): void {
+}): Promise<void> {
   const { id, displayName } = payload;
   const listUrl = adminPath("/admin/organizer-applications");
-  void sendAdminEmbed(
+  await sendAdminEmbed(
     {
       title: "オーガナイザー申請",
       fields: [

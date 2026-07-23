@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       updatedAt: nowStr,
     });
 
-    notifyDiscordOrganizerApplication({
+    await notifyDiscordOrganizerApplication({
       id: applicationId,
       displayName: display_name,
     });

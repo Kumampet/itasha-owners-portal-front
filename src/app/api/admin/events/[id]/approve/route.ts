@@ -47,7 +47,7 @@ export async function POST(
 
     scheduleMergeApprovedEventIntoSitemapOnS3(event.id, new Date(event.updatedAt));
 
-    notifyDiscordEventApproved({
+    await notifyDiscordEventApproved({
       eventId: event.id,
       eventName: event.name,
       eventDateLabel: new Date(event.eventDate).toLocaleDateString("ja-JP", {
