@@ -1,19 +1,15 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { users } from "@/db/schema";
+import { eq, and, or, asc, desc, like } from "drizzle-orm";
 
 // GET /api/admin/users
-// 管理画面用のユーザー一覧取得API（ソート・絞り込み対応）
 export async function GET(request: Request) {
   try {
     const session = await auth();
-
-    // 管理者権限チェック
     if (!session || session.user?.role !== "ADMIN") {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -22,53 +18,48 @@ export async function GET(request: Request) {
     const search = searchParams.get("search");
     const role = searchParams.get("role");
 
-    // フィルター条件を構築
-    const where: Record<string, unknown> = {};
-    if (role && role !== "ALL") {
-      where.role = role;
-    }
+    const andConditions: any[] = [];
+    if (role && role !== "ALL") andConditions.push(eq(users.role, role));
     if (search) {
-      where.OR = [
-        { email: { contains: search } },
-        { name: { contains: search } },
-      ];
+      andConditions.push(or(like(users.email, `%${search}%`), like(users.name, `%${search}%`)));
     }
 
-    // ソート条件を構築
-    const orderBy: Record<string, "asc" | "desc"> = {};
-    orderBy[sortBy] = sortOrder as "asc" | "desc";
+    let sortCol: any = users.createdAt;
+    if (sortBy === "email") sortCol = users.email;
+    else if (sortBy === "name") sortCol = users.name;
 
-    const users = await prisma.user.findMany({
-      where,
-      orderBy,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        display_name: true,
-        role: true,
-        is_banned: true,
-        deleted_at: true,
-        created_at: true,
-      },
+    const list = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        displayName: users.displayName,
+        role: users.role,
+        isBanned: users.isBanned,
+        deletedAt: users.deletedAt,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(andConditions.length > 0 ? and(...andConditions) : undefined)
+      .orderBy(sortOrder === "asc" ? asc(sortCol) : desc(sortCol));
+
+    const formatted = list.map((u: any) => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      display_name: u.displayName,
+      role: u.role,
+      is_banned: u.isBanned,
+      deleted_at: u.deletedAt ? new Date(u.deletedAt).toISOString() : null,
+      created_at: new Date(u.createdAt).toISOString(),
+    }));
+
+    return NextResponse.json(formatted, {
+      headers: { "Cache-Control": "private, s-maxage=10, stale-while-revalidate=30" },
     });
-
-    // 管理画面用のため、privateディレクティブを使用して10秒間キャッシュ
-    return NextResponse.json(
-      users,
-      {
-        headers: {
-          "Cache-Control": "private, s-maxage=10, stale-while-revalidate=30",
-        },
-      }
-    );
   } catch (error) {
     console.error("Error fetching users:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json(
-      { error: "Failed to fetch users", details: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch users", details: errorMessage }, { status: 500 });
   }
 }
-

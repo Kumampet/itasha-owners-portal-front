@@ -47,6 +47,33 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Basic Authentication
+  const basicAuthUser = process.env.BASIC_AUTH_USER;
+  const basicAuthPass = process.env.BASIC_AUTH_PASS;
+  if (basicAuthUser && basicAuthPass) {
+    const authHeader = request.headers.get("authorization");
+    let authorized = false;
+    if (authHeader?.startsWith("Basic ")) {
+      try {
+        const credentials = atob(authHeader.split(" ")[1]);
+        const [user, pass] = credentials.split(":");
+        if (user === basicAuthUser && pass === basicAuthPass) {
+          authorized = true;
+        }
+      } catch (e) {
+        // Ignored
+      }
+    }
+    if (!authorized) {
+      return new NextResponse("Unauthorized", {
+        status: 401,
+        headers: {
+          "WWW-Authenticate": 'Basic realm="Secure Area"',
+        },
+      });
+    }
+  }
+
   // EU/EEA/英国ほか関連法域（GDPR_BLOCKED_COUNTRY_CODES）からのアクセスを拒否（ローカルホストなどは別途スキップ）
   // 国コードは CloudFront Viewer Country / x-vercel-ip-country / cf-ipcountry を利用
   if (!shouldSkipGdprGeoBlock(request)) {

@@ -24,16 +24,6 @@ function NotificationSettingsPageContent() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.replace("/app/mypage");
-      return;
-    }
-
-    if (status === "authenticated") {
-      fetchSettings();
-    }
-  }, [status, router]);
 
   const fetchSettings = async () => {
     try {
@@ -60,6 +50,17 @@ function NotificationSettingsPageContent() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/app/mypage");
+      return;
+    }
+
+    if (status === "authenticated") {
+      fetchSettings();
+    }
+  }, [status, router]);
 
   const updateSettings = async (updates: Partial<NotificationSettings>) => {
     if (!settings) return;

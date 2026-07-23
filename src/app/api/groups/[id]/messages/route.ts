@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { groups, userGroups, groupMessages } from "@/db/schema";
+import { eq, and, asc } from "drizzle-orm";
 import { sendPushNotificationToUsers } from "@/lib/push-notification";
-// TODO: 一斉連絡用メール通知機能は未実装です。将来的に実装する場合は、sendEmailをインポートして使用してください。
-// import { sendEmail } from "@/lib/ses";
 
 // GET /api/groups/[id]/messages
 // 団体メッセージ一覧を取得
@@ -14,18 +14,19 @@ export async function GET(
   try {
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
+    const userId = session.user.id;
     const { id } = await params;
 
     // 団体を取得
-    const group = await prisma.group.findUnique({
-      where: { id },
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, id),
     });
 
     if (!group) {
@@ -35,18 +36,20 @@ export async function GET(
       );
     }
 
-    // ユーザーがこの団体に参加しているか確認（複数団体参加対応：UserGroupテーブルを使用）
-    const userGroup = await prisma.userGroup.findUnique({
-      where: {
-        user_id_group_id: {
-          user_id: session.user.id,
-          group_id: id,
-        },
-      },
-    });
+    // ユーザーがこの団体に参加しているか確認
+    const userGroup = await db
+      .select()
+      .from(userGroups)
+      .where(
+        and(
+          eq(userGroups.userId, userId),
+          eq(userGroups.groupId, id)
+        )
+      )
+      .get();
 
     // オーナー（リーダー）の場合はUserGroupに存在しなくてもアクセス可能
-    const isLeader = group.leader_user_id === session.user.id;
+    const isLeader = group.leaderUserId === userId;
     if (!userGroup && !isLeader) {
       return NextResponse.json(
         { error: "You are not a member of this group" },
@@ -57,93 +60,98 @@ export async function GET(
     // オーナーがUserGroupに存在しない場合、UserGroupに追加（データ整合性のため）
     if (isLeader && !userGroup) {
       try {
-        await prisma.userGroup.create({
-          data: {
-            user_id: group.leader_user_id,
-            group_id: id,
-            event_id: group.event_id,
-            status: "INTERESTED",
-          },
+        await db.insert(userGroups).values({
+          userId: group.leaderUserId,
+          groupId: id,
+          eventId: group.eventId,
+          status: "INTERESTED",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         });
       } catch {
         // 既に存在する場合は無視
       }
     }
 
-    // メッセージを取得（新しい順）
-    const messages = await prisma.groupMessage.findMany({
-      where: {
-        group_id: id,
-      },
-      include: {
-        sender: {
-          select: {
+    // メッセージを取得（古い順）
+    const messages = await db.query.groupMessages.findMany({
+      where: eq(groupMessages.groupId, id),
+      orderBy: asc(groupMessages.createdAt),
+      with: {
+        user: { // sender
+          columns: {
             id: true,
             name: true,
-            display_name: true,
+            displayName: true,
             email: true,
           },
         },
-        reactions: {
-          include: {
+        groupMessageReactions: {
+          with: {
             user: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
-                display_name: true,
+                displayName: true,
               },
             },
           },
         },
       },
-      orderBy: {
-        created_at: "asc",
-      },
+    });
+
+    // レスポンスマッピング
+    const formattedMessages = messages.map((msg: any) => {
+      const reactionMap = new Map<string, Array<{ userId: string; userName: string | null; displayName: string | null }>>();
+      
+      const reactionsRaw = msg.groupMessageReactions || [];
+      reactionsRaw.forEach((reaction: any) => {
+        const emoji = reaction.emoji;
+        if (!reactionMap.has(emoji)) {
+          reactionMap.set(emoji, []);
+        }
+        reactionMap.get(emoji)!.push({
+          userId: reaction.user.id,
+          userName: reaction.user.name,
+          displayName: reaction.user.displayName,
+        });
+      });
+
+      const reactions = Array.from(reactionMap.entries()).map(([emoji, users]) => ({
+        emoji,
+        count: users.length,
+        users: users.map((u) => ({
+          id: u.userId,
+          name: u.userName,
+          displayName: u.displayName,
+        })),
+      }));
+
+      const sender = msg.user || {
+        id: "",
+        name: "退会したユーザー",
+        displayName: null,
+        email: null,
+      };
+
+      return {
+        id: msg.id,
+        content: msg.content,
+        isAnnouncement: msg.isAnnouncement,
+        sender: {
+          id: sender.id,
+          name: sender.name,
+          displayName: sender.displayName,
+          email: sender.email,
+        },
+        createdAt: new Date(msg.createdAt).toISOString(),
+        reactions,
+      };
     });
 
     // リアルタイム性が重要なのでキャッシュを無効にする
     return NextResponse.json(
-      messages.map((msg) => {
-        // リアクションを絵文字ごとに集計
-        const reactionMap = new Map<string, Array<{ userId: string; userName: string | null; displayName: string | null }>>();
-        
-        msg.reactions.forEach((reaction) => {
-          const emoji = reaction.emoji;
-          if (!reactionMap.has(emoji)) {
-            reactionMap.set(emoji, []);
-          }
-          reactionMap.get(emoji)!.push({
-            userId: reaction.user.id,
-            userName: reaction.user.name,
-            displayName: reaction.user.display_name,
-          });
-        });
-
-        // リアクションを配列に変換（絵文字ごとに集計）
-        const reactions = Array.from(reactionMap.entries()).map(([emoji, users]) => ({
-          emoji,
-          count: users.length,
-          users: users.map((u) => ({
-            id: u.userId,
-            name: u.userName,
-            displayName: u.displayName,
-          })),
-        }));
-
-        return {
-          id: msg.id,
-          content: msg.content,
-          isAnnouncement: msg.is_announcement,
-          sender: {
-            id: msg.sender.id,
-            name: msg.sender.name,
-            displayName: msg.sender.display_name,
-            email: msg.sender.email,
-          },
-          createdAt: msg.created_at,
-          reactions,
-        };
-      }),
+      formattedMessages,
       {
         headers: {
           "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -168,13 +176,14 @@ export async function POST(
   try {
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
+    const userId = session.user.id;
     const { id } = await params;
     const body = await request.json();
     const { content, isAnnouncement } = body;
@@ -187,15 +196,8 @@ export async function POST(
     }
 
     // 団体を取得
-    const group = await prisma.group.findUnique({
-      where: { id },
-      include: {
-        event: {
-          select: {
-            name: true,
-          },
-        },
-      },
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, id),
     });
 
     if (!group) {
@@ -205,18 +207,19 @@ export async function POST(
       );
     }
 
-    // ユーザーがこの団体に参加しているか確認（複数団体参加対応：UserGroupテーブルを使用）
-    const userGroup = await prisma.userGroup.findUnique({
-      where: {
-        user_id_group_id: {
-          user_id: session.user.id,
-          group_id: id,
-        },
-      },
-    });
+    // ユーザーがこの団体に参加しているか確認
+    const userGroup = await db
+      .select()
+      .from(userGroups)
+      .where(
+        and(
+          eq(userGroups.userId, userId),
+          eq(userGroups.groupId, id)
+        )
+      )
+      .get();
 
-    // オーナー（リーダー）の場合はUserGroupに存在しなくてもアクセス可能
-    const isLeader = group.leader_user_id === session.user.id;
+    const isLeader = group.leaderUserId === userId;
     if (!userGroup && !isLeader) {
       return NextResponse.json(
         { error: "You are not a member of this group" },
@@ -224,16 +227,16 @@ export async function POST(
       );
     }
 
-    // オーナーがUserGroupに存在しない場合、UserGroupに追加（データ整合性のため）
+    // オーナーがUserGroupに存在しない場合、UserGroupに追加
     if (isLeader && !userGroup) {
       try {
-        await prisma.userGroup.create({
-          data: {
-            user_id: group.leader_user_id,
-            group_id: id,
-            event_id: group.event_id,
-            status: "INTERESTED",
-          },
+        await db.insert(userGroups).values({
+          userId: group.leaderUserId,
+          groupId: id,
+          eventId: group.eventId,
+          status: "INTERESTED",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         });
       } catch {
         // 既に存在する場合は無視
@@ -241,59 +244,41 @@ export async function POST(
     }
 
     // メンバー一覧を取得（プッシュ通知送信用）
-    const groupMembers = await prisma.userGroup.findMany({
-      where: {
-        group_id: id,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
+    const groupMembers = await db
+      .select({ userId: userGroups.userId })
+      .from(userGroups)
+      .where(eq(userGroups.groupId, id));
+
+    const messageId = crypto.randomUUID();
+    const createdAtStr = new Date().toISOString();
 
     // メッセージを作成
-    const message = await prisma.groupMessage.create({
-      data: {
-        group_id: id,
-        sender_id: session.user.id,
-        content: content.trim(),
-        is_announcement: isAnnouncement === true,
-      },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            name: true,
-            display_name: true,
-            email: true,
-          },
-        },
-      },
+    await db.insert(groupMessages).values({
+      id: messageId,
+      groupId: id,
+      senderId: userId,
+      content: content.trim(),
+      isAnnouncement: isAnnouncement === true,
+      createdAt: createdAtStr,
     });
 
     // プッシュ通知を送信（送信者以外の全メンバーに）
     try {
       const recipientUserIds = groupMembers
-        .filter((gm) => gm.user_id !== session.user.id)
-        .map((gm) => gm.user_id);
+        .filter((gm: any) => gm.userId !== userId)
+        .map((gm: any) => gm.userId);
 
       if (recipientUserIds.length > 0) {
         const senderName = session.user.name || session.user.email || "メンバー";
         const title = isAnnouncement
           ? `【${group.name}】一斉連絡`
           : `${group.name}からのメッセージ`;
-        const body = `${senderName}: ${content.trim().substring(0, 100)}${content.trim().length > 100 ? "..." : ""}`;
+        const bodyText = `${senderName}: ${content.trim().substring(0, 100)}${content.trim().length > 100 ? "..." : ""}`;
 
-        // 非同期でプッシュ通知を送信（エラーが発生してもメッセージ作成は成功とする）
-        sendPushNotificationToUsers(recipientUserIds, title, body, {
+        sendPushNotificationToUsers(recipientUserIds, title, bodyText, {
           type: "group_message",
           groupId: id,
-          messageId: message.id,
+          messageId: messageId,
           url: `/app/groups/${id}`,
         }).catch((error) => {
           console.error("[Group Message] Failed to send push notifications:", error);
@@ -301,61 +286,19 @@ export async function POST(
       }
     } catch (pushError) {
       console.error("[Group Message] Error sending push notifications:", pushError);
-      // プッシュ通知エラーはログに記録するだけで、メッセージ作成は成功とする
     }
 
-    // TODO: 一斉連絡用メール通知機能は未実装です。将来的に実装する場合は、以下のロジックを追加してください。
-    // 一斉連絡の場合、メール通知を送信
-    // if (isAnnouncement === true) {
-    //   try {
-    //     const senderName = session.user.name || session.user.email;
-    //     const subject = `【${group.name}】一斉連絡: ${group.event.name}`;
-    //     const emailBody = `
-    // ${senderName}さんからの一斉連絡です。
-    //
-    // ${content.trim()}
-    //
-    // ---
-    // 団体: ${group.name}
-    // イベント: ${group.event.name}
-    // `;
-    //
-    //     // 送信者以外の全メンバーにメール送信
-    //     const recipients = group.members
-    //       .filter((m) => m.user_id !== session.user.id)
-    //       .map((m) => m.user.email);
-    //
-    //     // メール送信（エラーが発生してもメッセージ作成は成功とする）
-    //     for (const recipient of recipients) {
-    //       try {
-    //         await sendEmail({
-    //           to: recipient,
-    //           subject,
-    //           body: emailBody,
-    //         });
-    //       } catch (emailError) {
-    //         console.error(`Failed to send email to ${recipient}:`, emailError);
-    //         // 個別のメール送信エラーはログに記録するだけで続行
-    //       }
-    //     }
-    //   } catch (emailError) {
-    //     console.error("Failed to send announcement emails:", emailError);
-    //     // メール送信エラーはログに記録するだけで、メッセージ作成は成功とする
-    //   }
-    // }
-
-    // リアクション情報を取得（新規メッセージなので空配列）
     return NextResponse.json({
-      id: message.id,
-      content: message.content,
-      isAnnouncement: message.is_announcement,
+      id: messageId,
+      content: content.trim(),
+      isAnnouncement: isAnnouncement === true,
       sender: {
-        id: message.sender.id,
-        name: message.sender.name,
-        displayName: message.sender.display_name,
-        email: message.sender.email,
+        id: userId,
+        name: session.user.name || null,
+        displayName: session.user.displayName || null,
+        email: session.user.email || null,
       },
-      createdAt: message.created_at,
+      createdAt: createdAtStr,
       reactions: [],
     });
   } catch (error) {
@@ -366,4 +309,3 @@ export async function POST(
     );
   }
 }
-

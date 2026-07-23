@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { pushSubscriptions } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 
 // POST /api/user/push-subscription
 // プッシュ通知のサブスクリプションを登録
@@ -25,27 +27,30 @@ export async function POST(request: Request) {
       );
     }
 
+    const nowStr = new Date().toISOString();
+
     // サブスクリプションを登録または更新
-    const subscription = await prisma.pushSubscription.upsert({
-      where: {
-        user_id_endpoint: {
-          user_id: userId,
-          endpoint: endpoint,
-        },
-      },
-      update: {
-        p256dh: keys.p256dh,
-        auth: keys.auth,
-      },
-      create: {
-        user_id: userId,
+    await db
+      .insert(pushSubscriptions)
+      .values({
+        id: crypto.randomUUID(),
+        userId: userId,
         endpoint: endpoint,
         p256dh: keys.p256dh,
         auth: keys.auth,
-      },
-    });
+        createdAt: nowStr,
+        updatedAt: nowStr,
+      })
+      .onConflictDoUpdate({
+        target: [pushSubscriptions.userId, pushSubscriptions.endpoint],
+        set: {
+          p256dh: keys.p256dh,
+          auth: keys.auth,
+          updatedAt: nowStr,
+        },
+      });
 
-    return NextResponse.json({ success: true, subscription });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error registering push subscription:", error);
     return NextResponse.json(
@@ -79,12 +84,14 @@ export async function DELETE(request: Request) {
     }
 
     // サブスクリプションを削除
-    await prisma.pushSubscription.deleteMany({
-      where: {
-        user_id: userId,
-        endpoint: endpoint,
-      },
-    });
+    await db
+      .delete(pushSubscriptions)
+      .where(
+        and(
+          eq(pushSubscriptions.userId, userId),
+          eq(pushSubscriptions.endpoint, endpoint)
+        )
+      );
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -95,4 +102,3 @@ export async function DELETE(request: Request) {
     );
   }
 }
-

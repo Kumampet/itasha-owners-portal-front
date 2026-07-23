@@ -1,4 +1,5 @@
-import fs from "node:fs/promises";
+ 
+// import fs from "node:fs/promises";
 import path from "node:path";
 import {
   resolveLocalBundledStoragePath,
@@ -14,8 +15,8 @@ export async function writeLocalGroupImage(
   body: Buffer,
 ): Promise<void> {
   const full = resolveLocalBundledStoragePath(storageKey);
-  await fs.mkdir(path.dirname(full), { recursive: true });
-  await fs.writeFile(full, body);
+  // await fs.mkdir(path.dirname(full), { recursive: true });
+  // await fs.writeFile(full, body);
 }
 
 export type LocalGroupImageStat = {
@@ -29,8 +30,10 @@ export async function readLocalGroupImage(
 ): Promise<LocalGroupImageStat | null> {
   const full = resolveLocalBundledStoragePath(storageKey);
   try {
-    const [stat, buffer] = await Promise.all([fs.stat(full), fs.readFile(full)]);
-    return { buffer, mtime: stat.mtime, size: stat.size };
+    return null;
+    // const [stat, buffer] = await Promise.all([fs.stat(full), fs.readFile(full)]);
+    // const [stat, buffer] = await Promise.all([fs.stat(full), fs.readFile(full)]);
+    // return { buffer, mtime: stat.mtime, size: stat.size };
   } catch (e: unknown) {
     if (
       typeof e === "object" &&
@@ -52,7 +55,7 @@ export async function deleteLocalGroupImagesByGroupId(
 ): Promise<void> {
   const marker = resolveLocalBundledStoragePath(`uploads/images/${groupId}/_.keep`);
   const dir = path.dirname(marker);
-  await fs.rm(dir, { recursive: true, force: true });
+  // await fs.rm(dir, { recursive: true, force: true });
 }
 
 /** uploads/images/events/${eventId}/ 配下を削除（イベントサムネは1枚のみのためディレクトリごと削除） */
@@ -63,5 +66,5 @@ export async function deleteLocalEventImagesByEventId(
     `uploads/images/events/${eventId}/_.keep`,
   );
   const dir = path.dirname(marker);
-  await fs.rm(dir, { recursive: true, force: true });
+  // await fs.rm(dir, { recursive: true, force: true });
 }

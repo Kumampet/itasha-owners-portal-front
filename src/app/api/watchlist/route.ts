@@ -1,6 +1,61 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { eventFollows, eventEntries } from "@/db/schema";
+import { eq, desc, asc } from "drizzle-orm";
+
+function mapDrizzleWatchlistToResponse(item: any) {
+  const event = item.event;
+  if (!event) return { ...item, event: null };
+
+  const tagsList = (event.eventTags || []).map((et: any) => ({
+    tag: {
+      name: et.tag?.name || "",
+    }
+  }));
+
+  const entriesList = (event.eventEntries || []).map((entry: any) => {
+    return {
+      entry_number: entry.entryNumber,
+      entry_start_at: entry.entryStartAt ? new Date(entry.entryStartAt).toISOString() : null,
+      entry_start_public_at: entry.entryStartPublicAt ? new Date(entry.entryStartPublicAt).toISOString() : null,
+      entry_deadline_at: entry.entryDeadlineAt ? new Date(entry.entryDeadlineAt).toISOString() : null,
+      payment_due_type: entry.paymentDueType,
+      payment_due_at: entry.paymentDueAt ? new Date(entry.paymentDueAt).toISOString() : null,
+      payment_due_public_at: entry.paymentDuePublicAt ? new Date(entry.paymentDuePublicAt).toISOString() : null,
+    };
+  });
+
+  let keywords = [];
+  try {
+    keywords = event.keywords ? (typeof event.keywords === "string" ? JSON.parse(event.keywords) : event.keywords) : [];
+  } catch {}
+
+  let officialUrls = [];
+  try {
+    officialUrls = event.officialUrls ? (typeof event.officialUrls === "string" ? JSON.parse(event.officialUrls) : event.officialUrls) : [];
+  } catch {}
+
+  return {
+    user_id: item.userId,
+    event_id: item.eventId,
+    followed_at: new Date(item.followedAt).toISOString(),
+    event: {
+      id: event.id,
+      name: event.name,
+      description: event.description,
+      event_date: new Date(event.eventDate).toISOString(),
+      event_end_date: event.eventEndDate ? new Date(event.eventEndDate).toISOString() : null,
+      is_multi_day: event.isMultiDay,
+      keywords,
+      official_urls: officialUrls,
+      image_url: event.imageUrl,
+      approval_status: event.approvalStatus,
+      entries: entriesList,
+      tags: tagsList,
+    }
+  };
+}
 
 // GET /api/watchlist
 // ユーザーのウォッチリスト一覧を取得
@@ -16,56 +71,34 @@ export async function GET() {
 
     const userId = session.user.id;
 
-    const watchlist = await prisma.eventFollow.findMany({
-      where: {
-        user_id: userId,
-      },
-      include: {
+    const watchlist = await db.query.eventFollows.findMany({
+      where: eq(eventFollows.userId, userId),
+      orderBy: desc(eventFollows.followedAt),
+      with: {
         event: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            event_date: true,
-            event_end_date: true,
-            is_multi_day: true,
-            keywords: true,
-            official_urls: true,
-            image_url: true,
-            approval_status: true,
-            entries: {
-              select: {
-                entry_number: true,
-                entry_start_at: true,
-                entry_start_public_at: true,
-                entry_deadline_at: true,
-                payment_due_at: true,
-                payment_due_public_at: true,
-              },
-              orderBy: {
-                entry_number: "asc",
-              },
+          with: {
+            eventEntries: {
+              orderBy: asc(eventEntries.entryNumber),
             },
-            tags: {
-              select: {
+            eventTags: {
+              with: {
                 tag: {
-                  select: {
+                  columns: {
                     name: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        followed_at: "desc",
-      },
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     });
+
+    const mappedWatchlist = watchlist.map(mapDrizzleWatchlistToResponse);
 
     // ユーザー固有データのため、privateディレクティブを使用して5秒間キャッシュ
     return NextResponse.json(
-      watchlist,
+      mappedWatchlist,
       {
         headers: {
           "Cache-Control": "private, s-maxage=5, stale-while-revalidate=10",
@@ -80,4 +113,3 @@ export async function GET() {
     );
   }
 }
-

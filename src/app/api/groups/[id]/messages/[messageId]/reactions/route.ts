@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { groups, userGroups, groupMessages, groupMessageReactions } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 
 // POST /api/groups/[id]/messages/[messageId]/reactions
 // リアクションを追加
@@ -11,13 +13,14 @@ export async function POST(
   try {
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
+    const userId = session.user.id;
     const { id, messageId } = await params;
     const body = await request.json();
     const { emoji } = body;
@@ -29,7 +32,7 @@ export async function POST(
       );
     }
 
-    // 絵文字の長さをチェック（最大10文字）
+    // 絵文字の長さをチェック
     if (Array.from(emoji).length > 10) {
       return NextResponse.json(
         { error: "Emoji is too long" },
@@ -37,19 +40,32 @@ export async function POST(
       );
     }
 
-    // 団体を取得して、ユーザーがメンバーか確認
-    const group = await prisma.group.findUnique({
-      where: { id },
-      include: {
-        user_groups: {
-          where: {
-            user_id: session.user.id,
-          },
-        },
-      },
+    // 団体を取得
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, id),
     });
 
-    if (!group || group.user_groups.length === 0) {
+    if (!group) {
+      return NextResponse.json(
+        { error: "Group not found" },
+        { status: 404 }
+      );
+    }
+
+    // ユーザーがメンバーかリーダーか確認
+    const userGroup = await db
+      .select()
+      .from(userGroups)
+      .where(
+        and(
+          eq(userGroups.userId, userId),
+          eq(userGroups.groupId, id)
+        )
+      )
+      .get();
+
+    const isLeader = group.leaderUserId === userId;
+    if (!userGroup && !isLeader) {
       return NextResponse.json(
         { error: "You are not a member of this group" },
         { status: 403 }
@@ -57,11 +73,11 @@ export async function POST(
     }
 
     // メッセージが存在するか確認
-    const message = await prisma.groupMessage.findUnique({
-      where: { id: messageId },
+    const message = await db.query.groupMessages.findFirst({
+      where: eq(groupMessages.id, messageId),
     });
 
-    if (!message || message.group_id !== id) {
+    if (!message || message.groupId !== id) {
       return NextResponse.json(
         { error: "Message not found" },
         { status: 404 }
@@ -69,40 +85,41 @@ export async function POST(
     }
 
     // 自分のメッセージにはリアクションを付けられない
-    if (message.sender_id === session.user.id) {
+    if (message.senderId === userId) {
       return NextResponse.json(
         { error: "You cannot react to your own message" },
         { status: 403 }
       );
     }
 
-    // 既存のリアクションを確認（同じユーザーが同じ絵文字を既に付けている場合は削除）
-    const existingReaction = await prisma.groupMessageReaction.findUnique({
-      where: {
-        message_id_user_id_emoji: {
-          message_id: messageId,
-          user_id: session.user.id,
-          emoji: emoji.trim(),
-        },
-      },
-    });
+    // 既存のリアクションを確認（同じユーザーが同じ絵文字を既に付けている場合は削除：トグル）
+    const existingReaction = await db
+      .select()
+      .from(groupMessageReactions)
+      .where(
+        and(
+          eq(groupMessageReactions.messageId, messageId),
+          eq(groupMessageReactions.userId, userId),
+          eq(groupMessageReactions.emoji, emoji.trim())
+        )
+      )
+      .get();
 
     if (existingReaction) {
-      // 既に同じリアクションがある場合は削除（トグル動作）
-      await prisma.groupMessageReaction.delete({
-        where: { id: existingReaction.id },
-      });
+      await db
+        .delete(groupMessageReactions)
+        .where(eq(groupMessageReactions.id, existingReaction.id));
 
       return NextResponse.json({ added: false });
     }
 
     // リアクションを追加
-    await prisma.groupMessageReaction.create({
-      data: {
-        message_id: messageId,
-        user_id: session.user.id,
-        emoji: emoji.trim(),
-      },
+    await db.insert(groupMessageReactions).values({
+      id: crypto.randomUUID(),
+      messageId: messageId,
+      userId: userId,
+      emoji: emoji.trim(),
+      createdAt: new Date().toISOString(),
     });
 
     return NextResponse.json({ added: true });
@@ -124,13 +141,14 @@ export async function DELETE(
   try {
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
+    const userId = session.user.id;
     const { id, messageId } = await params;
     const url = new URL(request.url);
     const emoji = url.searchParams.get("emoji");
@@ -142,19 +160,32 @@ export async function DELETE(
       );
     }
 
-    // 団体を取得して、ユーザーがメンバーか確認
-    const group = await prisma.group.findUnique({
-      where: { id },
-      include: {
-        user_groups: {
-          where: {
-            user_id: session.user.id,
-          },
-        },
-      },
+    // 団体を取得
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, id),
     });
 
-    if (!group || group.user_groups.length === 0) {
+    if (!group) {
+      return NextResponse.json(
+        { error: "Group not found" },
+        { status: 404 }
+      );
+    }
+
+    // ユーザーがメンバーかリーダーか確認
+    const userGroup = await db
+      .select()
+      .from(userGroups)
+      .where(
+        and(
+          eq(userGroups.userId, userId),
+          eq(userGroups.groupId, id)
+        )
+      )
+      .get();
+
+    const isLeader = group.leaderUserId === userId;
+    if (!userGroup && !isLeader) {
       return NextResponse.json(
         { error: "You are not a member of this group" },
         { status: 403 }
@@ -162,35 +193,37 @@ export async function DELETE(
     }
 
     // メッセージが存在するか確認
-    const message = await prisma.groupMessage.findUnique({
-      where: { id: messageId },
+    const message = await db.query.groupMessages.findFirst({
+      where: eq(groupMessages.id, messageId),
     });
 
-    if (!message || message.group_id !== id) {
+    if (!message || message.groupId !== id) {
       return NextResponse.json(
         { error: "Message not found" },
         { status: 404 }
       );
     }
 
-    // 自分のメッセージにはリアクションを削除できない（そもそも付けられないが、念のため）
-    if (message.sender_id === session.user.id) {
+    // 自分のメッセージにはリアクションを削除できない
+    if (message.senderId === userId) {
       return NextResponse.json(
         { error: "You cannot delete reactions from your own message" },
         { status: 403 }
       );
     }
 
-    // リアクションを削除
-    const reaction = await prisma.groupMessageReaction.findUnique({
-      where: {
-        message_id_user_id_emoji: {
-          message_id: messageId,
-          user_id: session.user.id,
-          emoji: emoji.trim(),
-        },
-      },
-    });
+    // リアクションを検索
+    const reaction = await db
+      .select()
+      .from(groupMessageReactions)
+      .where(
+        and(
+          eq(groupMessageReactions.messageId, messageId),
+          eq(groupMessageReactions.userId, userId),
+          eq(groupMessageReactions.emoji, emoji.trim())
+        )
+      )
+      .get();
 
     if (!reaction) {
       return NextResponse.json(
@@ -199,9 +232,9 @@ export async function DELETE(
       );
     }
 
-    await prisma.groupMessageReaction.delete({
-      where: { id: reaction.id },
-    });
+    await db
+      .delete(groupMessageReactions)
+      .where(eq(groupMessageReactions.id, reaction.id));
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -212,4 +245,3 @@ export async function DELETE(
     );
   }
 }
-

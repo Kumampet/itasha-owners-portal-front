@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { reminders } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // GET /api/reminders/[id]/ical
 // リマインダーをiCal形式で出力
@@ -20,11 +22,11 @@ export async function GET(
     const { id } = await params;
     const userId = session.user.id;
 
-    const reminder = await prisma.reminder.findUnique({
-      where: { id },
-      include: {
+    const reminder = await db.query.reminders.findFirst({
+      where: eq(reminders.id, id),
+      with: {
         event: {
-          select: {
+          columns: {
             id: true,
             name: true,
           },
@@ -40,20 +42,21 @@ export async function GET(
     }
 
     // 自分のリマインダーか確認
-    if (reminder.user_id !== userId) {
+    if (reminder.userId !== userId) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 403 }
       );
     }
 
-    const reminderData = reminder.reminder_data as {
-      type: string;
-      datetime: string;
-      label: string;
-      event_id: string;
-      event_name: string;
-    };
+    let reminderData: any = {};
+    try {
+      if (typeof reminder.reminderData === "string") {
+        reminderData = JSON.parse(reminder.reminderData);
+      } else {
+        reminderData = reminder.reminderData;
+      }
+    } catch {}
 
     const startDate = new Date(reminderData.datetime);
     const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1時間後
@@ -126,4 +129,3 @@ export async function GET(
     );
   }
 }
-

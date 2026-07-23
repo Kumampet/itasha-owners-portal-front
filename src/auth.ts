@@ -3,12 +3,15 @@ import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import Twitter from "next-auth/providers/twitter";
 import { getAuthSecret } from "@/lib/auth-secret";
+import { db } from "@/lib/db";
+import { users, accounts } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 
 // DATABASE_URLが設定されているかチェック
 const hasDatabaseUrl = !!(
-  process.env.DATABASE_URL &&
-  typeof process.env.DATABASE_URL === "string" &&
-  process.env.DATABASE_URL.trim() !== ""
+  (process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== "") ||
+  (process.env.DB) ||
+  (process.env.MOCK_DATABASE !== "true")
 );
 
 // Edge の middleware が auth を読み込むため、ここで getAdapter() を呼ぶと prisma（node:fs 等）が
@@ -109,22 +112,23 @@ const configBase: NextAuthConfig = {
         if (!hasDatabaseUrl || !token.id) return false;
 
         try {
-          const { prisma } = await import("@/lib/prisma");
-          const dbUser = await prisma.user.findUnique({
-            where: { id: token.id as string },
-            select: {
-              id: true,
-              role: true,
-              is_banned: true,
-              email: true,
-              display_name: true,
-            },
-          });
+          const dbUser = await db
+            .select({
+              id: users.id,
+              role: users.role,
+              isBanned: users.isBanned,
+              email: users.email,
+              displayName: users.displayName,
+            })
+            .from(users)
+            .where(eq(users.id, token.id as string))
+            .get();
+
           if (dbUser) {
             token.email = dbUser.email || undefined;
             token.role = dbUser.role;
-            token.isBanned = dbUser.is_banned;
-            token.displayName = dbUser.display_name || undefined;
+            token.isBanned = dbUser.isBanned;
+            token.displayName = dbUser.displayName || undefined;
             return true;
           }
         } catch (error) {
@@ -159,83 +163,80 @@ const configBase: NextAuthConfig = {
         // 初回ログイン時のみDBから最新情報を取得
         if (hasDatabaseUrl) {
           try {
-            const { prisma } = await import("@/lib/prisma");
             let dbUser = null;
 
             // まず、token.idで検索
             if (token.id) {
-              dbUser = await prisma.user.findUnique({
-                where: { id: token.id as string },
-                select: {
-                  id: true,
-                  role: true,
-                  is_banned: true,
-                  email: true,
-                  display_name: true,
-                },
-              });
+              dbUser = await db
+                .select({
+                  id: users.id,
+                  role: users.role,
+                  isBanned: users.isBanned,
+                  email: users.email,
+                  displayName: users.displayName,
+                })
+                .from(users)
+                .where(eq(users.id, token.id as string))
+                .get();
             }
 
             // token.idで見つからない場合、既存ユーザーを探す
             if (!dbUser) {
-              // Twitter認証の場合、providerAccountIdを使用してAccountテーブルから既存ユーザーを検索
-              if (account?.provider === "twitter" && account?.providerAccountId) {
-                const existingAccount = await prisma.account.findUnique({
-                  where: {
-                    provider_providerAccountId: {
-                      provider: "twitter",
-                      providerAccountId: account.providerAccountId,
-                    },
-                  },
-                  select: {
-                    userId: true,
-                    user: {
-                      select: {
-                        id: true,
-                        role: true,
-                        is_banned: true,
-                        email: true,
-                        display_name: true,
-                      },
-                    },
-                  },
-                });
+              // プロバイダー認証の場合、providerAccountIdを使用してAccountテーブルから既存ユーザーを検索
+              if (account?.provider && account?.providerAccountId) {
+                const existingAccount = await db
+                  .select({
+                    userId: accounts.userId,
+                    id: users.id,
+                    role: users.role,
+                    isBanned: users.isBanned,
+                    email: users.email,
+                    displayName: users.displayName,
+                  })
+                  .from(accounts)
+                  .innerJoin(users, eq(accounts.userId, users.id))
+                  .where(
+                    and(
+                      eq(accounts.provider, account.provider),
+                      eq(accounts.providerAccountId, account.providerAccountId)
+                    )
+                  )
+                  .get();
 
-                if (existingAccount?.user) {
-                  dbUser = existingAccount.user;
+                if (existingAccount) {
+                  dbUser = existingAccount;
                   token.id = dbUser.id;
                   token.email = dbUser.email || undefined; // トークンにもメールアドレスを保存
                   user.id = dbUser.id;
-                  console.log(`[JWT] Found existing Twitter user via Account: ${dbUser.id} (${dbUser.email || "no email"})`);
+                  console.log(`[JWT] Found existing user via Account: ${dbUser.id} (${dbUser.email || "no email"})`);
                 }
               }
 
               // Accountテーブルで見つからない場合、メールアドレスで検索（既存ユーザーを探す）
-              // ただし、Twitter認証の場合はメールアドレスがないため、この検索はスキップ
               if (!dbUser) {
                 // まず、user.emailまたはtoken.emailで検索
                 const searchEmail = token.email || user?.email;
 
                 // メールアドレスがある場合のみ検索（Twitter認証の場合はメールアドレスがない）
                 if (searchEmail) {
-                  dbUser = await prisma.user.findUnique({
-                    where: { email: searchEmail },
-                    select: {
-                      id: true,
-                      role: true,
-                      is_banned: true,
-                      email: true,
-                    },
-                  });
+                  const matchedUser = await db
+                    .select({
+                      id: users.id,
+                      role: users.role,
+                      isBanned: users.isBanned,
+                      email: users.email,
+                      displayName: users.displayName,
+                    })
+                    .from(users)
+                    .where(eq(users.email, searchEmail))
+                    .get();
 
                   // 既存のユーザーが見つかった場合、トークンのIDを更新
-                  if (dbUser) {
+                  if (matchedUser) {
+                    dbUser = matchedUser;
                     token.id = dbUser.id;
                     token.email = dbUser.email || undefined; // トークンにもメールアドレスを保存
-                    // display_nameが存在する場合のみ設定（型安全性のため）
-                    if ('display_name' in dbUser) {
-                      token.displayName = (dbUser as { display_name: string | null }).display_name || undefined;
-                    }
+                    token.displayName = dbUser.displayName || undefined;
                     user.id = dbUser.id;
                   }
                 }
@@ -247,51 +248,55 @@ const configBase: NextAuthConfig = {
               try {
                 // メールアドレスを決定（Twitter認証の場合はnull）
                 const userEmail = user?.email || null;
+                const newUserId = user.id || crypto.randomUUID();
 
                 // メールアドレスがnullでもユーザーを作成できる（Twitter認証の場合）
-                const newUser = await prisma.user.create({
-                  data: {
-                    id: user.id || undefined, // user.idがあれば使用、なければUUIDを自動生成
-                    email: userEmail,
-                    name: user.name || null,
-                    image: user.image || null,
-                    role: (user.role as string) || "USER",
-                    is_banned: (user.isBanned as boolean) || false,
-                  },
-                  select: {
-                    id: true,
-                    role: true,
-                    is_banned: true,
-                    email: true,
-                    display_name: true,
-                  },
+                await db.insert(users).values({
+                  id: newUserId,
+                  email: userEmail,
+                  name: user.name || null,
+                  image: user.image || null,
+                  role: (user.role as string) || "USER",
+                  isBanned: (user.isBanned as boolean) || false,
+                  isProfilePublic: false,
+                  mustChangePassword: false,
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
                 });
-                dbUser = newUser;
-                token.id = newUser.id;
-                token.email = newUser.email || undefined; // メールアドレスがnullの場合もトークンに保存
-                token.displayName = newUser.display_name || undefined; // 表示名もトークンに保存
-                user.id = newUser.id;
-                console.log(`[JWT] Created user in DB: ${newUser.id} (${newUser.email || "no email"})`);
+
+                const createdUser = {
+                  id: newUserId,
+                  role: (user.role as string) || "USER",
+                  isBanned: (user.isBanned as boolean) || false,
+                  email: userEmail,
+                  displayName: null as string | null,
+                };
+
+                dbUser = createdUser;
+                token.id = createdUser.id;
+                token.email = createdUser.email || undefined; // メールアドレスがnullの場合もトークンに保存
+                token.displayName = undefined; // 表示名もトークンに保存
+                user.id = createdUser.id;
+                console.log(`[JWT] Created user in DB: ${createdUser.id} (${createdUser.email || "no email"})`);
 
                 // Accountレコードも作成（JWT戦略では自動的に作成されないため）
                 if (account?.provider && account?.providerAccountId) {
                   try {
-                    await prisma.account.create({
-                      data: {
-                        userId: newUser.id,
-                        type: account.type || "oauth",
-                        provider: account.provider,
-                        providerAccountId: account.providerAccountId,
-                        refresh_token: account.refresh_token || null,
-                        access_token: account.access_token || null,
-                        expires_at: account.expires_at || null,
-                        token_type: account.token_type || null,
-                        scope: account.scope || null,
-                        id_token: (typeof account.id_token === "string" ? account.id_token : null),
-                        session_state: (typeof account.session_state === "string" ? account.session_state : null),
-                      },
+                    await db.insert(accounts).values({
+                      id: crypto.randomUUID(),
+                      userId: createdUser.id,
+                      type: account.type || "oauth",
+                      provider: account.provider,
+                      providerAccountId: account.providerAccountId,
+                      refreshToken: account.refresh_token || null,
+                      accessToken: account.access_token || null,
+                      expiresAt: account.expires_at || null,
+                      tokenType: account.token_type || null,
+                      scope: account.scope || null,
+                      idToken: (typeof account.id_token === "string" ? account.id_token : null),
+                      sessionState: (typeof account.session_state === "string" ? account.session_state : null),
                     });
-                    console.log(`[JWT] Created Account record for ${account.provider} user: ${newUser.id}`);
+                    console.log(`[JWT] Created Account record for ${account.provider} user: ${createdUser.id}`);
                   } catch (error) {
                     // Accountレコードの作成に失敗しても、ユーザー作成は成功しているので続行
                     console.error(`[JWT] Error creating Account record:`, error);
@@ -306,12 +311,8 @@ const configBase: NextAuthConfig = {
 
             if (dbUser) {
               token.role = dbUser.role;
-              token.isBanned = dbUser.is_banned;
-              // display_nameが存在する場合のみ設定（型安全性のため）
-              if ('display_name' in dbUser) {
-                const dbUserWithDisplayName = dbUser as { display_name: string | null };
-                token.displayName = dbUserWithDisplayName.display_name || undefined;
-              }
+              token.isBanned = dbUser.isBanned;
+              token.displayName = dbUser.displayName || undefined;
             } else {
               // DBから取得できなかった場合は、userオブジェクトから取得
               token.role = (user.role as string) || "USER";

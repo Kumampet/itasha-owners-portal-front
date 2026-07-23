@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { events, eventEntries } from "@/db/schema";
 import { JAPAN_PREFECTURES } from "@/lib/japan-prefectures";
 import { startOfTodayJST } from "@/lib/date-utils";
+import { eq, and, or, gte, lt, like, desc, asc, sql, isNull, isNotNull } from "drizzle-orm";
 
 /**
  * クエリ `yearMonth=YYYY-MM` を日本時間の暦月範囲に変換する。
- * 開催年月フィルターは event_date（開催開始日）のみで判定し、event_end_date は見ない。
  */
 function parseYearMonthRangeJst(raw: string | null): { gte: Date; lt: Date } | null {
   if (!raw || !/^\d{4}-\d{2}$/.test(raw)) return null;
@@ -22,39 +23,96 @@ function parseYearMonthRangeJst(raw: string | null): { gte: Date; lt: Date } | n
   return { gte, lt };
 }
 
+function mapDrizzleEventToResponse(event: any, now: Date) {
+  const tagsList = (event.eventTags || []).map((et: any) => ({
+    tag: {
+      name: et.tag?.name || "",
+    }
+  }));
+
+  const entriesList = (event.eventEntries || []).map((entry: any) => {
+    // 公開日時が未来の場合は該当日時を非公開にする
+    const entryStartAt =
+      entry.entryStartPublicAt &&
+      new Date(entry.entryStartPublicAt) > now
+        ? null
+        : entry.entryStartAt;
+
+    const paymentDueAt =
+      entry.paymentDuePublicAt &&
+      new Date(entry.paymentDuePublicAt) > now
+        ? null
+        : entry.paymentDueAt;
+
+    return {
+      entry_number: entry.entryNumber,
+      entry_start_at: entryStartAt ? new Date(entryStartAt).toISOString() : null,
+      entry_start_public_at: entry.entryStartPublicAt ? new Date(entry.entryStartPublicAt).toISOString() : null,
+      entry_deadline_at: entry.entryDeadlineAt ? new Date(entry.entryDeadlineAt).toISOString() : null,
+      payment_due_type: entry.paymentDueType,
+      payment_due_at: paymentDueAt ? new Date(paymentDueAt).toISOString() : null,
+      payment_due_days_after_entry: entry.paymentDueDaysAfterEntry,
+      payment_due_public_at: entry.paymentDuePublicAt ? new Date(entry.paymentDuePublicAt).toISOString() : null,
+    };
+  });
+
+  // keywords, officialUrls は SQLite 上では文字列 (JSON) または null として保存されている
+  let keywords = [];
+  try {
+    keywords = event.keywords ? (typeof event.keywords === "string" ? JSON.parse(event.keywords) : event.keywords) : [];
+  } catch {}
+
+  let officialUrls = [];
+  try {
+    officialUrls = event.officialUrls ? (typeof event.officialUrls === "string" ? JSON.parse(event.officialUrls) : event.officialUrls) : [];
+  } catch {}
+
+  return {
+    id: event.id,
+    name: event.name,
+    description: event.description,
+    event_date: new Date(event.eventDate).toISOString(),
+    event_end_date: event.eventEndDate ? new Date(event.eventEndDate).toISOString() : null,
+    is_multi_day: event.isMultiDay,
+    prefecture: event.prefecture,
+    city: event.city,
+    street_address: event.streetAddress,
+    venue_name: event.venueName,
+    keywords,
+    official_urls: officialUrls,
+    image_url: event.imageUrl,
+    approval_status: event.approvalStatus,
+    entries: entriesList,
+    tags: tagsList,
+  };
+}
+
 // GET /api/events
-// 承認済みのイベントリストをDBから取得するAPI
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "10", 10);
     const search = searchParams.get("search") || "";
-    const sortOrder = searchParams.get("sortOrder") || "asc"; // "asc" = 開催日が近い順, "desc" = 開催日が遠い順
+    const sortOrder = searchParams.get("sortOrder") || "asc";
     const prefectureParam = searchParams.get("prefecture") || "";
     const yearMonthParam = searchParams.get("yearMonth") || "";
 
     const now = new Date();
     const startOfToday = startOfTodayJST(now);
+    const startOfTodayStr = startOfToday.toISOString();
 
-    // 過去のイベントを除外する条件（終了日がある場合は終了日、ない場合は開始日で判定）
-    // JST 当日開始を基準にすることで、開催当日のイベントも終日含める
-    const dateFilter = {
-      OR: [
-        {
-          AND: [
-            { event_end_date: { not: null } },
-            { event_end_date: { gte: startOfToday } },
-          ],
-        },
-        {
-          AND: [
-            { event_end_date: null },
-            { event_date: { gte: startOfToday } },
-          ],
-        },
-      ],
-    };
+    // 過去のイベントを除外する条件
+    const dateFilter = or(
+      and(
+        isNotNull(events.eventEndDate),
+        gte(events.eventEndDate, startOfTodayStr)
+      ),
+      and(
+        isNull(events.eventEndDate),
+        gte(events.eventDate, startOfTodayStr)
+      )
+    );
 
     const prefectureAccepted =
       prefectureParam && (JAPAN_PREFECTURES as readonly string[]).includes(prefectureParam)
@@ -63,129 +121,71 @@ export async function GET(request: Request) {
 
     const ymBounds = parseYearMonthRangeJst(yearMonthParam);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const andConditions: any[] = [dateFilter];
+    const andConditions: any[] = [
+      eq(events.approvalStatus, "APPROVED"),
+      dateFilter
+    ];
 
     if (search) {
-      andConditions.push({
-        OR: [
-          { name: { contains: search } },
-          { description: { contains: search } },
-          { prefecture: { contains: search } },
-          { city: { contains: search } },
-          { venue_name: { contains: search } },
-        ],
-      });
+      andConditions.push(
+        or(
+          like(events.name, `%${search}%`),
+          like(events.description, `%${search}%`),
+          like(events.prefecture, `%${search}%`),
+          like(events.city, `%${search}%`),
+          like(events.venueName, `%${search}%`)
+        )
+      );
     }
 
     if (prefectureAccepted) {
-      andConditions.push({ prefecture: prefectureAccepted });
+      andConditions.push(eq(events.prefecture, prefectureAccepted));
     }
 
-    // 開催年月: 開始日（event_date）が該当月（JST 暦）に含まれるもののみ
     if (ymBounds) {
-      andConditions.push({
-        event_date: {
-          gte: ymBounds.gte,
-          lt: ymBounds.lt,
-        },
-      });
+      andConditions.push(
+        and(
+          gte(events.eventDate, ymBounds.gte.toISOString()),
+          lt(events.eventDate, ymBounds.lt.toISOString())
+        )
+      );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {
-      approval_status: "APPROVED",
-      AND: andConditions,
-    };
-
-    // ソート条件: デフォルトは現在日から開催日時の近い順（昇順）
-    const orderBy: { event_date: "asc" | "desc" } = {
-      event_date: sortOrder === "desc" ? "desc" : "asc",
-    };
+    const finalWhere = and(...andConditions);
 
     // 総件数を取得
-    const totalCount = await prisma.event.count({ where });
+    const countRes = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(events)
+      .where(finalWhere);
+    const totalCount = countRes[0]?.count || 0;
 
-    // ページネーションでイベントを取得
+    // ページネーションで取得
     const skip = (page - 1) * limit;
-    const events = await prisma.event.findMany({
-      where,
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        event_date: true,
-        event_end_date: true,
-        is_multi_day: true,
-        prefecture: true,
-        city: true,
-        street_address: true,
-        venue_name: true,
-        keywords: true,
-        official_urls: true,
-        image_url: true,
-        approval_status: true,
-        entries: {
-          select: {
-            entry_number: true,
-            entry_start_at: true,
-            entry_start_public_at: true,
-            entry_deadline_at: true,
-            payment_due_type: true,
-            payment_due_at: true,
-            payment_due_days_after_entry: true,
-            payment_due_public_at: true,
-          },
-          orderBy: {
-            entry_number: "asc",
-          },
+    const eventsList = await db.query.events.findMany({
+      where: finalWhere,
+      orderBy: sortOrder === "desc" ? desc(events.eventDate) : asc(events.eventDate),
+      offset: skip,
+      limit: limit,
+      with: {
+        eventEntries: {
+          orderBy: asc(eventEntries.entryNumber),
         },
-        tags: {
-          select: {
+        eventTags: {
+          with: {
             tag: {
-              select: {
+              columns: {
                 name: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy,
-      skip,
-      take: limit,
+              }
+            }
+          }
+        }
+      }
     });
 
-    // 公開日時が未来の場合は該当日時を非公開にする
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const filteredEvents = events.map((event: any) => ({
-      ...event,
-      entries: (event.entries || []).map((entry: { entry_start_public_at: Date | null; entry_start_at: Date; payment_due_public_at: Date | null; payment_due_at: Date | null }) => {
-        const entryStartAt =
-          entry.entry_start_public_at &&
-          entry.entry_start_public_at !== null &&
-            new Date(entry.entry_start_public_at) > now
-            ? null
-            : entry.entry_start_at;
-
-        const paymentDueAt =
-          entry.payment_due_public_at &&
-          entry.payment_due_public_at !== null &&
-            new Date(entry.payment_due_public_at) > now
-            ? null
-            : entry.payment_due_at;
-
-        return {
-          ...entry,
-          entry_start_at: entryStartAt,
-          payment_due_at: paymentDueAt,
-        };
-      }),
-    }));
-
+    const filteredEvents = eventsList.map((event: any) => mapDrizzleEventToResponse(event, now));
     const totalPages = Math.ceil(totalCount / limit);
 
-    // CloudFront（Amplify Hosting のエッジ）で1分間キャッシュ
-    // これにより、1分間はDBへのクエリが発生しなくなる
     return NextResponse.json(
       {
         events: filteredEvents,

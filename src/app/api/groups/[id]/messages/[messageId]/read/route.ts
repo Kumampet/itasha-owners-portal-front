@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { groups, userGroups, groupMessages, groupMessageReads } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 
 // POST /api/groups/[id]/messages/[messageId]/read
 // メッセージを既読にする
@@ -11,28 +13,42 @@ export async function POST(
   try {
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
+    const userId = session.user.id;
     const { id, messageId } = await params;
 
-    // 団体を取得して、ユーザーがメンバーか確認
-    const group = await prisma.group.findUnique({
-      where: { id },
-      include: {
-        members: {
-          where: {
-            user_id: session.user.id,
-          },
-        },
-      },
+    // 団体を取得
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, id),
     });
 
-    if (!group || group.members.length === 0) {
+    if (!group) {
+      return NextResponse.json(
+        { error: "Group not found" },
+        { status: 404 }
+      );
+    }
+
+    // ユーザーがメンバーかリーダーか確認
+    const userGroup = await db
+      .select()
+      .from(userGroups)
+      .where(
+        and(
+          eq(userGroups.userId, userId),
+          eq(userGroups.groupId, id)
+        )
+      )
+      .get();
+
+    const isLeader = group.leaderUserId === userId;
+    if (!userGroup && !isLeader) {
       return NextResponse.json(
         { error: "You are not a member of this group" },
         { status: 403 }
@@ -40,33 +56,32 @@ export async function POST(
     }
 
     // メッセージが存在するか確認
-    const message = await prisma.groupMessage.findUnique({
-      where: { id: messageId },
+    const message = await db.query.groupMessages.findFirst({
+      where: eq(groupMessages.id, messageId),
     });
 
-    if (!message || message.group_id !== id) {
+    if (!message || message.groupId !== id) {
       return NextResponse.json(
         { error: "Message not found" },
         { status: 404 }
       );
     }
 
-    // 既読状態を更新（既に既読の場合は更新しない）
-    await prisma.groupMessageRead.upsert({
-      where: {
-        message_id_user_id: {
-          message_id: messageId,
-          user_id: session.user.id,
+    // 既読状態を更新
+    await db
+      .insert(groupMessageReads)
+      .values({
+        id: crypto.randomUUID(),
+        messageId: messageId,
+        userId: userId,
+        readAt: new Date().toISOString(),
+      })
+      .onConflictDoUpdate({
+        target: [groupMessageReads.messageId, groupMessageReads.userId],
+        set: {
+          readAt: new Date().toISOString(),
         },
-      },
-      create: {
-        message_id: messageId,
-        user_id: session.user.id,
-      },
-      update: {
-        read_at: new Date(),
-      },
-    });
+      });
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -77,4 +92,3 @@ export async function POST(
     );
   }
 }
-

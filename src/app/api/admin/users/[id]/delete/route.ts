@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { transferGroupLeadership } from "@/lib/user-utils";
 
 // DELETE /api/admin/users/[id]/delete
@@ -11,67 +13,42 @@ export async function DELETE(
 ) {
   try {
     const session = await auth();
-
-    // 管理者権限チェック
     if (!session || session.user?.role !== "ADMIN") {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
 
-    // 自分自身を削除できないようにチェック
     if (id === session.user.id) {
-      return NextResponse.json(
-        { error: "自分自身を削除することはできません" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "自分自身を削除することはできません" }, { status: 400 });
     }
 
-    // ユーザー情報を取得
-    const userBefore = await prisma.user.findUnique({
-      where: { id },
-      select: {
-        deleted_at: true,
-      },
-    });
+    const userBefore = await db
+      .select({ deletedAt: users.deletedAt })
+      .from(users)
+      .where(eq(users.id, id))
+      .get();
 
     if (!userBefore) {
-      return NextResponse.json(
-        { error: "ユーザーが見つかりません" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "ユーザーが見つかりません" }, { status: 404 });
     }
 
-    // リーダーになっているグループのリーダー権限を委譲
     const transferError = await transferGroupLeadership(id, { throwOnError: true });
     if (transferError) {
       return NextResponse.json(
-        {
-          error: `グループ「${transferError.groupName}」のリーダー権限委譲に失敗しました`,
-          message: transferError.message,
-        },
+        { error: `グループ「${transferError.groupName}」のリーダー権限委譲に失敗しました`, message: transferError.message },
         { status: 500 }
       );
     }
 
-    // ユーザーを論理削除（deleted_atを設定）
-    await prisma.user.update({
-      where: { id },
-      data: {
-        deleted_at: new Date(),
-      } as { deleted_at: Date },
-    });
+    await db
+      .update(users)
+      .set({ deletedAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
+      .where(eq(users.id, id));
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting user:", error);
-    return NextResponse.json(
-      { error: "ユーザーの削除に失敗しました" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "ユーザーの削除に失敗しました" }, { status: 500 });
   }
 }
-

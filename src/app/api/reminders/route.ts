@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { reminders, events } from "@/db/schema";
+import { eq, inArray, sql } from "drizzle-orm";
 import { createReminderSchedule } from "@/lib/reminder-scheduler";
 
 // GET /api/reminders
@@ -17,80 +19,75 @@ export async function GET(request: Request) {
 
     const userId = session.user.id;
 
-    // 通知時刻から1時間以上過ぎたリマインダーを自動削除
-    // 通知が送信されていないリマインダーも含めて、通知時刻から1時間以上過ぎたもののみ削除
-    const allReminders = await prisma.reminder.findMany({
-      where: {
-        user_id: userId,
-      },
-      select: {
-        id: true,
-        reminder_data: true,
-      },
-    });
+    // 全リマインダーを読み込み、通知時刻から1時間以上過ぎたものを自動削除
+    const allReminders = await db
+      .select({
+        id: reminders.id,
+        reminderData: reminders.reminderData,
+      })
+      .from(reminders)
+      .where(eq(reminders.userId, userId));
 
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000); // 1時間前
     
     const expiredReminderIds = allReminders
-      .filter((reminder) => {
+      .filter((reminder: any) => {
         try {
-          const reminderData = reminder.reminder_data as {
-            datetime: string;
-          };
+          const reminderData = typeof reminder.reminderData === "string" 
+            ? JSON.parse(reminder.reminderData) 
+            : reminder.reminderData;
           const reminderDate = new Date(reminderData.datetime);
-          // 通知時刻から1時間以上過ぎたリマインダーを削除対象とする
           return reminderDate < oneHourAgo;
         } catch (error) {
           console.error(`Error parsing reminder ${reminder.id} for deletion:`, error);
           return false;
         }
       })
-      .map((reminder) => reminder.id);
+      .map((reminder: any) => reminder.id);
 
     if (expiredReminderIds.length > 0) {
-      await prisma.reminder.deleteMany({
-        where: {
-          id: {
-            in: expiredReminderIds,
-          },
-        },
-      });
+      await db
+        .delete(reminders)
+        .where(inArray(reminders.id, expiredReminderIds));
       console.log(`[Reminders] Deleted ${expiredReminderIds.length} expired reminder(s)`);
     }
 
-    // ソート順を取得（デフォルトは期日が近い順に降順）
+    // ソート順を取得
     const { searchParams } = new URL(request.url);
-    const sortOrder = searchParams.get("sortOrder") || "asc"; // asc: 近い順（昇順）、desc: 遠い順（降順）
+    const sortOrder = searchParams.get("sortOrder") || "asc";
 
-    const reminders = await prisma.reminder.findMany({
-      where: {
-        user_id: userId,
-      },
-      include: {
+    const remindersList = await db.query.reminders.findMany({
+      where: eq(reminders.userId, userId),
+      with: {
         event: {
-          select: {
+          columns: {
             id: true,
             name: true,
-            event_date: true,
-            official_urls: true,
+            eventDate: true,
+            officialUrls: true,
           },
         },
       },
     });
 
     // リマインダーデータを整形
-    const formattedReminders = reminders.map((reminder) => {
-      const reminderData = reminder.reminder_data as {
-        type: string;
-        datetime: string;
-        label: string;
-        event_id: string | null;
-        event_name: string | null;
-      };
+    const formattedReminders = remindersList.map((reminder: any) => {
+      let reminderData: any = {};
+      try {
+        reminderData = typeof reminder.reminderData === "string"
+          ? JSON.parse(reminder.reminderData)
+          : reminder.reminderData;
+      } catch {}
 
-      // official_urlsは配列なので、最初のURLをoriginal_urlとして返す（後方互換性のため）
-      const officialUrls = reminder.event?.official_urls as string[] | null;
+      let officialUrls: string[] | null = null;
+      try {
+        if (reminder.event?.officialUrls) {
+          officialUrls = typeof reminder.event.officialUrls === "string"
+            ? JSON.parse(reminder.event.officialUrls)
+            : reminder.event.officialUrls;
+        }
+      } catch {}
       const firstUrl = officialUrls && officialUrls.length > 0 ? officialUrls[0] : null;
 
       return {
@@ -98,7 +95,7 @@ export async function GET(request: Request) {
         event: reminder.event ? {
           id: reminder.event.id,
           name: reminder.event.name,
-          event_date: reminder.event.event_date,
+          event_date: new Date(reminder.event.eventDate).toISOString(),
           original_url: firstUrl,
         } : null,
         type: reminderData.type,
@@ -106,13 +103,13 @@ export async function GET(request: Request) {
         label: reminderData.label,
         note: reminder.note,
         notified: reminder.notified,
-        notified_at: reminder.notified_at,
-        created_at: reminder.created_at,
+        notified_at: reminder.notifiedAt ? new Date(reminder.notifiedAt).toISOString() : null,
+        created_at: new Date(reminder.createdAt).toISOString(),
       };
     });
 
-    // 日時でソート（デフォルトは期日が近い順に降順 = 昇順）
-    formattedReminders.sort((a, b) => {
+    // 日時でソート
+    formattedReminders.sort((a: any, b: any) => {
       const dateA = new Date(a.datetime).getTime();
       const dateB = new Date(b.datetime).getTime();
       return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
@@ -154,17 +151,18 @@ export async function POST(request: Request) {
     const { label, datetime, event_id, note } = body;
 
     // event_idが指定されている場合のみイベント情報を取得
-    let event = null;
+    let event: any = null;
     if (event_id) {
-      event = await prisma.event.findUnique({
-        where: { id: event_id },
-        select: {
-          id: true,
-          name: true,
-          event_date: true,
-          official_urls: true,
-        },
-      });
+      event = await db
+        .select({
+          id: events.id,
+          name: events.name,
+          eventDate: events.eventDate,
+          officialUrls: events.officialUrls,
+        })
+        .from(events)
+        .where(eq(events.id, event_id))
+        .get();
 
       if (!event) {
         return NextResponse.json(
@@ -174,83 +172,74 @@ export async function POST(request: Request) {
       }
     }
 
-    // リマインダーを作成
-    const reminder = await prisma.reminder.create({
-      data: {
-        user_id: userId,
-        event_id: event_id || null,
-        reminder_data: {
-          type: "custom",
-          datetime: datetime,
-          label: label,
-          event_id: event_id || null,
-          event_name: event?.name || null,
-        },
-        note: note || null,
-      },
-      include: {
-        event: event ? {
-          select: {
-            id: true,
-            name: true,
-            event_date: true,
-            official_urls: true,
-          },
-        } : false,
-      },
-    });
-
-    const reminderData = reminder.reminder_data as {
-      type: string;
-      datetime: string;
-      label: string;
-      event_id: string | null;
-      event_name: string | null;
+    const reminderId = crypto.randomUUID();
+    const reminderData = {
+      type: "custom",
+      datetime: datetime,
+      label: label,
+      event_id: event_id || null,
+      event_name: event?.name || null,
     };
+
+    // リマインダーを作成
+    await db.insert(reminders).values({
+      id: reminderId,
+      userId: userId,
+      eventId: event_id || null,
+      reminderData: JSON.stringify(reminderData),
+      note: note || null,
+      notified: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
 
     // EventBridge Schedulerにスケジュールを作成（通知時刻が未来の場合のみ）
     const reminderDate = new Date(reminderData.datetime);
     let scheduleResult = null;
-    if (reminderDate > new Date() && !reminder.notified) {
+    if (reminderDate > new Date()) {
       try {
-        scheduleResult = await createReminderSchedule(reminder.id, reminderDate);
+        scheduleResult = await createReminderSchedule(reminderId, reminderDate);
         if (!scheduleResult.success) {
-          console.warn(`[Reminder API] Failed to create schedule for reminder ${reminder.id}: ${scheduleResult.error}`);
-          // スケジュール作成に失敗してもリマインダー作成は成功とする
+          console.warn(`[Reminder API] Failed to create schedule for reminder ${reminderId}: ${scheduleResult.error}`);
         } else {
-          console.log(`[Reminder API] Successfully created schedule for reminder ${reminder.id}: ${scheduleResult.scheduleArn}`);
+          console.log(`[Reminder API] Successfully created schedule for reminder ${reminderId}: ${scheduleResult.scheduleArn}`);
         }
       } catch (error) {
-        console.error(`[Reminder API] Error creating schedule for reminder ${reminder.id}:`, error);
+        console.error(`[Reminder API] Error creating schedule for reminder ${reminderId}:`, error);
         scheduleResult = {
           success: false,
           error: error instanceof Error ? error.message : "Unknown error",
         };
-        // スケジュール作成に失敗してもリマインダー作成は成功とする
       }
     }
 
-    // official_urlsは配列なので、最初のURLをoriginal_urlとして返す（後方互換性のため）
-    const reminderOfficialUrls = reminder.event?.official_urls as string[] | null;
-    const reminderFirstUrl = reminderOfficialUrls && reminderOfficialUrls.length > 0 ? reminderOfficialUrls[0] : null;
+    let officialUrls: string[] | null = null;
+    try {
+      if (event?.officialUrls) {
+        officialUrls = typeof event.officialUrls === "string"
+          ? JSON.parse(event.officialUrls)
+          : event.officialUrls;
+      }
+    } catch {}
+    const reminderFirstUrl = officialUrls && officialUrls.length > 0 ? officialUrls[0] : null;
 
     // 書き込み操作で即座に反映が必要なのでキャッシュを無効にする
     return NextResponse.json(
       {
-        id: reminder.id,
-        event: reminder.event ? {
-          id: reminder.event.id,
-          name: reminder.event.name,
-          event_date: reminder.event.event_date,
+        id: reminderId,
+        event: event ? {
+          id: event.id,
+          name: event.name,
+          event_date: new Date(event.eventDate).toISOString(),
           original_url: reminderFirstUrl,
         } : null,
         type: reminderData.type,
         datetime: reminderData.datetime,
         label: reminderData.label,
-        note: reminder.note,
-        notified: reminder.notified,
-        notified_at: reminder.notified_at,
-        created_at: reminder.created_at,
+        note: note || null,
+        notified: false,
+        notified_at: null,
+        created_at: new Date().toISOString(),
         schedule: scheduleResult ? {
           created: scheduleResult.success,
           scheduleArn: scheduleResult.scheduleArn || null,
@@ -271,4 +260,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

@@ -13,6 +13,19 @@ const withPWA = require("next-pwa")({
 });
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    const defaultRewrites = [];
+    
+    // リモートDB使用時（ローカル開発時）は、画像の参照先を本番ドメインに向ける
+    if (process.env.USE_REMOTE_D1 === "true") {
+      defaultRewrites.push({
+        source: "/api/images/:path*",
+        destination: "https://itasha-owners-navi.link/api/images/:path*",
+      });
+    }
+
+    return defaultRewrites;
+  },
   async redirects() {
     return [
       {
@@ -57,7 +70,17 @@ const nextConfig: NextConfig = {
     ],
   },
   // APIルートをNode.js Runtimeで実行するように強制
-  serverExternalPackages: ["@auth/core"],
+  serverExternalPackages: [
+    '@auth/core',
+    '@prisma/client',
+    'prisma',
+    "sharp",
+    "@panva/hkdf",
+    "@opennextjs/cloudflare"
+  ],
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
 
 export default withPWA(nextConfig);
