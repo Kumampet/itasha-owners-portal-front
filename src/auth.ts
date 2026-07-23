@@ -182,8 +182,8 @@ const configBase: NextAuthConfig = {
 
             // token.idで見つからない場合、既存ユーザーを探す
             if (!dbUser) {
-              // Twitter認証の場合、providerAccountIdを使用してAccountテーブルから既存ユーザーを検索
-              if (account?.provider === "twitter" && account?.providerAccountId) {
+              // プロバイダー認証の場合、providerAccountIdを使用してAccountテーブルから既存ユーザーを検索
+              if (account?.provider && account?.providerAccountId) {
                 const existingAccount = await db
                   .select({
                     userId: accounts.userId,
@@ -197,7 +197,7 @@ const configBase: NextAuthConfig = {
                   .innerJoin(users, eq(accounts.userId, users.id))
                   .where(
                     and(
-                      eq(accounts.provider, "twitter"),
+                      eq(accounts.provider, account.provider),
                       eq(accounts.providerAccountId, account.providerAccountId)
                     )
                   )
@@ -208,12 +208,11 @@ const configBase: NextAuthConfig = {
                   token.id = dbUser.id;
                   token.email = dbUser.email || undefined; // トークンにもメールアドレスを保存
                   user.id = dbUser.id;
-                  console.log(`[JWT] Found existing Twitter user via Account: ${dbUser.id} (${dbUser.email || "no email"})`);
+                  console.log(`[JWT] Found existing user via Account: ${dbUser.id} (${dbUser.email || "no email"})`);
                 }
               }
 
               // Accountテーブルで見つからない場合、メールアドレスで検索（既存ユーザーを探す）
-              // ただし、Twitter認証の場合はメールアドレスがないため、この検索はスキップ
               if (!dbUser) {
                 // まず、user.emailまたはtoken.emailで検索
                 const searchEmail = token.email || user?.email;

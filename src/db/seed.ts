@@ -5,13 +5,10 @@
  */
 import { config as loadEnv } from "dotenv";
 import { resolve } from "node:path";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "../lib/db";
 import {
   users,
-  accounts,
-  sessions,
-  verificationTokens,
   events,
   eventEntries,
   groups,
@@ -21,12 +18,8 @@ import {
   tags,
   eventTags,
   eventFollows,
-  eventSubmissions,
   reminders,
   userNotificationSettings,
-  pushSubscriptions,
-  contactSubmissions,
-  organizerApplications,
   userEvents,
   userGroups,
 } from "./schema";
@@ -191,7 +184,7 @@ async function main(drizzleDb: typeof db) {
     await upsertNotificationSettings(drizzleDb, u.id);
   }
 
-  const createdTags: any[] = [];
+  const createdTags: { id: string; name: string }[] = [];
   for (const name of tagNames) {
     const tagId = crypto.randomUUID();
     await drizzleDb.insert(tags).values({

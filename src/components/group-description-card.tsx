@@ -34,6 +34,7 @@ export function GroupDescriptionCard({
   // 編集モードに入ったときに値をリセット
   useEffect(() => {
     if (isEditing) {
+       
       setEditValue(groupDescription || "");
     }
   }, [isEditing, groupDescription]);

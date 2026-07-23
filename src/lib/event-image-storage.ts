@@ -1,6 +1,5 @@
 
 import {
-  deleteLocalEventImagesByEventId,
   isGroupImageStorageLocal,
 } from "@/lib/group-image-local-store";
 import { getR2Client } from "@/lib/r2";

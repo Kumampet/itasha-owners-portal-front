@@ -11,6 +11,7 @@ export function EventDayBadge({ eventDateISO, eventEndDateISO }: EventDayBadgePr
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+     
     setIsMounted(true);
   }, []);
 

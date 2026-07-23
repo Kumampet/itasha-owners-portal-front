@@ -1,3 +1,4 @@
+ 
 import path from "node:path";
 import { AwsClient } from "aws4fetch";
 import { getMetadataBase } from "@/lib/metadata";

@@ -27,6 +27,7 @@ export function DisplayNameModal({
   // モーダルが開かれたときに初期値を設定
   useEffect(() => {
     if (isOpen) {
+       
       setDisplayName(initialDisplayName || "");
     }
   }, [isOpen, initialDisplayName]);

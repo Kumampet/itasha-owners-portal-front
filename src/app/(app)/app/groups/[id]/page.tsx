@@ -268,7 +268,7 @@ export default function GroupDetailPage({
       return false;
     }
     return group.members.some(m => m.id === session.user?.id);
-  }, [group, session?.user?.id]);
+  }, [group, session]);
 
   // ログインしていない場合、「info」タブに切り替える
   useEffect(() => {

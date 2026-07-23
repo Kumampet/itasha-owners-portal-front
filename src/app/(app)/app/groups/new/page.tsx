@@ -41,24 +41,6 @@ function NewGroupForm() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!eventId) {
-      fetchEvents();
-      setSelectedEvent(null); // イベント選択画面に戻ったら選択をクリア
-    } else {
-      // eventIdが変更された場合は選択をリセットしてから取得
-      setSelectedEvent(null);
-      fetchEvent(eventId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, currentPage]);
-
-  // eventIdが変更されたときにページを1にリセット
-  useEffect(() => {
-    if (!eventId) {
-      setCurrentPage(1);
-    }
-  }, [eventId]);
 
   const fetchEvent = async (id: string) => {
     setEventLoading(true);
@@ -102,6 +84,25 @@ function NewGroupForm() {
     }
   };
 
+  useEffect(() => {
+    if (!eventId) {
+      fetchEvents();
+      setSelectedEvent(null); // イベント選択画面に戻ったら選択をクリア
+    } else {
+      // eventIdが変更された場合は選択をリセットしてから取得
+      setSelectedEvent(null);
+      fetchEvent(eventId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, currentPage]);
+
+  // eventIdが変更されたときにページを1にリセット
+  useEffect(() => {
+    if (!eventId) {
+      setCurrentPage(1);
+    }
+  }, [eventId]);
+
   const handleEventSelect = (eventId: string, event: Event) => {
     setSelectedEventId(eventId);
     setSelectedEvent(event); // 選択したイベント情報を保持
@@ -142,7 +143,7 @@ function NewGroupForm() {
         const data = await res.json();
         throw new Error(
           data.error ||
-            "団体の作成に失敗しました。お手数ですが一度ログアウトしてから再度ログインし、団体作成をやり直してください。"
+          "団体の作成に失敗しました。お手数ですが一度ログアウトしてから再度ログインし、団体作成をやり直してください。"
         );
       }
 

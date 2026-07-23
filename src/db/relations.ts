@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm/relations";
+import { relations } from "drizzle-orm";
 import { users, accounts, sessions, events, eventEntries, userEvents, groups, groupMessages, groupMessageReads, groupMessageReactions, tags, eventTags, eventFollows, eventSubmissions, reminders, userNotificationSettings, pushSubscriptions, contactSubmissions, organizerApplications, userGroups } from "./schema";
 
 export const accountsRelations = relations(accounts, ({one}) => ({

@@ -130,13 +130,13 @@ const QuickEmojiPicker = ({
   reactions,
   currentUserId,
   onEmojiClick,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   onShowFullPicker: _onShowFullPicker,
   className = "",
   gridClassName = "grid grid-cols-7 gap-1.5",
   buttonClassName = "text-xl hover:bg-card-elevated rounded p-.5 transition-colors flex items-center justify-center",
   activeButtonClassName = "bg-blue-50",
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   ellipsisButtonClassName: _ellipsisButtonClassName,
 }: QuickEmojiPickerProps) => {
   return (
@@ -227,13 +227,13 @@ const EmojiPickerContainer = ({
   currentUserId,
   onEmojiClick,
   showEmojiPicker,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   showFullEmojiPicker: _showFullEmojiPicker,
   onShowFullPicker,
   emojiPickerRef,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   fullEmojiPickerRef: _fullEmojiPickerRef,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   isMobile: _isMobile,
 }: EmojiPickerContainerProps) => {
   const [positionStyle, setPositionStyle] = useState<React.CSSProperties>({});
@@ -391,7 +391,7 @@ export function MessageReactions({
   });
 
   // リアクション追加ボタン（ハート+プラスアイコン）
-  const AddReactionButton = ({ className }: { className?: string }) => (
+  const renderAddReactionButton = (className?: string) => (
     <button
       onClick={() => {
         if (onAddButtonClick) {
@@ -485,7 +485,7 @@ export function MessageReactions({
         })}
 
         {/* リアクション追加ボタン */}
-        {showAddButton && <AddReactionButton />}
+        {showAddButton && renderAddReactionButton()}
 
         {/* よく使う絵文字ピッカー（13種類 + 3点リーダー） */}
         <EmojiPickerContainer
@@ -511,7 +511,7 @@ export function MessageReactions({
   if (showAddButton) {
     return (
       <div className="relative">
-        <AddReactionButton />
+        {renderAddReactionButton()}
         <EmojiPickerContainer
           messageBubbleRef={messageBubbleRef}
           reactions={[]}

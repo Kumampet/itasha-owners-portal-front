@@ -1,3 +1,5 @@
+ 
+import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { events, eventEntries } from "../db/schema";
 import { EVENT_DESCRIPTION_MAX_CHARS } from "@/lib/event-description";
