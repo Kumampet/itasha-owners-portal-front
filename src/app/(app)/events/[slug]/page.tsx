@@ -121,7 +121,7 @@ export default async function EventDetailPage({
     where: eq(events.id, slug),
     with: {
       eventEntries: {
-        orderBy: asc(eventEntries => eventEntries.entryNumber),
+        orderBy: (eventEntries, { asc }) => [asc(eventEntries.entryNumber)],
       },
       eventTags: {
         with: {
