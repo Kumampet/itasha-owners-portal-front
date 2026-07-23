@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       );
     }
 
-    let sortCol = contactSubmissions.createdAt;
+    let sortCol: any = contactSubmissions.createdAt;
     if (sortBy === "title") sortCol = contactSubmissions.title;
     else if (sortBy === "name") sortCol = contactSubmissions.name;
 

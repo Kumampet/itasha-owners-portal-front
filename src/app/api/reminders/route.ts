@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000); // 1時間前
     
     const expiredReminderIds = allReminders
-      .filter((reminder) => {
+      .filter((reminder: any) => {
         try {
           const reminderData = typeof reminder.reminderData === "string" 
             ? JSON.parse(reminder.reminderData) 
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
           return false;
         }
       })
-      .map((reminder) => reminder.id);
+      .map((reminder: any) => reminder.id);
 
     if (expiredReminderIds.length > 0) {
       await db
@@ -72,7 +72,7 @@ export async function GET(request: Request) {
     });
 
     // リマインダーデータを整形
-    const formattedReminders = remindersList.map((reminder) => {
+    const formattedReminders = remindersList.map((reminder: any) => {
       let reminderData: any = {};
       try {
         reminderData = typeof reminder.reminderData === "string"
@@ -109,7 +109,7 @@ export async function GET(request: Request) {
     });
 
     // 日時でソート
-    formattedReminders.sort((a, b) => {
+    formattedReminders.sort((a: any, b: any) => {
       const dateA = new Date(a.datetime).getTime();
       const dateB = new Date(b.datetime).getTime();
       return sortOrder === "desc" ? dateB - dateA : dateA - dateB;

@@ -39,7 +39,7 @@ export async function GET(request: Request) {
       );
     }
 
-    let sortCol = eventSubmissions.createdAt;
+    let sortCol: any = eventSubmissions.createdAt;
     if (sortBy === "event_date") {
       sortCol = eventSubmissions.eventDate;
     } else if (sortBy === "name") {

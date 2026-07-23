@@ -38,7 +38,7 @@ export async function GET(request: Request) {
       );
     }
 
-    let sortCol = organizerApplications.createdAt;
+    let sortCol: any = organizerApplications.createdAt;
     if (sortBy === "display_name") {
       sortCol = organizerApplications.displayName;
     } else if (sortBy === "email") {

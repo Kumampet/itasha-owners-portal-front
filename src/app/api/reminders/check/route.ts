@@ -48,7 +48,7 @@ export async function GET(request: Request) {
 
     // リマインダーデータからdatetimeを取得してフィルタリング
     // 通知時刻を過ぎたリマインダーを対象（過去1時間以内のもの）
-    const dueReminders = remindersList.filter((reminder) => {
+    const dueReminders = remindersList.filter((reminder: any) => {
       try {
         let reminderData: any = {};
         if (typeof reminder.reminderData === "string") {

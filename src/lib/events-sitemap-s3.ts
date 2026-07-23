@@ -44,13 +44,12 @@ function getEventsSitemapAwsClient(): AwsClient {
   const secretAccessKey =
     process.env.EVENTS_SITEMAP_AWS_SECRET_ACCESS_KEY?.trim();
 
-  return new AwsClient({
-    region,
-    service: "s3",
-    ...(accessKeyId && secretAccessKey
-      ? { accessKeyId, secretAccessKey }
-      : {}),
-  });
+  const opts: any = { region, service: "s3" };
+  if (accessKeyId && secretAccessKey) {
+    opts.accessKeyId = accessKeyId;
+    opts.secretAccessKey = secretAccessKey;
+  }
+  return new AwsClient(opts);
 }
 
 function getS3Url(bucket: string, key: string, region: string): string {
@@ -82,7 +81,7 @@ export async function buildApprovedEventsSitemapXmlFromDatabase(): Promise<strin
     .where(eq(events.approvalStatus, "APPROVED"))
     .orderBy(asc(events.updatedAt));
 
-  const entries: SitemapUrlEntry[] = eventsList.map((e) => ({
+  const entries: SitemapUrlEntry[] = eventsList.map((e: any) => ({
     loc: eventDetailPublicUrl(e.id),
     lastmod: new Date(e.updatedAt).toISOString(),
   }));

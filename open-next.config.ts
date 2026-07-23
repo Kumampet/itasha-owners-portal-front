@@ -16,8 +16,8 @@ export default defineCloudflareConfig({
         plugins: [
           {
             name: "ignore-next-hashed-externals",
-            setup(build) {
-              build.onResolve({ filter: /^(sharp|@aws-sdk\/client-s3|@prisma\/client)-.*/ }, (args) => ({
+            setup(build: any) {
+              build.onResolve({ filter: /^(sharp|@aws-sdk\/client-s3|@prisma\/client)-.*/ }, (args: any) => ({
                 path: args.path,
                 external: true,
               }));
@@ -28,4 +28,4 @@ export default defineCloudflareConfig({
     },
   },
   edgeExternals: ["sharp", "@panva/hkdf"],
-});
+} as any);

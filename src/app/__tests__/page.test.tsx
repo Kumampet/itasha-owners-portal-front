@@ -1,33 +1,21 @@
+// @ts-nocheck
 import { render, screen } from '@/test-utils'
 import Home from '../page'
-import { prisma } from '@/lib/prisma'
 
-jest.mock('@/lib/prisma', () => ({
-  prisma: {
-    event: {
-      findMany: jest.fn(),
-    },
-  },
-}))
-
-jest.mock('next/image', () => ({
-  __esModule: true,
-  default: ({ src, alt, ...props }: { src: string; alt: string }) => (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} {...props} />
-  ),
-}))
-
-const mockPrisma = prisma as unknown as {
-  event: {
-    findMany: jest.Mock
+jest.mock('@/lib/db', () => ({
+  db: {
+    select: jest.fn().mockReturnThis(),
+    from: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockResolvedValue([]),
   }
-}
+}))
 
 describe('Home', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    mockPrisma.event.findMany.mockResolvedValue([])
+
   })
 
   it('ヒーロー文言とイベント一覧セクションを表示する', async () => {

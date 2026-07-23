@@ -134,7 +134,7 @@ async function putOptimizedImage(
 
   const response = await awsClient.fetch(url, {
     method: "PUT",
-    body: optimizedBuffer,
+    body: new Uint8Array(optimizedBuffer),
     headers: {
       "Content-Type": contentType,
     }

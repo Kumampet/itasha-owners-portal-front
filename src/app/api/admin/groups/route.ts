@@ -51,8 +51,8 @@ export async function GET(request: Request) {
       .from(groupMessages)
       .groupBy(groupMessages.groupId);
 
-    const memberMap = Object.fromEntries(memberCounts.map((r) => [r.groupId, r.count]));
-    const messageMap = Object.fromEntries(messageCounts.map((r) => [r.groupId, r.count]));
+    const memberMap = Object.fromEntries(memberCounts.map((r: any) => [r.groupId, r.count]));
+    const messageMap = Object.fromEntries(messageCounts.map((r: any) => [r.groupId, r.count]));
 
     const formatted = groupsList.map((g: any) => ({
       id: g.id,

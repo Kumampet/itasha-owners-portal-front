@@ -200,7 +200,7 @@ describe('EventDetailPage', () => {
     mockDb.query.events.findFirst.mockResolvedValue(mockEvent as never)
 
     const params = Promise.resolve({ slug: 'event-1' })
-    const page = await EventDetailPage({ page })
+    const page = await EventDetailPage({ params })
     render(page)
 
     const link = screen.getByText('https://example.com/event1')

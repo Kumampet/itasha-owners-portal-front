@@ -66,7 +66,7 @@ export async function POST(request: Request) {
 
     // 同一イベントで既に別の団体に参加しているか確認（警告用）
     const otherUserGroupsInSameEvent = await db.query.userGroups.findMany({
-      where: warriors => and(
+      where: () => and(
         eq(userGroups.userId, userId),
         eq(userGroups.eventId, eventId),
         ne(userGroups.groupId, group.id)
