@@ -22,7 +22,7 @@ export async function GET(
       with: {
         event: { columns: { id: true, name: true, eventDate: true } },
         user: { columns: { id: true, name: true, displayName: true, email: true } }, // leader
-        messages: {
+        groupMessages: {
           orderBy: asc(groupMessages.createdAt),
           with: {
             user: { columns: { id: true, name: true, displayName: true, email: true } }, // sender
@@ -107,7 +107,7 @@ export async function GET(
           }
         : null,
       members: membersList,
-      messages: ((group as any).messages || []).map((msg: any) => ({
+      messages: ((group as any).groupMessages || []).map((msg: any) => ({
         id: msg.id,
         content: msg.content,
         isAnnouncement: msg.isAnnouncement,

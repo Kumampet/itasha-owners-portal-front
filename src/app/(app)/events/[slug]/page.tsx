@@ -120,10 +120,10 @@ export default async function EventDetailPage({
   const event = await db.query.events.findFirst({
     where: eq(events.id, slug),
     with: {
-      entries: {
-        orderBy: asc(entries => entries.entryNumber),
+      eventEntries: {
+        orderBy: asc(eventEntries => eventEntries.entryNumber),
       },
-      tags: {
+      eventTags: {
         with: {
           tag: {
             columns: {
@@ -145,7 +145,7 @@ export default async function EventDetailPage({
     event.isMultiDay || false,
   );
 
-  const formattedEntries = (event.entries || []).map((e: any) => ({
+  const formattedEntries = (event.eventEntries || []).map((e: any) => ({
     entryNumber: e.entryNumber,
     entryStartAt: e.entryStartAt,
     entryStartPublicAt: e.entryStartPublicAt,
@@ -195,7 +195,7 @@ export default async function EventDetailPage({
           name={event.name}
           image_url={event.imageUrl}
           keywords={keywords}
-          tags={event.tags}
+          tags={event.eventTags}
           shareUrl={shareUrl}
         />
 

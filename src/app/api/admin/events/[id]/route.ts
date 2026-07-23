@@ -57,7 +57,7 @@ export async function GET(
         eventEntries: {
           orderBy: asc(eventEntries.entryNumber),
         },
-        tags: {
+        eventTags: {
           with: {
             tag: {
               columns: {
@@ -126,7 +126,7 @@ export async function GET(
         payment_due_days_after_entry: e.paymentDueDaysAfterEntry,
         payment_due_public_at: e.paymentDuePublicAt ? new Date(e.paymentDuePublicAt).toISOString() : null,
       })),
-      tags: (event.tags || []).map((t: any) => ({
+      tags: (event.eventTags || []).map((t: any) => ({
         tag: {
           id: t.tag.id,
           name: t.tag.name,
@@ -372,7 +372,7 @@ export async function PATCH(
           eventEntries: {
             orderBy: asc(eventEntries.entryNumber),
           },
-          tags: {
+          eventTags: {
             with: {
               tag: true,
             },
@@ -457,7 +457,7 @@ export async function PATCH(
         payment_due_at: e.paymentDueAt ? new Date(e.paymentDueAt).toISOString() : null,
         payment_due_public_at: e.paymentDuePublicAt ? new Date(e.paymentDuePublicAt).toISOString() : null,
       })),
-      tags: (updatedEvent.tags || []).map((t: any) => ({
+      tags: (updatedEvent.eventTags || []).map((t: any) => ({
         tag: {
           id: t.tag.id,
           name: t.tag.name,
