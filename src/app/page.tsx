@@ -43,35 +43,43 @@ function toBrief(
 }
 
 async function fetchHomeLists() {
-  const now = new Date();
-  const where = buildApprovedFutureEventWhereDrizzle(now);
-  const selectFields = {
-    id: events.id,
-    name: events.name,
-    description: events.description,
-    eventDate: events.eventDate,
-    eventEndDate: events.eventEndDate,
-    isMultiDay: events.isMultiDay,
-    imageUrl: events.imageUrl,
-  };
+  try {
+    const now = new Date();
+    const where = buildApprovedFutureEventWhereDrizzle(now);
+    const selectFields = {
+      id: events.id,
+      name: events.name,
+      description: events.description,
+      eventDate: events.eventDate,
+      eventEndDate: events.eventEndDate,
+      isMultiDay: events.isMultiDay,
+      imageUrl: events.imageUrl,
+    };
 
-  const [recentRows, upcomingRows] = await Promise.all([
-    db.select(selectFields)
-      .from(events)
-      .where(where)
-      .orderBy(desc(events.createdAt))
-      .limit(3),
-    db.select(selectFields)
-      .from(events)
-      .where(where)
-      .orderBy(asc(events.eventDate))
-      .limit(3),
-  ]);
+    const [recentRows, upcomingRows] = await Promise.all([
+      db.select(selectFields)
+        .from(events)
+        .where(where)
+        .orderBy(desc(events.createdAt))
+        .limit(3),
+      db.select(selectFields)
+        .from(events)
+        .where(where)
+        .orderBy(asc(events.eventDate))
+        .limit(3),
+    ]);
 
-  return {
-    recent: recentRows.map(toBrief),
-    upcoming: upcomingRows.map(toBrief),
-  };
+    return {
+      recent: recentRows.map(toBrief),
+      upcoming: upcomingRows.map(toBrief),
+    };
+  } catch (e) {
+    console.error("[fetchHomeLists] Failed to fetch events from DB:", e);
+    return {
+      recent: [],
+      upcoming: [],
+    };
+  }
 }
 
 export default async function Home() {
