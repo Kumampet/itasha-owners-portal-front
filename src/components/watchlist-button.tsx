@@ -26,6 +26,7 @@ export function WatchlistButton({ eventId, className, onToggle, iconOnly = false
 
   useEffect(() => {
     if (!session) {
+       
       setIsLoading(false);
       return;
     }

@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { events, eventEntries } from "@/db/schema";
+import { eq, and, or, asc, desc, isNull, isNotNull, like, notInArray, sql } from "drizzle-orm";
 import { scheduleMergeApprovedEventIntoSitemapOnS3 } from "@/lib/events-sitemap-s3";
 import { fromDateTimeLocal, fromDateLocal } from "@/lib/date-utils";
 import { notifyDiscordEventApprovalRequested } from "@/lib/discord-admin-notify";
 import { EVENT_DESCRIPTION_MAX_CHARS } from "@/lib/event-description";
 
 // GET /api/admin/events
-// 管理画面用のイベント一覧取得API（全ステータス、ソート・絞り込み対応）
+// 管理画面用のイベント一覧取得API
 export async function GET(request: Request) {
   try {
     const session = await auth();
@@ -28,112 +30,105 @@ export async function GET(request: Request) {
     const noEntryStart = searchParams.get("noEntryStart") === "true";
     const page = parseInt(searchParams.get("page") || "1", 10);
     const requestedLimit = parseInt(searchParams.get("limit") || "20", 10);
-    // 管理画面では最大20件まで
     const limit = Math.min(requestedLimit, 20);
 
     const now = new Date();
+    const nowStr = now.toISOString();
 
-    // 過去のイベントを除外する条件（終了日がある場合は終了日、ない場合は開始日で判定）
-    const dateFilter = {
-      OR: [
-        {
-          AND: [
-            { event_end_date: { not: null } },
-            { event_end_date: { gte: now } },
-          ],
-        },
-        {
-          AND: [
-            { event_end_date: null },
-            { event_date: { gte: now } },
-          ],
-        },
-      ],
-    };
+    // 過去のイベントを除外する条件
+    const dateFilterCondition = or(
+      and(isNotNull(events.eventEndDate), sql`${events.eventEndDate} >= ${nowStr}`),
+      and(isNull(events.eventEndDate), sql`${events.eventDate} >= ${nowStr}`)
+    );
 
-    // フィルター条件を構築
-    const where: Record<string, unknown> = {};
-
-    // AND条件の配列を構築
-    const andConditions: unknown[] = [dateFilter];
+    const andConditions: any[] = [dateFilterCondition];
 
     // オーガナイザーの場合、自分が登録したイベントのみを表示
     if (session.user?.role === "ORGANIZER" && session.user?.id) {
-      andConditions.push({ created_by_user_id: session.user.id });
+      andConditions.push(eq(events.createdByUserId, session.user.id));
     }
 
     if (status && status !== "ALL") {
-      andConditions.push({ approval_status: status });
+      andConditions.push(eq(events.approvalStatus, status));
     }
 
     if (search) {
-      andConditions.push({
-        OR: [
-          { name: { contains: search } },
-          { description: { contains: search } },
-        ],
-      });
+      andConditions.push(
+        or(
+          like(events.name, `%${search}%`),
+          like(events.description, `%${search}%`)
+        )
+      );
     }
 
     // エントリー開始日時未登録フィルター
-    // エントリーが存在しない、またはすべてのエントリーのentry_start_atがnullのイベントを取得
     if (noEntryStart) {
-      andConditions.push({
-        OR: [
-          { entries: { none: {} } },
-          { entries: { every: { entry_start_at: null } } },
-        ],
-      });
+      const hasStartEntrySubquery = db
+        .select({ eventId: eventEntries.eventId })
+        .from(eventEntries)
+        .where(isNotNull(eventEntries.entryStartAt));
+
+      andConditions.push(notInArray(events.id, hasStartEntrySubquery));
     }
 
-    // すべての条件をANDで結合
-    where.AND = andConditions;
-
-    // ソート条件を構築
-    const orderBy: Record<string, string> = {};
-    orderBy[sortBy] = sortOrder;
-
     // 総件数を取得
-    const totalCount = await prisma.event.count({ where });
+    const totalCountRes = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(events)
+      .where(and(...andConditions));
+    const totalCount = totalCountRes[0]?.count || 0;
 
-    // ページネーションでイベントを取得
-    const skip = (page - 1) * limit;
-    const events = await prisma.event.findMany({
-      where,
-      orderBy,
-      skip,
-      take: limit,
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        event_date: true,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        event_end_date: true as any,
-        is_multi_day: true,
-        approval_status: true,
-        created_at: true,
-        entries: {
-          select: {
-            entry_number: true,
-            entry_start_at: true,
-            entry_deadline_at: true,
-            payment_due_at: true,
+    // ソート条件
+    let sortCol: any = events.createdAt;
+    if (sortBy === "event_date") {
+      sortCol = events.eventDate;
+    }
+
+    const offset = (page - 1) * limit;
+
+    const eventsList = await db.query.events.findMany({
+      where: and(...andConditions),
+      orderBy: sortOrder === "asc" ? asc(sortCol) : desc(sortCol),
+      offset: offset,
+      limit: limit,
+      with: {
+        eventEntries: {
+          columns: {
+            entryNumber: true,
+            entryStartAt: true,
+            entryDeadlineAt: true,
+            paymentDueAt: true,
           },
-          orderBy: {
-            entry_number: "asc",
-          },
+          orderBy: asc(eventEntries.entryNumber),
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
+      },
+    });
+
+    // キャメルケースからスネークケースへのマッピング対応（GET互換性のため）
+    const formattedEvents = eventsList.map((ev: any) => {
+      return {
+        id: ev.id,
+        name: ev.name,
+        description: ev.description,
+        event_date: new Date(ev.eventDate).toISOString(),
+        event_end_date: ev.eventEndDate ? new Date(ev.eventEndDate).toISOString() : null,
+        is_multi_day: ev.isMultiDay,
+        approval_status: ev.approvalStatus,
+        created_at: new Date(ev.createdAt).toISOString(),
+        entries: (ev.eventEntries || []).map((e: any) => ({
+          entry_number: e.entryNumber,
+          entry_start_at: e.entryStartAt ? new Date(e.entryStartAt).toISOString() : null,
+          entry_deadline_at: e.entryDeadlineAt ? new Date(e.entryDeadlineAt).toISOString() : null,
+          payment_due_at: e.paymentDueAt ? new Date(e.paymentDueAt).toISOString() : null,
+        })),
+      };
     });
 
     const totalPages = Math.ceil(totalCount / limit);
 
-    // 管理画面用のため、privateディレクティブを使用して10秒間キャッシュ
     return NextResponse.json(
       {
-        events,
+        events: formattedEvents,
         pagination: {
           currentPage: page,
           totalPages,
@@ -183,27 +178,23 @@ export async function POST(request: Request) {
       );
     }
     const keywords: string[] = body.keywords || [];
-    const entries = body.entries || [];
+    const entriesList = body.entries || [];
     const approvalStatus = body.approval_status || "DRAFT";
 
-    // 下書き保存の場合はバリデーションをスキップ
     // 申請の場合は通常のバリデーションを適用
     if (approvalStatus === "PENDING") {
-      // 必須項目のバリデーション
       if (!body.name || !body.description || !body.event_date) {
         return NextResponse.json(
           { error: "必須項目が不足しています" },
           { status: 400 }
         );
       }
-      // エントリー決定方法のバリデーション
       if (!body.entry_selection_method || !["FIRST_COME", "LOTTERY", "SELECTION"].includes(body.entry_selection_method)) {
         return NextResponse.json(
           { error: "エントリー決定方法を選択してください" },
           { status: 400 }
         );
       }
-      // 空文字列を除外してバリデーション
       const validUrls = (body.official_urls || []).filter((url: string) => url && url.trim() !== "");
       if (validUrls.length === 0) {
         return NextResponse.json(
@@ -211,13 +202,12 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
-      if (!entries || entries.length === 0) {
+      if (!entriesList || entriesList.length === 0) {
         return NextResponse.json(
           { error: "最低1つのエントリー情報が必要です" },
           { status: 400 }
         );
       }
-      // エントリー開始日時は必須項目から除外
       if (body.is_multi_day && !body.event_end_date) {
         return NextResponse.json(
           { error: "複数日開催の場合、終了日が必要です" },
@@ -226,10 +216,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // エントリー情報のバリデーション（下書き・申請共通）
-    for (const entry of entries) {
-      // エントリー締め切り日時と支払期限は任意項目のため、バリデーションを削除
-      // 支払期限タイプがRELATIVEの場合、日数が指定されている場合は1日以上であることを確認
+    // エントリー情報のバリデーション
+    for (const entry of entriesList) {
       if (entry.payment_due_type === "RELATIVE" && entry.payment_due_days_after_entry && entry.payment_due_days_after_entry < 1) {
         return NextResponse.json(
           { error: `エントリー${entry.entry_number}の支払期限日数は1日以上である必要があります` },
@@ -238,7 +226,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // event_dateを変換（必須項目のためnullチェック）
+    // event_dateを変換
     const eventDate = fromDateLocal(body.event_date);
     if (!eventDate) {
       return NextResponse.json(
@@ -247,157 +235,210 @@ export async function POST(request: Request) {
       );
     }
 
-    // トランザクションでイベント、エントリー情報、キーワードを同時に作成
-    const event = await prisma.$transaction(async (tx) => {
-      // イベントを作成
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const eventData: any = {
-        name: body.name,
-        description: body.description,
-        event_date: eventDate,
-        is_multi_day: body.is_multi_day || false,
-        event_end_date: body.event_end_date ? fromDateLocal(body.event_end_date) : null,
-        postal_code: body.postal_code || null,
-        prefecture: body.prefecture || null,
-        city: body.city || null,
-        street_address: body.street_address || null,
-        venue_name: body.venue_name || null,
-        keywords: keywords.length > 0 ? keywords : undefined,
-        official_urls: (body.official_urls || []).filter((url: string) => url && url.trim() !== ""), // 空文字列を除外したURL配列
-        image_url: body.image_url || null,
-        approval_status: body.approval_status || "DRAFT",
-        payment_methods: body.payment_methods || null,
-        entry_selection_method: body.entry_selection_method || "FIRST_COME",
-        max_participants: body.max_participants || null,
-      };
+    const eventId = crypto.randomUUID();
+    const nowStr = new Date().toISOString();
 
-      // イベント登録者（イベントを登録したアカウント）を設定
-      if (session.user?.id) {
-        eventData.created_by_user_id = session.user.id;
-      }
-
-      const createdEvent = await tx.event.create({
-        data: eventData,
-      });
-
-      // エントリー情報を作成
-      // entry_start_atは必須項目から除外されたため、nullを許可
-      for (const entry of entries) {
-        // entry_start_atが有効な値かチェック（空文字列の場合はnullとして扱う）
-        const entryStartAt = fromDateTimeLocal(entry.entry_start_at);
-
-        // entry_start_atが指定されている場合は有効性をチェック
-        if (entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== "") {
-          if (!entryStartAt) {
-            return NextResponse.json(
-              { error: `エントリー${entry.entry_number}の開始日時が無効です` },
-              { status: 400 }
-            );
-          }
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (tx as any).eventEntry.create({
-          data: {
-            event_id: createdEvent.id,
-            entry_number: entry.entry_number,
-            entry_start_at: entryStartAt,
-            entry_start_public_at: fromDateTimeLocal(entry.entry_start_public_at),
-            entry_deadline_at: fromDateTimeLocal(entry.entry_deadline_at),
-            payment_due_type: entry.payment_due_type || "ABSOLUTE",
-            payment_due_at: entry.payment_due_type === "ABSOLUTE"
-              ? fromDateTimeLocal(entry.payment_due_at)
-              : null,
-            payment_due_days_after_entry: entry.payment_due_type === "RELATIVE" && entry.payment_due_days_after_entry
-              ? entry.payment_due_days_after_entry
-              : null,
-            payment_due_public_at: fromDateTimeLocal(entry.payment_due_public_at),
-          },
-        });
-      }
-
-      // 作成したイベントを取得（エントリー情報を含む）
-      return await tx.event.findUnique({
-        where: { id: createdEvent.id },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          event_date: true,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          event_end_date: true as any,
-          is_multi_day: true,
-          postal_code: true,
-          prefecture: true,
-          city: true,
-          street_address: true,
-          venue_name: true,
-          keywords: true,
-          official_urls: true,
-          image_url: true,
-          approval_status: true,
-          updated_at: true,
-          entry_selection_method: true,
-          max_participants: true,
-          entries: {
-            select: {
-              entry_number: true,
-              entry_start_at: true,
-              entry_start_public_at: true,
-              entry_deadline_at: true,
-              payment_due_type: true,
-              payment_due_at: true,
-              payment_due_days_after_entry: true,
-              payment_due_public_at: true,
-            },
-            orderBy: {
-              entry_number: "asc",
-            },
-          },
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+    const eventInsertQuery = db.insert(events).values({
+      id: eventId,
+      name: body.name,
+      description: body.description,
+      eventDate: eventDate.toISOString(),
+      isMultiDay: body.is_multi_day || false,
+      eventEndDate: body.event_end_date ? fromDateLocal(body.event_end_date)?.toISOString() : null,
+      postalCode: body.postal_code || null,
+      prefecture: body.prefecture || null,
+      city: body.city || null,
+      streetAddress: body.street_address || null,
+      venueName: body.venue_name || null,
+      keywords: keywords.length > 0 ? JSON.stringify(keywords) : null,
+      officialUrls: body.official_urls ? JSON.stringify(body.official_urls.filter((url: string) => url && url.trim() !== "")) : "[]",
+      imageUrl: body.image_url || null,
+      approvalStatus: approvalStatus,
+      paymentMethods: body.payment_methods ? JSON.stringify(body.payment_methods) : null,
+      entrySelectionMethod: body.entry_selection_method || "FIRST_COME",
+      maxParticipants: body.max_participants || null,
+      createdByUserId: session.user.id,
+      createdAt: nowStr,
+      updatedAt: nowStr,
     });
 
-    // キャッシュを無効化（新規作成時は一覧と個別の両方）
-    const { revalidateTag } = await import("next/cache");
-    revalidateTag("events", {});
-    if (event && typeof event === "object" && "id" in event) {
-      revalidateTag(`event-${event.id}`, {});
-    }
+    const entryQueries: any[] = [];
+    for (const entry of entriesList) {
+      const entryStartAt = fromDateTimeLocal(entry.entry_start_at);
 
-    if (
-      event &&
-      typeof event === "object" &&
-      "approval_status" in event &&
-      event.approval_status === "PENDING" &&
-      "id" in event &&
-      "name" in event &&
-      "event_date" in event
-    ) {
-      const d = event.event_date as Date;
-      notifyDiscordEventApprovalRequested({
-        eventId: event.id as string,
-        eventName: event.name as string,
-        eventDateLabel: d.toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" }),
-      });
-    }
+      if (entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== "") {
+        if (!entryStartAt) {
+          throw new Error(`エントリー${entry.entry_number}の開始日時が無効です`);
+        }
+      }
 
-    if (
-      event &&
-      typeof event === "object" &&
-      "approval_status" in event &&
-      event.approval_status === "APPROVED" &&
-      "id" in event &&
-      "updated_at" in event
-    ) {
-      scheduleMergeApprovedEventIntoSitemapOnS3(
-        event.id as string,
-        event.updated_at as Date,
+      const entryId = crypto.randomUUID();
+      entryQueries.push(
+        db.insert(eventEntries).values({
+          id: entryId,
+          eventId: eventId,
+          entryNumber: entry.entry_number,
+          entryStartAt: entryStartAt ? entryStartAt.toISOString() : null,
+          entryStartPublicAt: fromDateTimeLocal(entry.entry_start_public_at) ? fromDateTimeLocal(entry.entry_start_public_at)!.toISOString() : null,
+          entryDeadlineAt: fromDateTimeLocal(entry.entry_deadline_at) ? fromDateTimeLocal(entry.entry_deadline_at)!.toISOString() : null,
+          paymentDueType: entry.payment_due_type || "ABSOLUTE",
+          paymentDueAt: entry.payment_due_type === "ABSOLUTE" && fromDateTimeLocal(entry.payment_due_at)
+            ? fromDateTimeLocal(entry.payment_due_at)!.toISOString()
+            : null,
+          paymentDueDaysAfterEntry: entry.payment_due_type === "RELATIVE" && entry.payment_due_days_after_entry
+            ? entry.payment_due_days_after_entry
+            : null,
+          paymentDuePublicAt: fromDateTimeLocal(entry.payment_due_public_at)
+            ? fromDateTimeLocal(entry.payment_due_public_at)!.toISOString()
+            : null,
+          createdAt: nowStr,
+          updatedAt: nowStr,
+        })
       );
     }
 
-    return NextResponse.json(event);
+    let createdEvent;
+    if (typeof (db as any).batch === "function") {
+      await (db as any).batch([eventInsertQuery, ...entryQueries]);
+      createdEvent = await db.query.events.findFirst({
+        where: eq(events.id, eventId),
+        with: {
+          eventEntries: {
+            orderBy: asc(eventEntries.entryNumber),
+          },
+        },
+      });
+    } else {
+      createdEvent = await db.transaction(async (tx: any) => {
+        await tx.insert(events).values({
+          id: eventId,
+          name: body.name,
+          description: body.description,
+          eventDate: eventDate.toISOString(),
+          isMultiDay: body.is_multi_day || false,
+          eventEndDate: body.event_end_date ? fromDateLocal(body.event_end_date)?.toISOString() : null,
+          postalCode: body.postal_code || null,
+          prefecture: body.prefecture || null,
+          city: body.city || null,
+          streetAddress: body.street_address || null,
+          venueName: body.venue_name || null,
+          keywords: keywords.length > 0 ? JSON.stringify(keywords) : null,
+          officialUrls: body.official_urls ? JSON.stringify(body.official_urls.filter((url: string) => url && url.trim() !== "")) : "[]",
+          imageUrl: body.image_url || null,
+          approvalStatus: approvalStatus,
+          paymentMethods: body.payment_methods ? JSON.stringify(body.payment_methods) : null,
+          entrySelectionMethod: body.entry_selection_method || "FIRST_COME",
+          maxParticipants: body.max_participants || null,
+          createdByUserId: session.user.id,
+          createdAt: nowStr,
+          updatedAt: nowStr,
+        });
+
+        for (const entry of entriesList) {
+          const entryStartAt = fromDateTimeLocal(entry.entry_start_at);
+
+          if (entry.entry_start_at && typeof entry.entry_start_at === "string" && entry.entry_start_at.trim() !== "") {
+            if (!entryStartAt) {
+              throw new Error(`エントリー${entry.entry_number}の開始日時が無効です`);
+            }
+          }
+
+          const entryId = crypto.randomUUID();
+          await tx.insert(eventEntries).values({
+            id: entryId,
+            eventId: eventId,
+            entryNumber: entry.entry_number,
+            entryStartAt: entryStartAt ? entryStartAt.toISOString() : null,
+            entryStartPublicAt: fromDateTimeLocal(entry.entry_start_public_at) ? fromDateTimeLocal(entry.entry_start_public_at)!.toISOString() : null,
+            entryDeadlineAt: fromDateTimeLocal(entry.entry_deadline_at) ? fromDateTimeLocal(entry.entry_deadline_at)!.toISOString() : null,
+            paymentDueType: entry.payment_due_type || "ABSOLUTE",
+            paymentDueAt: entry.payment_due_type === "ABSOLUTE" && fromDateTimeLocal(entry.payment_due_at)
+              ? fromDateTimeLocal(entry.payment_due_at)!.toISOString()
+              : null,
+            paymentDueDaysAfterEntry: entry.payment_due_type === "RELATIVE" && entry.payment_due_days_after_entry
+              ? entry.payment_due_days_after_entry
+              : null,
+            paymentDuePublicAt: fromDateTimeLocal(entry.payment_due_public_at)
+              ? fromDateTimeLocal(entry.payment_due_public_at)!.toISOString()
+              : null,
+            createdAt: nowStr,
+            updatedAt: nowStr,
+          });
+        }
+
+        return await tx.query.events.findFirst({
+          where: eq(events.id, eventId),
+          with: {
+            eventEntries: {
+              orderBy: asc(eventEntries.entryNumber),
+            },
+          },
+        });
+      });
+    }
+
+    const { revalidateTag } = await import("next/cache");
+    revalidateTag("events", {});
+    if (createdEvent) {
+      revalidateTag(`event-${createdEvent.id}`, {});
+    }
+
+    if (
+      createdEvent &&
+      createdEvent.approvalStatus === "PENDING"
+    ) {
+      notifyDiscordEventApprovalRequested({
+        eventId: createdEvent.id,
+        eventName: createdEvent.name,
+        eventDateLabel: new Date(createdEvent.eventDate).toLocaleDateString("ja-JP", {
+          timeZone: "Asia/Tokyo",
+        }),
+      });
+    }
+
+    if (
+      createdEvent &&
+      createdEvent.approvalStatus === "APPROVED"
+    ) {
+      scheduleMergeApprovedEventIntoSitemapOnS3(
+        createdEvent.id,
+        new Date(createdEvent.updatedAt),
+      );
+    }
+
+    // レスポンス整形
+    const resObj = createdEvent ? {
+      id: createdEvent.id,
+      name: createdEvent.name,
+      description: createdEvent.description,
+      event_date: new Date(createdEvent.eventDate).toISOString(),
+      event_end_date: createdEvent.eventEndDate ? new Date(createdEvent.eventEndDate).toISOString() : null,
+      is_multi_day: createdEvent.isMultiDay,
+      postal_code: createdEvent.postalCode,
+      prefecture: createdEvent.prefecture,
+      city: createdEvent.city,
+      street_address: createdEvent.streetAddress,
+      venue_name: createdEvent.venueName,
+      keywords: keywords,
+      official_urls: body.official_urls || [],
+      image_url: createdEvent.imageUrl,
+      approval_status: createdEvent.approvalStatus,
+      updated_at: new Date(createdEvent.updatedAt).toISOString(),
+      entry_selection_method: createdEvent.entrySelectionMethod,
+      max_participants: createdEvent.maxParticipants,
+      entries: (createdEvent.eventEntries || []).map((e: any) => ({
+        entry_number: e.entryNumber,
+        entry_start_at: e.entryStartAt ? new Date(e.entryStartAt).toISOString() : null,
+        entry_start_public_at: e.entryStartPublicAt ? new Date(e.entryStartPublicAt).toISOString() : null,
+        entry_deadline_at: e.entryDeadlineAt ? new Date(e.entryDeadlineAt).toISOString() : null,
+        payment_due_type: e.paymentDueType,
+        payment_due_at: e.paymentDueAt ? new Date(e.paymentDueAt).toISOString() : null,
+        payment_due_days_after_entry: e.paymentDueDaysAfterEntry,
+        payment_due_public_at: e.paymentDuePublicAt ? new Date(e.paymentDuePublicAt).toISOString() : null,
+      })),
+    } : null;
+
+    return NextResponse.json(resObj);
   } catch (error) {
     console.error("Error creating event:", error);
     const errorMessage =

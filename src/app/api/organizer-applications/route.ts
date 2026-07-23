@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { users, organizerApplications } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { notifyDiscordOrganizerApplication } from "@/lib/discord-admin-notify";
 
 // POST /api/organizer-applications
@@ -33,10 +35,12 @@ export async function POST(request: Request) {
     if (session?.user?.id) {
       try {
         console.log(`[OrganizerApplication] Checking user existence for ID: ${session.user.id}`);
-        const userExists = await prisma.user.findUnique({
-          where: { id: session.user.id },
-          select: { id: true },
-        });
+        const userExists = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.id, session.user.id))
+          .get();
+
         if (userExists) {
           applicantId = session.user.id;
           console.log(`[OrganizerApplication] User found, setting applicant_id: ${applicantId}`);
@@ -45,36 +49,36 @@ export async function POST(request: Request) {
         }
       } catch (error) {
         console.error("[OrganizerApplication] Error checking user existence:", error);
-        // エラーが発生した場合はnullのまま（未ログインとして扱う）
       }
-    } else {
-      console.log("[OrganizerApplication] No session or user ID, applicant_id will be null");
     }
 
+    const applicationId = crypto.randomUUID();
+    const nowStr = new Date().toISOString();
+
     // 申請を作成
-    const application = await prisma.organizerApplication.create({
-      data: {
-        display_name,
-        email,
-        experience,
-        applicant_id: applicantId,
-        status: "PENDING",
-      },
-      select: {
-        id: true,
-        display_name: true,
-        email: true,
-        status: true,
-        created_at: true,
-      },
+    await db.insert(organizerApplications).values({
+      id: applicationId,
+      displayName: display_name,
+      email: email,
+      experience: experience,
+      applicantId: applicantId,
+      status: "PENDING",
+      createdAt: nowStr,
+      updatedAt: nowStr,
     });
 
     notifyDiscordOrganizerApplication({
-      id: application.id,
-      displayName: application.display_name,
+      id: applicationId,
+      displayName: display_name,
     });
 
-    return NextResponse.json(application, { status: 201 });
+    return NextResponse.json({
+      id: applicationId,
+      display_name: display_name,
+      email: email,
+      status: "PENDING",
+      created_at: nowStr,
+    }, { status: 201 });
   } catch (error) {
     console.error("Error creating organizer application:", error);
     return NextResponse.json(
@@ -83,4 +87,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

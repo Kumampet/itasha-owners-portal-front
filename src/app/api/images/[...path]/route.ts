@@ -1,32 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { S3Client, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+
 import { Readable } from "stream";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { groups, userGroups, events } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import {
   isGroupImageStorageLocal,
   readLocalGroupImage,
 } from "@/lib/group-image-local-store";
 
-// S3エラーの型定義
-interface S3Error {
-  name?: string;
-  $metadata?: {
-    httpStatusCode?: number;
-  };
-  message?: string;
-}
 
-// S3クライアントの初期化
-const s3Client = new S3Client({
-  region: process.env.APP_AWS_REGION || "ap-northeast-1",
-  credentials: process.env.IMAGE_S3_AWS_ACCESS_KEY_ID && process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY
-    ? {
-        accessKeyId: process.env.IMAGE_S3_AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY,
-      }
-    : undefined,
-});
+import { getR2Client } from "@/lib/r2";
+
 
 type ImageCacheMode = "immutable" | "replaceable";
 
@@ -85,41 +71,44 @@ async function serveStoredImage(
     });
   }
 
-  if (!process.env.IMAGE_S3_BUCKET_NAME) {
+  if (!process.env.R2_BUCKET_NAME) {
     return NextResponse.json(
       { error: "S3 bucket not configured" },
       { status: 500 }
     );
   }
 
-  if (!process.env.IMAGE_S3_AWS_ACCESS_KEY_ID || !process.env.IMAGE_S3_AWS_SECRET_ACCESS_KEY) {
+  if (!process.env.R2_ACCESS_KEY_ID || !process.env.R2_SECRET_ACCESS_KEY) {
     return NextResponse.json(
       { error: "S3 credentials not configured" },
       { status: 500 }
     );
   }
 
-  const headCommand = new HeadObjectCommand({
-    Bucket: process.env.IMAGE_S3_BUCKET_NAME,
-    Key: s3Key,
-  });
+  const awsClient = getR2Client();
+  const url = `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${s3Key}`;
 
   let headResponse;
   try {
-    headResponse = await s3Client.send(headCommand);
+    headResponse = await awsClient.fetch(url, { method: "HEAD" });
   } catch (headError) {
-    const error = headError as S3Error;
-    if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
-      return NextResponse.json(
-        { error: "Image not found" },
-        { status: 404 }
-      );
-    }
     throw headError;
   }
 
-  const etag = headResponse.ETag?.replace(/"/g, '') || '';
-  const lastModified = headResponse.LastModified;
+  if (headResponse.status === 404) {
+    return NextResponse.json(
+      { error: "Image not found" },
+      { status: 404 }
+    );
+  }
+
+  if (!headResponse.ok) {
+    throw new Error(`Failed to head object: ${headResponse.status} ${headResponse.statusText}`);
+  }
+
+  const etag = headResponse.headers.get("etag")?.replace(/"/g, '') || '';
+  const lastModifiedStr = headResponse.headers.get("last-modified");
+  const lastModified = lastModifiedStr ? new Date(lastModifiedStr) : undefined;
   const cc = cacheControlHeader(cacheMode);
 
   const ifNoneMatch = request.headers.get('if-none-match');
@@ -159,14 +148,9 @@ async function serveStoredImage(
     }
   }
 
-  const command = new GetObjectCommand({
-    Bucket: process.env.IMAGE_S3_BUCKET_NAME,
-    Key: s3Key,
-  });
+  const response = await awsClient.fetch(url, { method: "GET" });
 
-  const response = await s3Client.send(command);
-
-  if (!response.Body) {
+  if (!response.ok || !response.body) {
     return NextResponse.json(
       { error: "Image not found" },
       { status: 404 }
@@ -181,7 +165,7 @@ async function serveStoredImage(
     contentType = 'image/jpeg';
   }
 
-  const stream = response.Body as Readable;
+  const stream = response.body;
 
   const headers: Record<string, string> = {
     'Content-Type': contentType,
@@ -240,10 +224,11 @@ export async function GET(
 
     if (isEventThumbnail) {
       const eventId = pathParts[3];
-      const event = await prisma.event.findUnique({
-        where: { id: eventId },
-        select: { id: true },
-      });
+      const event = await db
+        .select({ id: events.id })
+        .from(events)
+        .where(eq(events.id, eventId))
+        .get();
 
       if (!event) {
         return NextResponse.json(
@@ -257,7 +242,7 @@ export async function GET(
 
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -272,8 +257,8 @@ export async function GET(
       );
     }
 
-    const group = await prisma.group.findUnique({
-      where: { id: groupId },
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, groupId),
     });
 
     if (!group) {
@@ -283,16 +268,18 @@ export async function GET(
       );
     }
 
-    const userGroup = await prisma.userGroup.findUnique({
-      where: {
-        user_id_group_id: {
-          user_id: session.user.id,
-          group_id: groupId,
-        },
-      },
-    });
+    const userGroup = await db
+      .select()
+      .from(userGroups)
+      .where(
+        and(
+          eq(userGroups.userId, session.user.id),
+          eq(userGroups.groupId, groupId)
+        )
+      )
+      .get();
 
-    const isLeader = group.leader_user_id === session.user.id;
+    const isLeader = group.leaderUserId === session.user.id;
     if (!userGroup && !isLeader) {
       return NextResponse.json(
         { error: "You are not a member of this group" },

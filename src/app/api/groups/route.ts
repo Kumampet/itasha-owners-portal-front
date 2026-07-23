@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { userGroups } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 
 // GET /api/groups
 // ユーザーが参加している団体一覧を取得
@@ -8,65 +10,71 @@ export async function GET() {
   try {
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    // ユーザーが参加している団体を取得（複数団体参加対応：UserGroupテーブルを使用）
-    const userGroups = await prisma.userGroup.findMany({
-      where: {
-        user_id: session.user.id,
-      },
-      include: {
+    const userId = session.user.id;
+
+    // ユーザーが参加している団体を取得
+    const userGroupsList = await db.query.userGroups.findMany({
+      where: eq(userGroups.userId, userId),
+      orderBy: desc(userGroups.createdAt),
+      with: {
         group: {
-          include: {
+          with: {
             event: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
-                event_date: true,
+                eventDate: true,
               },
             },
-            leader: {
-              select: {
+            user: {
+              columns: {
                 id: true,
                 name: true,
                 email: true,
               },
             },
-            _count: {
-              select: {
-                // UserGroupテーブルからメンバー数をカウント
-                user_groups: true,
+            userGroups: {
+              columns: {
+                userId: true,
               },
             },
           },
         },
       },
-      orderBy: {
-        created_at: "desc",
-      },
     });
 
-    // groupがnullの場合は除外（削除された団体のUserGroupレコードが残っている場合の対策）
-    const groups = userGroups
-      .filter((ug) => ug.group !== null)
-      .map((ug) => {
+    const groups = userGroupsList
+      .filter((ug: any) => ug.group !== null)
+      .map((ug: any) => {
         const group = ug.group!;
+        const leader = group.user; // Drizzle relations mapping for leaderUserId -> user
+        
         return {
           id: group.id,
           name: group.name,
           theme: group.theme,
-          groupCode: group.group_code,
-          maxMembers: group.max_members,
-          memberCount: group._count.user_groups,
-          isLeader: group.leader_user_id === session.user.id,
-          event: group.event,
-          leader: group.leader,
-          createdAt: group.created_at,
+          groupCode: group.groupCode,
+          maxMembers: group.maxMembers,
+          memberCount: group.userGroups?.length || 0,
+          isLeader: group.leaderUserId === userId,
+          event: group.event ? {
+            id: group.event.id,
+            name: group.event.name,
+            event_date: new Date(group.event.eventDate).toISOString(),
+          } : null,
+          leader: leader ? {
+            id: leader.id,
+            name: leader.name,
+            email: leader.email,
+          } : null,
+          createdAt: new Date(group.createdAt).toISOString(),
         };
       });
 
@@ -92,4 +100,3 @@ export async function GET() {
     );
   }
 }
-

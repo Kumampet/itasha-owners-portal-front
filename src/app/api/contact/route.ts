@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { users, contactSubmissions } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { notifyDiscordContactReceived } from "@/lib/discord-admin-notify";
 
 // POST /api/contact
@@ -40,7 +42,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // メールアドレスの形式チェック（簡易版）
+    // メールアドレスの形式チェック
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       return NextResponse.json(
@@ -52,29 +54,44 @@ export async function POST(request: Request) {
     // ログインしている場合は、ユーザーが存在するか確認してからsubmitter_idを設定
     let submitterId: string | null = null;
     if (session?.user?.id) {
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { id: true },
-      });
+      const user = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, session.user.id))
+        .get();
       if (user) {
         submitterId = user.id;
       }
     }
 
-    const submission = await prisma.contactSubmission.create({
-      data: {
-        title: title.trim(),
-        name: name.trim(),
-        email: email.trim(),
-        content: content.trim(),
-        submitter_id: submitterId,
-        status: "PENDING",
-      },
+    const submissionId = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    await db.insert(contactSubmissions).values({
+      id: submissionId,
+      title: title.trim(),
+      name: name.trim(),
+      email: email.trim(),
+      content: content.trim(),
+      submitterId: submitterId,
+      status: "PENDING",
+      createdAt: now,
+      updatedAt: now,
     });
 
-    notifyDiscordContactReceived({ id: submission.id });
+    notifyDiscordContactReceived({ id: submissionId });
 
-    return NextResponse.json(submission, { status: 201 });
+    return NextResponse.json({
+      id: submissionId,
+      title: title.trim(),
+      name: name.trim(),
+      email: email.trim(),
+      content: content.trim(),
+      submitter_id: submitterId,
+      status: "PENDING",
+      created_at: now,
+      updated_at: now,
+    }, { status: 201 });
   } catch (error) {
     console.error("Error creating contact submission:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -84,4 +101,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

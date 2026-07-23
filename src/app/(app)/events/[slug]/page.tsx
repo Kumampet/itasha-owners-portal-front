@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { events } from "@/db/schema";
+import { eq, asc } from "drizzle-orm";
 import { createMetadataWithOGP, getMetadataBase } from "@/lib/metadata";
 import { EventDetailActions } from "@/components/event-detail-actions";
 import { formatShortDateTime } from "@/lib/date-utils";
@@ -15,14 +17,15 @@ export async function generateMetadata({
   params,
 }: EventDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const event = await prisma.event.findUnique({
-    where: { id: slug },
-    select: {
-      name: true,
-      description: true,
-      image_url: true,
-    },
-  });
+  const event = await db
+    .select({
+      name: events.name,
+      description: events.description,
+      imageUrl: events.imageUrl,
+    })
+    .from(events)
+    .where(eq(events.id, slug))
+    .get();
 
   if (!event) {
     return createMetadataWithOGP({
@@ -30,7 +33,7 @@ export async function generateMetadata({
     });
   }
 
-  const trimmedImage = event.image_url?.trim();
+  const trimmedImage = event.imageUrl?.trim();
 
   return createMetadataWithOGP({
     title: event.name,
@@ -69,42 +72,42 @@ function formatDateRange(
 }
 
 function formatEntryInfo(entries: Array<{
-  entry_number: number;
-  entry_start_at: Date | null;
-  entry_start_public_at: Date | null;
-  entry_deadline_at: Date | null;
-  payment_due_at: Date | null;
-  payment_due_public_at: Date | null;
+  entryNumber: number;
+  entryStartAt: string | null;
+  entryStartPublicAt: string | null;
+  entryDeadlineAt: string | null;
+  paymentDueAt: string | null;
+  paymentDuePublicAt: string | null;
 }>) {
   if (!entries || entries.length === 0) {
     return {
       entryStart: "未定",
       deadline: "未定",
+      paymentDue: "未定",
     };
   }
 
-  // 最初のエントリー情報を使用
   const firstEntry = entries[0];
   const now = new Date();
 
   // 公開日時が未来の場合は日時を非表示
-  const entryStartAt = firstEntry.entry_start_public_at && new Date(firstEntry.entry_start_public_at) > now
+  const entryStartAt = firstEntry.entryStartPublicAt && new Date(firstEntry.entryStartPublicAt) > now
     ? null
-    : firstEntry.entry_start_at;
+    : firstEntry.entryStartAt;
 
-  const paymentDueAt = firstEntry.payment_due_public_at && new Date(firstEntry.payment_due_public_at) > now
+  const paymentDueAt = firstEntry.paymentDuePublicAt && new Date(firstEntry.paymentDuePublicAt) > now
     ? null
-    : firstEntry.payment_due_at;
+    : firstEntry.paymentDueAt;
 
   return {
     entryStart: entryStartAt
-      ? formatShortDateTime(entryStartAt)
+      ? formatShortDateTime(new Date(entryStartAt))
       : "未定",
-    deadline: firstEntry.entry_deadline_at
-      ? formatShortDateTime(firstEntry.entry_deadline_at)
+    deadline: firstEntry.entryDeadlineAt
+      ? formatShortDateTime(new Date(firstEntry.entryDeadlineAt))
       : "未定",
     paymentDue: paymentDueAt
-      ? formatShortDateTime(paymentDueAt)
+      ? formatShortDateTime(new Date(paymentDueAt))
       : "未定",
   };
 }
@@ -114,45 +117,16 @@ export default async function EventDetailPage({
 }: EventDetailPageProps) {
   const { slug } = await params;
 
-  const event = await prisma.event.findUnique({
-    where: {
-      id: slug,
-    },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      event_date: true,
-      event_end_date: true,
-      is_multi_day: true,
-      approval_status: true,
-      prefecture: true,
-      city: true,
-      street_address: true,
-      venue_name: true,
-      keywords: true,
-      official_urls: true,
-      image_url: true,
-      entry_selection_method: true,
-      entries: {
-        select: {
-          entry_number: true,
-          entry_start_at: true,
-          entry_start_public_at: true,
-          entry_deadline_at: true,
-          payment_due_type: true,
-          payment_due_at: true,
-          payment_due_days_after_entry: true,
-          payment_due_public_at: true,
-        },
-        orderBy: {
-          entry_number: "asc",
-        },
+  const event = await db.query.events.findFirst({
+    where: eq(events.id, slug),
+    with: {
+      eventEntries: {
+        orderBy: (eventEntries: any, { asc }: any) => [asc(eventEntries.entryNumber)],
       },
-      tags: {
-        select: {
+      eventTags: {
+        with: {
           tag: {
-            select: {
+            columns: {
               name: true,
             },
           },
@@ -166,17 +140,44 @@ export default async function EventDetailPage({
   }
 
   const formatted = formatDateRange(
-    event.event_date,
-    event.event_end_date,
-    event.is_multi_day,
+    new Date(event.eventDate),
+    event.eventEndDate ? new Date(event.eventEndDate) : null,
+    event.isMultiDay || false,
   );
-  const entryInfo = formatEntryInfo(event.entries || []);
+
+  const formattedEntries = (event.eventEntries || []).map((e: any) => ({
+    entryNumber: e.entryNumber,
+    entryStartAt: e.entryStartAt,
+    entryStartPublicAt: e.entryStartPublicAt,
+    entryDeadlineAt: e.entryDeadlineAt,
+    paymentDueAt: e.paymentDueAt,
+    paymentDuePublicAt: e.paymentDuePublicAt,
+  }));
+
+  const entryInfo = formatEntryInfo(formattedEntries);
+
+  let officialUrls: string[] = [];
+  try {
+    if (event.officialUrls) {
+      officialUrls = typeof event.officialUrls === "string"
+        ? JSON.parse(event.officialUrls)
+        : event.officialUrls;
+    }
+  } catch {}
+
+  let keywords: string[] = [];
+  try {
+    if (event.keywords) {
+      keywords = typeof event.keywords === "string"
+        ? JSON.parse(event.keywords)
+        : event.keywords;
+    }
+  } catch {}
 
   const hasLocationDetailSection =
-    Boolean(event.venue_name) ||
+    Boolean(event.venueName) ||
     Boolean(event.prefecture) ||
-    (Array.isArray(event.official_urls) &&
-      (event.official_urls as string[]).length > 0);
+    (Array.isArray(officialUrls) && officialUrls.length > 0);
 
   const shareUrl = `${getMetadataBase().origin.replace(/\/$/, "")}/events/${event.id}`;
 
@@ -192,9 +193,9 @@ export default async function EventDetailPage({
 
         <EventPageHeader
           name={event.name}
-          image_url={event.image_url}
-          keywords={event.keywords}
-          tags={event.tags}
+          image_url={event.imageUrl}
+          keywords={keywords}
+          tags={event.eventTags}
           shareUrl={shareUrl}
         />
 
@@ -207,7 +208,7 @@ export default async function EventDetailPage({
               開催日時: {formatted.main}
             </p>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-              エントリー{event.entry_selection_method === "FIRST_COME" ? "（先着）" : event.entry_selection_method === "LOTTERY" ? "（抽選）" : event.entry_selection_method === "SELECTION" ? "（選考）" : ""}
+              エントリー{event.entrySelectionMethod === "FIRST_COME" ? "（先着）" : event.entrySelectionMethod === "LOTTERY" ? "（抽選）" : event.entrySelectionMethod === "SELECTION" ? "（選考）" : ""}
             </p>
             <p className="text-sm text-muted-foreground">
               開始: {entryInfo.entryStart} / 締切: {entryInfo.deadline}
@@ -221,7 +222,7 @@ export default async function EventDetailPage({
           <div className="space-y-2">
             <EventDetailActions
               eventId={event.id}
-              officialUrls={event.official_urls as string[] | undefined}
+              officialUrls={officialUrls}
             />
           </div>
         </section>
@@ -237,7 +238,7 @@ export default async function EventDetailPage({
 
         {hasLocationDetailSection ? (
           <section className="space-y-6 border-t border-border pt-8">
-            {(event.venue_name || event.prefecture) ? (
+            {(event.venueName || event.prefecture) ? (
               <div className="grid gap-6 sm:grid-cols-2">
                 {event.prefecture && (
                   <div className="space-y-1">
@@ -247,28 +248,28 @@ export default async function EventDetailPage({
                     <p className="text-sm text-foreground">
                       {event.prefecture}
                       {event.city && ` ${event.city}`}
-                      {event.street_address && ` ${event.street_address}`}
+                      {event.streetAddress && ` ${event.streetAddress}`}
                     </p>
                   </div>
                 )}
-                {event.venue_name && (
+                {event.venueName && (
                   <div className="space-y-1">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                       会場
                     </p>
                     <p className="text-sm text-foreground">
-                      {event.venue_name}
+                      {event.venueName}
                     </p>
                   </div>
                 )}
               </div>
             ) : null}
-            {event.official_urls && Array.isArray(event.official_urls) && event.official_urls.length > 0 && (
+            {officialUrls && officialUrls.length > 0 && (
               <div className="space-y-3">
-                {(event.official_urls as string[]).map((url: string, idx: number) => (
+                {officialUrls.map((url: string, idx: number) => (
                   <div key={idx}>
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                      公式サイト{(event.official_urls as string[]).length > 1 ? ` ${idx + 1}` : ""}
+                      公式サイト{officialUrls.length > 1 ? ` ${idx + 1}` : ""}
                     </p>
                     <Link
                       href={url}
@@ -288,4 +289,3 @@ export default async function EventDetailPage({
     </main>
   );
 }
-

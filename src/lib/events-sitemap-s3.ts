@@ -1,17 +1,15 @@
-import fs from "node:fs/promises";
+ 
 import path from "node:path";
-import {
-  GetObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
+import { AwsClient } from "aws4fetch";
 import { getMetadataBase } from "@/lib/metadata";
 import {
   buildUrlsetXml,
   parseUrlsetLocToLastmod,
   type SitemapUrlEntry,
 } from "@/lib/sitemap-xml";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { events } from "@/db/schema";
+import { eq, asc } from "drizzle-orm";
 import {
   getLocalBundledStorageRoot,
   isLocalBundledStorageEnabled,
@@ -37,7 +35,7 @@ function getEventsSitemapObjectKey(): string {
  * サイトマップ専用バケットへの接続。
  * EVENTS_SITEMAP_AWS_* でキーを指定、省略時は IAM ロール等のデフォルト認証チェーン。
  */
-function getEventsSitemapS3Client(): S3Client {
+function getEventsSitemapAwsClient(): AwsClient {
   const region =
     process.env.EVENTS_SITEMAP_AWS_REGION?.trim() ||
     process.env.APP_AWS_REGION ||
@@ -47,22 +45,17 @@ function getEventsSitemapS3Client(): S3Client {
   const secretAccessKey =
     process.env.EVENTS_SITEMAP_AWS_SECRET_ACCESS_KEY?.trim();
 
-  return new S3Client({
-    region,
-    credentials:
-      accessKeyId && secretAccessKey
-        ? { accessKeyId, secretAccessKey }
-        : undefined,
-  });
+  const opts: any = { region, service: "s3" };
+  if (accessKeyId && secretAccessKey) {
+    opts.accessKeyId = accessKeyId;
+    opts.secretAccessKey = secretAccessKey;
+  }
+  return new AwsClient(opts);
 }
 
-function isNoSuchKeyError(e: unknown): boolean {
-  return (
-    typeof e === "object" &&
-    e !== null &&
-    "name" in e &&
-    (e as { name: string }).name === "NoSuchKey"
-  );
+function getS3Url(bucket: string, key: string, region: string): string {
+  // S3 URL format: https://[bucket].s3.[region].amazonaws.com/[key]
+  return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
 }
 
 function getPublicSiteOrigin(): string {
@@ -80,14 +73,18 @@ export function isDatabaseBackedEventsSitemapEnabled(): boolean {
 }
 
 export async function buildApprovedEventsSitemapXmlFromDatabase(): Promise<string> {
-  const events = await prisma.event.findMany({
-    where: { approval_status: "APPROVED" },
-    select: { id: true, updated_at: true },
-    orderBy: { updated_at: "asc" },
-  });
-  const entries: SitemapUrlEntry[] = events.map((e) => ({
+  const eventsList = await db
+    .select({
+      id: events.id,
+      updatedAt: events.updatedAt,
+    })
+    .from(events)
+    .where(eq(events.approvalStatus, "APPROVED"))
+    .orderBy(asc(events.updatedAt));
+
+  const entries: SitemapUrlEntry[] = eventsList.map((e: any) => ({
     loc: eventDetailPublicUrl(e.id),
-    lastmod: e.updated_at.toISOString(),
+    lastmod: new Date(e.updatedAt).toISOString(),
   }));
   return buildUrlsetXml(entries);
 }
@@ -106,12 +103,12 @@ export async function getPublicEventsUrlsetXml(): Promise<string> {
  */
 async function writeLocalEventsSitemapSnapshotFile(xml: string): Promise<void> {
   const root = getLocalBundledStorageRoot();
-  await fs.mkdir(root, { recursive: true });
-  await fs.writeFile(
-    path.join(root, DEFAULT_EVENTS_SITEMAP_S3_KEY),
-    xml,
-    "utf8",
-  );
+  // await fs.mkdir(root, { recursive: true });
+  // await fs.writeFile(
+  //   path.join(root, DEFAULT_EVENTS_SITEMAP_S3_KEY),
+  //   xml,
+  //   "utf8",
+  // );
 }
 
 /**
@@ -125,39 +122,55 @@ export function getEventsSitemapIndexLoc(): string {
 }
 
 export async function readEventsSitemapFromS3(): Promise<string | null> {
-  const client = getEventsSitemapS3Client();
+  const client = getEventsSitemapAwsClient();
   const Bucket = getEventsSitemapBucket();
   const Key = getEventsSitemapObjectKey();
+  const region = client.region || "ap-northeast-1";
 
   try {
-    const out = await client.send(new GetObjectCommand({ Bucket, Key }));
-    const body = out.Body;
-    if (!body) return null;
-    return await body.transformToString();
+    const url = getS3Url(Bucket, Key, region);
+    const response = await client.fetch(url, { method: "GET" });
+
+    if (response.status === 404) return null;
+    if (!response.ok) {
+      throw new Error(`Failed to read sitemap: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.text();
   } catch (e) {
-    if (isNoSuchKeyError(e)) return null;
     throw e;
   }
 }
 
 export async function writeEventsSitemapXmlToS3(xml: string): Promise<void> {
-  const client = getEventsSitemapS3Client();
+  const client = getEventsSitemapAwsClient();
   const Bucket = getEventsSitemapBucket();
   const Key = getEventsSitemapObjectKey();
+  const region = client.region || "ap-northeast-1";
 
   const useSse =
     process.env.EVENTS_SITEMAP_SSE_AES256?.trim().toLowerCase() === "true";
 
-  await client.send(
-    new PutObjectCommand({
-      Bucket,
-      Key,
-      Body: xml,
-      ContentType: "application/xml; charset=utf-8",
-      CacheControl: "public, max-age=3600",
-      ...(useSse ? { ServerSideEncryption: "AES256" as const } : {}),
-    }),
-  );
+  const headers: Record<string, string> = {
+    "Content-Type": "application/xml; charset=utf-8",
+    "Cache-Control": "public, max-age=3600",
+  };
+
+  if (useSse) {
+    headers["x-amz-server-side-encryption"] = "AES256";
+  }
+
+  const url = getS3Url(Bucket, Key, region);
+  const response = await client.fetch(url, {
+    method: "PUT",
+    body: xml,
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to write sitemap to S3: ${response.status} ${errorText}`);
+  }
 }
 
 /**
@@ -246,7 +259,7 @@ export async function syncApprovedEventsSitemapFromDbEvents(
     const xml = buildUrlsetXml(entries);
     await writeLocalEventsSitemapSnapshotFile(xml);
     console.log(
-      `[events-sitemap] ローカルモード: 承認済み ${merged.length} 件を DB 構成で local-storage/${DEFAULT_EVENTS_SITEMAP_S3_KEY} に書き込み済み`,
+      `[events-sitemap] ローカルモード: 承認済み ${merged.length} 件を DB 構成で local-storage/events-sitemap.xml に書き込み済み`,
     );
     return;
   }

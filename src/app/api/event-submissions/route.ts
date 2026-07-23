@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { eventSubmissions } from "@/db/schema";
 import { notifyDiscordEventListingRequest } from "@/lib/discord-admin-notify";
 import { fromDateLocal } from "@/lib/date-utils";
 
@@ -47,28 +48,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "開催日の形式が正しくありません" }, { status: 400 });
     }
 
-    const submission = await prisma.eventSubmission.create({
-      data: {
-        name: name.trim(),
-        venue_name: venue_name.trim(),
-        original_url: original_url.trim(),
-        event_date: eventDateParsed,
-        description: typeof description === "string" ? description.trim() || null : null,
-        submitter_id: session?.user?.id || null,
-        submitter_email: session?.user?.email || null,
-        status: "PENDING",
-      },
+    const now = new Date().toISOString();
+    const id = crypto.randomUUID();
+
+    await db.insert(eventSubmissions).values({
+      id,
+      name: name.trim(),
+      venueName: venue_name.trim(),
+      originalUrl: original_url.trim(),
+      eventDate: eventDateParsed.toISOString(),
+      description: typeof description === "string" ? description.trim() || null : null,
+      submitterId: session?.user?.id || null,
+      submitterEmail: session?.user?.email || null,
+      status: "PENDING",
+      createdAt: now,
+      updatedAt: now,
     });
 
     notifyDiscordEventListingRequest({
-      id: submission.id,
-      name: submission.name,
-      originalUrl: submission.original_url,
-      venue_name: submission.venue_name,
-      eventDateIso: submission.event_date?.toISOString() ?? null,
+      id,
+      name: name.trim(),
+      originalUrl: original_url.trim(),
+      venue_name: venue_name.trim(),
+      eventDateIso: eventDateParsed.toISOString(),
     });
 
-    return NextResponse.json(submission, { status: 201 });
+    return NextResponse.json({ id, status: "PENDING" }, { status: 201 });
   } catch (error) {
     console.error("Error creating event submission:", error);
     return NextResponse.json({ error: "Failed to create event submission" }, { status: 500 });

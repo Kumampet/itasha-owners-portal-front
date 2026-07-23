@@ -37,14 +37,6 @@ export default function GroupsPage() {
     document.title = "団体管理 | 痛車オーナーズナビ | いたなび！";
   }, []);
 
-  useEffect(() => {
-    fetchGroups();
-    fetchUnreadCounts();
-
-    // 定期的に未読状態をチェック（10秒ごと）
-    const interval = setInterval(fetchUnreadCounts, 10000);
-    return () => clearInterval(interval);
-  }, []);
 
 
   const fetchGroups = async () => {
@@ -79,6 +71,15 @@ export default function GroupsPage() {
       console.error("Failed to fetch unread counts:", error);
     }
   };
+
+  useEffect(() => {
+    fetchGroups();
+    fetchUnreadCounts();
+
+    // 定期的に未読状態をチェック（10秒ごと）
+    const interval = setInterval(fetchUnreadCounts, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <main className="flex-1">

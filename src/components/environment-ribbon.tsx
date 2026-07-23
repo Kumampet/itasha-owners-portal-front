@@ -42,7 +42,7 @@ export function EnvironmentRibbon() {
     useEffect(() => {
         // クライアント側でのみ実行されるため、useEffect内でsetStateを呼び出す
         // これはハイドレーションエラーを防ぐために必要な処理
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+         
         setEnvironment(getEnvironment());
     }, []);
 

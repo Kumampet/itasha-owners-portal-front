@@ -1,56 +1,30 @@
 import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { events, eventEntries } from "@/db/schema";
+import { eq, asc } from "drizzle-orm";
 
 // キャッシュされた個別イベント取得関数
 // ISR: 60秒間キャッシュしてDB負荷を軽減
 const getCachedEvent = (id: string) =>
   unstable_cache(
     async () => {
-      return await prisma.event.findUnique({
-        where: {
-          id: id,
-        },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          event_date: true,
-          event_end_date: true,
-          is_multi_day: true,
-          prefecture: true,
-          city: true,
-          street_address: true,
-          venue_name: true,
-          keywords: true,
-          official_urls: true,
-          image_url: true,
-          approval_status: true,
-          entries: {
-            select: {
-              entry_number: true,
-              entry_start_at: true,
-              entry_start_public_at: true,
-              entry_deadline_at: true,
-              payment_due_type: true,
-              payment_due_at: true,
-              payment_due_days_after_entry: true,
-              payment_due_public_at: true,
-            },
-            orderBy: {
-              entry_number: "asc",
-            },
+      return await db.query.events.findFirst({
+        where: eq(events.id, id),
+        with: {
+          eventEntries: {
+            orderBy: asc(eventEntries.entryNumber),
           },
-          tags: {
-            select: {
+          eventTags: {
+            with: {
               tag: {
-                select: {
+                columns: {
                   name: true,
-                },
-              },
-            },
-          },
-        },
+                }
+              }
+            }
+          }
+        }
       });
     },
     [`event-${id}`], // イベントIDを含むキャッシュキー
@@ -80,29 +54,65 @@ export async function GET(
 
     const now = new Date();
 
-    // 公開日時が未来の場合は該当日時を非公開にする
-    type EntryType = NonNullable<typeof event.entries>[number];
+    // 公開日時が未来の場合は該当日時を非公開にし、レスポンス形式をフロントエンドに合わせる
+    const tagsList = (event.eventTags || []).map((et: any) => ({
+      tag: {
+        name: et.tag?.name || "",
+      }
+    }));
+
+    const entriesList = (event.eventEntries || []).map((entry: any) => {
+      const entryStartAt =
+        entry.entryStartPublicAt &&
+        new Date(entry.entryStartPublicAt) > now
+          ? null
+          : entry.entryStartAt;
+
+      const paymentDueAt =
+        entry.paymentDuePublicAt &&
+        new Date(entry.paymentDuePublicAt) > now
+          ? null
+          : entry.paymentDueAt;
+
+      return {
+        entry_number: entry.entryNumber,
+        entry_start_at: entryStartAt ? new Date(entryStartAt).toISOString() : null,
+        entry_start_public_at: entry.entryStartPublicAt ? new Date(entry.entryStartPublicAt).toISOString() : null,
+        entry_deadline_at: entry.entryDeadlineAt ? new Date(entry.entryDeadlineAt).toISOString() : null,
+        payment_due_type: entry.paymentDueType,
+        payment_due_at: paymentDueAt ? new Date(paymentDueAt).toISOString() : null,
+        payment_due_days_after_entry: entry.paymentDueDaysAfterEntry,
+        payment_due_public_at: entry.paymentDuePublicAt ? new Date(entry.paymentDuePublicAt).toISOString() : null,
+      };
+    });
+
+    let keywords = [];
+    try {
+      keywords = event.keywords ? (typeof event.keywords === "string" ? JSON.parse(event.keywords) : event.keywords) : [];
+    } catch {}
+
+    let officialUrls = [];
+    try {
+      officialUrls = event.officialUrls ? (typeof event.officialUrls === "string" ? JSON.parse(event.officialUrls) : event.officialUrls) : [];
+    } catch {}
+
     const filteredEvent = {
-      ...event,
-      entries: (event.entries || []).map((entry: EntryType) => {
-        const entryStartAt =
-          entry.entry_start_public_at &&
-          new Date(entry.entry_start_public_at) > now
-            ? null
-            : entry.entry_start_at;
-
-        const paymentDueAt =
-          entry.payment_due_public_at &&
-          new Date(entry.payment_due_public_at) > now
-            ? null
-            : entry.payment_due_at;
-
-        return {
-          ...entry,
-          entry_start_at: entryStartAt,
-          payment_due_at: paymentDueAt,
-        };
-      }),
+      id: event.id,
+      name: event.name,
+      description: event.description,
+      event_date: new Date(event.eventDate).toISOString(),
+      event_end_date: event.eventEndDate ? new Date(event.eventEndDate).toISOString() : null,
+      is_multi_day: event.isMultiDay,
+      prefecture: event.prefecture,
+      city: event.city,
+      street_address: event.streetAddress,
+      venue_name: event.venueName,
+      keywords,
+      official_urls: officialUrls,
+      image_url: event.imageUrl,
+      approval_status: event.approvalStatus,
+      entries: entriesList,
+      tags: tagsList,
     };
 
     // CloudFront（Amplify Hosting のエッジ）で60秒間キャッシュ

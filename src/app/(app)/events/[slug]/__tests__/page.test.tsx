@@ -1,12 +1,18 @@
 import { render, screen } from '@/test-utils'
 import EventDetailPage from '../page'
-import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 
 // モック設定
-jest.mock('@/lib/prisma', () => ({
-  prisma: {
-    event: {
-      findUnique: jest.fn(),
+jest.mock('@/lib/db', () => ({
+  db: {
+    select: jest.fn().mockReturnThis(),
+    from: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    get: jest.fn(),
+    query: {
+      events: {
+        findFirst: jest.fn(),
+      },
     },
   },
 }))
@@ -44,9 +50,12 @@ jest.mock('next/image', () => ({
   ),
 }))
 
-const mockPrisma = prisma as unknown as {
-  event: {
-    findUnique: jest.Mock
+const mockDb = db as unknown as {
+  get: jest.Mock
+  query: {
+    events: {
+      findFirst: jest.Mock
+    }
   }
 }
 
@@ -55,28 +64,28 @@ describe('EventDetailPage', () => {
     id: 'event-1',
     name: 'テストイベント',
     description: 'テストイベントの説明です。',
-    event_date: new Date('2024-12-31T10:00:00Z'),
-    event_end_date: null,
-    is_multi_day: false,
-    approval_status: 'APPROVED',
+    eventDate: '2024-12-31T10:00:00Z',
+    eventEndDate: null,
+    isMultiDay: false,
+    approvalStatus: 'APPROVED',
     prefecture: '東京都',
     city: '渋谷区',
-    street_address: 'テスト1-2-3',
-    venue_name: 'テスト会場',
-    keywords: ['痛車', 'イベント'],
-    official_urls: ['https://example.com/event1'],
-    image_url: 'https://example.com/image1.jpg',
-    entry_selection_method: 'FIRST_COME',
+    streetAddress: 'テスト1-2-3',
+    venueName: 'テスト会場',
+    keywords: JSON.stringify(['痛車', 'イベント']),
+    officialUrls: JSON.stringify(['https://example.com/event1']),
+    imageUrl: 'https://example.com/image1.jpg',
+    entrySelectionMethod: 'FIRST_COME',
     entries: [
       {
-        entry_number: 1,
-        entry_start_at: new Date('2024-11-01T00:00:00Z'),
-        entry_start_public_at: null,
-        entry_deadline_at: new Date('2024-12-01T23:59:59Z'),
-        payment_due_type: 'FIXED',
-        payment_due_at: new Date('2024-12-15T23:59:59Z'),
-        payment_due_days_after_entry: null,
-        payment_due_public_at: null,
+        entryNumber: 1,
+        entryStartAt: '2024-11-01T00:00:00Z',
+        entryStartPublicAt: null,
+        entryDeadlineAt: '2024-12-01T23:59:59Z',
+        paymentDueType: 'FIXED',
+        paymentDueAt: '2024-12-15T23:59:59Z',
+        paymentDueDaysAfterEntry: null,
+        paymentDuePublicAt: null,
       },
     ],
     tags: [
@@ -90,19 +99,18 @@ describe('EventDetailPage', () => {
   })
 
   it('イベント詳細を表示する', async () => {
-    mockPrisma.event.findUnique.mockResolvedValue(mockEvent as never)
+    mockDb.query.events.findFirst.mockResolvedValue(mockEvent as never)
 
     const params = Promise.resolve({ slug: 'event-1' })
     const page = await EventDetailPage({ params })
     render(page)
 
     expect(screen.getByText('テストイベント')).toBeInTheDocument()
-    // 説明は「イベント紹介」セクションに1箇所のみ表示（ヘッダーには出ない）
     expect(screen.getAllByText('テストイベントの説明です。')).toHaveLength(1)
   })
 
   it('イベントが見つからない場合、notFoundを呼び出す', async () => {
-    mockPrisma.event.findUnique.mockResolvedValue(null)
+    mockDb.query.events.findFirst.mockResolvedValue(null)
 
     const params = Promise.resolve({ slug: 'non-existent' })
     
@@ -111,7 +119,7 @@ describe('EventDetailPage', () => {
   })
 
   it('イベント名を表示する', async () => {
-    mockPrisma.event.findUnique.mockResolvedValue(mockEvent as never)
+    mockDb.query.events.findFirst.mockResolvedValue(mockEvent as never)
 
     const params = Promise.resolve({ slug: 'event-1' })
     const page = await EventDetailPage({ params })
@@ -121,7 +129,7 @@ describe('EventDetailPage', () => {
   })
 
   it('イベント説明を「イベント紹介」セクションに表示する', async () => {
-    mockPrisma.event.findUnique.mockResolvedValue(mockEvent as never)
+    mockDb.query.events.findFirst.mockResolvedValue(mockEvent as never)
 
     const params = Promise.resolve({ slug: 'event-1' })
     const page = await EventDetailPage({ params })
@@ -132,7 +140,7 @@ describe('EventDetailPage', () => {
   })
 
   it('イベント画像を表示する', async () => {
-    mockPrisma.event.findUnique.mockResolvedValue(mockEvent as never)
+    mockDb.query.events.findFirst.mockResolvedValue(mockEvent as never)
 
     const params = Promise.resolve({ slug: 'event-1' })
     const page = await EventDetailPage({ params })
@@ -143,7 +151,7 @@ describe('EventDetailPage', () => {
   })
 
   it('キーワードを表示する', async () => {
-    mockPrisma.event.findUnique.mockResolvedValue(mockEvent as never)
+    mockDb.query.events.findFirst.mockResolvedValue(mockEvent as never)
 
     const params = Promise.resolve({ slug: 'event-1' })
     const page = await EventDetailPage({ params })
@@ -154,7 +162,7 @@ describe('EventDetailPage', () => {
   })
 
   it('タグを表示する', async () => {
-    mockPrisma.event.findUnique.mockResolvedValue(mockEvent as never)
+    mockDb.query.events.findFirst.mockResolvedValue(mockEvent as never)
 
     const params = Promise.resolve({ slug: 'event-1' })
     const page = await EventDetailPage({ params })
@@ -165,7 +173,7 @@ describe('EventDetailPage', () => {
   })
 
   it('開催情報を表示する', async () => {
-    mockPrisma.event.findUnique.mockResolvedValue(mockEvent as never)
+    mockDb.query.events.findFirst.mockResolvedValue(mockEvent as never)
 
     const params = Promise.resolve({ slug: 'event-1' })
     const page = await EventDetailPage({ params })
@@ -177,7 +185,7 @@ describe('EventDetailPage', () => {
   })
 
   it('エントリー情報を表示する', async () => {
-    mockPrisma.event.findUnique.mockResolvedValue(mockEvent as never)
+    mockDb.query.events.findFirst.mockResolvedValue(mockEvent as never)
 
     const params = Promise.resolve({ slug: 'event-1' })
     const page = await EventDetailPage({ params })
@@ -189,7 +197,7 @@ describe('EventDetailPage', () => {
   })
 
   it('公式サイトリンクを表示する', async () => {
-    mockPrisma.event.findUnique.mockResolvedValue(mockEvent as never)
+    mockDb.query.events.findFirst.mockResolvedValue(mockEvent as never)
 
     const params = Promise.resolve({ slug: 'event-1' })
     const page = await EventDetailPage({ params })
@@ -203,11 +211,11 @@ describe('EventDetailPage', () => {
   it('複数日のイベントの場合、終了日を表示する', async () => {
     const multiDayEvent = {
       ...mockEvent,
-      event_end_date: new Date('2025-01-01T18:00:00Z'),
-      is_multi_day: true,
+      eventEndDate: '2025-01-01T18:00:00Z',
+      isMultiDay: true,
     }
 
-    mockPrisma.event.findUnique.mockResolvedValue(multiDayEvent as never)
+    mockDb.query.events.findFirst.mockResolvedValue(multiDayEvent as never)
 
     const params = Promise.resolve({ slug: 'event-1' })
     const page = await EventDetailPage({ params })
@@ -217,7 +225,7 @@ describe('EventDetailPage', () => {
   })
 
   it('イベント一覧への戻るリンクを表示する', async () => {
-    mockPrisma.event.findUnique.mockResolvedValue(mockEvent as never)
+    mockDb.query.events.findFirst.mockResolvedValue(mockEvent as never)
 
     const params = Promise.resolve({ slug: 'event-1' })
     const page = await EventDetailPage({ params })
@@ -233,7 +241,7 @@ describe('EventDetailPage', () => {
       entries: [],
     }
 
-    mockPrisma.event.findUnique.mockResolvedValue(eventWithoutEntries as never)
+    mockDb.query.events.findFirst.mockResolvedValue(eventWithoutEntries as never)
 
     const params = Promise.resolve({ slug: 'event-1' })
     const page = await EventDetailPage({ params })
@@ -243,7 +251,7 @@ describe('EventDetailPage', () => {
   })
 
   it('支払期限を表示する', async () => {
-    mockPrisma.event.findUnique.mockResolvedValue(mockEvent as never)
+    mockDb.query.events.findFirst.mockResolvedValue(mockEvent as never)
 
     const params = Promise.resolve({ slug: 'event-1' })
     const page = await EventDetailPage({ params })
@@ -252,4 +260,3 @@ describe('EventDetailPage', () => {
     expect(screen.getByText(/支払期限/)).toBeInTheDocument()
   })
 })
-

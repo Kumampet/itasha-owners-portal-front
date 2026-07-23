@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { userNotificationSettings } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // GET /api/user/notification-settings
 // ユーザーの通知設定を取得
@@ -16,25 +18,43 @@ export async function GET() {
 
     const userId = session.user.id;
 
-    let settings = await prisma.userNotificationSettings.findUnique({
-      where: { user_id: userId },
+    let settings = await db.query.userNotificationSettings.findFirst({
+      where: eq(userNotificationSettings.userId, userId),
     });
 
     // 設定が存在しない場合はデフォルト値で作成
     if (!settings) {
-      settings = await prisma.userNotificationSettings.create({
-        data: {
-          user_id: userId,
-          browser_notification_enabled: false,
-          email_notification_enabled: true,
-          group_message_unread_notification_enabled: true,
-        },
+      const settingsId = crypto.randomUUID();
+      const nowStr = new Date().toISOString();
+      await db.insert(userNotificationSettings).values({
+        id: settingsId,
+        userId: userId,
+        browserNotificationEnabled: false,
+        emailNotificationEnabled: true,
+        groupMessageUnreadNotificationEnabled: true,
+        createdAt: nowStr,
+        updatedAt: nowStr,
       });
+
+      settings = {
+        id: settingsId,
+        userId: userId,
+        browserNotificationEnabled: false,
+        emailNotificationEnabled: true,
+        groupMessageUnreadNotificationEnabled: true,
+        createdAt: nowStr,
+        updatedAt: nowStr,
+      } as any;
     }
 
-    // リアルタイム性が重要なのでキャッシュを無効にする
     return NextResponse.json(
-      settings,
+      {
+        id: settings.id,
+        user_id: settings.userId,
+        browser_notification_enabled: settings.browserNotificationEnabled,
+        email_notification_enabled: settings.emailNotificationEnabled,
+        group_message_unread_notification_enabled: settings.groupMessageUnreadNotificationEnabled,
+      },
       {
         headers: {
           "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -44,12 +64,10 @@ export async function GET() {
   } catch (error) {
     console.error("Error fetching notification settings:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    const errorStack = error instanceof Error ? error.stack : undefined;
     return NextResponse.json(
       {
         error: "Failed to fetch notification settings",
         details: errorMessage,
-        ...(process.env.NODE_ENV === "development" && { stack: errorStack }),
       },
       { status: 500 }
     );
@@ -71,36 +89,49 @@ export async function PATCH(request: Request) {
     const userId = session.user.id;
     const body = await request.json();
 
-    const settings = await prisma.userNotificationSettings.upsert({
-      where: { user_id: userId },
-      update: {
-        browser_notification_enabled: body.browser_notification_enabled ?? false,
-        email_notification_enabled: body.email_notification_enabled ?? true,
-        group_message_unread_notification_enabled:
-          body.group_message_unread_notification_enabled ?? true,
-      },
-      create: {
-        user_id: userId,
-        browser_notification_enabled: body.browser_notification_enabled ?? false,
-        email_notification_enabled: body.email_notification_enabled ?? true,
-        group_message_unread_notification_enabled:
-          body.group_message_unread_notification_enabled ?? true,
-      },
-    });
+    const browserVal = body.browser_notification_enabled ?? false;
+    const emailVal = body.email_notification_enabled ?? true;
+    const unreadVal = body.group_message_unread_notification_enabled ?? true;
 
-    return NextResponse.json(settings);
+    const settingsId = crypto.randomUUID();
+    const nowStr = new Date().toISOString();
+
+    await db
+      .insert(userNotificationSettings)
+      .values({
+        id: settingsId,
+        userId: userId,
+        browserNotificationEnabled: browserVal,
+        emailNotificationEnabled: emailVal,
+        groupMessageUnreadNotificationEnabled: unreadVal,
+        createdAt: nowStr,
+        updatedAt: nowStr,
+      })
+      .onConflictDoUpdate({
+        target: userNotificationSettings.userId,
+        set: {
+          browserNotificationEnabled: browserVal,
+          emailNotificationEnabled: emailVal,
+          groupMessageUnreadNotificationEnabled: unreadVal,
+          updatedAt: nowStr,
+        },
+      });
+
+    return NextResponse.json({
+      user_id: userId,
+      browser_notification_enabled: browserVal,
+      email_notification_enabled: emailVal,
+      group_message_unread_notification_enabled: unreadVal,
+    });
   } catch (error) {
     console.error("Error updating notification settings:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    const errorStack = error instanceof Error ? error.stack : undefined;
     return NextResponse.json(
       {
         error: "Failed to update notification settings",
         details: errorMessage,
-        ...(process.env.NODE_ENV === "development" && { stack: errorStack }),
       },
       { status: 500 }
     );
   }
 }
-

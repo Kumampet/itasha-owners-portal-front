@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { users, groups, userGroups, userEvents } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
-/** セッションと DB のユーザーがずれたとき等（再ログインで解消するケース） */
 const GROUP_CREATE_RELOGIN_MESSAGE =
   "ログイン状態とサーバー側の情報が一致していない可能性があります。お手数ですが一度ログアウトしてから、再度ログインしたうえで団体作成をやり直してください。";
 
-/** 原因が特定できない失敗でも、ユーザーにログインやり直しを促す（「時間をおいて」では案内しない） */
 const GROUP_CREATE_FAILURE_RELOGIN_MESSAGE =
   "団体の作成に失敗しました。お手数ですが一度ログアウトしてから再度ログインし、団体作成をやり直してください。";
 
@@ -17,19 +16,18 @@ export async function POST(request: Request) {
   try {
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json({ error: GROUP_CREATE_RELOGIN_MESSAGE }, { status: 401 });
     }
 
     const userId = session.user.id;
-    if (!userId) {
-      return NextResponse.json({ error: GROUP_CREATE_RELOGIN_MESSAGE }, { status: 401 });
-    }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true },
-    });
+    const existingUser = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.id, userId))
+      .get();
+
     if (!existingUser) {
       return NextResponse.json({ error: GROUP_CREATE_RELOGIN_MESSAGE }, { status: 403 });
     }
@@ -55,9 +53,12 @@ export async function POST(request: Request) {
     let attempts = 0;
     while (!isUnique && attempts < 10) {
       const candidateCode = generateGroupCode();
-      const existing = await prisma.group.findUnique({
-        where: { group_code: candidateCode },
-      });
+      const existing = await db
+        .select()
+        .from(groups)
+        .where(eq(groups.groupCode, candidateCode))
+        .get();
+
       if (!existing) {
         groupCode = candidateCode;
         isUnique = true;
@@ -73,61 +74,96 @@ export async function POST(request: Request) {
       );
     }
 
-    // トランザクションで団体とUserEvent、UserGroupを作成
-    const result = await prisma.$transaction(async (tx) => {
-      // 団体を作成
-      const group = await tx.group.create({
-        data: {
-          event_id: eventId,
+    const groupId = crypto.randomUUID();
+    const groupInsert = db.insert(groups).values({
+      id: groupId,
+      eventId,
+      name,
+      theme: theme || null,
+      maxMembers: maxMembers || null,
+      groupCode: groupCode,
+      leaderUserId: userId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    const userGroupInsert = db.insert(userGroups).values({
+      userId,
+      groupId,
+      eventId,
+      status: "INTERESTED",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    const userEventInsert = db.insert(userEvents)
+      .values({
+        userId,
+        eventId,
+        groupId,
+        status: "INTERESTED",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+      .onConflictDoUpdate({
+        target: [userEvents.userId, userEvents.eventId],
+        set: {
+          groupId,
+          updatedAt: new Date().toISOString(),
+        },
+      });
+
+    if (typeof (db as any).batch === "function") {
+      await (db as any).batch([groupInsert, userGroupInsert, userEventInsert]);
+    } else {
+      await db.transaction(async (tx: any) => {
+        await tx.insert(groups).values({
+          id: groupId,
+          eventId,
           name,
           theme: theme || null,
-          max_members: maxMembers || null,
-          group_code: groupCode!,
-          leader_user_id: userId,
-        },
-      });
-
-      // UserGroupを作成（複数団体参加対応）
-      await tx.userGroup.create({
-        data: {
-          user_id: userId,
-          group_id: group.id,
-          event_id: eventId,
+          maxMembers: maxMembers || null,
+          groupCode: groupCode,
+          leaderUserId: userId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        await tx.insert(userGroups).values({
+          userId,
+          groupId,
+          eventId,
           status: "INTERESTED",
-        },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        await tx.insert(userEvents)
+          .values({
+            userId,
+            eventId,
+            groupId,
+            status: "INTERESTED",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          })
+          .onConflictDoUpdate({
+            target: [userEvents.userId, userEvents.eventId],
+            set: {
+              groupId,
+              updatedAt: new Date().toISOString(),
+            },
+          });
       });
+    }
 
-      // UserEventも作成または更新（後方互換性のため）
-      await tx.userEvent.upsert({
-        where: {
-          user_id_event_id: {
-            user_id: userId,
-            event_id: eventId,
-          },
-        },
-        update: {
-          group_id: group.id,
-        },
-        create: {
-          user_id: userId,
-          event_id: eventId,
-          group_id: group.id,
-          status: "INTERESTED",
-        },
-      });
-
-      return group;
-    });
+    const result = { id: groupId, groupCode };
 
     return NextResponse.json({
       groupId: result.id,
-      groupCode: result.group_code,
+      groupCode: result.groupCode,
     });
   } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2003"
-    ) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    if (errorMsg.includes("FOREIGN KEY") || errorMsg.includes("constraint")) {
       return NextResponse.json({ error: GROUP_CREATE_RELOGIN_MESSAGE }, { status: 409 });
     }
     console.error("Error creating group:", error);
@@ -137,4 +173,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

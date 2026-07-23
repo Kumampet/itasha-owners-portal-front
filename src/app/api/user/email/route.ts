@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // PATCH /api/user/email
 // メールアドレスを更新
@@ -8,13 +10,14 @@ export async function PATCH(request: Request) {
   try {
     const session = await auth();
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
+    const userId = session.user.id;
     const body = await request.json();
     const { email } = body;
 
@@ -35,12 +38,13 @@ export async function PATCH(request: Request) {
     }
 
     // 既存のメールアドレスとの重複チェック
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true },
-    });
+    const existingUser = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email))
+      .get();
 
-    if (existingUser && existingUser.id !== session.user.id) {
+    if (existingUser && existingUser.id !== userId) {
       return NextResponse.json(
         { error: "このメールアドレスは既に使用されています" },
         { status: 400 }
@@ -48,12 +52,13 @@ export async function PATCH(request: Request) {
     }
 
     // メールアドレスを更新
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
+    await db
+      .update(users)
+      .set({
         email: email.trim(),
-      },
-    });
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(users.id, userId));
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -64,4 +69,3 @@ export async function PATCH(request: Request) {
     );
   }
 }
-
