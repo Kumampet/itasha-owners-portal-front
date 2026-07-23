@@ -23,7 +23,8 @@
 	},
 	"vars": {
 		"MOCK_DATABASE": "false",
-		"AUTH_TRUST_HOST": "true"
+		"AUTH_TRUST_HOST": "true",
+		"AUTH_URL": "https://itasha-owners-navi.link"
 	},
 	"alias": {
 		"sharp": "./src/lib/empty.js",
