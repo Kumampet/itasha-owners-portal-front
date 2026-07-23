@@ -38,10 +38,7 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "痛車オーナーズナビ | いたなび！",
   },
-  icons: {
-    apple: "/images/main_logo_square.png",
-    icon: "/images/main_logo_square.png",
-  },
+
   other: {
     "google-adsense-account": getAdsenseClientId(),
   },
