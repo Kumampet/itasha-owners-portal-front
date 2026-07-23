@@ -79,7 +79,7 @@ export async function POST(request: Request) {
       updatedAt: now,
     });
 
-    notifyDiscordContactReceived({ id: submissionId });
+    await notifyDiscordContactReceived({ id: submissionId });
 
     return NextResponse.json({
       id: submissionId,

@@ -404,7 +404,7 @@ export async function PATCH(
       updatedEvent &&
       updatedEvent.approvalStatus === "PENDING"
     ) {
-      notifyDiscordEventApprovalRequested({
+      await notifyDiscordEventApprovalRequested({
         eventId: updatedEvent.id,
         eventName: updatedEvent.name,
         eventDateLabel: new Date(updatedEvent.eventDate).toLocaleDateString("ja-JP", {

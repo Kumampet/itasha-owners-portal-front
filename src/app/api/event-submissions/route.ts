@@ -65,7 +65,7 @@ export async function POST(request: Request) {
       updatedAt: now,
     });
 
-    notifyDiscordEventListingRequest({
+    await notifyDiscordEventListingRequest({
       id,
       name: name.trim(),
       originalUrl: original_url.trim(),
